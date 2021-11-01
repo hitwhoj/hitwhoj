@@ -9,7 +9,9 @@
     </p>
   </div>
   <div v-else>
-    <h1>Who are you, idiot?</h1>
+    <h1>
+      <translate text="welcome" />
+    </h1>
   </div>
 </template>
 

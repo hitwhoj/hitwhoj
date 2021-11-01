@@ -35,6 +35,7 @@ export async function render(
   const preloadLinks = renderPreloadLinks(ctx.modules, manifest);
 
   const { status, title, meta } = store.state.ssr;
+  const { lang } = store.state.i18n;
 
   const metadata =
     `<title>${escapeHtml(title)}</title>` +
@@ -50,7 +51,7 @@ export async function render(
     store.state
   ).replace(/\//g, "\\/")};</script>`;
 
-  return [html, preloadLinks, metadata, initialState, status];
+  return [html, preloadLinks, metadata, initialState, status, lang];
 }
 
 function renderPreloadLinks(

@@ -105,7 +105,7 @@ app.use(async (ctx) => {
         url: string,
         manifest: Record<string, string[]>,
         config: Partial<{ cookie: string; host: string }>
-      ) => Promise<[string, string, string, string, number]>;
+      ) => Promise<[string, string, string, string, number, string]>;
     if (!isProd) {
       // always read fresh template in dev
       template = await fs.readFile("index.html", "utf-8");
@@ -122,13 +122,14 @@ app.use(async (ctx) => {
         : ":" + config.port
     }`;
 
-    const [appHtml, preloadLinks, metadata, initialState, status] =
+    const [appHtml, preloadLinks, metadata, initialState, status, lang] =
       await render(url, manifest, {
         cookie,
         host,
       });
 
     const html = template
+      .replace("<html>", `<html lang="${lang.split('_')[0]}">`)
       .replace(
         `<!-- preload-links -->`,
         isProd ? metadata + initialState + preloadLinks : preloadLinks
