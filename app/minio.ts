@@ -36,7 +36,7 @@ export function writeFile(
   file: string | Buffer | Readable,
   meta: IMetadata = {}
 ) {
-  d.log(`write file ${filename}`);
+  d.debug(`write file ${filename}`);
   if (typeof file === "string") {
     return minioClient.fPutObject(config.minio.bucket, filename, file, meta);
   }
@@ -47,7 +47,7 @@ export function writeFile(
  * Returns a file into storage
  */
 export function readFile(filename: string) {
-  d.log(`read file ${filename}`);
+  d.debug(`read file ${filename}`);
   return minioClient.getObject(config.minio.bucket, filename);
 }
 
@@ -59,7 +59,7 @@ export type MyBucketItem = Omit<BucketItemStat, "metaData"> & {
  * Stat a file in storage
  */
 export function statFile(filename: string): Promise<MyBucketItem> {
-  d.log(`stat file ${filename}`);
+  d.debug(`stat file ${filename}`);
   return minioClient.statObject(config.minio.bucket, filename);
 }
 
@@ -68,10 +68,10 @@ export function statFile(filename: string): Promise<MyBucketItem> {
  */
 export function removeFile(filename: string | string[]) {
   if (Array.isArray(filename)) {
-    d.log(`remove file [${filename.join(", ")}]`);
+    d.debug(`remove file [${filename.join(", ")}]`);
     return minioClient.removeObjects(config.minio.bucket, filename);
   } else {
-    d.log(`remove file ${filename}`);
+    d.debug(`remove file ${filename}`);
     return minioClient.removeObject(config.minio.bucket, filename);
   }
 }
@@ -81,7 +81,7 @@ export function readFilePartial(
   start: number,
   length: number
 ) {
-  d.log(`read file ${filename} from ${start} to ${start + length - 1}`);
+  d.debug(`read file ${filename} from ${start} to ${start + length - 1}`);
   return minioClient.getPartialObject(
     config.minio.bucket,
     filename,

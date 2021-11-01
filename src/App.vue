@@ -1,16 +1,16 @@
 <template>
   <ul class="nav">
     <li><router-link to="/">Home</router-link></li>
-    <li v-if="!user.username">
+    <li v-if="!username">
       <router-link to="/signin">Sign In</router-link>
     </li>
-    <li v-if="!user.username">
+    <li v-if="!username">
       <router-link to="/signup">Sign Up</router-link>
     </li>
-    <li v-if="user.username">
+    <li v-if="username">
       <router-link to="/upload">Upload a file</router-link>
     </li>
-    <li v-if="user.username">
+    <li v-if="username">
       <router-link to="/files">My files</router-link>
     </li>
   </ul>
@@ -20,7 +20,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onServerPrefetch, toRefs } from "vue";
+import { computed, onMounted, onServerPrefetch } from "vue";
 import { useStore } from "./store";
 
 const store = useStore();
@@ -29,9 +29,11 @@ const fetchData = async () => {
   await store.dispatch("user/whoami");
 };
 
+const username = computed(() => store.getters.username);
+
 onServerPrefetch(fetchData);
 onMounted(() => {
-  if (!store.state.user.files) {
+  if (!username.value) {
     fetchData();
   }
 });
@@ -39,10 +41,8 @@ onMounted(() => {
 store.commit("ssr/title", "Hello world");
 store.commit("ssr/meta", {
   name: "description",
-  content: "desc is not allowed in this page",
+  content: "This is an example description",
 });
-
-const { user } = toRefs(store.state);
 </script>
 
 <style lang="less">

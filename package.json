@@ -9,7 +9,7 @@
     "build:ssr": "vite build --ssr src/entry-server.ts --outDir dist/server",
     "build:server": "webpack --mode=production",
     "start": "node build/main.js",
-    "debug": "cross-env DEV=true node --inspect-brk build/main.js",
+    "debug": "cross-env DEV=true node --inspect-brk build/main.js --debug",
     "lint": "yarn lint:client && yarn lint:server",
     "lint:fix": "yarn lint:client --fix && yarn lint:server --fix",
     "lint:client": "eslint --ext ts,vue src -f ./node_modules/eslint-friendly-formatter",

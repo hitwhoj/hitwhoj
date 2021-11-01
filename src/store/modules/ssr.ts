@@ -6,6 +6,8 @@ export type State = {
   meta: Record<string, string>;
 };
 
+export type Getters = {};
+
 export type Mutations<S = State> = {
   "ssr/status"(state: S, payload: number): void;
   "ssr/title"(state: S, payload: string): void;
@@ -20,6 +22,8 @@ export function createSSRModule(_api: API) {
     title: "Example Title",
     meta: {},
   });
+
+  const getters: Getters = {};
 
   const mutations: Mutations = {
     "ssr/status"(state, payload) {
@@ -40,6 +44,7 @@ export function createSSRModule(_api: API) {
 
   return {
     state,
+    getters,
     mutations,
     actions,
   };

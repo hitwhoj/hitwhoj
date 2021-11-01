@@ -1,29 +1,32 @@
 import { API } from "../api";
 import {
-  ActionContext,
-  createStore as createVuexStore,
+  createStore as _createStore,
   Store,
-  useStore as useVuexStore,
+  useStore as _useStore,
 } from "vuex";
 import {
   createModules,
   ModuleState as RootState,
+  ModuleGetters as RootGetters,
   ModuleActions as RootActions,
   ModuleMutations as RootMutations,
 } from "./modules";
 
 export const createStore = (api: API): Store<RootState> => {
-  return createVuexStore({
+  return _createStore({
     modules: createModules(api),
   });
 };
 
 type OptionalSpread<T> = T extends undefined ? [] : [T];
 
-export type ArgumentedActionContext<S = RootState> = Omit<
-  ActionContext<S, RootState>,
-  "commit" | "dispatch" | "state" | "rootState"
-> & {
+export type AbstractGetter = Record<string, (...args: any[]) => any>;
+
+type FlatGetters<T extends AbstractGetter> = {
+  [v in keyof T]: ReturnType<T[v]>;
+};
+
+export type ArgumentedActionContext<S, G extends AbstractGetter> = {
   commit<K extends keyof RootMutations>(
     type: K,
     ...payload: OptionalSpread<Parameters<RootMutations[K]>[1]>
@@ -33,10 +36,15 @@ export type ArgumentedActionContext<S = RootState> = Omit<
     ...payload: OptionalSpread<Parameters<RootActions[K]>[1]>
   ): ReturnType<RootActions[K]>;
   state: S;
+  getters: FlatGetters<G>;
   rootState: RootState;
+  rootGetters: FlatGetters<RootGetters>;
 };
 
-export type MyStore = Omit<Store<RootState>, "commit" | "dispatch"> & {
+export type MyStore = Omit<
+  Store<RootState>,
+  "commit" | "dispatch" | "getters"
+> & {
   commit<K extends keyof RootMutations>(
     type: K,
     ...payload: OptionalSpread<Parameters<RootMutations[K]>[1]>
@@ -45,8 +53,9 @@ export type MyStore = Omit<Store<RootState>, "commit" | "dispatch"> & {
     type: K,
     ...payload: OptionalSpread<Parameters<RootActions[K]>[1]>
   ): ReturnType<RootActions[K]>;
+  readonly getters: FlatGetters<RootGetters>;
 };
 
 export function useStore() {
-  return useVuexStore() as MyStore;
+  return _useStore() as MyStore;
 }

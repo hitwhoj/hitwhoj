@@ -26,7 +26,7 @@ jobs:
 
       - name: Build
         run: |
-          ln -sf _config.json config.json
+          cp _config.json config.json
           yarn build
       
       - name: Lint

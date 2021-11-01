@@ -4,6 +4,16 @@ By default, we only provide deploy instructions under Arch Linux.
 
 If you are using Ubuntu or other Linux distros (or maybe Windows), you may need to solve it by yourself.
 
+## Configurations
+
+Firstly, clone a `config.json` to yourself.
+
+```bash
+cp _config.json config.json
+```
+
+Then modify some lines to suit your environment.
+
 ## MongoDB
 
 Install [`aur/mongodb-bin`][mongodb] through your AUR package manager.
@@ -58,16 +68,6 @@ sudo systemctl start minio.service
 ```
 
 And finally, write you `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` into `config.json`.
-
-## Configurations
-
-Firstly, clone a `config.json` to yourself.
-
-```bash
-cp _config.json config.json
-```
-
-Then modify some lines to suit your environment.
 
 ## Build the project
 

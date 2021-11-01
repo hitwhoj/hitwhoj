@@ -1,5 +1,6 @@
 import {
   State as UserState,
+  Getters as UserGetters,
   Mutations as UserMutations,
   Actions as UserActions,
   createUserModule,
@@ -7,6 +8,7 @@ import {
 
 import {
   State as SSRState,
+  Getters as SSRGetters,
   Mutations as SSRMutations,
   Actions as SSRActions,
   createSSRModule,
@@ -26,5 +28,6 @@ export type ModuleState = {
   ssr: SSRState;
 };
 
+export type ModuleGetters = UserGetters & SSRGetters;
 export type ModuleMutations = UserMutations & SSRMutations;
 export type ModuleActions = UserActions & SSRActions;

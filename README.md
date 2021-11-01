@@ -70,6 +70,10 @@ yarn build
 # the server via `yarn start` or `node build/main.js`
 yarn start
 
+# pass --debug, --info, --warn, or --error to
+# set log level, default log level is --info.
+yarn start --debug
+
 # ======== develop =======
 
 # start a frontend HMR development environment

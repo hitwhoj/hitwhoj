@@ -41,7 +41,7 @@ if (!isProd) {
 
 app.use(async (ctx, next) => {
   await next();
-  d.log(
+  d.info(
     `${ctx.ip} ${ctx.status} ${ctx.method} ${ctx.path} ${ctx.get("User-Agent")}`
   );
 });

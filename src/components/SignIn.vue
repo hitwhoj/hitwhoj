@@ -25,6 +25,8 @@ async function submit() {
 
   if (success) {
     router.push("/");
+  } else {
+    alert("sign in failed");
   }
 }
 </script>

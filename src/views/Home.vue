@@ -1,8 +1,9 @@
 <template>
-  <div v-if="user.username">
-    <h1>Hello {{ user.username }}!</h1>
+  <div v-if="profile">
+    <h1>Hello {{ profile._id }}!</h1>
     <p>
-      And you email is <a :href="'mailto:' + user.email">{{ user.email }}</a>
+      And you email is
+      <a :href="'mailto:' + profile.email">{{ profile.email }}</a>
     </p>
   </div>
   <div v-else>
@@ -11,12 +12,12 @@
 </template>
 
 <script lang="ts" setup>
-import { toRefs } from "vue";
+import { computed } from "vue";
 import { useStore } from "../store";
 
 const store = useStore();
 
-const { user } = toRefs(store.state);
+const profile = computed(() => store.state.user.profile);
 </script>
 
 <style lang="less" scoped>
