@@ -18,6 +18,7 @@
   "https": {
     "enable": false,
     "hsts": true,
+    "redirect": true,
     "key": "localhost-key.pem",
     "cert": "localhost.pem"
   },

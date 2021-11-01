@@ -169,7 +169,7 @@ if (config.https.enable) {
     }/`
   );
 
-  if (config.https.hsts) {
+  if (config.https.redirect) {
     const jump = new Koa();
     jump.use(hsts);
     jump.use(async (ctx) => {
