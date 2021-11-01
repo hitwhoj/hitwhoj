@@ -10,6 +10,9 @@ import c2k from "koa-connect";
 import { createServer, ViteDevServer } from "vite";
 import { promises as fs } from "fs";
 import compress from "koa-compress";
+import logger from "./logger";
+
+const d = logger("main");
 
 // @ts-ignore
 import { render as SSRRender } from "../dist/server/entry-server.js";
@@ -17,7 +20,7 @@ import { render as SSRRender } from "../dist/server/entry-server.js";
 const app = new Koa();
 
 const isProd = !process.env.DEV;
-console.log(`working in ${isProd ? "production" : "development"} mode`);
+d.info(`working in ${isProd ? "production" : "development"} mode`);
 
 let vite: ViteDevServer;
 if (!isProd) {
@@ -30,16 +33,21 @@ if (!isProd) {
   });
   // use vite's connect instance as middleware
   app.use(c2k(vite.middlewares));
-  console.log("ViteDevServer is working");
+  d.info("ViteDevServer is working");
 } else {
   app.use(compress());
   app.use(serve("dist/client", { index: false }));
 }
 
+app.use(async (ctx, next) => {
+  await next();
+  d.log(`${ctx.ip} ${ctx.status} ${ctx.method} ${ctx.path}`);
+});
+
 // CORS start ========
 
 if (isProd && config.cors.enable) {
-  console.log("CORS stricted to " + config.cors.host);
+  d.info("CORS stricted to " + config.cors.host);
   app.use(cors({ origin: config.cors.host }));
 }
 
@@ -56,16 +64,16 @@ const hsts: Koa.Middleware = async (ctx, next) => {
 };
 
 if (config.https.enable && config.https.hsts) {
-  console.log("HSTS enabled");
+  d.info("HSTS enabled");
   app.use(hsts);
 }
 
 // HSTS end ========
 
 app.on("error", (e) => {
-  if (e?.code === "ECONNRESET") return;
-  // FIXME: we should not ignore it
-  console.error(e);
+  if (!(e instanceof Error)) return;
+  if (e.name === "ECONNRESET") return;
+  d.error(e.message);
 });
 
 app.use(body({ multipart: true }));
@@ -131,7 +139,8 @@ app.use(async (ctx) => {
   } catch (e) {
     if (!(e instanceof Error)) return;
     vite && vite.ssrFixStacktrace(e);
-    console.error(e.stack);
+    d.error(`SSR failed to path ${ctx.path}`);
+    e.stack && d.error(e.stack);
     ctx.response.status = 500;
     ctx.response.set("Content-Type", "text/html");
     ctx.response.body = e.stack;
@@ -152,7 +161,7 @@ if (config.https.enable) {
   );
   server.listen(config.port);
 
-  console.log(
+  d.info(
     `HTTPS Server started on https://localhost${
       config.port === 443 ? "" : `:${config.port}`
     }/`
@@ -167,12 +176,12 @@ if (config.https.enable) {
     });
     jump.listen(80);
 
-    console.log("HTTP server started on http://localhost/");
+    d.info("HTTP server started on http://localhost/");
   }
 } else {
   app.listen(config.port);
 
-  console.log(
+  d.info(
     `HTTP server started on http://localhost${
       config.port === 80 ? "" : `:${config.port}`
     }/`
