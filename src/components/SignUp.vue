@@ -4,7 +4,9 @@
     <input type="password" v-model="password1" />
     <input type="password" v-model="password2" />
     <input type="email" v-model="email" />
-    <input type="button" @click="submit" value="sign up" />
+    <button @click="submit">
+      <translate text="sign_up" />
+    </button>
   </div>
 </template>
 

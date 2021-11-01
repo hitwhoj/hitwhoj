@@ -1,26 +1,43 @@
 <template>
   <ul class="nav">
-    <li><router-link to="/">Home</router-link></li>
-    <li v-if="!username">
-      <router-link to="/signin">Sign In</router-link>
+    <li>
+      <router-link to="/">
+        <translate text="home" />
+      </router-link>
     </li>
     <li v-if="!username">
-      <router-link to="/signup">Sign Up</router-link>
+      <router-link to="/signin">
+        <translate text="sign_in" />
+      </router-link>
+    </li>
+    <li v-if="!username">
+      <router-link to="/signup">
+        <translate text="sign_up" />
+      </router-link>
     </li>
     <li v-if="username">
-      <router-link to="/upload">Upload a file</router-link>
+      <router-link to="/upload">
+        <translate text="upload_file" />
+      </router-link>
     </li>
     <li v-if="username">
-      <router-link to="/files">My files</router-link>
+      <router-link to="/files">
+        <translate text="my_files" />
+      </router-link>
     </li>
   </ul>
   <div class="content">
     <router-view />
   </div>
+  <div class="content">
+    <button @click="changeLang('en_us')">English</button>
+    <button @click="changeLang('zh_cn')">中文</button>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onServerPrefetch } from "vue";
+import { Languages } from "./plugins/i18n/lang";
 import { useStore } from "./store";
 
 const store = useStore();
@@ -43,6 +60,10 @@ store.commit("ssr/meta", {
   name: "description",
   content: "This is an example description",
 });
+
+const changeLang = async (lang: Languages) => {
+  await store.dispatch("i18n/change_language", lang);
+};
 </script>
 
 <style lang="less">

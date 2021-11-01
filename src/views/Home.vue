@@ -1,8 +1,10 @@
 <template>
   <div v-if="profile">
-    <h1>Hello {{ profile._id }}!</h1>
+    <h1>
+      <translate text="greeting" :args="[profile._id]" />
+    </h1>
     <p>
-      And you email is
+      <translate text="your_email" />
       <a :href="'mailto:' + profile.email">{{ profile.email }}</a>
     </p>
   </div>

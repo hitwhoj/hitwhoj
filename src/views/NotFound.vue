@@ -1,5 +1,7 @@
 <template>
-  <h1>404 NOT FOUND</h1>
+  <h1>
+    <translate text="not_found_404" />
+  </h1>
 </template>
 
 <script lang="ts" setup>

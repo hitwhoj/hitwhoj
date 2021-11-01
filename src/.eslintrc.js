@@ -18,5 +18,6 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/ban-types': 0,
     "prettier/prettier": 2,
+    'no-undef': 0,
   }
 };

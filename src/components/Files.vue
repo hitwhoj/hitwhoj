@@ -2,9 +2,15 @@
   <table v-if="files">
     <thead>
       <tr>
-        <td>Filename</td>
-        <td>Filesize</td>
-        <td>UUID</td>
+        <td>
+          <translate text="file_name" />
+        </td>
+        <td>
+          <translate text="file_size" />
+        </td>
+        <td>
+          <translate text="file_uuid" />
+        </td>
       </tr>
     </thead>
     <tbody>

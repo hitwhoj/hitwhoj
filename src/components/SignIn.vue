@@ -2,7 +2,9 @@
   <div class="signin">
     <input type="text" v-model="username" />
     <input type="password" v-model="password" />
-    <input type="button" @click="submit" value="sign in" />
+    <button @click="submit">
+      <translate text="sign_in" />
+    </button>
   </div>
 </template>
 
