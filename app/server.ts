@@ -41,7 +41,9 @@ if (!isProd) {
 
 app.use(async (ctx, next) => {
   await next();
-  d.log(`${ctx.ip} ${ctx.status} ${ctx.method} ${ctx.path}`);
+  d.log(
+    `${ctx.ip} ${ctx.status} ${ctx.method} ${ctx.path} ${ctx.get("User-Agent")}`
+  );
 });
 
 // CORS start ========
@@ -72,7 +74,7 @@ if (config.https.enable && config.https.hsts) {
 
 app.on("error", (e) => {
   if (!(e instanceof Error)) return;
-  if (e.name === "ECONNRESET") return;
+  if (/ECONNRESET/i.test(e.message)) return;
   d.error(e.message);
 });
 

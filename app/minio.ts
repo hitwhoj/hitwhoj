@@ -81,7 +81,7 @@ export function readFilePartial(
   start: number,
   length: number
 ) {
-  d.log(`read partial file ${filename} from ${start} with length ${length}`);
+  d.log(`read file ${filename} from ${start} to ${start + length - 1}`);
   return minioClient.getPartialObject(
     config.minio.bucket,
     filename,
