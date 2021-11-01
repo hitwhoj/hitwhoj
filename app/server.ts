@@ -9,6 +9,7 @@ import https from "https";
 import c2k from "koa-connect";
 import { createServer, ViteDevServer } from "vite";
 import { promises as fs } from "fs";
+import compress from 'koa-compress';
 
 // @ts-ignore
 import { render as SSRRender } from "../dist/server/entry-server.js";
@@ -31,7 +32,7 @@ if (!isProd) {
   app.use(c2k(vite.middlewares));
   console.log("ViteDevServer is working");
 } else {
-  // app.use(require('compression')());
+  app.use(compress());
   app.use(serve("dist/client", { index: false }));
 }
 
