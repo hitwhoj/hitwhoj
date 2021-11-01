@@ -1,0 +1,28 @@
+{
+  "mongo": {
+    "host": "localhost",
+    "port": 27017,
+    "dbname": "hitwhoj",
+    "username": "username",
+    "password": "password"
+  },
+  "minio": {
+    "host": "localhost",
+    "port": 9000,
+    "root_user": "cpAHPp6ew3xcXpOLK67ae2pCPbE9D3rC",
+    "root_password": "Zcgr5y9TpfcOZ0xMTnjLzd7rPFGMnbhb",
+    "bucket": "hitwhoj",
+    "region": "cn-sd-1"
+  },
+  "port": 8080,
+  "https": {
+    "enable": false,
+    "hsts": true,
+    "key": "localhost-key.pem",
+    "cert": "localhost.pem"
+  },
+  "cors": {
+    "enable": true,
+    "host": "http://localhost:8080"
+  }
+}

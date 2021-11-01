@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.1.2
+
+      - name: Yarn CLI
+        uses: CultureHQ/actions-yarn@v1.0.1
+
+      - name: Install node modules
+        run: |
+          yarn install
+          node --version
+
+      - name: Build
+        run: |
+          ln -sf _config.json config.json
+          yarn build
+      
+      - name: Lint
+        run: |
+          yarn lint:client
+          yarn lint:server
+
+      - name: Test
+        run: |
+          yarn coverage

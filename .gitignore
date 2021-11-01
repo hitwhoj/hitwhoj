@@ -1,0 +1,13 @@
+/node_modules
+/.DS_Store
+/dist
+/build
+/*.local
+/*.log
+/static
+/config.json
+*.log
+*.pem
+/.vscode
+/.nyc_output
+/.idea
