@@ -9,7 +9,7 @@ import https from "https";
 import c2k from "koa-connect";
 import { createServer, ViteDevServer } from "vite";
 import { promises as fs } from "fs";
-import compress from 'koa-compress';
+import compress from "koa-compress";
 
 // @ts-ignore
 import { render as SSRRender } from "../dist/server/entry-server.js";
@@ -44,6 +44,23 @@ if (isProd && config.cors.enable) {
 }
 
 // CORS end ========
+
+// HSTS start ========
+
+const hsts: Koa.Middleware = async (ctx, next) => {
+  ctx.response.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+  await next();
+};
+
+if (config.https.enable && config.https.hsts) {
+  console.log("HSTS enabled");
+  app.use(hsts);
+}
+
+// HSTS end ========
 
 app.on("error", (e) => {
   if (e?.code === "ECONNRESET") return;
@@ -143,12 +160,14 @@ if (config.https.enable) {
 
   if (config.https.hsts) {
     const jump = new Koa();
+    jump.use(hsts);
     jump.use(async (ctx) => {
-      ctx.redirect("https://" + ctx.host + ctx.url);
+      ctx.response.status = 301;
+      ctx.response.set("Location", "https://" + ctx.host + ctx.url);
     });
     jump.listen(80);
 
-    console.log("HSTS server started on http://localhost/");
+    console.log("HTTP server started on http://localhost/");
   }
 } else {
   app.listen(config.port);
