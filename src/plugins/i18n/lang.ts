@@ -1,18 +1,18 @@
 import en_us from "./translations/en_us";
 
 const fetchLangs = {
-  zh_cn: () => import("./translations/zh_cn"),
+  "zh-CN": () => import("./translations/zh_cn"),
 };
 
 export type OtherLanguages = keyof typeof fetchLangs;
-export type Languages = "en_us" | OtherLanguages;
+export type Languages = "en-US" | OtherLanguages;
 export type Translations = typeof en_us;
 export type TranslateKeys = keyof typeof en_us;
 
 const cachedLangs: { [K in OtherLanguages]?: Translations } = {};
 
 export async function loadLanguage(lang: Languages) {
-  if (lang === "en_us") {
+  if (lang === "en-US") {
     return;
   }
 
@@ -21,12 +21,21 @@ export async function loadLanguage(lang: Languages) {
   }
 }
 
+const name: { [k in Languages]: string } = {
+  "en-US": "English (US)",
+  "zh-CN": "简体中文",
+};
+
+export function getLanguageName(lang: Languages) {
+  return name[lang];
+}
+
 export function translate(
   lang: Languages,
   key: TranslateKeys,
   args: string[] = []
 ) {
-  const trans = lang === "en_us" ? en_us : cachedLangs[lang];
+  const trans = lang === "en-US" ? en_us : cachedLangs[lang];
   if (!trans) {
     console.warn(`Trying to translate before load the language ${lang}`);
     return "???";

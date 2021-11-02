@@ -129,7 +129,7 @@ app.use(async (ctx) => {
       });
 
     const html = template
-      .replace("<html>", `<html lang="${lang.split('_')[0]}">`)
+      .replace("<html>", `<html lang="${lang}">`)
       .replace(
         `<!-- preload-links -->`,
         isProd ? metadata + initialState + preloadLinks : preloadLinks

@@ -30,14 +30,15 @@
     <router-view />
   </div>
   <div class="content">
-    <button @click="changeLang('en_us')">English</button>
-    <button @click="changeLang('zh_cn')">中文</button>
+    <button v-for="lang in langs" @click="changeLang(lang)" :key="lang">
+      {{ getLanguageName(lang) }}
+    </button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onServerPrefetch } from "vue";
-import { Languages } from "./plugins/i18n/lang";
+import { Languages, getLanguageName } from "./plugins/i18n/lang";
 import { useStore } from "./store";
 
 const store = useStore();
@@ -60,6 +61,8 @@ store.commit("ssr/meta", {
   name: "description",
   content: "This is an example description",
 });
+
+const langs: Array<Languages> = ["en-US", "zh-CN"];
 
 const changeLang = async (lang: Languages) => {
   await store.dispatch("i18n/change_language", lang);

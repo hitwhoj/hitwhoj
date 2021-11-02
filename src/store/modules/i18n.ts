@@ -21,7 +21,7 @@ export type Actions<S = State, G extends AbstractGetter = Getters> = {
 
 export function createI18nModule(_api: API) {
   const state = (): State => ({
-    lang: "en_us",
+    lang: "en-US",
   });
 
   const getters: Getters = {};
