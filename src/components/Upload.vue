@@ -19,7 +19,6 @@ const change = (e: any) => {
 
 const upload = async () => {
   if (!file.value) return;
-  console.log("uploading");
   const success = await store.dispatch("user/upload", file.value);
   if (success) {
     alert("upload success");

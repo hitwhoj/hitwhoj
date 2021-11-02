@@ -49,12 +49,12 @@ const store = useStore();
 
 const username = computed(() => store.getters.username);
 
-const fetchData = () => store.dispatch("user/whoami");
+const fetchUserProfile = () => store.dispatch("user/whoami");
 
-onServerPrefetch(fetchData);
+onServerPrefetch(fetchUserProfile);
 onMounted(() => {
   if (!username.value) {
-    fetchData();
+    fetchUserProfile();
   }
 });
 
