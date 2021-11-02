@@ -104,7 +104,7 @@ export function createUserModule(api: API) {
     },
 
     async "user/update"({ commit }, payload) {
-      const res = await api.user.changeProfile(payload);
+      const res = await api.user.updateProfile(payload);
       if (res.status === 200) {
         commit("user/update", res.data);
       }

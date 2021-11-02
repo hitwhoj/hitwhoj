@@ -32,7 +32,7 @@ export function createUserAPI(core: APICore) {
       return core.makePOSTRequest<UserFilesDoc[]>("/files");
     },
 
-    changeProfile(data: Partial<Omit<UserProfileDoc, "_id">>) {
+    updateProfile(data: Partial<Omit<UserProfileDoc, "_id">>) {
       return core.makePUTRequest<UserProfileDoc>("/profile", data);
     },
   };
