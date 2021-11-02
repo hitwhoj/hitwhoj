@@ -1,5 +1,6 @@
 import { APICore } from "./utils";
 import type { UserFilesDoc, UserProfileDoc } from "../../app/modules/user";
+import { Languages } from "../plugins/i18n/lang";
 
 export function createUserAPI(core: APICore) {
   return {
@@ -30,6 +31,13 @@ export function createUserAPI(core: APICore) {
 
     getFiles() {
       return core.makePOSTRequest<UserFilesDoc[]>("/files");
+    },
+
+    changeProfile(email: string, language: Languages) {
+      return core.makePUTRequest<UserProfileDoc>("/profile", {
+        email,
+        language,
+      });
     },
   };
 }

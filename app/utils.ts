@@ -70,3 +70,5 @@ export function encodeRFC5987ValueChars(str: string) {
     // so we can allow for a little better readability over the wire: |`^
     .replace(/%(?:7C|60|5E)/g, unescape);
 }
+
+export const languages = ['en-US', 'zh-CN'];

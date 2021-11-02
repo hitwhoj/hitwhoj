@@ -1,5 +1,5 @@
 import Router from "koa-router";
-import { Types } from "../utils";
+import { languages, Types } from "../utils";
 import { Users } from "../modules/user";
 import type { State, Tools } from "../router";
 
@@ -68,6 +68,31 @@ router.post("/signup", async (ctx) => {
   });
 
   ctx.end(200, profile.result);
+});
+
+router.put("/profile", async (ctx) => {
+  if (!ctx.state.username) {
+    return ctx.fail("user/login_required");
+  }
+
+  const email = ctx.data.body("email", Types.String) ?? "";
+  const language = ctx.data.body("language", Types.String) ?? "";
+
+  if (!email || !language) {
+    return ctx.fail("common/wrong_arguments");
+  }
+
+  if (languages.indexOf(language) === -1) {
+    return ctx.fail("common/wrong_arguments");
+  }
+
+  const result = await Users.changeUserProfile(ctx.state.username, {
+    email,
+    language,
+  });
+  if (!result.ok) return ctx.fail(result.error);
+
+  ctx.end(200, result.result);
 });
 
 export default router;
