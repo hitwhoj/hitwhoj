@@ -13,7 +13,7 @@ export type UserPasswordDoc = {
 export type UserProfileDoc = {
   _id: string;
   email: string;
-  language: string;
+  displayName: string;
 };
 
 export type UserSessionDoc = {
@@ -49,7 +49,7 @@ export class Users {
     const result1 = await collPassword.insertOne({ _id: username, password });
     if (!result1.acknowledged) return err("core/database_panicked");
 
-    const profile = { _id: username, email, language: "en-US" };
+    const profile = { _id: username, email, displayName: "" };
     const result2 = await collProfile.insertOne(profile);
     if (!result2.acknowledged) return err("core/database_panicked");
 
@@ -88,7 +88,7 @@ export class Users {
    */
   static async changeUserProfile(
     username: string,
-    profile: Omit<UserProfileDoc, "_id">
+    profile: Partial<Omit<UserProfileDoc, "_id">>
   ): Promise<Result<UserProfileDoc>> {
     const result = await collProfile.findOneAndUpdate(
       { _id: username },

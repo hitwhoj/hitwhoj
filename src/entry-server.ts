@@ -1,6 +1,7 @@
 import { createApp } from "./main";
 import { renderToString, SSRContext } from "@vue/server-renderer";
 import { APICoreConfig } from "./api/utils";
+import { isValidLanguage, Languages } from "./plugins/i18n/lang";
 
 function escapeHtml(unsafe: string) {
   return unsafe
@@ -22,6 +23,10 @@ export async function render(
   router.push(url);
   await router.isReady();
 
+  if (config.language && isValidLanguage(config.language)) {
+    store.state.i18n.lang = config.language as Languages;
+  }
+
   // passing SSR context object which will be available via useSSRContext()
   // @vitejs/plugin-vue injects code into a component's setup() that registers
   // itself on ctx.modules. After the render, ctx.modules would contain all the
@@ -35,30 +40,28 @@ export async function render(
   const preloadLinks = renderPreloadLinks(ctx.modules, manifest);
 
   const { status, title, meta } = store.state.ssr;
-  const { lang } = store.state.i18n;
 
-  const metadata =
-    `<title>${escapeHtml(title)}</title>` +
-    Object.keys(meta)
-      .map((key) => {
-        return `<meta name=${JSON.stringify(key)} content=${JSON.stringify(
-          meta[key]
-        )}>`;
-      })
-      .join("");
+  const metadata = [
+    `<title>${escapeHtml(title)}</title>`,
+    ...Object.keys(meta).map((key) => {
+      return `<meta name=${JSON.stringify(key)} content=${JSON.stringify(
+        meta[key]
+      )}>`;
+    }),
+  ].join("\n    ");
 
   const initialState = `<script>window.__INITIAL_STATE__=${JSON.stringify(
     store.state
   ).replace(/\//g, "\\/")};</script>`;
 
-  return [html, preloadLinks, metadata, initialState, status, lang];
+  return [html, preloadLinks, metadata, initialState, status];
 }
 
 function renderPreloadLinks(
   modules: string[],
   manifest: Record<string, string[]>
 ) {
-  let links = "";
+  const links: string[] = [];
   const seen = new Set();
   modules.forEach((id) => {
     const files = manifest[id];
@@ -66,12 +69,12 @@ function renderPreloadLinks(
       files.forEach((file) => {
         if (!seen.has(file)) {
           seen.add(file);
-          links += renderPreloadLink(file);
+          links.push(renderPreloadLink(file));
         }
       });
     }
   });
-  return links;
+  return links.join("\n    ");
 }
 
 function renderPreloadLink(file: string) {

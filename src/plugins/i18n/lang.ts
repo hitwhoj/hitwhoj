@@ -9,16 +9,33 @@ export type Languages = "en-US" | OtherLanguages;
 export type Translations = typeof en_us;
 export type TranslateKeys = keyof typeof en_us;
 
+export function isValidLanguage(language: string) {
+  if (language === "en-US") return true;
+  return Object.keys(fetchLangs).indexOf(language) > -1;
+}
+
 const cachedLangs: { [K in OtherLanguages]?: Translations } = {};
+
+export function getDefaultLanguage() {
+  return en_us;
+}
+
+export function getAllLanguages() {
+  return ["en-US"].concat(Object.keys(fetchLangs)) as Languages[];
+}
 
 export async function loadLanguage(lang: Languages) {
   if (lang === "en-US") {
-    return;
+    return en_us;
   }
 
-  if (!cachedLangs[lang]) {
-    cachedLangs[lang] = (await fetchLangs[lang]()).default;
+  const cache = cachedLangs[lang];
+  if (!cache) {
+    const trans = (await fetchLangs[lang]()).default;
+    cachedLangs[lang] = trans;
+    return trans;
   }
+  return cache;
 }
 
 const name: { [k in Languages]: string } = {
@@ -28,24 +45,4 @@ const name: { [k in Languages]: string } = {
 
 export function getLanguageName(lang: Languages) {
   return name[lang];
-}
-
-export function translate(
-  lang: Languages,
-  key: TranslateKeys,
-  args: string[] = []
-) {
-  const trans = lang === "en-US" ? en_us : cachedLangs[lang];
-  if (!trans) {
-    console.warn(`Trying to translate before load the language ${lang}`);
-    return "???";
-  }
-
-  const text = trans[key];
-  if (!text) {
-    console.warn(`Translate for ${key} in ${lang} is missing`);
-    return "???";
-  }
-
-  return text.replace(/\{(\d+)\}/g, (_, i) => args[i]);
 }

@@ -1,11 +1,11 @@
 <template>
-  {{ translate(lang, key, args) }}
+  {{ translatedText }}
 </template>
 
 <script lang="ts" setup>
 import { computed } from "@vue/reactivity";
 import { useStore } from "../../store";
-import { translate } from "./lang";
+import { TranslateKeys } from "./lang";
 
 const props = defineProps({
   text: {
@@ -20,7 +20,20 @@ const props = defineProps({
 
 const store = useStore();
 
-const lang = computed(() => store.state.i18n.lang);
+const translation = computed(() => store.state.i18n.translation);
 const key = computed(() => props.text);
-const args = computed(() => (Array.isArray(props.args) ? props.args : []));
+const args = computed(() =>
+  Array.isArray(props.args) ? props.args.map(String) : []
+);
+
+const translatedText = computed(() => {
+  const k = key.value;
+  const t = translation.value;
+  const v = t[k as TranslateKeys];
+  if (!v) {
+    console.warn(`Translation for ${k} was not found`);
+    return "???";
+  }
+  return v.replace(/\{(\d+)\}/g, (_, i) => args.value[i]);
+});
 </script>

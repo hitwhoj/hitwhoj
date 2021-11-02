@@ -21,6 +21,7 @@ export type APIResponse<T> = {
 export type APICoreConfig = Partial<{
   cookie: string;
   host: string;
+  language: string;
 }>;
 
 /**

@@ -1,6 +1,6 @@
 import Router from "koa-router";
-import { languages, Types } from "../utils";
-import { Users } from "../modules/user";
+import { Types } from "../utils";
+import { UserProfileDoc, Users } from "../modules/user";
 import type { State, Tools } from "../router";
 
 const router = new Router<State, Tools>();
@@ -75,21 +75,19 @@ router.put("/profile", async (ctx) => {
     return ctx.fail("user/login_required");
   }
 
+  const data: Partial<Omit<UserProfileDoc, "_id">> = {};
+
   const email = ctx.data.body("email", Types.String) ?? "";
-  const language = ctx.data.body("language", Types.String) ?? "";
+  if (email) data.email = email;
 
-  if (!email || !language) {
+  const displayName = ctx.data.body("displayName", Types.String) ?? "";
+  if (displayName) data.displayName = displayName;
+
+  if (!Object.keys(data).length) {
     return ctx.fail("common/wrong_arguments");
   }
 
-  if (languages.indexOf(language) === -1) {
-    return ctx.fail("common/wrong_arguments");
-  }
-
-  const result = await Users.changeUserProfile(ctx.state.username, {
-    email,
-    language,
-  });
+  const result = await Users.changeUserProfile(ctx.state.username, data);
   if (!result.ok) return ctx.fail(result.error);
 
   ctx.end(200, result.result);

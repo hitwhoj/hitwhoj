@@ -38,16 +38,18 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onServerPrefetch } from "vue";
-import { Languages, getLanguageName } from "./plugins/i18n/lang";
+import {
+  Languages,
+  getLanguageName,
+  getAllLanguages,
+} from "./plugins/i18n/lang";
 import { useStore } from "./store";
 
 const store = useStore();
 
-const fetchData = async () => {
-  await store.dispatch("user/whoami");
-};
-
 const username = computed(() => store.getters.username);
+
+const fetchData = () => store.dispatch("user/whoami");
 
 onServerPrefetch(fetchData);
 onMounted(() => {
@@ -62,11 +64,16 @@ store.commit("ssr/meta", {
   content: "This is an example description",
 });
 
-const langs: Array<Languages> = ["en-US", "zh-CN"];
+const langs = getAllLanguages();
 
 const changeLang = async (lang: Languages) => {
   await store.dispatch("i18n/change_language", lang);
 };
+
+const fetchLanguage = () =>
+  store.dispatch("i18n/change_language", store.state.i18n.lang);
+
+onServerPrefetch(fetchLanguage);
 </script>
 
 <style lang="less">

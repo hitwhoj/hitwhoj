@@ -93,6 +93,7 @@ const indexProd = isProd
 
 // @ts-ignore
 import SSRManifest from "../dist/client/ssr-manifest.json";
+import { languages } from "./utils";
 
 const manifest = isProd ? SSRManifest : {};
 
@@ -104,7 +105,7 @@ app.use(async (ctx) => {
       render: (
         url: string,
         manifest: Record<string, string[]>,
-        config: Partial<{ cookie: string; host: string }>
+        config: Partial<{ cookie: string; host: string; language: string }>
       ) => Promise<[string, string, string, string, number, string]>;
     if (!isProd) {
       // always read fresh template in dev
@@ -122,17 +123,37 @@ app.use(async (ctx) => {
         : ":" + config.port
     }`;
 
-    const [appHtml, preloadLinks, metadata, initialState, status, lang] =
+    let language = languages[0];
+    const cookieLanguage = ctx.cookies.get("language") ?? "";
+    if (languages.indexOf(cookieLanguage) > -1) {
+      language = cookieLanguage;
+    } else {
+      const acceptLanguages = ctx
+        .get("Accept-Language")
+        .split(",")
+        .map((s) => s.split(";")[0].trim());
+      for (const acceptLanguage of acceptLanguages) {
+        if (languages.indexOf(acceptLanguage) > -1) {
+          language = acceptLanguage;
+          break;
+        }
+      }
+    }
+
+    const [appHtml, preloadLinks, metadata, initialState, status] =
       await render(url, manifest, {
         cookie,
         host,
+        language,
       });
 
     const html = template
-      .replace("<html>", `<html lang="${lang}">`)
+      .replace("<html>", `<html lang="${language}">`)
       .replace(
         `<!-- preload-links -->`,
-        isProd ? metadata + initialState + preloadLinks : preloadLinks
+        isProd
+          ? [metadata, initialState, preloadLinks].join("\n    ")
+          : preloadLinks
       )
       .replace(`<!-- app-html -->`, appHtml);
 

@@ -35,6 +35,10 @@ export type Actions<S = State, G extends AbstractGetter = Getters> = {
   ): Promise<boolean>;
   "user/upload"(actx: ActionContext<S, G>, payload: File): Promise<boolean>;
   "user/files"(actx: ActionContext<S, G>): Promise<void>;
+  "user/update"(
+    actx: ActionContext<S, G>,
+    payload: Partial<Omit<UserProfileDoc, "_id">>
+  ): Promise<boolean>;
 };
 
 export function createUserModule(api: API) {
@@ -63,20 +67,16 @@ export function createUserModule(api: API) {
       const res = await api.user.whoami();
       if (res.status === 200) {
         commit("user/update", res.data);
-        return true;
-      } else {
-        return false;
       }
+      return res.status === 200;
     },
 
     async "user/signin"({ commit }, payload) {
       const res = await api.user.signIn(payload.username, payload.password);
       if (res.status === 200) {
         commit("user/update", res.data);
-        return true;
-      } else {
-        return false;
       }
+      return res.status === 200;
     },
 
     async "user/signup"({ commit }, payload) {
@@ -87,10 +87,8 @@ export function createUserModule(api: API) {
       );
       if (res.status === 200) {
         commit("user/update", res.data);
-        return true;
-      } else {
-        return false;
       }
+      return res.status === 200;
     },
 
     async "user/upload"(_, username) {
@@ -103,6 +101,14 @@ export function createUserModule(api: API) {
       if (res.status === 200) {
         commit("user/set_files", res.data);
       }
+    },
+
+    async "user/update"({ commit }, payload) {
+      const res = await api.user.changeProfile(payload);
+      if (res.status === 200) {
+        commit("user/update", res.data);
+      }
+      return res.status === 200;
     },
   };
 
