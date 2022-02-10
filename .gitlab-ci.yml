@@ -1,0 +1,36 @@
+image: node:lts-gallium
+
+services:
+  - mongo:5.0.3
+  # - name: minio/minio
+  #   alias: minio
+  #   command: ["server", "/minio"]
+
+variables:
+  MONGO_INITDB_ROOT_USERNAME: testuser
+  MONGO_INITDB_ROOT_PASSWORD: testpassword
+  # MINIO_ACCESS_KEY: testadmin
+  # MINIO_SECRET_KEY: testpassword
+
+cache:
+  paths:
+    - node_modules/
+
+test_build:
+  script:
+    - node --version
+    - yarn --version
+    - yarn install
+
+    # check formats
+    - yarn prettier --check app
+
+    # check types
+    - yarn tsc
+
+    # build
+    - yarn build
+
+    # prisma
+    - echo DATABASE_URL="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@mongo:27017/admin" > .env
+    - yarn prisma db push

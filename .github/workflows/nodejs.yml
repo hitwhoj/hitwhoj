@@ -1,0 +1,51 @@
+name: Gayhub CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+
+    - name: Deploy mongo
+      run: |
+        docker run -d -p 27017:27017 --name mongo \
+                   -e "MONGO_INITDB_ROOT_USERNAME=testuser" \
+                   -e "MONGO_INITDB_ROOT_PASSWORD=testpassword" \
+                   mongo
+
+    # - name: Deploy minio
+    #   run: |
+    #     docker run -d -p 9000:9000 --name minio \
+    #                -e "MINIO_ACCESS_KEY=testadmin" \
+    #                -e "MINIO_SECRET_KEY=testpassword" \
+    #                minio/minio server /data
+
+    - name: Install dependencies
+      run: yarn install
+
+    - name: Check formats
+      run: yarn prettier --check app
+
+    - name: Check types
+      run: yarn tsc
+
+    - name: Build
+      run: yarn build
+
+    - name: Deploy
+      run: |
+        echo DATABASE_URL="mongodb://testuser:testpassword@localhost:27017/admin" > .env
+        yarn prisma db push
