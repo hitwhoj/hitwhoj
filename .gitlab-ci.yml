@@ -1,7 +1,7 @@
 image: node:lts-gallium
 
 services:
-  - postgres:14.2
+  - postgres:latest
   # - name: minio/minio
   #   alias: minio
   #   command: ["server", "/minio"]
@@ -28,9 +28,10 @@ test_build:
     # check types
     - yarn tsc
 
-    # build
-    - yarn build
-
     # prisma
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
     - yarn prisma db push
+    - yarn prisma db seed
+
+    # build
+    - yarn build

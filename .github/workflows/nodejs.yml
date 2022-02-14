@@ -46,6 +46,7 @@ jobs:
         run: |
           export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
           yarn prisma db push
+          yarn prisma db seed
 
       - name: Build
         run: yarn build
