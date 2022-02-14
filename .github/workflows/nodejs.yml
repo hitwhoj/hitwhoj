@@ -18,12 +18,11 @@ jobs:
         with:
           node-version: 16.x
 
-      - name: Deploy mongo
+      - name: Deploy postgres
         run: |
-          docker run -d -p 27017:27017 --name mongo \
-                     -e "MONGO_INITDB_ROOT_USERNAME=testuser" \
-                     -e "MONGO_INITDB_ROOT_PASSWORD=testpassword" \
-                     mongo
+          docker run -d -p 5432:5432 --name postgres \
+                     -e "POSTGRES_PASSWORD=mysecretpassword" \
+                     postgres
 
       # - name: Deploy minio
       #   run: |
@@ -43,10 +42,10 @@ jobs:
       - name: Check types
         run: yarn tsc
 
+      - name: Database
+        run: |
+          export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
+          yarn prisma db push
+
       - name: Build
         run: yarn build
-
-      - name: Deploy
-        run: |
-          export DATABASE_URL="mongodb://testuser:testpassword@localhost:27017/admin"
-          yarn prisma db push

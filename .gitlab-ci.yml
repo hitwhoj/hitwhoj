@@ -1,14 +1,13 @@
 image: node:lts-gallium
 
 services:
-  - mongo:5.0.3
+  - postgres:14.2
   # - name: minio/minio
   #   alias: minio
   #   command: ["server", "/minio"]
 
 variables:
-  MONGO_INITDB_ROOT_USERNAME: testuser
-  MONGO_INITDB_ROOT_PASSWORD: testpassword
+  POSTGRES_PASSWORD: mysecretpassword
   # MINIO_ACCESS_KEY: testadmin
   # MINIO_SECRET_KEY: testpassword
 
@@ -33,5 +32,5 @@ test_build:
     - yarn build
 
     # prisma
-    - export DATABASE_URL="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@mongo:27017/admin"
+    - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
     - yarn prisma db push
