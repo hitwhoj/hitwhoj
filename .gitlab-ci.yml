@@ -23,7 +23,8 @@ test_build:
     - yarn install
 
     # check formats
-    - yarn prettier --check app
+    - yarn fmt
+    - git diff --exit-code
 
     # check types
     - yarn tsc
@@ -32,5 +33,5 @@ test_build:
     - yarn build
 
     # prisma
-    - echo DATABASE_URL="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@mongo:27017/admin" > .env
+    - export DATABASE_URL="mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@mongo:27017/admin"
     - yarn prisma db push

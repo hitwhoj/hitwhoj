@@ -1,9 +1,3 @@
-import { LinksFunction } from "remix";
-
-import Button, { links as buttonLinks } from "~/components/button";
-
-export const links: LinksFunction = () => [...buttonLinks()];
-
 export default function Index() {
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
@@ -31,11 +25,6 @@ export default function Index() {
           <a target="_blank" href="https://remix.run/docs" rel="noreferrer">
             Remix Docs
           </a>
-        </li>
-        <li>
-          <Button onClick={() => alert("xss")}>
-            <span>alert("xss")</span>
-          </Button>
         </li>
       </ul>
     </div>

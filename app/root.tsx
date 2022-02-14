@@ -1,16 +1,21 @@
 import {
   Links,
+  LinksFunction,
+  MetaFunction,
   LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
 } from "remix";
-import type { MetaFunction } from "remix";
+
+import style from "~/styles/global.css";
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
 };
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export default function App() {
   return (

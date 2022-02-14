@@ -1,7 +1,4 @@
-node_modules
-
-/.cache
 /server/build
 /public/build
 /app/styles
-.env
+/.cache
