@@ -11,7 +11,157 @@ datasource db {
 }
 
 model User {
-  uid   Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  uid Int @id @default(autoincrement())
+
+  email    String?
+  avatar   String?
+  nickname String  @unique
+
+  password String
+
+  // ==== relations ====
+
+  createdFiles        UserFile[]
+  createdProblems     Problem[]
+  createdProblemLists ProblemList[]
+  createdContests     Contest[]
+
+  attendedContests Contest[] @relation("attendee", references: [cid])
+  moddedContests   Contest[] @relation("mod", references: [cid])
+  juriedContests   Contest[] @relation("jury", references: [cid])
+}
+
+model UserSession {
+  session String   @id
+  uid     Int
+  expires DateTime
+}
+
+model UserFile {
+  fid String @id @default(uuid())
+
+  filename  String
+  filesize  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  private Boolean @default(true)
+
+  // ==== relations ====
+
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
+}
+
+model Problem {
+  pid Int @id @default(autoincrement())
+
+  title       String
+  description String
+
+  private Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ==== relations ====
+
+  tags ProblemTag[] @relation(references: [id])
+
+  uid     Int?
+  creator User? @relation(fields: [uid], references: [uid])
+
+  files                ProblemFile[]
+  includedContests     Contest[]     @relation(references: [cid])
+  includedProblemLists ProblemList[] @relation(references: [lid])
+}
+
+model ProblemTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  problems Problem[] @relation(references: [pid])
+}
+
+model ProblemList {
+  lid Int @id @default(autoincrement())
+
+  title       String
+  description String
+
+  private Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ==== relations ====
+
+  tags ProblemListTag[] @relation(references: [id])
+
+  problems Problem[] @relation(references: [pid])
+
+  uid     Int?
+  creator User? @relation(fields: [uid], references: [uid])
+}
+
+model ProblemListTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  problemLists ProblemList[] @relation(references: [lid])
+}
+
+model ProblemFile {
+  fid String @id @default(uuid())
+
+  filename  String
+  filesize  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  private Boolean @default(true)
+
+  // ==== relations ====
+
+  pid     Int
+  problem Problem @relation(fields: [pid], references: [pid])
+}
+
+model Contest {
+  cid Int @id @default(autoincrement())
+
+  title       String
+  description String
+
+  system ContestSystem
+
+  beginTime DateTime
+  endTime   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ==== relations ====
+
+  tags ContestTag[] @relation(references: [id])
+
+  uid     Int?
+  creator User? @relation(fields: [uid], references: [uid])
+
+  problems Problem[] @relation(references: [pid])
+
+  mods      User[] @relation("mod", references: [uid])
+  juries    User[] @relation("jury", references: [uid])
+  attendees User[] @relation("attendee", references: [uid])
+}
+
+model ContestTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  contests Contest[] @relation(references: [cid])
+}
+
+enum ContestSystem {
+  ACM
 }
