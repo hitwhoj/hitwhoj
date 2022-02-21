@@ -39,14 +39,14 @@ jobs:
           yarn fmt
           git diff --exit-code
 
-      - name: Check types
-        run: yarn tsc
-
       - name: Database
         run: |
           export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
           yarn prisma db push
           yarn prisma db seed
+
+      - name: Check types
+        run: yarn tsc
 
       - name: Build
         run: yarn build

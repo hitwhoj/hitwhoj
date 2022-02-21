@@ -25,13 +25,13 @@ test_build:
     - yarn fmt
     - git diff --exit-code
 
-    # check types
-    - yarn tsc
-
     # prisma
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
     - yarn prisma db push
     - yarn prisma db seed
+
+    # check types
+    - yarn tsc
 
     # build
     - yarn build
