@@ -7,11 +7,12 @@ meta:
 
 Welcome to HITwh OJ! This is the documents page.
 
-[GitLab Source][gitlab]
+- [Deploy][deploy]
+- [License][license]
 
-[Read more about Deploy][deploy]
+External links:
 
-[License][license]
+- [Source code][gitlab]
 
 [gitlab]: https://git.hit.edu.cn/hitwhoj/hitwhoj
 [deploy]: /docs/deploy

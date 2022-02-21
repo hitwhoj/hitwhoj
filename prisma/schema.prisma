@@ -19,7 +19,11 @@ model User {
 
   password String
 
+  joinedAt DateTime @default(now())
+
   // ==== relations ====
+
+  sessions UserSession[]
 
   createdFiles        UserFile[]
   createdProblems     Problem[]
@@ -32,9 +36,12 @@ model User {
 }
 
 model UserSession {
-  session String   @id
-  uid     Int
-  expires DateTime
+  session String @id @default(uuid())
+
+  // ==== relations ====
+
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
 }
 
 model UserFile {
