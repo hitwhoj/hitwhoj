@@ -1,5 +1,6 @@
 ---
-title: Help - HITwh OJ
+meta:
+  title: "Help - HITwh OJ"
 ---
 
 # Documents

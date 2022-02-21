@@ -1,5 +1,6 @@
 ---
-title: "Help: License - HITwh OJ"
+meta:
+  title: "Help: License - HITwh OJ"
 ---
 
 # License
