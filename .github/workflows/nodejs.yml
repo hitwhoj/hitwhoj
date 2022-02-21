@@ -2,9 +2,9 @@ name: Gayhub CI
 
 on:
   push:
-    branches: [master, remix-dev]
+    branches: [master, dev]
   pull_request:
-    branches: [master, remix-dev]
+    branches: [master, dev]
 
 jobs:
   build:
