@@ -49,6 +49,7 @@ model UserFile {
 
   filename  String
   filesize  Int
+  mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

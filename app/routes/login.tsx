@@ -6,8 +6,8 @@ import {
   useActionData,
   useTransition,
 } from "remix";
-import { getUserByNickname } from "~/modules/user/profile";
-import { createUserSession } from "~/modules/user/session";
+import { db } from "~/utils/db.server";
+import { commitSession } from "~/utils/sessions";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -19,7 +19,7 @@ export const action: ActionFunction = async ({ request }) => {
     return json("Nickname or password is missing", { status: 400 });
   }
 
-  const user = await getUserByNickname(nickname);
+  const user = await db.user.findUnique({ where: { nickname } });
 
   if (!user) {
     return json("Nickname is not registered", { status: 400 });
@@ -29,14 +29,9 @@ export const action: ActionFunction = async ({ request }) => {
     return json("Password is incorrect", { status: 400 });
   }
 
-  const { session } = await createUserSession(user.uid);
-
   return redirect(`/user/${user.uid}`, {
     headers: {
-      // issue for ten years
-      "Set-Cookie": `session=${session}; Path=/; Expires=${new Date(
-        Date.now() + 1000 * 60 * 60 * 24 * 365 * 10
-      ).toUTCString()}; HttpOnly`,
+      "Set-Cookie": await commitSession(user.uid),
     },
   });
 };

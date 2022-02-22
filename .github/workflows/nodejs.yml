@@ -1,4 +1,4 @@
-name: Gayhub CI
+name: GitHub CI
 
 on:
   push:
@@ -24,12 +24,12 @@ jobs:
                      -e "POSTGRES_PASSWORD=mysecretpassword" \
                      postgres
 
-      # - name: Deploy minio
-      #   run: |
-      #     docker run -d -p 9000:9000 --name minio \
-      #                -e "MINIO_ACCESS_KEY=testadmin" \
-      #                -e "MINIO_SECRET_KEY=testpassword" \
-      #                minio/minio server /data
+      - name: Deploy minio
+        run: |
+          docker run -d -p 9000:9000 --name minio \
+                     -e "MINIO_ACCESS_KEY=testadmin" \
+                     -e "MINIO_SECRET_KEY=testpassword" \
+                     minio/minio server /data
 
       - name: Install dependencies
         run: yarn install
@@ -39,8 +39,11 @@ jobs:
           yarn fmt
           git diff --exit-code
 
-      - name: Database
+      - name: Postgres & MinIO
         run: |
+          export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
+          export S3_SECRET_KEY=$MINIO_SECRET_KEY
+          export S3_BUCKET=hitwhoj
           export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
           yarn prisma db push
           yarn prisma db seed

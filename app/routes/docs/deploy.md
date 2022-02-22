@@ -31,12 +31,42 @@ Deploy our project is very easy.
     Afterwards, write connection string to `.env` file.
 
     ```sh
-    echo "DATABASE_URL=postgres://user:password@host:port/database" > .env
+    echo "DATABASE_URL=postgres://user:password@host:port/database" >> .env
     ```
 
     Then you can use `yarn prisma db push` to initialize database.
 
-4.  Build the project
+4.  Configure MinIO storage
+
+    You need to install MinIO yourself.
+
+    Afterwards, write connection string to `.env` file.
+
+    ```sh
+    # end point, defaults to localhost
+    echo "S3_END_POINT=localhost" >> .env
+
+    # port number, defaults to 9000
+    echo "S3_PORT=9000" >> .env
+
+    # enable SSL, defaults to false
+    echo "S3_SSL=true" >> .env
+
+    # access key, defaults to "", choose one of the following:
+    echo "S3_ACCESS_KEY=access_key" >> .env
+    echo "S3_ROOT_USER=access_key" >> .env
+
+    # secret key, defaults to "", choose one of the following:
+    echo "S3_SECRET_KEY=secret_key" >> .env
+    echo "S3_ROOT_PASSWORD=secret_key" >> .env
+
+    # bucket name, defaults to ""
+    echo "S3_BUCKET=bucket_name" >> .env
+    ```
+
+    If you host MinIO and the server on the same machine, you only need to configure `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` environment variables.
+
+5.  Build the project
 
     You can use `yarn build` to build the project.
 
@@ -44,7 +74,7 @@ Deploy our project is very easy.
     yarn build
     ```
 
-5.  Start the project
+6.  Start the project
 
     You can use `yarn start` to start the project.
 

@@ -8,6 +8,12 @@ export default function Index() {
         <li>
           <Link to="/docs">Documents</Link>
         </li>
+        <li>
+          <Link to="/login">Sign in</Link>
+        </li>
+        <li>
+          <Link to="/register">Sign up</Link>
+        </li>
       </ul>
     </div>
   );

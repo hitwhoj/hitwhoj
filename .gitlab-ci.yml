@@ -2,14 +2,14 @@ image: node:lts-gallium
 
 services:
   - postgres:latest
-  # - name: minio/minio
-  #   alias: minio
-  #   command: ["server", "/minio"]
+  - name: minio/minio
+    alias: minio
+    command: ["server", "/minio"]
 
 variables:
   POSTGRES_PASSWORD: mysecretpassword
-  # MINIO_ACCESS_KEY: testadmin
-  # MINIO_SECRET_KEY: testpassword
+  MINIO_ACCESS_KEY: testadmin
+  MINIO_SECRET_KEY: testpassword
 
 cache:
   paths:
@@ -29,6 +29,11 @@ test_build:
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
     - yarn prisma db push
     - yarn prisma db seed
+
+    # minio
+    - export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
+    - export S3_SECRET_KEY=$MINIO_SECRET_KEY
+    - export S3_BUCKET=hitwhoj
 
     # check types
     - yarn tsc

@@ -6,8 +6,8 @@ import {
   useActionData,
   useTransition,
 } from "remix";
-import { createUser, getUserByNickname } from "~/modules/user/profile";
-import { createUserSession } from "~/modules/user/session";
+import { db } from "~/utils/db.server";
+import { commitSession } from "~/utils/sessions";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -24,19 +24,15 @@ export const action: ActionFunction = async ({ request }) => {
     return json("Passwords do not match", { status: 400 });
   }
 
-  if (await getUserByNickname(nickname)) {
+  if (await db.user.findUnique({ where: { nickname } })) {
     return json("Nickname is already taken", { status: 400 });
   }
 
-  const { uid } = await createUser({ nickname, password });
-  const { session } = await createUserSession(uid);
+  const { uid } = await db.user.create({ data: { nickname, password } });
 
   return redirect(`/user/${uid}`, {
     headers: {
-      // issue for ten years
-      "Set-Cookie": `session=${session}; Path=/; Expires=${new Date(
-        Date.now() + 1000 * 60 * 60 * 24 * 365 * 10
-      ).toUTCString()}; HttpOnly`,
+      "Set-Cookie": await commitSession(uid),
     },
   });
 };
@@ -48,7 +44,13 @@ export default function Register() {
   return (
     <>
       <h2>Register</h2>
-      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
+      <Form
+        method="post"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <input type="text" name="nickname" placeholder="Nickname" required />
         <input
           type="password"
