@@ -14,7 +14,7 @@
     "seed": "node --require esbuild-register prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^3.9.1",
+    "@prisma/client": "^3.10.0",
     "@remix-run/express": "^1.1.3",
     "@remix-run/react": "^1.1.3",
     "compression": "^1.7.4",
@@ -38,7 +38,7 @@
     "concurrently": "^7.0.0",
     "esbuild": "^0.14.21",
     "esbuild-register": "^3.3.2",
-    "prisma": "^3.9.1",
+    "prisma": "^3.10.0",
     "rimraf": "^3.0.2",
     "sass": "^1.49.7",
     "typescript": "^4.1.2"
