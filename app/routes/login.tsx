@@ -11,14 +11,17 @@ import { commitSession } from "~/utils/sessions";
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const nickname = form.get("nickname") as string | null;
-  const password = form.get("password") as string | null;
+  const nickname = form.get("nickname")?.toString();
+  const password = form.get("password")?.toString();
 
   if (!nickname || !password) {
     return new Response("Nickname or password is missing", { status: 400 });
   }
 
-  const user = await db.user.findUnique({ where: { nickname } });
+  const user = await db.user.findUnique({
+    where: { nickname },
+    select: { password: true, uid: true },
+  });
 
   if (!user) {
     return new Response("Nickname is not registered", { status: 400 });
@@ -51,7 +54,7 @@ export default function Login() {
           required
         />
         <button type="submit" disabled={state === "submitting"}>
-          Sign in
+          {state === "submitting" ? "Sign in..." : "Sign in"}
         </button>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </Form>

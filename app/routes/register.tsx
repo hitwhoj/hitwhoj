@@ -11,9 +11,9 @@ import { commitSession } from "~/utils/sessions";
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const nickname = form.get("nickname") as string | null;
-  const password = form.get("password") as string | null;
-  const password2 = form.get("password2") as string | null;
+  const nickname = form.get("nickname")?.toString();
+  const password = form.get("password")?.toString();
+  const password2 = form.get("password2")?.toString();
 
   if (!nickname || !password || !password2) {
     return new Response("Nickname or password is missing", { status: 400 });
