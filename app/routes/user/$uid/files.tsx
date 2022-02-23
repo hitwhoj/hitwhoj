@@ -8,7 +8,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   const uid = Number(params.uid);
 
   if (isNaN(uid)) {
-    throw json("Invalid user id", { status: 404 });
+    throw new Response("Invalid user id", { status: 404 });
   }
 
   const user = await db.user.findUnique({
@@ -17,7 +17,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 
   if (!user) {
-    throw json("User not found", { status: 404 });
+    throw new Response("User not found", { status: 404 });
   }
 
   return json(user.createdFiles);

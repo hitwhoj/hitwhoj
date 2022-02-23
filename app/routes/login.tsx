@@ -1,7 +1,6 @@
 import {
   ActionFunction,
   Form,
-  json,
   redirect,
   useActionData,
   useTransition,
@@ -16,17 +15,17 @@ export const action: ActionFunction = async ({ request }) => {
   const password = form.get("password") as string | null;
 
   if (!nickname || !password) {
-    return json("Nickname or password is missing", { status: 400 });
+    return new Response("Nickname or password is missing", { status: 400 });
   }
 
   const user = await db.user.findUnique({ where: { nickname } });
 
   if (!user) {
-    return json("Nickname is not registered", { status: 400 });
+    return new Response("Nickname is not registered", { status: 400 });
   }
 
   if (user.password !== password) {
-    return json("Password is incorrect", { status: 400 });
+    return new Response("Password is incorrect", { status: 400 });
   }
 
   return redirect(`/user/${user.uid}`, {
