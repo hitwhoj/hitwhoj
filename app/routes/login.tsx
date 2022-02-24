@@ -1,7 +1,6 @@
 import {
   ActionFunction,
   Form,
-  json,
   redirect,
   useActionData,
   useTransition,
@@ -12,21 +11,24 @@ import { commitSession } from "~/utils/sessions";
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const nickname = form.get("nickname") as string | null;
-  const password = form.get("password") as string | null;
+  const nickname = form.get("nickname")?.toString();
+  const password = form.get("password")?.toString();
 
   if (!nickname || !password) {
-    return json("Nickname or password is missing", { status: 400 });
+    return new Response("Nickname or password is missing", { status: 400 });
   }
 
-  const user = await db.user.findUnique({ where: { nickname } });
+  const user = await db.user.findUnique({
+    where: { nickname },
+    select: { password: true, uid: true },
+  });
 
   if (!user) {
-    return json("Nickname is not registered", { status: 400 });
+    return new Response("Nickname is not registered", { status: 400 });
   }
 
   if (user.password !== password) {
-    return json("Password is incorrect", { status: 400 });
+    return new Response("Password is incorrect", { status: 400 });
   }
 
   return redirect(`/user/${user.uid}`, {
@@ -52,7 +54,7 @@ export default function Login() {
           required
         />
         <button type="submit" disabled={state === "submitting"}>
-          Sign in
+          {state === "submitting" ? "Sign in..." : "Sign in"}
         </button>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </Form>

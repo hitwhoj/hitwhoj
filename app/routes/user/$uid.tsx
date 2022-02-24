@@ -1,5 +1,4 @@
 import {
-  json,
   Link,
   LoaderFunction,
   Outlet,
@@ -12,11 +11,11 @@ import { db } from "~/utils/db.server";
 type LoaderData = string;
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const uid = Number(params.uid);
-
-  if (isNaN(uid)) {
-    throw json("Invalid user id", { status: 404 });
+  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
+    throw new Response("Invalid user id", { status: 404 });
   }
+
+  const uid = Number(params.uid);
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -24,10 +23,10 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 
   if (!user) {
-    throw json("User not found", { status: 404 });
+    throw new Response("User not found", { status: 404 });
   }
 
-  return json(user.nickname);
+  return new Response(user.nickname);
 };
 
 export default function UserProfile() {

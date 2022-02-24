@@ -22,6 +22,21 @@ If you don't want to export `DATABASE_URL` environment variable every time, you 
 echo DATABASE_URL=postgres://user:password@host:port/database > .env
 ```
 
+## MinIO
+
+You need those environment variables to configure MinIO:
+
+- `S3_END_POINT`: end point, defaults to `localhost`
+- `S3_PORT`: port number, defaults to `9000`
+- `S3_SSL`: enable SSL, defaults to `false`
+- `S3_ACCESS_KEY`: access key, defaults to `""`
+- `S3_SECRET_KEY`: secret key, defaults to `""`
+- `S3_ROOT_USER`: alias to `S3_ACCESS_KEY`
+- `S3_ROOT_PASSWORD`: alias to `S3_SECRET_KEY`
+- `S3_BUCKET`: bucket name, defaults to `""`
+
+Just write them in `.env` file.
+
 ## Development
 
 Before start developing your project, you need to make sure that the database is initialized.
