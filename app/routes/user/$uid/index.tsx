@@ -5,7 +5,7 @@ import { db } from "~/utils/db.server";
 type LoaderData = User;
 
 export const loader: LoaderFunction = async ({ params }) => {
-  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
+  if (!params.uid || !/^[1-9]\d*$/.test(params.uid)) {
     throw new Response("Invalid user id", { status: 404 });
   }
 
