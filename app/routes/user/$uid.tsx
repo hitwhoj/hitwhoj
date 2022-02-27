@@ -1,4 +1,6 @@
+import { User } from "@prisma/client";
 import {
+  json,
   Link,
   LoaderFunction,
   Outlet,
@@ -7,10 +9,11 @@ import {
   useParams,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { findSessionUid } from "~/utils/sessions";
 
-type LoaderData = string;
+type LoaderData = Pick<User, "nickname"> & { isSelf: boolean };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
     throw new Response("Invalid user id", { status: 404 });
   }
@@ -26,11 +29,16 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return new Response(user.nickname);
+  const self = await findSessionUid(request);
+
+  return json({
+    nickname: user.nickname,
+    isSelf: self === uid,
+  });
 };
 
 export default function UserProfile() {
-  const nickname = useLoaderData<LoaderData>();
+  const { nickname, isSelf } = useLoaderData<LoaderData>();
   const { uid } = useParams();
 
   return (
@@ -43,6 +51,11 @@ export default function UserProfile() {
         <li>
           <Link to={`/user/${uid}/files`}>Files</Link>
         </li>
+        {isSelf && (
+          <li>
+            <Link to={`/user/${uid}/edit`}>Edit</Link>
+          </li>
+        )}
       </ul>
       <Outlet />
     </>

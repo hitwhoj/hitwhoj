@@ -1,6 +1,5 @@
 import { Problem } from "@prisma/client";
-import { Link } from "react-router-dom";
-import { LoaderFunction, json, useLoaderData, MetaFunction } from "remix";
+import { LoaderFunction, json, useLoaderData, MetaFunction, Link } from "remix";
 import { db } from "~/utils/db.server";
 
 type LoaderData = Pick<Problem, "pid" | "title" | "private">[];
