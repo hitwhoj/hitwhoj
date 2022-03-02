@@ -14,6 +14,10 @@
     "seed": "node --require esbuild-register prisma/seed.ts"
   },
   "dependencies": {
+    "@emotion/react": "^11.8.1",
+    "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.4.2",
+    "@mui/material": "^5.4.3",
     "@prisma/client": "^3.10.0",
     "@remix-run/express": "^1.1.3",
     "@remix-run/react": "^1.1.3",

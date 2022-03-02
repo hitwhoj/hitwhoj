@@ -8,14 +8,27 @@ import {
   Scripts,
   ScrollRestoration,
 } from "remix";
-
 import style from "~/styles/global.css";
+import Layout from "~/src/Layout";
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
 };
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
+export const links: LinksFunction = () => [
+  {
+    rel: "stylesheet",
+    href: style,
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/icon?family=Material+Icons",
+  },
+];
 
 export default function App() {
   return (
@@ -27,7 +40,9 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <Outlet />
+        <Layout>
+          <Outlet />
+        </Layout>
         <ScrollRestoration />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
