@@ -35,16 +35,15 @@ export default function handleRequest(
   // Grab the CSS from emotion
   const { styles } = extractCriticalToChunks(html);
 
-  let stylesHTML = "";
-
-  styles.forEach(({ key, ids, css }) => {
-    const emotionKey = `${key} ${ids.join(" ")}`;
-    const newStyleTag = `<style data-emotion="${emotionKey}">${css}</style>`;
-    stylesHTML = `${stylesHTML}${newStyleTag}`;
-  });
+  const stylesHtml = styles
+    .map(
+      ({ key, ids, css }) =>
+        `<style data-emotion="${key} ${ids.join(" ")}">${css}</style>`
+    )
+    .join("");
 
   // Add the emotion style tags after the insertion point meta tag
-  const markup = html.replace("</head>", `${stylesHTML}</head>`);
+  const markup = html.replace("</head>", `${stylesHtml}</head>`);
 
   responseHeaders.set("Content-Type", "text/html");
 
