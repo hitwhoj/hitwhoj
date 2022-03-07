@@ -1,12 +1,17 @@
 import {
   ActionFunction,
   Form,
+  MetaFunction,
   redirect,
   useActionData,
   useTransition,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { commitSession } from "~/utils/sessions";
+
+export const meta: MetaFunction = () => ({
+  title: "Register",
+});
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();

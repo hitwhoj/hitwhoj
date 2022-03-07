@@ -1,5 +1,9 @@
-// import React from "react";
-import { Link } from "remix";
+import { Link, MetaFunction } from "remix";
+
+export const meta: MetaFunction = () => ({
+  title: "Homepage",
+});
+
 export default function Index() {
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
