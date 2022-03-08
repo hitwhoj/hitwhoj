@@ -22,8 +22,7 @@ test_build:
     - yarn install
 
     # check formats
-    - yarn fmt
-    - git diff --exit-code
+    - yarn prettier --check .
 
     # prisma
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"

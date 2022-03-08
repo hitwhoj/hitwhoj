@@ -35,9 +35,7 @@ jobs:
         run: yarn install
 
       - name: Check formats
-        run: |
-          yarn fmt
-          git diff --exit-code
+        run: yarn prettier --check .
 
       - name: Postgres & MinIO
         run: |

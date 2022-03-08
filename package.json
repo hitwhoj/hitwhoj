@@ -5,7 +5,7 @@
     "build": "sass --no-source-map styles:app/styles && remix build",
     "clean": "rimraf public/build server/build app/styles .cache",
     "dev": "concurrently -n \"REMIX,SASS,NODE\" \"remix watch\" \"sass --no-source-map --watch styles:app/styles\" \"yarn start:dev\"",
-    "fmt": "prettier --write . && prisma format",
+    "fmt": "prettier --write .",
     "postinstall": "remix setup node",
     "start": "cross-env NODE_ENV=production node --require esbuild-register server/index.ts",
     "start:dev": "cross-env NODE_ENV=development node --require esbuild-register server/index.ts"
@@ -44,6 +44,7 @@
     "concurrently": "^7.0.0",
     "esbuild": "^0.14.21",
     "esbuild-register": "^3.3.2",
+    "prettier-plugin-prisma": "^3.10.0",
     "prisma": "^3.10.0",
     "rimraf": "^3.0.2",
     "sass": "^1.49.7",

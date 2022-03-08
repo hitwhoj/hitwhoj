@@ -298,6 +298,11 @@
   resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86.tgz#2964113729a78b8b21e186b5592affd1fde73c16"
   integrity sha512-LjRssaWu9w2SrXitofnutRIyURI7l0veQYIALz7uY4shygM9nMcK3omXcObRm7TAcw3Z+9ytfK1B+ySOsOesxQ==
 
+"@prisma/prisma-fmt-wasm@3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86":
+  version "3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86"
+  resolved "https://registry.yarnpkg.com/@prisma/prisma-fmt-wasm/-/prisma-fmt-wasm-3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86.tgz#a9d0916ff42925a83134652a3d247d0c25ea3f6f"
+  integrity sha512-f0Srf2EasvBRKBlTUrqkW5hp889+SRrRkqu0MgcuTXlgHxVMj7DIo1JNylPb1y/HDwtjLWf6AL+sk+2R891SWA==
+
 "@remix-run/dev@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@remix-run/dev/-/dev-1.1.3.tgz#f019339b7ffc09588fcd905eddb5fce0213f908b"
@@ -3514,6 +3519,13 @@ picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.2:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
+
+prettier-plugin-prisma@^3.10.0:
+  version "3.10.0"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-prisma/-/prettier-plugin-prisma-3.10.0.tgz#1c776b6ac19d3c7594a8747d14f60e5ee903b980"
+  integrity sha512-NIbpqcwyB70fAWqFlOmmhaa9DhGAnZ8uWVyc0cS7EaOR7TH5yjnw6WV5HPjWdVmh6m84W8dwMRzGzLTW/S4Kmw==
+  dependencies:
+    "@prisma/prisma-fmt-wasm" "3.10.0-50.73e60b76d394f8d37d8ebd1f8918c79029f0db86"
 
 prettier@^2.5.1:
   version "2.5.1"
