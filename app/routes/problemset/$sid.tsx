@@ -6,7 +6,6 @@ import {
   MetaFunction,
   Outlet,
   useLoaderData,
-  useParams,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant, ensureId } from "~/utils/invariant";
