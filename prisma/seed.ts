@@ -109,7 +109,7 @@ async function seed() {
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
       creator: { connect: { uid: alice } },
-      tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
+      tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ pid: p2 }, { pid: p1 }] },
     },
   });
