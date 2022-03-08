@@ -81,7 +81,7 @@ async function seed() {
     },
   });
 
-  await prisma.problemList.create({
+  await prisma.problemSet.create({
     data: {
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
@@ -89,6 +89,28 @@ async function seed() {
       creator: { connect: { uid: david } },
       tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: { connect: [{ pid: p1 }, { pid: p2 }] },
+    },
+  });
+
+  await prisma.problemSet.create({
+    data: {
+      title: "关注嘉然，顿顿解馋",
+      description: "b 站关注嘉然今天吃什么",
+
+      creator: { connect: { uid: alice } },
+      tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
+      problems: { connect: [{ pid: p2 }, { pid: p1 }] },
+    },
+  });
+
+  await prisma.problemSet.create({
+    data: {
+      title: "嘉然可爱捏",
+      description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
+
+      creator: { connect: { uid: alice } },
+      tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
+      problems: { connect: [{ pid: p2 }, { pid: p1 }] },
     },
   });
 }
