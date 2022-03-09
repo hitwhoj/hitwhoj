@@ -13,12 +13,14 @@ variables:
 
 cache:
   paths:
+    - .cache/yarn
     - node_modules/
 
 test_build:
   script:
     - node --version
     - yarn --version
+    - yarn config set cache-folder $(realpath ./.cache/yarn)
     - yarn install
 
     # check formats
