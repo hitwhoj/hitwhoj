@@ -27,6 +27,10 @@ export const loader: LoaderFunction = async ({ params }) => {
     take: 20,
   });
 
+  if (!problemSets.length) {
+    throw new Response("Problem Set Tag not found", { status: 404 });
+  }
+
   return json({ problemSets });
 };
 

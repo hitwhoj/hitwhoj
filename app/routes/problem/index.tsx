@@ -2,7 +2,9 @@ import { Problem } from "@prisma/client";
 import { LoaderFunction, json, useLoaderData, MetaFunction, Link } from "remix";
 import { db } from "~/utils/db.server";
 
-type LoaderData = Pick<Problem, "pid" | "title" | "private">[];
+type LoaderData = {
+  problems: Pick<Problem, "pid" | "title" | "private">[];
+};
 
 export const loader: LoaderFunction = async () => {
   const problems = await db.problem.findMany({
@@ -15,7 +17,7 @@ export const loader: LoaderFunction = async () => {
     },
   });
 
-  return json(problems);
+  return json({ problems });
 };
 
 export const meta: MetaFunction = () => ({
@@ -23,7 +25,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemList() {
-  const problems = useLoaderData<LoaderData>();
+  const { problems } = useLoaderData<LoaderData>();
 
   return (
     <>
