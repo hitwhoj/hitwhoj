@@ -25,10 +25,10 @@ model User {
 
   sessions UserSession[]
 
-  createdFiles        UserFile[]
-  createdProblems     Problem[]
-  createdProblemLists ProblemList[]
-  createdContests     Contest[]
+  createdFiles       UserFile[]
+  createdProblems    Problem[]
+  createdProblemSets ProblemSet[]
+  createdContests    Contest[]
 
   attendedContests Contest[] @relation("attendee", references: [cid])
   moddedContests   Contest[] @relation("mod", references: [cid])
@@ -79,9 +79,9 @@ model Problem {
   uid     Int?
   creator User? @relation(fields: [uid], references: [uid])
 
-  files                ProblemFile[]
-  includedContests     Contest[]     @relation(references: [cid])
-  includedProblemLists ProblemList[] @relation(references: [lid])
+  files               ProblemFile[]
+  includedContests    Contest[]     @relation(references: [cid])
+  includedProblemSets ProblemSet[]  @relation(references: [sid])
 }
 
 model ProblemTag {
@@ -91,8 +91,8 @@ model ProblemTag {
   problems Problem[] @relation(references: [pid])
 }
 
-model ProblemList {
-  lid Int @id @default(autoincrement())
+model ProblemSet {
+  sid Int @id @default(autoincrement())
 
   title       String
   description String
@@ -104,7 +104,7 @@ model ProblemList {
 
   // ==== relations ====
 
-  tags ProblemListTag[] @relation(references: [id])
+  tags ProblemSetTag[] @relation(references: [id])
 
   problems Problem[] @relation(references: [pid])
 
@@ -112,11 +112,11 @@ model ProblemList {
   creator User? @relation(fields: [uid], references: [uid])
 }
 
-model ProblemListTag {
+model ProblemSetTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problemLists ProblemList[] @relation(references: [lid])
+  problemSets ProblemSet[] @relation(references: [sid])
 }
 
 model ProblemFile {
