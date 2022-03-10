@@ -8,13 +8,14 @@ import {
   useParams,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { ensureNotEmptyString, invariant } from "~/utils/invariant";
 
 type LoaderData = {
   problemSets: ProblemSet[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const tag = params.tag as string;
+  const tag = invariant(ensureNotEmptyString(params.tag), "tag is required");
 
   const problemSets = await db.problemSet.findMany({
     where: {

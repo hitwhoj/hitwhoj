@@ -1,15 +1,14 @@
 import { UserFile } from "@prisma/client";
 import { json, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
+import { ensureNumericId, invariant } from "~/utils/invariant";
 
-type LoaderData = UserFile[];
+type LoaderData = {
+  files: UserFile[];
+};
 
 export const loader: LoaderFunction = async ({ params }) => {
-  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
-    throw new Response("Invalid user id", { status: 404 });
-  }
-
-  const uid = Number(params.uid);
+  const uid = invariant(ensureNumericId(params.uid), "uid is required");
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -20,22 +19,24 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json(user.createdFiles);
+  return json({ files: user.createdFiles });
 };
 
 export default function UserFiles() {
-  const files = useLoaderData<LoaderData>();
+  const { files } = useLoaderData<LoaderData>();
 
   return (
     <>
       {files.length ? (
-        files.map((file) => (
-          <p key={file.fid}>
-            <a href={`/files/${file.fid}`}>{file.filename}</a>
-          </p>
-        ))
+        <ul>
+          {files.map((file) => (
+            <li key={file.fid}>
+              <a href={`/files/${file.fid}`}>{file.filename}</a>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p>no files</p>
+        <p>没有文件捏</p>
       )}
     </>
   );

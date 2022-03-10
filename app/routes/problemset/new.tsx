@@ -1,10 +1,18 @@
 import { ActionFunction, Form, MetaFunction, redirect } from "remix";
 import { db } from "~/utils/db.server";
+import { ensureNotEmptyString, invariant } from "~/utils/invariant";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
-  const title = form.get("title")?.toString();
-  const description = form.get("description")?.toString();
+
+  const title = invariant(
+    ensureNotEmptyString(form.get("title")),
+    "Title is required"
+  );
+  const description = invariant(
+    ensureNotEmptyString(form.get("description")),
+    "Description is required"
+  );
 
   if (!title || !description) {
     throw new Response("Title or description is required", { status: 400 });

@@ -8,7 +8,7 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
-import { invariant, ensureId } from "~/utils/invariant";
+import { invariant, ensureNumericId } from "~/utils/invariant";
 
 export const meta: MetaFunction = () => ({
   title: "Problem List",
@@ -19,7 +19,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(ensureId(params.sid), "sid is required");
+  const sid = invariant(ensureNumericId(params.sid), "sid is required");
 
   const problemSet = await db.problemSet.findUnique({
     where: { sid },

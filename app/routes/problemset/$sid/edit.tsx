@@ -8,7 +8,11 @@ import {
   LoaderFunction,
 } from "remix";
 import { db } from "~/utils/db.server";
-import { ensureId, invariant } from "~/utils/invariant";
+import {
+  ensureNotEmptyString,
+  ensureNumericId,
+  invariant,
+} from "~/utils/invariant";
 
 type LoaderData = {
   problemSet: ProblemSet & {
@@ -18,7 +22,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(ensureId(params.sid), "sid is required");
+  const sid = invariant(ensureNumericId(params.sid), "sid is required");
 
   const problemSet = await db.problemSet.findUnique({
     where: { sid },
@@ -41,7 +45,7 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const sid = invariant(ensureId(params.sid), "sid is required");
+  const sid = invariant(ensureNumericId(params.sid), "sid is required");
   const form = await request.formData();
 
   const _action = form.get("_action");
@@ -49,7 +53,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   switch (_action) {
     case ActionType.CreateProblem: {
       const pid = invariant(
-        ensureId(form.get("pid")?.toString()),
+        ensureNumericId(form.get("pid")),
         "pid is required"
       );
 
@@ -69,7 +73,7 @@ export const action: ActionFunction = async ({ params, request }) => {
 
     case ActionType.DeleteProblem: {
       const pid = invariant(
-        ensureId(form.get("pid")?.toString()),
+        ensureNumericId(form.get("pid")),
         "pid is required"
       );
 
@@ -88,7 +92,10 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.CreateTag: {
-      const tag = invariant(form.get("tag")?.toString(), "Tag is required");
+      const tag = invariant(
+        ensureNotEmptyString(form.get("tag")),
+        "Tag is required"
+      );
 
       await db.problemSet.update({
         where: { sid },
@@ -106,7 +113,10 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteTag: {
-      const tag = invariant(form.get("tag")?.toString(), "Tag is required");
+      const tag = invariant(
+        ensureNotEmptyString(form.get("tag")),
+        "Tag is required"
+      );
 
       await db.problemSet.update({
         where: { sid },
@@ -124,11 +134,11 @@ export const action: ActionFunction = async ({ params, request }) => {
 
     case ActionType.UpdateInfomation: {
       const title = invariant(
-        form.get("title")?.toString(),
+        ensureNotEmptyString(form.get("title")),
         "Title is required"
       );
       const description = invariant(
-        form.get("description")?.toString(),
+        ensureNotEmptyString(form.get("description")),
         "Description is required"
       );
 

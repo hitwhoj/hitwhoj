@@ -3,10 +3,9 @@ import {
   json,
   Link,
   LoaderFunction,
+  MetaFunction,
   Outlet,
-  useCatch,
   useLoaderData,
-  useParams,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
@@ -37,38 +36,30 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   });
 };
 
+export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
+  title: `User: ${data.nickname} - HITwh OJ`,
+});
+
 export default function UserProfile() {
   const { nickname, isSelf } = useLoaderData<LoaderData>();
-  const { uid } = useParams();
 
   return (
     <>
       <h2>User {nickname}</h2>
       <ul>
         <li>
-          <Link to={`/user/${uid}`}>Profile</Link>
+          <Link to=".">资料</Link>
         </li>
         <li>
-          <Link to={`/user/${uid}/files`}>Files</Link>
+          <Link to="files">文件</Link>
         </li>
         {isSelf && (
           <li>
-            <Link to={`/user/${uid}/edit`}>Edit</Link>
+            <Link to="edit">编辑</Link>
           </li>
         )}
       </ul>
       <Outlet />
-    </>
-  );
-}
-
-export function CatchBoundary() {
-  const caught = useCatch();
-
-  return (
-    <>
-      <h2>{caught.status} Error!</h2>
-      <p>Message: {caught.data}</p>
     </>
   );
 }
