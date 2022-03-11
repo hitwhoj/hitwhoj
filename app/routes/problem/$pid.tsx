@@ -1,14 +1,15 @@
 import { Problem } from "@prisma/client";
 import { LoaderFunction, json, useLoaderData, MetaFunction } from "remix";
 import { db } from "~/utils/db.server";
-import { ensureNumericId, invariant } from "~/utils/invariant";
+import { invariant } from "~/utils/invariant";
+import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   problem: Problem;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const pid = invariant(ensureNumericId(params.pid), "Pid is required");
+  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
   const problem = await db.problem.findUnique({
     where: { pid },

@@ -1,22 +1,15 @@
 import { ActionFunction, Form, MetaFunction, redirect } from "remix";
 import { db } from "~/utils/db.server";
-import { ensureNotEmptyString, invariant } from "~/utils/invariant";
+import { invariant } from "~/utils/invariant";
+import { descriptionScheme, titleScheme } from "~/utils/scheme";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const title = invariant(
-    ensureNotEmptyString(form.get("title")),
-    "Title is required"
-  );
+  const title = invariant(titleScheme.safeParse(form.get("title")));
   const description = invariant(
-    ensureNotEmptyString(form.get("description")),
-    "Description is required"
+    descriptionScheme.safeParse(form.get("description"))
   );
-
-  if (!title || !description) {
-    throw new Response("Title or description is required", { status: 400 });
-  }
 
   const { sid } = await db.problemSet.create({
     data: {

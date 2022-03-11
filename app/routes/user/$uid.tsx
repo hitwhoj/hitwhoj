@@ -8,16 +8,14 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import { idScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = Pick<User, "nickname"> & { isSelf: boolean };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
-    throw new Response("Invalid user id", { status: 404 });
-  }
-
-  const uid = Number(params.uid);
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
     where: { uid },

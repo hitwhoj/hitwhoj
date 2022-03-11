@@ -1,14 +1,15 @@
 import { UserFile } from "@prisma/client";
 import { json, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
-import { ensureNumericId, invariant } from "~/utils/invariant";
+import { invariant } from "~/utils/invariant";
+import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   files: UserFile[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const uid = invariant(ensureNumericId(params.uid), "uid is required");
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
     where: { uid },

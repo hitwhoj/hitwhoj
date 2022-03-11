@@ -7,14 +7,10 @@ import {
   useFetcher,
   useLoaderData,
 } from "remix";
+import { z } from "zod";
 import { db } from "~/utils/db.server";
-import {
-  ensureEmail,
-  ensureNotEmptyString,
-  ensureNumericId,
-  ensureString,
-  invariant,
-} from "~/utils/invariant";
+import { invariant } from "~/utils/invariant";
+import { emailScheme, idScheme, nicknameScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
@@ -28,9 +24,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return redirect("/login");
   }
 
-  const uid = invariant(ensureNumericId(params.uid), "Invalid uid", {
-    status: 404,
-  });
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -61,11 +55,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     return redirect("/login");
   }
 
-  const uid = invariant(ensureNumericId(params.uid), "Invalid uid", {
-    status: 404,
-  });
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
-  // TODO: 检查权限
+  // FIXME: 检查权限
   if (self !== uid) {
     throw new Response("Permission denied", { status: 403 });
   }
@@ -77,8 +69,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   switch (_action) {
     case ActionType.UpdateNickname: {
       const nickname = invariant(
-        ensureNotEmptyString(form.get("nickname")),
-        "Nickname is required"
+        nicknameScheme.safeParse(form.get("nickname"))
       );
 
       const nicknamedUser = await db.user.findUnique({
@@ -86,8 +77,8 @@ export const action: ActionFunction = async ({ request, params }) => {
         select: { uid: true },
       });
 
-      if (nicknamedUser) {
-        throw new Response("Nickname already exists", { status: 400 });
+      if (nicknamedUser && nicknamedUser.uid !== uid) {
+        throw new Response("Nickname already taken", { status: 400 });
       }
 
       await db.user.update({
@@ -100,8 +91,10 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     case ActionType.UpdateAvatar: {
       const avatar = invariant(
-        ensureString(form.get("avatar")),
-        "Avatar is required"
+        z
+          .string()
+          .url("Avatar must be a valid URL")
+          .safeParse(form.get("avatar"))
       );
 
       await db.user.update({
@@ -113,10 +106,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.UpdateEmail: {
-      const email = invariant(
-        ensureEmail(form.get("email")),
-        "Email is required"
-      );
+      const email = invariant(emailScheme.safeParse(form.get("email")));
 
       await db.user.update({
         where: { uid },
