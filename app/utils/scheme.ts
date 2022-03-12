@@ -5,7 +5,7 @@ import { z } from "zod";
  */
 export const idScheme = z
   .string()
-  .regex(/^[1-9]\d+$/, "Id must be a positive integer")
+  .regex(/^[1-9]\d*$/, "Id must be a positive integer")
   .transform((x) => parseInt(x, 10));
 
 /**

@@ -38,6 +38,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
   title: `${data.problemSet.title} - HITwh OJ`,
+  description: data.problemSet.description,
 });
 
 export default function ProblemSetIndex() {
