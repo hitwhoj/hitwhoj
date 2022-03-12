@@ -1,7 +1,8 @@
 import { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
 import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
-import { ensureId, invariant } from "~/utils/invariant";
+import { invariant } from "~/utils/invariant";
+import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   problemSet: ProblemSet & {
@@ -11,7 +12,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(ensureId(params.sid), "sid is required");
+  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
 
   const problemSet = await db.problemSet.findUnique({
     where: { sid },

@@ -8,13 +8,17 @@ import {
   useParams,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import { tagScheme } from "~/utils/scheme";
 
 type LoaderData = {
   problemSets: ProblemSet[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const tag = params.tag as string;
+  const tag = invariant(tagScheme.safeParse(params.tag), {
+    status: 404,
+  });
 
   const problemSets = await db.problemSet.findMany({
     where: {

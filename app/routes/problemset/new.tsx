@@ -1,14 +1,15 @@
 import { ActionFunction, Form, MetaFunction, redirect } from "remix";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import { descriptionScheme, titleScheme } from "~/utils/scheme";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
-  const title = form.get("title")?.toString();
-  const description = form.get("description")?.toString();
 
-  if (!title || !description) {
-    throw new Response("Title or description is required", { status: 400 });
-  }
+  const title = invariant(titleScheme.safeParse(form.get("title")));
+  const description = invariant(
+    descriptionScheme.safeParse(form.get("description"))
+  );
 
   const { sid } = await db.problemSet.create({
     data: {

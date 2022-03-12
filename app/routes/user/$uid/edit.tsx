@@ -1,18 +1,21 @@
 import { User } from "@prisma/client";
-import { useState } from "react";
 import {
   ActionFunction,
-  Form,
   json,
   LoaderFunction,
   redirect,
+  useFetcher,
   useLoaderData,
-  useTransition,
 } from "remix";
+import { z } from "zod";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import { emailScheme, idScheme, nicknameScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
-type LoaderData = Pick<User, "nickname" | "email" | "avatar">;
+type LoaderData = {
+  user: Pick<User, "nickname" | "email" | "avatar">;
+};
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const self = await findSessionUid(request);
@@ -21,11 +24,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return redirect("/login");
   }
 
-  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
-    throw new Response("Invalid user id", { status: 404 });
-  }
-
-  const uid = Number(params.uid);
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -40,8 +39,14 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json(user);
+  return json({ user });
 };
+
+enum ActionType {
+  UpdateNickname = "updateNickname",
+  UpdateAvatar = "updateAvatar",
+  UpdateEmail = "updateEmail",
+}
 
 export const action: ActionFunction = async ({ request, params }) => {
   const self = await findSessionUid(request);
@@ -50,95 +55,159 @@ export const action: ActionFunction = async ({ request, params }) => {
     return redirect("/login");
   }
 
-  if (!params.uid || !/^\d{1,9}$/.test(params.uid)) {
-    throw new Response("Invalid user id", { status: 404 });
-  }
+  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
-  const uid = Number(params.uid);
-
+  // FIXME: 检查权限
   if (self !== uid) {
     throw new Response("Permission denied", { status: 403 });
   }
 
-  const formData = await request.formData();
-  const nickname = formData.get("nickname")?.toString();
-  const avatar = formData.get("avatar")?.toString() ?? "";
-  const email = formData.get("email")?.toString() ?? "";
+  const form = await request.formData();
 
-  if (!nickname) {
-    throw new Response("You must provide nickname", { status: 400 });
+  const _action = form.get("_action");
+
+  switch (_action) {
+    case ActionType.UpdateNickname: {
+      const nickname = invariant(
+        nicknameScheme.safeParse(form.get("nickname"))
+      );
+
+      const nicknamedUser = await db.user.findUnique({
+        where: { nickname },
+        select: { uid: true },
+      });
+
+      if (nicknamedUser && nicknamedUser.uid !== uid) {
+        throw new Response("Nickname already taken", { status: 400 });
+      }
+
+      await db.user.update({
+        where: { uid },
+        data: { nickname },
+      });
+
+      return null;
+    }
+
+    case ActionType.UpdateAvatar: {
+      const avatar = invariant(
+        z
+          .string()
+          .url("Avatar must be a valid URL")
+          .safeParse(form.get("avatar"))
+      );
+
+      await db.user.update({
+        where: { uid },
+        data: { avatar },
+      });
+
+      return null;
+    }
+
+    case ActionType.UpdateEmail: {
+      const email = invariant(emailScheme.safeParse(form.get("email")));
+
+      await db.user.update({
+        where: { uid },
+        data: { email },
+      });
+
+      return null;
+    }
   }
 
-  const nicknamedUser = await db.user.findUnique({
-    where: { nickname },
-    select: { uid: true },
-  });
-
-  if (nicknamedUser && nicknamedUser.uid !== uid) {
-    throw new Response("Nickname was already taken", { status: 400 });
-  }
-
-  await db.user.update({
-    where: { uid },
-    data: {
-      nickname,
-      avatar,
-      email,
-    },
-  });
-
-  return redirect(`/user/${uid}`);
+  throw new Response("I'm a teapot", { status: 418 });
 };
 
+function NicknameEditor({ nickname }: { nickname: string }) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input
+        type="text"
+        name="nickname"
+        defaultValue={nickname}
+        disabled={isUpdating}
+        required
+      />
+
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateNickname}
+      >
+        更新捏
+      </button>
+    </fetcher.Form>
+  );
+}
+
+function EmailEditor({ email }: { email: string }) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input
+        type="email"
+        name="email"
+        defaultValue={email}
+        disabled={isUpdating}
+        required
+      />
+
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateEmail}
+      >
+        更新捏
+      </button>
+    </fetcher.Form>
+  );
+}
+
+function AvatarEditor({ avatar }: { avatar: string }) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input
+        type="text"
+        name="avatar"
+        defaultValue={avatar}
+        disabled={isUpdating}
+        placeholder="https://..."
+        required
+      />
+
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateAvatar}
+      >
+        更新捏
+      </button>
+    </fetcher.Form>
+  );
+}
+
 export default function UserEdit() {
-  const user = useLoaderData<LoaderData>();
-
-  const [nickname, setNickname] = useState(user.nickname);
-  const [email, setEmail] = useState(user.email || "");
-  const [avatar, setAvatar] = useState(user.avatar || "");
-
-  const { state } = useTransition();
+  const { user } = useLoaderData<LoaderData>();
 
   return (
     <>
       <h3>Edit</h3>
-      <Form
-        method="post"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "20% 1fr",
-        }}
-      >
-        <label htmlFor="nickname">Nickname</label>
-        <input
-          type="text"
-          value={nickname}
-          name="nickname"
-          id="nickname"
-          onChange={(e) => setNickname(e.currentTarget.value)}
-        />
-        <label htmlFor="email">E-Mail</label>
-        <input
-          type="email"
-          value={email}
-          name="email"
-          id="email"
-          onChange={(e) => setEmail(e.currentTarget.value)}
-        />
-        <label htmlFor="avatar">Avatar</label>
-        <input
-          type="text"
-          value={avatar}
-          name="avatar"
-          id="avatar"
-          onChange={(e) => setAvatar(e.currentTarget.value)}
-          placeholder="https://..."
-        />
-        <div></div>
-        <button type="submit" disabled={state === "submitting"}>
-          {state === "submitting" ? "Apply..." : "Apply"}
-        </button>
-      </Form>
+      <NicknameEditor nickname={user.nickname} />
+      <EmailEditor email={user.email || ""} />
+      <AvatarEditor avatar={user.avatar || ""} />
     </>
   );
 }
