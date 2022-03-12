@@ -31,10 +31,10 @@ export default function ProblemSetNew() {
       <h1>创建题单</h1>
       <Form method="post">
         <label htmlFor="title">标题</label>
-        <input type="text" name="title" id="title" />
+        <input type="text" name="title" id="title" required />
         <br />
         <label htmlFor="description">描述</label>
-        <input type="text" name="description" id="description" />
+        <input type="text" name="description" id="description" required />
         <br />
         <button type="submit">创建</button>
       </Form>

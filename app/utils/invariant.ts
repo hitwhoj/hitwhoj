@@ -12,5 +12,5 @@ export function invariant<Output, Input = Output>(
     return t.data;
   }
 
-  throw json(t.error, init);
+  throw json(t.error.issues, init);
 }
