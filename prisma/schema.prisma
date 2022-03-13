@@ -13,10 +13,10 @@ datasource db {
 model User {
   uid Int @id @default(autoincrement())
 
-  email    String?
-  avatar   String?
-  nickname String?
-  username String  @unique
+  email    String @default("")
+  avatar   String @default("")
+  nickname String @default("")
+  username String @unique
 
   password String
 
@@ -35,7 +35,7 @@ model User {
   moddedContests   Contest[] @relation("mod", references: [cid])
   juriedContests   Contest[] @relation("jury", references: [cid])
 
-  submittedRecords Record[]
+  records Record[]
 }
 
 model UserSession {

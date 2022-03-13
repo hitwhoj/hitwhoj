@@ -252,9 +252,9 @@ export default function UserEdit() {
     <>
       <h3>Edit</h3>
       <UsernameEditor username={user.username} />
-      <NicknameEditor nickname={user.nickname || ""} />
-      <EmailEditor email={user.email || ""} />
-      <AvatarEditor avatar={user.avatar || ""} />
+      <NicknameEditor nickname={user.nickname} />
+      <EmailEditor email={user.email} />
+      <AvatarEditor avatar={user.avatar} />
     </>
   );
 }
