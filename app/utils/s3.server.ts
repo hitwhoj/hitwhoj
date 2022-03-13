@@ -9,6 +9,11 @@ const s3 = new Client({
 });
 
 const bucket = process.env.S3_BUCKET || "";
+const region = process.env.S3_REGION || "cn-north-1";
+
+if (!bucket) {
+  throw new Error("S3_BUCKET is not set");
+}
 
 export function writeFile(
   filename: string,
@@ -23,6 +28,17 @@ export function writeFile(
 
 export function readFile(filename: string) {
   return s3.getObject(bucket, filename);
+}
+
+export function readFileAsText(filename: string) {
+  return new Promise<string>((resolve, reject) => {
+    let data: string = "";
+    s3.getObject(bucket, filename, (err, stream) => {
+      if (err) reject(err);
+      stream.on("data", (chunk) => (data += chunk));
+      stream.on("end", () => resolve(data));
+    });
+  });
 }
 
 export function statFile(filename: string) {
@@ -59,4 +75,25 @@ export async function removeDir(dirname: string) {
   const items = await listDir(dirname);
   const filenames = items.map((item) => item.name);
   return removeFiles(filenames);
+}
+
+async function ensureBucketExists() {
+  if (!(await s3.bucketExists(bucket))) {
+    console.warn(`Bucket ${bucket} does not exist, creating...`);
+    await s3.makeBucket(bucket, region);
+    console.warn(`Bucket ${bucket} created.`);
+  }
+}
+
+declare global {
+  var __s3: boolean | undefined;
+}
+
+if (process.env.NODE_ENV === "production") {
+  ensureBucketExists();
+} else {
+  if (!global.__s3) {
+    global.__s3 = true;
+    ensureBucketExists();
+  }
 }

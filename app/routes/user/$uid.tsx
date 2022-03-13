@@ -12,14 +12,17 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
-type LoaderData = Pick<User, "nickname"> & { isSelf: boolean };
+type LoaderData = {
+  user: Pick<User, "nickname" | "username">;
+  isSelf: boolean;
+};
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
     where: { uid },
-    select: { nickname: true },
+    select: { nickname: true, username: true },
   });
 
   if (!user) {
@@ -29,21 +32,23 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const self = await findSessionUid(request);
 
   return json({
-    nickname: user.nickname,
+    user,
     isSelf: self === uid,
   });
 };
 
 export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `User: ${data.nickname} - HITwh OJ`,
+  title: `User: ${data.user.nickname || data.user.username} - HITwh OJ`,
 });
 
 export default function UserProfile() {
-  const { nickname, isSelf } = useLoaderData<LoaderData>();
+  const { user, isSelf } = useLoaderData<LoaderData>();
 
   return (
     <>
-      <h2>User {nickname}</h2>
+      <h2>
+        {user.nickname ? `${user.nickname} (${user.username})` : user.username}
+      </h2>
       <ul>
         <li>
           <Link to=".">资料</Link>

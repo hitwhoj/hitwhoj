@@ -10,11 +10,16 @@ import {
 import { z } from "zod";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
-import { emailScheme, idScheme, nicknameScheme } from "~/utils/scheme";
+import {
+  emailScheme,
+  idScheme,
+  nicknameScheme,
+  usernameScheme,
+} from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
-  user: Pick<User, "nickname" | "email" | "avatar">;
+  user: Pick<User, "username" | "nickname" | "email" | "avatar">;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -29,6 +34,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await db.user.findUnique({
     where: { uid },
     select: {
+      username: true,
       nickname: true,
       avatar: true,
       email: true,
@@ -43,6 +49,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 enum ActionType {
+  UpdateUsername = "updateUsername",
   UpdateNickname = "updateNickname",
   UpdateAvatar = "updateAvatar",
   UpdateEmail = "updateEmail",
@@ -67,19 +74,32 @@ export const action: ActionFunction = async ({ request, params }) => {
   const _action = form.get("_action");
 
   switch (_action) {
+    case ActionType.UpdateUsername: {
+      const username = invariant(
+        usernameScheme.safeParse(form.get("username"))
+      );
+
+      const user = await db.user.findUnique({
+        where: { username },
+        select: { uid: true },
+      });
+
+      if (user && user.uid !== uid) {
+        throw new Response("Username already taken", { status: 400 });
+      }
+
+      await db.user.update({
+        where: { uid },
+        data: { username },
+      });
+
+      return null;
+    }
+
     case ActionType.UpdateNickname: {
       const nickname = invariant(
         nicknameScheme.safeParse(form.get("nickname"))
       );
-
-      const nicknamedUser = await db.user.findUnique({
-        where: { nickname },
-        select: { uid: true },
-      });
-
-      if (nicknamedUser && nicknamedUser.uid !== uid) {
-        throw new Response("Nickname already taken", { status: 400 });
-      }
 
       await db.user.update({
         where: { uid },
@@ -119,6 +139,32 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   throw new Response("I'm a teapot", { status: 418 });
 };
+
+function UsernameEditor({ username }: { username: string }) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input
+        type="text"
+        name="username"
+        defaultValue={username}
+        disabled={isUpdating}
+        required
+      />
+
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateUsername}
+      >
+        更新捏
+      </button>
+    </fetcher.Form>
+  );
+}
 
 function NicknameEditor({ nickname }: { nickname: string }) {
   const fetcher = useFetcher();
@@ -205,7 +251,8 @@ export default function UserEdit() {
   return (
     <>
       <h3>Edit</h3>
-      <NicknameEditor nickname={user.nickname} />
+      <UsernameEditor username={user.username} />
+      <NicknameEditor nickname={user.nickname || ""} />
       <EmailEditor email={user.email || ""} />
       <AvatarEditor avatar={user.avatar || ""} />
     </>

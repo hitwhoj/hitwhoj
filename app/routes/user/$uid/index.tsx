@@ -5,7 +5,7 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
-  user: User;
+  user: Pick<User, "uid" | "username" | "nickname" | "email" | "password">;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -13,6 +13,13 @@ export const loader: LoaderFunction = async ({ params }) => {
 
   const user = await db.user.findUnique({
     where: { uid },
+    select: {
+      uid: true,
+      username: true,
+      nickname: true,
+      email: true,
+      password: true,
+    },
   });
 
   if (!user) {
@@ -31,6 +38,14 @@ export default function Profile() {
         <tr>
           <th>UID</th>
           <td>{user.uid}</td>
+        </tr>
+        <tr>
+          <th>Username</th>
+          <td>{user.username}</td>
+        </tr>
+        <tr>
+          <th>Nickname</th>
+          <td>{user.nickname}</td>
         </tr>
         <tr>
           <th>E-Mail</th>
