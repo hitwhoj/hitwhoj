@@ -6,7 +6,7 @@
     "clean": "rimraf public/build server/build app/styles .cache",
     "dev": "concurrently -n \"REMIX,SASS,NODE\" \"remix watch\" \"sass --no-source-map --watch styles:app/styles\" \"yarn start:dev\"",
     "fmt": "prettier --write .",
-    "postinstall": "remix setup node",
+    "postinstall": "remix setup node && prisma generate",
     "start": "cross-env NODE_ENV=production node --require esbuild-register server/index.ts",
     "start:dev": "cross-env NODE_ENV=development node --require esbuild-register server/index.ts"
   },
