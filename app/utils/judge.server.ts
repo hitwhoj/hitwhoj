@@ -183,9 +183,7 @@ class JudgeServer {
       return;
     }
 
-    this.server.sockets.sockets.forEach((socket) => {
-      socket.emit("task");
-    });
+    this.server.emit("task");
   }
 
   /**
