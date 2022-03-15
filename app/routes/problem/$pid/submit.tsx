@@ -34,7 +34,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   });
 
   await s3.writeFile(`/record/${rid}`, Buffer.from(code));
-  await judge.push({ rid });
+  judge.push({ rid });
 
   return redirect(`/record/${rid}`);
 };

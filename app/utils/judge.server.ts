@@ -48,7 +48,7 @@ export type JudgeResponse = {
 
 export interface ServerEvent {
   task: () => void; // 评测机空闲，申请分发任务
-  result: (result: JudgeResponse) => void; // 评测机返回单个测试点结果
+  result: (req: JudgeRequest, res: JudgeResponse) => void; // 评测机返回单个测试点结果
   finish: (req: JudgeRequest) => void; // 评测机评测完成
   reject: (req: JudgeRequest) => void; // 评测机拒绝评测
 }
@@ -66,18 +66,18 @@ export interface ClientEvent {
  * 如果考虑到网络有延迟的情况，后端服务器可能会收到同一个评测机发来的多次 "task" 数据包，但由于网络波动，分配到的任务数量可能会大于评测机的资源上限。这时候评测机可以发送 "reject" 数据包告诉后端服务器评测机拒绝接受这项新的任务。
  *
  * ```plain
- * 后端服务器        评测机
- * |-----(task 1)----->| 后端收到 Task 1，发送广播 1
- * |-----(task 2)----->| 后端收到 Task 2，发送广播 2
- * |<----(task 1)------| 评测机收到广播 1，向后端发送 Task 1 ACK
- * |<----(task 2)------| 评测机收到广播 2，向后端发送 Task 2 ACK（因为当前资源依然空闲）
- * |---(dispatch 1)--->| 后端分配 Task 1 给评测机，评测机开始评测 Task 1
- * |---(dispatch 2)--->| 后端分配 Task 2 给评测机，然而评测机当前没有空余资源
- * |<---(reject 2)-----| 于是评测机向后端发送 Reject 2 报文
- * |-----(task 2)----->| 后端收到 Reject 2 报文，重新发送广播 2
+ * 后端服务器          评测机
+ * |------(task 1)------>| 后端收到 Task 1，发送广播 1
+ * |------(task 2)------>| 后端收到 Task 2，发送广播 2
+ * |<-----(task 1)-------| 评测机收到广播 1，向后端发送 Task 1 ACK
+ * |<-----(task 2)-------| 评测机收到广播 2，向后端发送 Task 2 ACK（因为当前资源依然空闲）
+ * |----(dispatch 1)---->| 后端分配 Task 1 给评测机，评测机开始评测 Task 1
+ * |----(dispatch 2)---->| 后端分配 Task 2 给评测机，然而评测机当前没有空余资源
+ * |<----(reject 2)------| 于是评测机向后端发送 Reject 2 报文
+ * |------(task 2)------>| 后端收到 Reject 2 报文，重新发送广播 2
  * 之后便由其他评测机接受并评测 Task 2
- * |a few moments later|
- * |<---(finish 2)-----| 评测完成
+ * | a few moments later |
+ * |<----(finish 2)------| 评测完成，向后端发送 Finish 2 报文
  * ```
  *
  * 考虑评测机超时的情况，后端服务器当分配任务之后启动一个计时器，如果评测机在规定时间内没有发送任何数据包回来，则将评测结果设置为 UnknownError，并且丢弃任何之后收到的关于该任务的数据包。
@@ -121,27 +121,50 @@ class JudgeServer {
           setInterval(() => {
             // TODO: 评测超时
             console.log("timeout", task);
+            this.timeout.delete(task.rid);
           }, 60000)
         );
       });
 
       // 评测机返回单个测试点结果
-      socket.on("result", (res) => {
+      socket.on("result", (req, res) => {
+        if (!this.timeout.has(req.rid)) {
+          // 任务已经过期，直接忽略该结果
+          return;
+        }
+
         // TODO: 记录单点评测结果
         console.log("result", res);
       });
 
       // 评测机评测完成
       socket.on("finish", (req) => {
+        const timeout = this.timeout.get(req.rid);
+        if (!timeout) {
+          // 任务已经过期，直接忽略该结果
+          return;
+        }
+
         // TODO: 评测完成
         console.log("finish", req);
-        clearInterval(this.timeout.get(req.rid)!);
+
+        // 清理超时计时器
+        clearInterval(timeout);
       });
 
       // 评测机拒绝评测任务
       socket.on("reject", (req) => {
+        const timeout = this.timeout.get(req.rid);
+        if (!timeout) {
+          // 任务已经过期，直接忽略该结果
+          return;
+        }
+
         // 将评测机拒绝的任务重新放回队列
         this.push(req);
+
+        // 清理超时计时器
+        clearInterval(timeout);
       });
     });
 
@@ -152,10 +175,11 @@ class JudgeServer {
   }
 
   /**
-   * 广播目前待领取的任务
+   * 向所有评测机广播目前有待领取的任务
    */
   broadcast() {
-    if (this.taskQueue.length === 0) {
+    if (!this.taskQueue.length) {
+      // 没有任务，不广播
       return;
     }
 
