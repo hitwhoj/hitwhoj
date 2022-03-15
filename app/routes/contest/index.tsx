@@ -26,7 +26,9 @@ export const meta: MetaFunction = () => ({
 });
 
 export const contestState = (beginTime: Date, endTime: Date) => {
-  if (endTime.valueOf() && endTime.valueOf() < Date.now()) {
+  const begin = new Date(beginTime);
+  const end = new Date(endTime);
+  if (end.getTime() < Date.now()) {
     return (
       <span
         style={{
@@ -40,7 +42,7 @@ export const contestState = (beginTime: Date, endTime: Date) => {
         已结束
       </span>
     );
-  } else if (beginTime.valueOf() > Date.now()) {
+  } else if (begin.getTime() > Date.now()) {
     return (
       <span
         style={{
@@ -53,7 +55,7 @@ export const contestState = (beginTime: Date, endTime: Date) => {
       >
         未开始
       </span>
-    )
+    );
   } else {
     return (
       <span
@@ -67,9 +69,30 @@ export const contestState = (beginTime: Date, endTime: Date) => {
       >
         进行中
       </span>
-    )
+    );
   }
-}
+};
+
+export const contestList = (
+  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[]
+) => (
+  <ul>
+    {contests.map((contest) => (
+      <li key={contest.cid}>
+        <span
+          style={{
+            color: "grey",
+            marginRight: "10px",
+          }}
+        >
+          C{contest.cid}
+        </span>
+        <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
+        {contestState(contest.beginTime, contest.endTime)}
+      </li>
+    ))}
+  </ul>
+);
 
 export default function ContestList() {
   const { contests } = useLoaderData<LoaderData>();
@@ -77,22 +100,7 @@ export default function ContestList() {
   return (
     <>
       <h1>Contest List</h1>
-      <ul>
-        {contests.map((contest) => (
-            <li key={contest.cid}>
-              <span
-                  style={{
-                    color: "grey",
-                    marginRight: "10px",
-                  }}
-              >
-                C{contest.cid}
-              </span>
-              <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
-              {contestState(contest.beginTime, contest.endTime)}
-            </li>
-        ))}
-      </ul>
+      {contestList(contests)}
     </>
   );
 }

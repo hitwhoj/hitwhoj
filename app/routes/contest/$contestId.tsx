@@ -1,5 +1,11 @@
 import { Contest } from "@prisma/client";
-import { LoaderFunction, json, useLoaderData, MetaFunction } from "remix";
+import {
+  LoaderFunction,
+  json,
+  useLoaderData,
+  MetaFunction,
+  Outlet,
+} from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -31,16 +37,16 @@ export default function Contest() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-      <div>
-        <header>
-          <h1>
+    <div>
+      <header>
+        <h1>
           <span style={{ color: "grey", marginRight: "20px" }}>
             C{contest.cid}
           </span>
-            {contest.title}
-          </h1>
-        </header>
-        <div style={{ margin: "20px 0" }}>{contest.description}</div>
-      </div>
+          {contest.title}
+        </h1>
+      </header>
+      <Outlet />
+    </div>
   );
 }
