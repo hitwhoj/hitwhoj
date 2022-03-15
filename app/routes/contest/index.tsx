@@ -25,7 +25,7 @@ export const meta: MetaFunction = () => ({
   title: "Contest List",
 });
 
-export const contestState = (beginTime: Date, endTime: Date) => {
+export function State ({beginTime, endTime}: {beginTime: Date, endTime: Date}) {
   const begin = new Date(beginTime);
   const end = new Date(endTime);
   if (end.getTime() < Date.now()) {
@@ -71,14 +71,15 @@ export const contestState = (beginTime: Date, endTime: Date) => {
       </span>
     );
   }
-};
+}
 
-export const contestList = (
-  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[]
-) => (
-  <ul>
-    {contests.map((contest) => (
-      <li key={contest.cid}>
+export function List (
+  { contests }: { contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[] }
+) {
+  return (
+    <ul>
+      {contests.map((contest) => (
+        <li key={contest.cid}>
         <span
           style={{
             color: "grey",
@@ -87,12 +88,13 @@ export const contestList = (
         >
           C{contest.cid}
         </span>
-        <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
-        {contestState(contest.beginTime, contest.endTime)}
-      </li>
-    ))}
-  </ul>
-);
+          <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
+          <State beginTime={contest.beginTime} endTime={contest.endTime} />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function ContestList() {
   const { contests } = useLoaderData<LoaderData>();
@@ -100,7 +102,10 @@ export default function ContestList() {
   return (
     <>
       <h1>Contest List</h1>
-      {contestList(contests)}
+      <Link to="new">
+        <button>创建比赛</button>
+      </Link>
+      <List contests={contests}/>
     </>
   );
 }

@@ -4,7 +4,7 @@ import {
   json,
   useLoaderData,
   MetaFunction,
-  Outlet,
+  Outlet, Link,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -37,16 +37,19 @@ export default function Contest() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-    <div>
-      <header>
-        <h1>
-          <span style={{ color: "grey", marginRight: "20px" }}>
-            C{contest.cid}
-          </span>
-          {contest.title}
-        </h1>
-      </header>
+    <>
+      <h1>{contest.title}</h1>
+      {/* 比赛导航 */}
+      <ul>
+        <li>
+          <Link to=".">详情</Link>
+        </li>
+        <li>
+          <Link to="edit">编辑</Link>
+        </li>
+      </ul>
+      {/* 比赛页面 */}
       <Outlet />
-    </div>
+    </>
   );
 }

@@ -9,10 +9,10 @@ import {
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import { contestList } from "~/routes/contest";
+import { List } from "~/routes/contest";
 
 type LoaderData = {
-  contests: Contest[];
+  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -21,6 +21,14 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 
   const contests = await db.contest.findMany({
+    orderBy: [{ cid: "asc" }],
+    take: 20,
+    select: {
+      cid: true,
+      title: true,
+      beginTime: true,
+      endTime: true,
+    },
     where: {
       tags: {
         some: {
@@ -28,14 +36,9 @@ export const loader: LoaderFunction = async ({ params }) => {
         },
       },
     },
-    take: 20,
   });
 
-  if (!contests.length) {
-    throw new Response("Contest Tag not found", { status: 404 });
-  }
-
-  return json({ contests: contests });
+  return json({ contests });
 };
 
 export const meta: MetaFunction = ({ params }) => ({
@@ -49,7 +52,7 @@ export default function ContestTag() {
   return (
     <>
       <h1>Tag: {tag}</h1>
-      {contestList(contests)}
+      <List contests={contests} />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
+import { Contest, ContestTag, Problem } from "@prisma/client";
 import {
   json,
   useFetcher,
@@ -17,17 +17,17 @@ import {
 } from "~/utils/scheme";
 
 type LoaderData = {
-  problemSet: ProblemSet & {
-    tags: ProblemSetTag[];
+  contest: Contest & {
+    tags: ContestTag[];
     problems: Pick<Problem, "pid" | "title">[];
   };
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
 
-  const problemSet = await db.problemSet.findUnique({
-    where: { sid },
+  const contest = await db.contest.findUnique({
+    where: { cid },
     include: {
       tags: true,
       problems: {
@@ -39,11 +39,11 @@ export const loader: LoaderFunction = async ({ params }) => {
     },
   });
 
-  if (!problemSet) {
-    throw new Response("Problem Set not found", { status: 404 });
+  if (!contest) {
+    throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ problemSet });
+  return json({ contest });
 };
 
 enum ActionType {
@@ -52,10 +52,12 @@ enum ActionType {
   CreateProblem = "createProblem",
   DeleteProblem = "deleteProblem",
   UpdateInformation = "updateInformation",
+  UpdateTime = "updateTime",
+  UpdateSystem = "updateSystem",
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
   const form = await request.formData();
 
   const _action = form.get("_action");
@@ -64,8 +66,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     case ActionType.CreateProblem: {
       const pid = invariant(idScheme.safeParse(form.get("pid")));
 
-      await db.problemSet.update({
-        where: { sid },
+      await db.contest.update({
+        where: { cid },
         data: {
           problems: {
             connect: {
@@ -81,8 +83,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     case ActionType.DeleteProblem: {
       const pid = invariant(idScheme.safeParse(form.get("pid")));
 
-      await db.problemSet.update({
-        where: { sid },
+      await db.contest.update({
+        where: { cid },
         data: {
           problems: {
             disconnect: {
@@ -98,8 +100,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     case ActionType.CreateTag: {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
-      await db.problemSet.update({
-        where: { sid },
+      await db.contest.update({
+        where: { cid },
         data: {
           tags: {
             connectOrCreate: {
@@ -116,8 +118,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     case ActionType.DeleteTag: {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
-      await db.problemSet.update({
-        where: { sid },
+      await db.contest.update({
+        where: { cid },
         data: {
           tags: {
             disconnect: {
@@ -136,8 +138,8 @@ export const action: ActionFunction = async ({ params, request }) => {
         descriptionScheme.safeParse(form.get("description"))
       );
 
-      await db.problemSet.update({
-        where: { sid },
+      await db.contest.update({
+        where: { cid },
         data: {
           title,
           description,
@@ -146,16 +148,24 @@ export const action: ActionFunction = async ({ params, request }) => {
 
       return null;
     }
+
+    case ActionType.UpdateTime: {
+      return null;
+    }
+
+    case ActionType.UpdateSystem: {
+      return null;
+    }
   }
 
   throw new Response("I'm a teapot", { status: 418 });
 };
 
 export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `Edit ProblemSet: ${data.problemSet.title} - HITwh OJ`,
+  title: `Edit Contest: ${data.contest.title} - HITwh OJ`,
 });
 
-function ProblemSetTagItem({ name }: { name: string }) {
+function ContestTagItem({ name }: { name: string }) {
   const fetcher = useFetcher();
   const isDeleting = fetcher.state !== "idle";
 
@@ -172,13 +182,13 @@ function ProblemSetTagItem({ name }: { name: string }) {
   );
 }
 
-function ProblemSetProblemItem({ pid, title }: { pid: number; title: string }) {
+function ContestProblemItem({ pid, title }: { pid: number; title: string }) {
   const fetcher = useFetcher();
   const isDeleting = fetcher.state !== "idle";
 
   return (
     <li style={{ opacity: isDeleting ? 0.25 : 1 }}>
-      {title}{" "}
+      {title}&nbsp;
       <fetcher.Form method="post" style={{ display: "inline" }}>
         <input type="hidden" name="pid" value={pid} />
         <button name="_action" value={ActionType.DeleteProblem}>
@@ -190,9 +200,9 @@ function ProblemSetProblemItem({ pid, title }: { pid: number; title: string }) {
 }
 
 function TitleEditor({
-  title,
-  description,
-}: {
+                       title,
+                       description,
+                     }: {
   title: string;
   description: string;
 }) {
@@ -229,7 +239,7 @@ function TitleEditor({
   );
 }
 
-function ProblemSetTagCreator() {
+function ContestTagCreator() {
   const fetcher = useFetcher();
   const isCreating = fetcher.state !== "idle";
 
@@ -248,7 +258,7 @@ function ProblemSetTagCreator() {
   );
 }
 
-function ProblemSetProblemCreator() {
+function ContestProblemCreator() {
   const fetcher = useFetcher();
   const isCreating = fetcher.state !== "idle";
 
@@ -267,40 +277,40 @@ function ProblemSetProblemCreator() {
   );
 }
 
-export default function ProblemSetEdit() {
-  const { problemSet } = useLoaderData<LoaderData>();
+export default function ContestEdit() {
+  const { contest } = useLoaderData<LoaderData>();
 
   return (
     <>
       <h2>标题与简介</h2>
       <TitleEditor
-        title={problemSet.title}
-        description={problemSet.description}
+        title={contest.title}
+        description={contest.description}
       />
 
       <h2>标签</h2>
-      {problemSet.tags.length ? (
+      {contest.tags.length ? (
         <ul>
-          {problemSet.tags.map(({ name }) => (
-            <ProblemSetTagItem name={name} key={name} />
+          {contest.tags.map(({ name }) => (
+            <ContestTagItem name={name} key={name} />
           ))}
         </ul>
       ) : (
         <div>没有标签捏</div>
       )}
-      <ProblemSetTagCreator />
+      <ContestTagCreator />
 
       <h2>题目</h2>
-      {problemSet.problems.length ? (
+      {contest.problems.length ? (
         <ul>
-          {problemSet.problems.map(({ pid, title }) => (
-            <ProblemSetProblemItem pid={pid} title={title} key={pid} />
+          {contest.problems.map(({ pid, title }) => (
+            <ContestProblemItem pid={pid} title={title} key={pid} />
           ))}
         </ul>
       ) : (
         <div>没有题目捏</div>
       )}
-      <ProblemSetProblemCreator />
+      <ContestProblemCreator />
     </>
   );
 }

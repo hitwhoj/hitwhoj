@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {ContestSystem} from "@prisma/client";
 
 /**
  * Id scheme for any type of id.
@@ -43,3 +44,20 @@ export const emailScheme = z
   .email("Email must be a valid email")
   // TODO: maybe open it
   .regex(/@(?:stu\.)?\.hit\.edu\.cn$/, "Email must be a HIT email");
+
+/**
+ * Begin and end datetimeString, example: '2022-03-15T11:23'
+ */
+export const datetimeStringScheme = z
+  .string()
+  .nonempty("DateTime must be nonempty")
+  .regex(/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/, "Date must be a datetime-local");
+
+export const datetimeStringScheme2 = z
+  .number();
+
+/**
+ * Contest system
+ */
+export const systemScheme = z
+  .nativeEnum(ContestSystem)

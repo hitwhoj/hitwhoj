@@ -37,11 +37,11 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `${data.contest.title} - HITwh OJ`,
+  title: `Contest: ${data.contest.title} - HITwh OJ`,
   description: data.contest.description,
 });
 
-const time = (contest: Contest) => {
+function Time ({contest}: {contest: Contest}) {
   const begin = new Date(contest.beginTime);
   const end = new Date(contest.endTime);
   return (
@@ -52,10 +52,10 @@ const time = (contest: Contest) => {
       {end.toUTCString()}
     </p>
   );
-};
+}
 
-const tags = (tags: ContestTag[]) =>
-  tags.length ? (
+function Tags({tags}: { tags: ContestTag[] }) {
+  return tags.length ? (
     <ul>
       {tags.map((tag) => (
         <li key={tag.name}>
@@ -65,10 +65,11 @@ const tags = (tags: ContestTag[]) =>
     </ul>
   ) : (
     <div>没有标签捏</div>
-  );
+  )
+}
 
-const problems = (problems: Pick<Problem, "pid" | "title">[]) =>
-  problems.length ? (
+function ProblemList ({problems}: {problems: Pick<Problem, "pid" | "title">[]}) {
+  return problems.length ? (
     <ol>
       {problems.map((problem) => (
         <li key={problem.pid}>
@@ -79,18 +80,19 @@ const problems = (problems: Pick<Problem, "pid" | "title">[]) =>
   ) : (
     <div>没有题目捏</div>
   );
+}
 
 export default function contestIndex() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
     <>
-      {time(contest)}
+      <Time contest={contest}/>
       <p>{contest.description}</p>
       <h2>标签</h2>
-      {tags(contest.tags)}
+      <Tags tags={contest.tags} />
       <h2>题目</h2>
-      {problems(contest.problems)}
+      <ProblemList problems={contest.problems} />
     </>
   );
 }
