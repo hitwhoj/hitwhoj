@@ -83,9 +83,9 @@ export interface ClientEvent {
  * 考虑评测机超时的情况，后端服务器当分配任务之后启动一个计时器，如果评测机在规定时间内没有发送任何数据包回来，则将评测结果设置为 UnknownError，并且丢弃任何之后收到的关于该任务的数据包。
  */
 class JudgeServer {
-  server = new io.Server<ServerEvent, ClientEvent>();
-  timeout = new Map<number, NodeJS.Timeout>();
-  taskQueue: JudgeRequest[] = [];
+  private server = new io.Server<ServerEvent, ClientEvent>();
+  private timeout = new Map<number, NodeJS.Timeout>();
+  private taskQueue: JudgeRequest[] = [];
 
   constructor() {
     const privateKey = process.env.JUDGE_PRIVATE_KEY;
@@ -177,7 +177,7 @@ class JudgeServer {
   /**
    * 向所有评测机广播目前有待领取的任务
    */
-  broadcast() {
+  private broadcast() {
     if (!this.taskQueue.length) {
       // 没有任务，不广播
       return;
