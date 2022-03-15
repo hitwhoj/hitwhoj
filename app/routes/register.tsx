@@ -16,23 +16,23 @@ export const meta: MetaFunction = () => ({
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const nickname = form.get("nickname")?.toString();
+  const username = form.get("username")?.toString();
   const password = form.get("password")?.toString();
   const password2 = form.get("password2")?.toString();
 
-  if (!nickname || !password || !password2) {
-    return new Response("Nickname or password is missing", { status: 400 });
+  if (!username || !password || !password2) {
+    return new Response("username or password is missing", { status: 400 });
   }
 
   if (password !== password2) {
     return new Response("Passwords do not match", { status: 400 });
   }
 
-  if (await db.user.findUnique({ where: { nickname } })) {
-    return new Response("Nickname is already taken", { status: 400 });
+  if (await db.user.findUnique({ where: { username } })) {
+    return new Response("username is already taken", { status: 400 });
   }
 
-  const { uid } = await db.user.create({ data: { nickname, password } });
+  const { uid } = await db.user.create({ data: { username, password } });
 
   return redirect(`/user/${uid}`, {
     headers: {
@@ -55,7 +55,7 @@ export default function Register() {
           flexDirection: "column",
         }}
       >
-        <input type="text" name="nickname" placeholder="Nickname" required />
+        <input type="text" name="username" placeholder="Username" required />
         <input
           type="password"
           name="password"
