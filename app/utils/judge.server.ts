@@ -10,15 +10,14 @@ export type JudgeRequest = {
   rid: number;
 };
 
-export enum RecordTestResult {
-  Accepted = "Accepted",
-  WrongAnswer = "WrongAnswer",
-  TimeLimitExceeded = "TimeLimitExceeded",
-  MemoryLimitExceeded = "MemoryLimitExceeded",
-  RuntimeError = "RuntimeError",
-  SystemError = "SystemError",
-  Unknown = "Unknown",
-}
+type RecordTestResult =
+  | "Accepted"
+  | "WrongAnswer"
+  | "TimeLimitExceeded"
+  | "MemoryLimitExceeded"
+  | "RuntimeError"
+  | "SystemError"
+  | "Unknown";
 
 /**
  * 单个数据点的评测结果
@@ -94,15 +93,16 @@ class JudgeServer {
       console.warn(
         "JUDGE_PRIVATE_KEY is not set, any request will be accepted"
       );
+    } else {
+      // 验证请求
+      this.server.use((socket, next) => {
+        if (socket.handshake.auth.key !== privateKey) {
+          socket.disconnect();
+          return;
+        }
+        next();
+      });
     }
-
-    this.server.use((socket, next) => {
-      if (privateKey && socket.handshake.auth.key !== privateKey) {
-        socket.disconnect();
-        return;
-      }
-      next();
-    });
 
     this.server.on("connect", (socket) => {
       // 评测机请求分配任务
