@@ -1,9 +1,10 @@
 import { ActionFunction, Form, LoaderFunction, redirect } from "remix";
 import { db } from "~/utils/db.server";
+import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
-import { writeFile } from "~/utils/s3.server";
 import { codeScheme, idScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
+import { judge } from "~/utils/judge.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const self = await findSessionUid(request);
@@ -32,7 +33,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     select: { rid: true },
   });
 
-  await writeFile(`/record/${rid}`, Buffer.from(code));
+  await s3.writeFile(`/record/${rid}`, Buffer.from(code));
+  await judge.push({ rid });
 
   return redirect(`/record/${rid}`);
 };

@@ -1,8 +1,8 @@
 import { Record } from "@prisma/client";
 import { json, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
+import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
-import { readFileAsText } from "~/utils/s3.server";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
@@ -27,7 +27,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Record not found", { status: 404 });
   }
 
-  const code = await readFileAsText(`/record/${record.rid}`);
+  const code = await s3.readFileAsText(`/record/${record.rid}`);
 
   return json({
     record,
