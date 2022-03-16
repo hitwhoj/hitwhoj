@@ -1,5 +1,5 @@
 import { z } from "zod";
-import {ContestSystem} from "@prisma/client";
+import { ContestSystem } from "@prisma/client";
 
 /**
  * Id scheme for any type of id.
@@ -51,18 +51,17 @@ export const emailScheme = z
 export const datetimeStringScheme = z
   .string()
   .nonempty("DateTime must be nonempty")
-  .regex(/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/, "Date must be a datetime-local");
+  .regex(
+    /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/,
+    "Date must be a datetime-local"
+  );
 
 /**
  * Time zone number, unit: hour, example: 8
  */
-export const timeZoneScheme = z
-  .number()
-  .min(-12)
-  .max(12)
+export const timeZoneScheme = z.number().min(-12).max(12);
 
 /**
  * Contest system
  */
-export const systemScheme = z
-  .nativeEnum(ContestSystem)
+export const systemScheme = z.nativeEnum(ContestSystem);

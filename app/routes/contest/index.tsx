@@ -25,7 +25,13 @@ export const meta: MetaFunction = () => ({
   title: "Contest List",
 });
 
-export function State ({beginTime, endTime}: {beginTime: Date, endTime: Date}) {
+export function State({
+  beginTime,
+  endTime,
+}: {
+  beginTime: Date;
+  endTime: Date;
+}) {
   const begin = new Date(beginTime);
   const end = new Date(endTime);
   if (end.getTime() < Date.now()) {
@@ -73,21 +79,23 @@ export function State ({beginTime, endTime}: {beginTime: Date, endTime: Date}) {
   }
 }
 
-export function List (
-  { contests }: { contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[] }
-) {
+export function List({
+  contests,
+}: {
+  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
+}) {
   return (
     <ul>
       {contests.map((contest) => (
         <li key={contest.cid}>
-        <span
-          style={{
-            color: "grey",
-            marginRight: "10px",
-          }}
-        >
-          C{contest.cid}
-        </span>
+          <span
+            style={{
+              color: "grey",
+              marginRight: "10px",
+            }}
+          >
+            C{contest.cid}
+          </span>
           <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
           <State beginTime={contest.beginTime} endTime={contest.endTime} />
         </li>
@@ -105,7 +113,7 @@ export default function ContestList() {
       <Link to="new">
         <button>创建比赛</button>
       </Link>
-      <List contests={contests}/>
+      <List contests={contests} />
     </>
   );
 }

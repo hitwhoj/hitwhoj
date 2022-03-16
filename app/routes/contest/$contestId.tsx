@@ -4,7 +4,8 @@ import {
   json,
   useLoaderData,
   MetaFunction,
-  Outlet, Link,
+  Outlet,
+  Link,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";

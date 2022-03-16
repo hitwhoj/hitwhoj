@@ -41,7 +41,7 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
   description: data.contest.description,
 });
 
-function Time ({contest}: {contest: Contest}) {
+function Time({ contest }: { contest: Contest }) {
   const begin = new Date(contest.beginTime);
   const end = new Date(contest.endTime);
   return (
@@ -54,7 +54,7 @@ function Time ({contest}: {contest: Contest}) {
   );
 }
 
-function Tags({tags}: { tags: ContestTag[] }) {
+function Tags({ tags }: { tags: ContestTag[] }) {
   return tags.length ? (
     <ul>
       {tags.map((tag) => (
@@ -65,10 +65,14 @@ function Tags({tags}: { tags: ContestTag[] }) {
     </ul>
   ) : (
     <div>没有标签捏</div>
-  )
+  );
 }
 
-function ProblemList ({problems}: {problems: Pick<Problem, "pid" | "title">[]}) {
+function ProblemList({
+  problems,
+}: {
+  problems: Pick<Problem, "pid" | "title">[];
+}) {
   return problems.length ? (
     <ol>
       {problems.map((problem) => (
@@ -87,7 +91,7 @@ export default function contestIndex() {
 
   return (
     <>
-      <Time contest={contest}/>
+      <Time contest={contest} />
       <p>{contest.description}</p>
       <h2>标签</h2>
       <Tags tags={contest.tags} />
