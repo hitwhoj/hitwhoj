@@ -1,4 +1,4 @@
-import { File as UserFile } from "@prisma/client";
+import { UserFile } from "@prisma/client";
 import { json, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
