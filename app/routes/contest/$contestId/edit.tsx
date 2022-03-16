@@ -165,7 +165,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         invariant(timeZoneScheme.safeParse(Number(form.get("timeZone")))) *
           60 *
           1000 -
-        new Date(Date.now()).getTimezoneOffset() * 60 * 1000;
+        new Date().getTimezoneOffset() * 60 * 1000;
 
       const beginTime = new Date(begin.getTime() + timeZone);
       const endTime = new Date(end.getTime() + timeZone);
@@ -350,7 +350,7 @@ function TimeEditor({ contest }: { contest: Contest }) {
         required
       />
       <select hidden={true} name="timeZone" id="timeZone" required>
-        <option value={new Date(Date.now()).getTimezoneOffset()} selected>
+        <option value={new Date().getTimezoneOffset()} selected>
           当前浏览器时区
         </option>
         <option value="8">中国标准时间(+0800)</option>

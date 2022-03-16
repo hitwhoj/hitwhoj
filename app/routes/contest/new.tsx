@@ -28,7 +28,7 @@ export const action: ActionFunction = async ({ request }) => {
     invariant(timeZoneScheme.safeParse(Number(form.get("timeZone")))) *
       60 *
       1000 -
-    new Date(Date.now()).getTimezoneOffset() * 60 * 1000;
+    new Date().getTimezoneOffset() * 60 * 1000;
   const system = invariant(systemScheme.safeParse(form.get("system")));
 
   const beginTime = new Date(begin.getTime() + timeZone);
@@ -68,7 +68,7 @@ export default function ContestNew() {
           name="beginTime"
           id="beginTime"
           defaultValue={new Date(
-            Date.now() - new Date(Date.now()).getTimezoneOffset() * 60 * 1000
+            Date.now() - new Date().getTimezoneOffset() * 60 * 1000
           )
             .toISOString()
             .toString()
@@ -82,7 +82,7 @@ export default function ContestNew() {
           name="endTime"
           id="endTime"
           defaultValue={new Date(
-            Date.now() - new Date(Date.now()).getTimezoneOffset() * 60 * 1000
+            Date.now() - new Date().getTimezoneOffset() * 60 * 1000
           )
             .toISOString()
             .toString()
@@ -90,7 +90,7 @@ export default function ContestNew() {
           required
         />
         <select hidden={true} name="timeZone" id="timeZone" required>
-          <option value={new Date(Date.now()).getTimezoneOffset()} selected>
+          <option value={new Date().getTimezoneOffset()} selected>
             当前浏览器时区
           </option>
           <option value="8">中国标准时间(+0800)</option>
