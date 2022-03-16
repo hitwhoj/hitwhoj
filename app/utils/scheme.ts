@@ -9,6 +9,15 @@ export const idScheme = z
   .transform((x) => parseInt(x, 10));
 
 /**
+ * UUID scheme for any type of uuid.
+ */
+export const uuidScheme = z.string().regex(
+  // this is a copilot generated regex and idk what the fuck it is
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  "UUID must be a valid UUID"
+);
+
+/**
  * Username scheme for every user
  */
 export const usernameScheme = z

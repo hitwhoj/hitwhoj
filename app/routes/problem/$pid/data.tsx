@@ -4,7 +4,6 @@ import {
   json,
   Link,
   LoaderFunction,
-  redirect,
   unstable_parseMultipartFormData,
   useFetcher,
   useLoaderData,
@@ -12,7 +11,7 @@ import {
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { s3 } from "~/utils/s3.server";
-import { idScheme } from "~/utils/scheme";
+import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
 type LoaderData = {
@@ -24,7 +23,13 @@ export const loader: LoaderFunction = async ({ params }) => {
 
   const problem = await db.problem.findUnique({
     where: { pid },
-    select: { files: true },
+    select: {
+      files: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
   });
 
   if (!problem) {
@@ -35,8 +40,10 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 enum ActionType {
-  Upload = "upload",
-  Delete = "delete",
+  UploadFile = "uploadFile",
+  ModifyFile = "modifyFile",
+  RemoveFile = "removeFile",
+  ModifyPrivacy = "modifyPrivacy",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -46,7 +53,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const _action = form.get("_action");
 
   switch (_action) {
-    case ActionType.Upload: {
+    case ActionType.UploadFile: {
       const file = form.get("file");
 
       if (!(file instanceof File)) {
@@ -68,49 +75,129 @@ export const action: ActionFunction = async ({ request, params }) => {
         file.type
       );
 
-      return redirect("/");
+      return null;
     }
 
-    case ActionType.Delete: {
+    case ActionType.RemoveFile: {
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+
+      const file = await db.file.delete({
+        where: { fid },
+      });
+
+      if (!file) {
+        throw new Response("File not found", { status: 404 });
+      }
+
+      await s3.removeFile(`/file/${fid}`);
+
+      return null;
+    }
+
+    case ActionType.ModifyFile: {
       throw new Response("Not implemented", { status: 501 });
+    }
+
+    case ActionType.ModifyPrivacy: {
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+
+      const file = await db.file.findUnique({
+        where: { fid },
+        select: { private: true },
+      });
+
+      if (!file) {
+        throw new Response("File not found", { status: 404 });
+      }
+
+      await db.file.update({
+        where: { fid },
+        data: { private: !file.private },
+      });
+
+      return null;
     }
   }
 
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-function FileUploader() {
+function ProblemFileUploader() {
   const fetcher = useFetcher();
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="file" name="file" />
-      <button type="submit" name="_action" value={ActionType.Upload}>
+      <button type="submit" name="_action" value={ActionType.UploadFile}>
         上传捏
       </button>
     </fetcher.Form>
   );
 }
 
-function FileList({ files }: { files: ProblemFile[] }) {
+function ProblemFileListItem({ file }: { file: ProblemFile }) {
+  const fetcher1 = useFetcher();
+  const isDeleting = fetcher1.state !== "idle";
+  const fetcher2 = useFetcher();
+  const isSetting = fetcher2.state !== "idle";
+
+  return (
+    <tr style={{ opacity: isDeleting ? 0.25 : 1 }}>
+      <td>
+        <Link to={`/file/${file.fid}`}>{file.filename}</Link>
+      </td>
+      <td>{file.filesize}</td>
+      <td>{file.mimetype}</td>
+      <td>
+        {file.private ? (
+          <span style={{ color: "red" }}>隐藏</span>
+        ) : (
+          <span style={{ color: "lime" }}>公开</span>
+        )}
+      </td>
+      <td>
+        <fetcher1.Form method="post" style={{ display: "inline-block" }}>
+          <input type="hidden" name="fid" value={file.fid} />
+          <button
+            type="submit"
+            name="_action"
+            value={ActionType.RemoveFile}
+            disabled={isDeleting}
+          >
+            删除捏
+          </button>
+        </fetcher1.Form>
+        <fetcher2.Form method="post" style={{ display: "inline-block" }}>
+          <input type="hidden" name="fid" value={file.fid} />
+          <button
+            type="submit"
+            name="_action"
+            value={ActionType.ModifyPrivacy}
+            disabled={isSetting}
+          >
+            {file.private ? "公开" : "隐藏"}
+          </button>
+        </fetcher2.Form>
+      </td>
+    </tr>
+  );
+}
+
+function ProblemFileList({ files }: { files: ProblemFile[] }) {
   return (
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Size</th>
-          <th>Type</th>
+          <th>文件名</th>
+          <th>文件大小</th>
+          <th>文件类型</th>
+          <th>公开状态</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody>
         {files.map((file) => (
-          <tr key={file.fid}>
-            <td>
-              <Link to={`/file/${file.fid}`}>{file.filename}</Link>
-            </td>
-            <td>{file.filesize}</td>
-            <td>{file.mimetype}</td>
-          </tr>
+          <ProblemFileListItem file={file} key={file.fid} />
         ))}
       </tbody>
     </table>
@@ -122,9 +209,9 @@ export default function ProblemData() {
 
   return (
     <>
-      <h1>Problem Data</h1>
-      <FileUploader />
-      <FileList files={files} />
+      <h2>测试数据</h2>
+      <ProblemFileUploader />
+      <ProblemFileList files={files} />
     </>
   );
 }
