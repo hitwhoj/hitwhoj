@@ -53,8 +53,8 @@ export const descriptionScheme = z
 export const emailScheme = z
   .string()
   .email("Email must be a valid email")
-  // TODO: maybe open it
-  .regex(/@(?:stu\.)?\.hit\.edu\.cn$/, "Email must be a HIT email");
+  // TODO: maybe requires modification
+  .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
 
 /**
  * Code scheme for submitted code
