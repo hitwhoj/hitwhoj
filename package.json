@@ -14,7 +14,7 @@
     "seed": "node --require esbuild-register prisma/seed.ts"
   },
   "gitHooks": {
-    "pre-commit": "yarn fmt && yarn tsc && git add ."
+    "pre-commit": "yarn && yarn fmt && yarn tsc && git add ."
   },
   "dependencies": {
     "@emotion/cache": "^11.7.1",
@@ -23,7 +23,7 @@
     "@emotion/styled": "^11.8.1",
     "@mui/icons-material": "^5.4.2",
     "@mui/material": "^5.4.3",
-    "@prisma/client": "^3.10.0",
+    "@prisma/client": "^3.11.0",
     "@remix-run/express": "^1.2.3",
     "@remix-run/react": "^1.2.3",
     "compression": "^1.7.4",
@@ -50,7 +50,7 @@
     "esbuild": "^0.14.21",
     "esbuild-register": "^3.3.2",
     "prettier-plugin-prisma": "^3.10.0",
-    "prisma": "^3.10.0",
+    "prisma": "^3.11.0",
     "rimraf": "^3.0.2",
     "sass": "^1.49.7",
     "typescript": "^4.1.2",
