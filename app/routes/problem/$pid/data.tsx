@@ -9,8 +9,8 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { createFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
-import { s3 } from "~/utils/s3.server";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
@@ -54,26 +54,15 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   switch (_action) {
     case ActionType.UploadFile: {
-      const file = form.get("file");
+      const files = form
+        .getAll("file")
+        .filter((file): file is File => file instanceof File);
 
-      if (!(file instanceof File)) {
+      if (!files.length) {
         throw new Response("Invalid file", { status: 400 });
       }
 
-      const { fid } = await db.file.create({
-        data: {
-          pid,
-          filename: file.name,
-          filesize: file.size,
-          mimetype: file.type,
-        },
-      });
-
-      await s3.writeFile(
-        `/file/${fid}`,
-        Buffer.from(await file.arrayBuffer()),
-        file.type
-      );
+      await Promise.all(files.map((file) => createFile(file, { pid })));
 
       return null;
     }
@@ -81,15 +70,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     case ActionType.RemoveFile: {
       const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
-      const file = await db.file.delete({
-        where: { fid },
-      });
-
-      if (!file) {
-        throw new Response("File not found", { status: 404 });
-      }
-
-      await s3.removeFile(`/file/${fid}`);
+      await removeFile(fid);
 
       return null;
     }
@@ -127,7 +108,7 @@ function ProblemFileUploader() {
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
-      <input type="file" name="file" />
+      <input type="file" name="file" multiple />
       <button type="submit" name="_action" value={ActionType.UploadFile}>
         上传捏
       </button>
