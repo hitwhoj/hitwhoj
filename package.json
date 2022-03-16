@@ -14,7 +14,7 @@
     "seed": "node --require esbuild-register prisma/seed.ts"
   },
   "gitHooks": {
-    "pre-commit": "yarn fmt && git add ."
+    "pre-commit": "yarn fmt && yarn tsc && git add ."
   },
   "dependencies": {
     "@emotion/cache": "^11.7.1",
