@@ -16,7 +16,7 @@ async function seed() {
   const { uid: alice } = await prisma.user.create({
     data: {
       email: "alice@hit.edu.cn",
-      nickname: "Alice",
+      username: "Alice",
       password: "alice",
     },
   });
@@ -24,7 +24,7 @@ async function seed() {
   const { uid: bob } = await prisma.user.create({
     data: {
       email: "bob@hit.edu.cn",
-      nickname: "Bob",
+      username: "Bob",
       password: "bob",
     },
   });
@@ -32,7 +32,7 @@ async function seed() {
   const { uid: charlie } = await prisma.user.create({
     data: {
       email: "charlie@hit.edu.cn",
-      nickname: "Charlie",
+      username: "Charlie",
       password: "charlie",
     },
   });
@@ -40,7 +40,7 @@ async function seed() {
   const { uid: david } = await prisma.user.create({
     data: {
       email: "david@hit.edu.cn",
-      nickname: "David",
+      username: "David",
       password: "david",
     },
   });

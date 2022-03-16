@@ -6,12 +6,15 @@
     "clean": "rimraf public/build server/build app/styles .cache",
     "dev": "concurrently -n \"REMIX,SASS,NODE\" \"remix watch\" \"sass --no-source-map --watch styles:app/styles\" \"yarn start:dev\"",
     "fmt": "prettier --write .",
-    "postinstall": "remix setup node",
+    "postinstall": "remix setup node && prisma generate",
     "start": "cross-env NODE_ENV=production node --require esbuild-register server/index.ts",
     "start:dev": "cross-env NODE_ENV=development node --require esbuild-register server/index.ts"
   },
   "prisma": {
     "seed": "node --require esbuild-register prisma/seed.ts"
+  },
+  "gitHooks": {
+    "pre-commit": "yarn fmt && git add ."
   },
   "dependencies": {
     "@emotion/cache": "^11.7.1",
@@ -32,6 +35,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "remix": "^1.1.3",
+    "socket.io": "^4.4.1",
     "zod": "^3.13.4"
   },
   "devDependencies": {
@@ -49,7 +53,8 @@
     "prisma": "^3.10.0",
     "rimraf": "^3.0.2",
     "sass": "^1.49.7",
-    "typescript": "^4.1.2"
+    "typescript": "^4.1.2",
+    "yorkie": "^2.0.0"
   },
   "engines": {
     "node": "=16"

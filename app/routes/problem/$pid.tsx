@@ -1,11 +1,18 @@
 import { Problem } from "@prisma/client";
-import { LoaderFunction, json, useLoaderData, MetaFunction } from "remix";
+import {
+  LoaderFunction,
+  json,
+  useLoaderData,
+  MetaFunction,
+  Outlet,
+  Link,
+} from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
-  problem: Problem;
+  problem: Pick<Problem, "pid" | "title" | "description">;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -13,6 +20,11 @@ export const loader: LoaderFunction = async ({ params }) => {
 
   const problem = await db.problem.findUnique({
     where: { pid },
+    select: {
+      pid: true,
+      title: true,
+      description: true,
+    },
   });
 
   if (!problem) {
@@ -40,7 +52,15 @@ export default function Problem() {
           {problem.title}
         </h1>
       </header>
-      <div style={{ margin: "20px 0" }}>{problem.description}</div>
+      <ul>
+        <li>
+          <Link to=".">查看</Link>
+        </li>
+        <li>
+          <Link to="submit">提交</Link>
+        </li>
+      </ul>
+      <Outlet />
     </div>
   );
 }

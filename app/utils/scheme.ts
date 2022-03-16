@@ -12,12 +12,15 @@ export const idScheme = z
 /**
  * Username scheme for every user
  */
-export const nicknameScheme = z
+export const usernameScheme = z
   .string()
-  .nonempty("Nickname must be nonempty")
-  .min(3, "Nickname must be at least 3 characters")
-  .max(20, "Nickname must be at most 20 characters")
-  .regex(/^[a-zA-Z0-9_]+$/, "Nickname must be alphanumeric");
+  .nonempty("Username must be nonempty")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
+
+/**
+ * Nickname scheme for every user
+ */
+export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");
 
 /**
  * Tag scheme for any tags
@@ -65,3 +68,8 @@ export const timeZoneScheme = z.number().min(-12).max(12);
  * Contest system
  */
 export const systemScheme = z.nativeEnum(ContestSystem);
+
+/**
+ * Code scheme for submitted code
+ */
+export const codeScheme = z.string().nonempty("Code must be nonempty");
