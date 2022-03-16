@@ -4,7 +4,8 @@ export default function Record() {
   const { teamId } = useParams();
   return (
     <div>
-      <span> teamId团队详情: {teamId} </span>
+      <h1> Team:{teamId} </h1>
+
       <Outlet />
     </div>
   );
