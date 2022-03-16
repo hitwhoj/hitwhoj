@@ -136,13 +136,11 @@ function ProblemFileUploader() {
 }
 
 function ProblemFileListItem({ file }: { file: ProblemFile }) {
-  const fetcher1 = useFetcher();
-  const isDeleting = fetcher1.state !== "idle";
-  const fetcher2 = useFetcher();
-  const isSetting = fetcher2.state !== "idle";
+  const fetcher = useFetcher();
+  const isFetching = fetcher.state !== "idle";
 
   return (
-    <tr style={{ opacity: isDeleting ? 0.25 : 1 }}>
+    <tr style={{ opacity: isFetching ? 0.5 : 1 }}>
       <td>
         <Link to={`/file/${file.fid}`}>{file.filename}</Link>
       </td>
@@ -156,28 +154,25 @@ function ProblemFileListItem({ file }: { file: ProblemFile }) {
         )}
       </td>
       <td>
-        <fetcher1.Form method="post" style={{ display: "inline-block" }}>
+        <fetcher.Form method="post">
           <input type="hidden" name="fid" value={file.fid} />
           <button
             type="submit"
             name="_action"
             value={ActionType.RemoveFile}
-            disabled={isDeleting}
+            disabled={isFetching}
           >
             删除捏
           </button>
-        </fetcher1.Form>
-        <fetcher2.Form method="post" style={{ display: "inline-block" }}>
-          <input type="hidden" name="fid" value={file.fid} />
           <button
             type="submit"
             name="_action"
             value={ActionType.ModifyPrivacy}
-            disabled={isSetting}
+            disabled={isFetching}
           >
             {file.private ? "公开" : "隐藏"}
           </button>
-        </fetcher2.Form>
+        </fetcher.Form>
       </td>
     </tr>
   );
