@@ -1,5 +1,5 @@
 import { File, Problem, User } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
@@ -39,6 +39,10 @@ export const loader: LoaderFunction = async ({ params }) => {
 
   return json({ file });
 };
+
+export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
+  title: `File: ${data.file.filename} - HITwh OJ`,
+});
 
 export default function FileIndex() {
   const { file } = useLoaderData<LoaderData>();

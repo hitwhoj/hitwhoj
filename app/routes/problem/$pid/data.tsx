@@ -41,7 +41,6 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 enum ActionType {
   UploadFile = "uploadFile",
-  ModifyFile = "modifyFile",
   RemoveFile = "removeFile",
   ModifyPrivacy = "modifyPrivacy",
 }
@@ -73,10 +72,6 @@ export const action: ActionFunction = async ({ request, params }) => {
       await removeFile(fid);
 
       return null;
-    }
-
-    case ActionType.ModifyFile: {
-      throw new Response("Not implemented", { status: 501 });
     }
 
     case ActionType.ModifyPrivacy: {
