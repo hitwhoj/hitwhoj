@@ -53,8 +53,13 @@ export const datetimeStringScheme = z
   .nonempty("DateTime must be nonempty")
   .regex(/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/, "Date must be a datetime-local");
 
-export const datetimeStringScheme2 = z
-  .number();
+/**
+ * Time zone number, unit: hour, example: 8
+ */
+export const timeZoneScheme = z
+  .number()
+  .min(-12)
+  .max(12)
 
 /**
  * Contest system

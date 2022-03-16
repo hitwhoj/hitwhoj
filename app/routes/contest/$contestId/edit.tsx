@@ -1,4 +1,4 @@
-import { Contest, ContestTag, Problem } from "@prisma/client";
+import {Contest, ContestSystem, ContestTag, Problem} from "@prisma/client";
 import {
   json,
   useFetcher,
@@ -10,9 +10,10 @@ import {
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import {
+  datetimeStringScheme,
   descriptionScheme,
-  idScheme,
-  tagScheme,
+  idScheme, systemScheme,
+  tagScheme, timeZoneScheme,
   titleScheme,
 } from "~/utils/scheme";
 
@@ -150,10 +151,36 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.UpdateTime: {
+      const begin = new Date(invariant(datetimeStringScheme.safeParse(form.get("beginTime"))));
+      const end = new Date(invariant(datetimeStringScheme.safeParse(form.get("endTime"))));
+
+      // 客户端时区 + 服务器时区, 将时间转换为 UTC 标准时间, 以13位时间戳格式
+      const timeZone = invariant(timeZoneScheme.safeParse(Number(form.get("timeZone"))))*60*1000 - new Date(Date.now()).getTimezoneOffset()*60*1000;
+
+      const beginTime = new Date(begin.getTime() + timeZone);
+      const endTime = new Date(end.getTime() + timeZone);
+
+      await db.contest.update({
+        where: { cid },
+        data: {
+          beginTime,
+          endTime,
+        },
+      });
+
       return null;
     }
 
     case ActionType.UpdateSystem: {
+      const system = invariant(systemScheme.safeParse(form.get("system")));
+
+      await db.contest.update({
+        where: { cid },
+        data: {
+          system,
+        },
+      });
+
       return null;
     }
   }
@@ -277,6 +304,60 @@ function ContestProblemCreator() {
   );
 }
 
+function TimeEditor({contest}: {contest: Contest}) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+  const begin = new Date(contest.beginTime);
+  const end = new Date(contest.endTime);
+
+  return (
+    <fetcher.Form method="post">
+
+      <input type="datetime-local" id="beginTime" name="beginTime" disabled={isUpdating}
+             defaultValue={(new Date(begin.getTime() - begin.getTimezoneOffset()*60*1000)).toISOString().toString().slice(0, 16)} required/>
+      <br/>
+      <input type="datetime-local" id="endTime" name="endTime" disabled={isUpdating}
+             defaultValue={(new Date(end.getTime() - end.getTimezoneOffset()*60*1000)).toISOString().toString().slice(0, 16)} required/>
+      <select hidden={true} name="timeZone" id="timeZone" required>
+        <option value={(new Date(Date.now())).getTimezoneOffset()} selected >当前浏览器时区</option>
+        <option value="8">中国标准时间(+0800)</option>
+        <option value="0">格林威治标准时间(-0000)</option>
+      </select>
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateTime}
+      >
+        提交捏
+      </button>
+    </fetcher.Form>
+  )
+}
+
+function SystemEditor() {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <select id="system" name="system" disabled={isUpdating} required>
+        {Object.values(ContestSystem).map(system => (
+          <option value={system}>{system}</option>
+        ))}
+      </select>
+      <button
+        type="submit"
+        disabled={isUpdating}
+        name="_action"
+        value={ActionType.UpdateSystem}
+      >
+        提交捏
+      </button>
+    </fetcher.Form>
+  )
+}
+
 export default function ContestEdit() {
   const { contest } = useLoaderData<LoaderData>();
 
@@ -287,6 +368,12 @@ export default function ContestEdit() {
         title={contest.title}
         description={contest.description}
       />
+
+      <h2>时间</h2>
+      <TimeEditor contest={contest}/>
+
+      <h2>赛制</h2>
+      <SystemEditor />
 
       <h2>标签</h2>
       {contest.tags.length ? (

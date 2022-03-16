@@ -47,9 +47,9 @@ function Time ({contest}: {contest: Contest}) {
   return (
     <p>
       起止时间:&nbsp;&nbsp;
-      {begin.toUTCString()}
+      {begin.toLocaleString()}
       &nbsp;~&nbsp;
-      {end.toUTCString()}
+      {end.toLocaleString()}
     </p>
   );
 }
