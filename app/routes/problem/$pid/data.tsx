@@ -1,4 +1,4 @@
-import type { File as PrismaFile } from "@prisma/client";
+import type { File as ProblemFile } from "@prisma/client";
 import {
   ActionFunction,
   json,
@@ -16,7 +16,7 @@ import { idScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
 type LoaderData = {
-  files: PrismaFile[];
+  files: ProblemFile[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -92,7 +92,7 @@ function FileUploader() {
   );
 }
 
-function FileList({ files }: { files: PrismaFile[] }) {
+function FileList({ files }: { files: ProblemFile[] }) {
   return (
     <table>
       <thead>
