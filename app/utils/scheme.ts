@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ContestSystem } from "@prisma/client";
 
 /**
  * Id scheme for any type of id.
@@ -55,6 +56,29 @@ export const emailScheme = z
   .email("Email must be a valid email")
   // TODO: maybe requires modification
   .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
+
+/**
+ * Begin and end datetimeString, example: '2022-03-15T11:23'
+ */
+export const datetimeStringScheme = z
+  .string()
+  .nonempty("DateTime must be nonempty")
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Date must be a datetime-local")
+  .transform((x) => new Date(x));
+
+/**
+ * Time zone number, unit: hour, example: 8
+ */
+export const timezoneScheme = z
+  .string()
+  .nonempty("Timezone must be nonempty")
+  .regex(/^-?\d+$/, "Timezone must be a number")
+  .transform((x) => parseInt(x, 10));
+
+/**
+ * Contest system
+ */
+export const systemScheme = z.nativeEnum(ContestSystem);
 
 /**
  * Code scheme for submitted code
