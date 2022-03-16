@@ -54,15 +54,17 @@ export const emailScheme = z
 export const datetimeStringScheme = z
   .string()
   .nonempty("DateTime must be nonempty")
-  .regex(
-    /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/,
-    "Date must be a datetime-local"
-  );
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Date must be a datetime-local")
+  .transform((x) => new Date(x));
 
 /**
  * Time zone number, unit: hour, example: 8
  */
-export const timeZoneScheme = z.number().min(-12).max(12);
+export const timezoneScheme = z
+  .string()
+  .nonempty("Timezone must be nonempty")
+  .regex(/^-?\d+$/, "Timezone must be a number")
+  .transform((x) => parseInt(x, 10));
 
 /**
  * Contest system

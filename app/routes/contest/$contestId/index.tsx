@@ -46,15 +46,15 @@ function Time({ contest }: { contest: Contest }) {
   const end = new Date(contest.endTime);
   return (
     <p>
-      起止时间:&nbsp;&nbsp;
-      {begin.toLocaleString()}
-      &nbsp;~&nbsp;
-      {end.toLocaleString()}
+      起止时间：{" "}
+      <time dateTime={begin.toISOString()}>{begin.toLocaleString()}</time>
+      {" ~ "}
+      <time dateTime={end.toISOString()}>{end.toLocaleString()}</time>
     </p>
   );
 }
 
-function Tags({ tags }: { tags: ContestTag[] }) {
+function ContestTags({ tags }: { tags: ContestTag[] }) {
   return tags.length ? (
     <ul>
       {tags.map((tag) => (
@@ -68,7 +68,7 @@ function Tags({ tags }: { tags: ContestTag[] }) {
   );
 }
 
-function ProblemList({
+function ContestProblemList({
   problems,
 }: {
   problems: Pick<Problem, "pid" | "title">[];
@@ -94,9 +94,9 @@ export default function contestIndex() {
       <Time contest={contest} />
       <p>{contest.description}</p>
       <h2>标签</h2>
-      <Tags tags={contest.tags} />
+      <ContestTags tags={contest.tags} />
       <h2>题目</h2>
-      <ProblemList problems={contest.problems} />
+      <ContestProblemList problems={contest.problems} />
     </>
   );
 }

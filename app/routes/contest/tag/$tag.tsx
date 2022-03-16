@@ -9,7 +9,7 @@ import {
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import { List } from "~/routes/contest";
+import { ContestList } from "~/routes/contest";
 
 type LoaderData = {
   contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
@@ -52,7 +52,7 @@ export default function ContestTag() {
   return (
     <>
       <h1>Tag: {tag}</h1>
-      <List contests={contests} />
+      <ContestList contests={contests} />
     </>
   );
 }

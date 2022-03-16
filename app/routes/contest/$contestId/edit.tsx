@@ -15,9 +15,10 @@ import {
   idScheme,
   systemScheme,
   tagScheme,
-  timeZoneScheme,
+  timezoneScheme,
   titleScheme,
 } from "~/utils/scheme";
+import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 
 type LoaderData = {
   contest: Contest & {
@@ -153,22 +154,19 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.UpdateTime: {
-      const begin = new Date(
-        invariant(datetimeStringScheme.safeParse(form.get("beginTime")))
-      );
-      const end = new Date(
-        invariant(datetimeStringScheme.safeParse(form.get("endTime")))
+      // 客户端所在的时区
+      const timezone = invariant(
+        timezoneScheme.safeParse(form.get("timezone"))
       );
 
-      // 客户端时区 + 服务器时区, 将时间转换为 UTC 标准时间, 以13位时间戳格式
-      const timeZone =
-        invariant(timeZoneScheme.safeParse(Number(form.get("timeZone")))) *
-          60 *
-          1000 -
-        new Date().getTimezoneOffset() * 60 * 1000;
-
-      const beginTime = new Date(begin.getTime() + timeZone);
-      const endTime = new Date(end.getTime() + timeZone);
+      const beginTime = adjustTimezone(
+        invariant(datetimeStringScheme.safeParse(form.get("beginTime"))),
+        timezone
+      );
+      const endTime = adjustTimezone(
+        invariant(datetimeStringScheme.safeParse(form.get("endTime"))),
+        timezone
+      );
 
       await db.contest.update({
         where: { cid },
@@ -225,7 +223,7 @@ function ContestProblemItem({ pid, title }: { pid: number; title: string }) {
 
   return (
     <li style={{ opacity: isDeleting ? 0.25 : 1 }}>
-      {title}&nbsp;
+      {title}{" "}
       <fetcher.Form method="post" style={{ display: "inline" }}>
         <input type="hidden" name="pid" value={pid} />
         <button name="_action" value={ActionType.DeleteProblem}>
@@ -314,11 +312,9 @@ function ContestProblemCreator() {
   );
 }
 
-function TimeEditor({ contest }: { contest: Contest }) {
+function TimeEditor({ begin, end }: { begin: Date; end: Date }) {
   const fetcher = useFetcher();
   const isUpdating = fetcher.state !== "idle";
-  const begin = new Date(contest.beginTime);
-  const end = new Date(contest.endTime);
 
   return (
     <fetcher.Form method="post">
@@ -327,12 +323,7 @@ function TimeEditor({ contest }: { contest: Contest }) {
         id="beginTime"
         name="beginTime"
         disabled={isUpdating}
-        defaultValue={new Date(
-          begin.getTime() - begin.getTimezoneOffset() * 60 * 1000
-        )
-          .toISOString()
-          .toString()
-          .slice(0, 16)}
+        defaultValue={getDatetimeLocal(begin.getTime())}
         required
       />
       <br />
@@ -341,21 +332,14 @@ function TimeEditor({ contest }: { contest: Contest }) {
         id="endTime"
         name="endTime"
         disabled={isUpdating}
-        defaultValue={new Date(
-          end.getTime() - end.getTimezoneOffset() * 60 * 1000
-        )
-          .toISOString()
-          .toString()
-          .slice(0, 16)}
+        defaultValue={getDatetimeLocal(end.getTime())}
         required
       />
-      <select hidden={true} name="timeZone" id="timeZone" required>
-        <option value={new Date().getTimezoneOffset()} selected>
-          当前浏览器时区
-        </option>
-        <option value="8">中国标准时间(+0800)</option>
-        <option value="0">格林威治标准时间(-0000)</option>
-      </select>
+      <input
+        type="hidden"
+        name="timezone"
+        value={new Date().getTimezoneOffset()}
+      />
       <button
         type="submit"
         disabled={isUpdating}
@@ -368,7 +352,7 @@ function TimeEditor({ contest }: { contest: Contest }) {
   );
 }
 
-function SystemEditor() {
+function SystemEditor(props: { system: ContestSystem }) {
   const fetcher = useFetcher();
   const isUpdating = fetcher.state !== "idle";
 
@@ -376,7 +360,13 @@ function SystemEditor() {
     <fetcher.Form method="post">
       <select id="system" name="system" disabled={isUpdating} required>
         {Object.values(ContestSystem).map((system) => (
-          <option value={system}>{system}</option>
+          <option
+            value={system}
+            key={system}
+            selected={system === props.system}
+          >
+            {system}
+          </option>
         ))}
       </select>
       <button
@@ -400,10 +390,13 @@ export default function ContestEdit() {
       <TitleEditor title={contest.title} description={contest.description} />
 
       <h2>时间</h2>
-      <TimeEditor contest={contest} />
+      <TimeEditor
+        begin={new Date(contest.beginTime)}
+        end={new Date(contest.endTime)}
+      />
 
       <h2>赛制</h2>
-      <SystemEditor />
+      <SystemEditor system={contest.system} />
 
       <h2>标签</h2>
       {contest.tags.length ? (

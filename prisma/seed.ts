@@ -87,7 +87,7 @@ async function seed() {
       description: "## Description\n\nThe A-SOUL contest",
       beginTime: new Date(Date.now() - 3600000),
       endTime: new Date(Date.now() + 3600000),
-      system: ContestSystem.ACM,
+      system: ContestSystem.IOI,
 
       creator: { connect: { uid: alice } },
       tags: { create: [{ name: "a-soul" }] },

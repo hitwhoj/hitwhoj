@@ -25,15 +25,7 @@ export const meta: MetaFunction = () => ({
   title: "Contest List",
 });
 
-export function State({
-  beginTime,
-  endTime,
-}: {
-  beginTime: Date;
-  endTime: Date;
-}) {
-  const begin = new Date(beginTime);
-  const end = new Date(endTime);
+export function ContestState({ begin, end }: { begin: Date; end: Date }) {
   if (end.getTime() < Date.now()) {
     return (
       <span
@@ -79,7 +71,7 @@ export function State({
   }
 }
 
-export function List({
+export function ContestList({
   contests,
 }: {
   contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
@@ -97,14 +89,17 @@ export function List({
             C{contest.cid}
           </span>
           <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
-          <State beginTime={contest.beginTime} endTime={contest.endTime} />
+          <ContestState
+            begin={new Date(contest.beginTime)}
+            end={new Date(contest.endTime)}
+          />
         </li>
       ))}
     </ul>
   );
 }
 
-export default function ContestList() {
+export default function ContestListIndex() {
   const { contests } = useLoaderData<LoaderData>();
 
   return (
@@ -113,7 +108,7 @@ export default function ContestList() {
       <Link to="new">
         <button>创建比赛</button>
       </Link>
-      <List contests={contests} />
+      <ContestList contests={contests} />
     </>
   );
 }

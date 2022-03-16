@@ -5,10 +5,11 @@ import {
   datetimeStringScheme,
   descriptionScheme,
   systemScheme,
-  timeZoneScheme,
+  timezoneScheme,
   titleScheme,
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
+import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -17,22 +18,18 @@ export const action: ActionFunction = async ({ request }) => {
   const description = invariant(
     descriptionScheme.safeParse(form.get("description"))
   );
-  const begin = new Date(
-    invariant(datetimeStringScheme.safeParse(form.get("beginTime")))
-  );
-  const end = new Date(
-    invariant(datetimeStringScheme.safeParse(form.get("endTime")))
-  );
-  // 客户端时区 + 服务器时区, 将时间转换为 UTC 标准时间, 以13位时间戳格式
-  const timeZone =
-    invariant(timeZoneScheme.safeParse(Number(form.get("timeZone")))) *
-      60 *
-      1000 -
-    new Date().getTimezoneOffset() * 60 * 1000;
-  const system = invariant(systemScheme.safeParse(form.get("system")));
 
-  const beginTime = new Date(begin.getTime() + timeZone);
-  const endTime = new Date(end.getTime() + timeZone);
+  // 客户端时区
+  const timezone = invariant(timezoneScheme.safeParse(form.get("timezone")));
+  const beginTime = adjustTimezone(
+    invariant(datetimeStringScheme.safeParse(form.get("beginTime"))),
+    timezone
+  );
+  const endTime = adjustTimezone(
+    invariant(datetimeStringScheme.safeParse(form.get("endTime"))),
+    timezone
+  );
+  const system = invariant(systemScheme.safeParse(form.get("system")));
 
   const { cid } = await db.contest.create({
     data: {
@@ -67,12 +64,7 @@ export default function ContestNew() {
           type="datetime-local"
           name="beginTime"
           id="beginTime"
-          defaultValue={new Date(
-            Date.now() - new Date().getTimezoneOffset() * 60 * 1000
-          )
-            .toISOString()
-            .toString()
-            .slice(0, 16)}
+          defaultValue={getDatetimeLocal(Date.now())}
           required
         />
         <br />
@@ -81,21 +73,14 @@ export default function ContestNew() {
           type="datetime-local"
           name="endTime"
           id="endTime"
-          defaultValue={new Date(
-            Date.now() - new Date().getTimezoneOffset() * 60 * 1000
-          )
-            .toISOString()
-            .toString()
-            .slice(0, 16)}
+          defaultValue={getDatetimeLocal(Date.now() + 5 * 60 * 60 * 1000)}
           required
         />
-        <select hidden={true} name="timeZone" id="timeZone" required>
-          <option value={new Date().getTimezoneOffset()} selected>
-            当前浏览器时区
-          </option>
-          <option value="8">中国标准时间(+0800)</option>
-          <option value="0">格林威治标准时间(-0000)</option>
-        </select>
+        <input
+          type="hidden"
+          name="timezone"
+          value={new Date().getTimezoneOffset()}
+        />
         <br />
         <label htmlFor="system">system: </label>
         {Object.values(ContestSystem).map((system) => (
