@@ -26,7 +26,7 @@ model User {
 
   sessions UserSession[]
 
-  createdFiles       UserFile[]
+  createdFiles       File[]
   createdProblems    Problem[]
   createdProblemSets ProblemSet[]
   createdContests    Contest[]
@@ -47,7 +47,12 @@ model UserSession {
   user User @relation(fields: [uid], references: [uid])
 }
 
-model UserFile {
+/// 所有文件，包括：
+///
+/// - 用户上传文件
+/// - 题目数据文件
+/// - 题目附加文件（pdf 之类的）
+model File {
   fid String @id @default(uuid())
 
   filename  String
@@ -56,12 +61,19 @@ model UserFile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// 是否允许公开下载
+  ///
+  /// - 对于题目数据文件，如果设置为公开，则可以在题目页面下载
+  /// - 对于用户上传文件，如果设置为私密，则只有用户自己可以下载
   private Boolean @default(true)
 
   // ==== relations ====
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  uid  Int?
+  user User? @relation(fields: [uid], references: [uid])
+
+  pid     Int?
+  problem Problem? @relation(fields: [pid], references: [pid])
 }
 
 model Problem {
@@ -82,9 +94,9 @@ model Problem {
   uid     Int?
   creator User? @relation(fields: [uid], references: [uid])
 
-  files               ProblemFile[]
-  includedContests    Contest[]     @relation(references: [cid])
-  includedProblemSets ProblemSet[]  @relation(references: [sid])
+  files               File[]
+  includedContests    Contest[]    @relation(references: [cid])
+  includedProblemSets ProblemSet[] @relation(references: [sid])
 
   records Record[]
 }
@@ -122,22 +134,6 @@ model ProblemSetTag {
   name String @unique
 
   problemSets ProblemSet[] @relation(references: [sid])
-}
-
-model ProblemFile {
-  fid String @id @default(uuid())
-
-  filename  String
-  filesize  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  private Boolean @default(true)
-
-  // ==== relations ====
-
-  pid     Int
-  problem Problem @relation(fields: [pid], references: [pid])
 }
 
 model Contest {
