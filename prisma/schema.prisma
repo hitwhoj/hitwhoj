@@ -178,6 +178,7 @@ model ContestTag {
 
 model Team{
   tid String @id @default(uuid())
+  name String @unique
   createdAt DateTime @default(now())
   description String?
 
@@ -205,7 +206,7 @@ model TeamHomework{
   ddl DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  description String
+  description String?
 
   // ==== relations ====
   creator User @relation(fields: [creatorId],references: [uid])
