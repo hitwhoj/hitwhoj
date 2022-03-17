@@ -1,11 +1,9 @@
-const serverTimezoneOffset = new Date().getTimezoneOffset();
-
 /**
  * 将时间从客户端时区调整为服务器时区
  */
 export function adjustTimezone(date: Date, timezoneOffset: number) {
   return new Date(
-    date.getTime() + (timezoneOffset - serverTimezoneOffset) * 60_000
+    date.getTime() + (timezoneOffset - new Date().getTimezoneOffset()) * 60_000
   );
 }
 
@@ -15,7 +13,7 @@ export function adjustTimezone(date: Date, timezoneOffset: number) {
  * @param time 时间 (默认为当前时间)
  */
 export function getDatetimeLocal(time: number = Date.now()) {
-  return new Date(time - serverTimezoneOffset * 60_000)
+  return new Date(time - new Date().getTimezoneOffset() * 60_000)
     .toISOString()
     .slice(0, 16);
 }
