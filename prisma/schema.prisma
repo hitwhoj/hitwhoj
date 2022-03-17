@@ -33,6 +33,10 @@ model User {
   attendedContests Contest[] @relation("attendee", references: [cid])
   moddedContests   Contest[] @relation("mod", references: [cid])
   juriedContests   Contest[] @relation("jury", references: [cid])
+
+  createdTeam Team[]
+  teamMember TeamMember[]
+  createdHomework TeamHomework[]
 }
 
 model UserSession {
@@ -110,6 +114,8 @@ model ProblemSet {
 
   uid     Int?
   creator User? @relation(fields: [uid], references: [uid])
+
+  includeInHomework TeamHomework[]  
 }
 
 model ProblemSetTag {
@@ -168,6 +174,45 @@ model ContestTag {
   name String @unique
 
   contests Contest[] @relation(references: [cid])
+}
+
+model Team{
+  tid String @id @default(uuid())
+  createdAt DateTime @default(now())
+  description String?
+
+  // ==== relations ====
+  creator  User @relation(fields: [creatorId], references: [uid])
+  creatorId Int
+  members TeamMember[]
+  homeworks TeamHomework[]
+}
+
+model TeamMember{
+  mid String @id @default(uuid())
+  authority String?
+
+  // ==== relations ====
+  member User @relation(fields: [memberId],references: [uid])
+  memberId Int
+  team Team @relation(fields: [teamId],references: [tid])
+  teamId String
+}
+
+model TeamHomework{
+  hid String @id @default(uuid())
+  name String
+  ddl DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  description String
+
+  // ==== relations ====
+  creator User @relation(fields: [creatorId],references: [uid])
+  creatorId Int
+  team Team @relation(fields: [teamId],references: [tid])
+  teamId String
+  problemsets ProblemSet[] @relation(references: [sid])
 }
 
 enum ContestSystem {
