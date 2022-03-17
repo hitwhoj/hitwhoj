@@ -36,6 +36,7 @@ model User {
   juriedContests   Contest[] @relation("jury", references: [cid])
 
   records Record[]
+  roles   Role[]
 }
 
 model UserSession {
@@ -209,4 +210,32 @@ enum RecordStatus {
   CompileError
   SystemError
   UnknownError
+}
+
+model Role {
+  rid  Int      @id @default(autoincrement())
+  role UserRole
+
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
+}
+
+enum UserRole {
+  // default roles
+  SU
+  ADMIN
+  USER
+  GUEST
+
+  // problem roles
+  PROBLEM_ADMIN
+
+  // contest roles
+  CONTEST_CREATER
+  CONTEST_MOD
+  CONTEST_JURY
+  CONTEST_ATTENDEE
+
+  // user roles
+  USER_SELF
 }

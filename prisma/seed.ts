@@ -76,6 +76,8 @@ async function seed() {
       system: ContestSystem.ACM,
 
       creator: { connect: { uid: charlie } },
+      attendees: { connect: [{ uid: david }, { uid: alice }] },
+      juries: { connect: { uid: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
       problems: { connect: [{ pid: p1 }, { pid: p2 }] },
     },
