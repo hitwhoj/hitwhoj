@@ -154,10 +154,12 @@ export default function ProblemData() {
   return (
     <>
       <h2>测试数据</h2>
+      <p>用于评测的数据文件</p>
       <ProblemFileUploader action={ActionType.UploadData} />
       <ProblemFileList files={files.filter((file) => file.private)} />
 
       <h2>附加文件</h2>
+      <p>题目的附加资料，例如样例数据、PDF 题面等</p>
       <ProblemFileUploader action={ActionType.UploadFile} />
       <ProblemFileList files={files.filter((file) => !file.private)} />
     </>
