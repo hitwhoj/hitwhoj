@@ -1,0 +1,190 @@
+---
+meta:
+  title: 评测相关 - HITwh OJ
+---
+
+# 评测相关
+
+本站提供对编程代码的在线评测服务。
+
+## 提交
+
+用户可以对于某一道题目提交自己的实现代码，网站会使用一些测试数据来尝试运行程序，根据评测的结果判断程序的正确性和健壮性。
+
+用户在提交代码的时候需要选择代码使用的语言，以及一些可选的额外编译选项，网站会根据所选的语言和编译选项来测试用户所提交的代码。
+
+当网站评测结束之后，用户便可以查看评测结果。
+
+评测结果有以下几种：
+
+- **Accepted**：代码通过所有测试用例，并且程序运行正常。
+- **Wrong Answer**：代码对于一部分测试数据输出了错误的结果。
+- **Time Limit Exceeded**：代码运行时间超过了题目规定的时间限制。
+- **Memory Limit Exceeded**：代码使用了超过了题目规定的内存限制。
+- **Runtime Error**：代码运行时出现了非预期的错误。
+- **Compile Error**：代码编译时出现了非预期的错误。
+- **System Error**：网站评测系统出现了非预期的错误，如果出现此类错误，请联系网站管理员。
+
+## 测试数据
+
+对于出题人来说，创建完题目之后需要上传一些测试数据，以便于网站对代码进行评测。
+
+网站支持三种不同的评测方式：
+
+1. 普通评测：使用出题人预先给出的测试数据进行一一评测。
+2. 交互式评测：使用一个特殊的程序（SPJ）来跟用户的代码进行交互式评测。
+3. 动态评测：使用出题人预选给出的测试数据生成程序和标准代码进行动态地生成测试数据并评测。
+
+题目数据文件中必须包含 `config.json` 文件才能开始支持评测，该文件的内容如下：
+
+### config.json
+
+- `type`: 评测方式，可以是 `normal`, `interactive`, `dynamic` 中的一种。
+- `timeLimit?`: 全局默认的时间限制（ms, 默认 1000ms）
+- `memoryLimit?`: 全局默认的内存限制（byte, 默认 256MB）
+- `spj`: SPJ 程序的文件名（仅限 `interactive` 方式）
+- `mkdata`: 动态评测时生成测试数据的程序（仅限 `dynamic` 方式）
+- `std`: 标准程序（仅限 `dynamic` 方式）
+- `subtasks`: 一个数组，包含以下字段（仅限 `normal` 和 `dynamic` 方式）：
+  - `score`: 该子任务分数
+  - `timeLimit?`: 时间限制（可选）
+  - `memoryLimit?`: 内存限制（可选）
+  - `tasks`: 一个数组，包含所有测试点的输入输出文件
+    - `input`: 输入文件
+    - `output`: 输出文件
+    - `args`: 传入 mkdata 程序的参数（仅限 `dynamic` 方式，如果设置此字段则 `input` 和 `output` 字段会被忽略）
+
+### 样例 1：
+
+普通评测方式中，只有通过了一个 subtask 中的所有测试点才算通过该 subtask，得到对应的分数。
+
+```json
+{
+  "type": "normal",
+  "subtasks": [
+    {
+      "score": 60,
+      "tasks": [
+        { "input": "1.in", "output": "1.out" },
+        { "input": "2.in", "output": "2.out" },
+        { "input": "3.in", "output": "3.out" }
+      ]
+    },
+    {
+      "score": 20,
+      "tasks": [
+        { "input": "4.in", "output": "4.out" },
+        { "input": "5.in", "output": "5.out" },
+        { "input": "6.in", "output": "6.out" }
+      ]
+    },
+    {
+      "score": 20,
+      "tasks": [
+        { "input": "7.in", "output": "7.out" },
+        { "input": "8.in", "output": "8.out" },
+        { "input": "9.in", "output": "9.out" },
+        { "input": "10.in", "output": "10.out" }
+      ]
+    }
+  ]
+}
+```
+
+### 样例 2：
+
+```json
+{
+  "type": "interactive",
+  "spj": "spj.cpp"
+}
+```
+
+其中 `spj.cpp` 可以使用 [testlib](https://github.com/MikeMirzayanov/testlib) 库。
+
+```cpp
+#include "testlib.h"
+
+int main(int argc, char * argv[]) {
+  setName("compares two signed integers");
+  registerTestlibCmd(argc, argv);
+  int ja = ans.readInt();
+  int pa = ouf.readInt();
+  if (ja != pa)
+    quitf(_wa, "expected %d, found %d", ja, pa);
+  quitf(_ok, "answer is %d", ja);
+}
+```
+
+### 样例 3：
+
+```json
+{
+  "type": "dynamic",
+  "mkdata": "mkdata.cpp",
+  "std": "std.cpp",
+  "subtasks": [
+    {
+      "score": 60,
+      "timeLimit": 200,
+      "memoryLimit": 256000000,
+      "tasks": [
+        { "args": "1" },
+        { "args": "2" },
+        { "args": "3" },
+        { "args": "4" }
+      ]
+    },
+    {
+      "score": 20,
+      "tasks": [{ "args": "5" }, { "args": "6" }, { "args": "7" }]
+    },
+    {
+      "score": 20,
+      "tasks": [
+        { "args": "8" },
+        { "args": "9" },
+        // 或者也可以使用预先生成的数据
+        { "input": "chain.in", "output": "chain.out" },
+        {
+          "input": "chrysanthemum_tree.in",
+          "output": "chrysanthemum_tree.out"
+        }
+      ]
+    }
+  ]
+}
+```
+
+其中 `mkdata.cpp` 中可以在 `main` 函数中读取到每个数据点的生成参数。
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main(int argc,  char *argv[]) {
+  int n = atoi(argv[1]);
+  srand(time(0) + n);
+  cout << n << endl;
+  for (int i = 0; i < n; i++) {
+    cout << rand() % n + 1 << endl;
+  }
+  return 0;
+}
+```
+
+`std.cpp` 则需要能正确地根据输入数据返回标准答案。
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+  int n, sum = 0;
+  cin >> n;
+  for (int i = 0; i < n; i++) {
+    int x;
+    cin >> x;
+    sum += x;
+  }
+  cout << sum << endl;
+}
+```
