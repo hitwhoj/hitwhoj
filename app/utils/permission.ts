@@ -134,7 +134,7 @@ const PermissionDict: Record<UserRole, bigint> = {
 
   [UserRole.CONTEST_JURY]: RolePermission.DEFAULT,
 
-  [UserRole.CONTEST_PARTICIPANT]:
+  [UserRole.CONTEST_ATTENDEE]:
     // TODO: submit code permission
     RolePermission.DEFAULT,
 
@@ -170,6 +170,7 @@ export async function guaranteePermission(
       return r.role;
     })) || [UserRole.GUEST];
 
+  //TODO: check if pid, cid is null
   if (config?.pid) {
     roles.push(...(await getProblemRole(uid, config.pid)));
   }
@@ -240,10 +241,10 @@ async function getContestRole(uid: number, cid: number) {
   if (mods.includes(uid)) {
     roles.push(UserRole.CONTEST_MOD);
   }
-  if (juries.includes()) {
+  if (juries.includes(uid)) {
     roles.push(UserRole.CONTEST_JURY);
   }
-  if (attendees.includes()) {
+  if (attendees.includes(uid)) {
     roles.push(UserRole.CONTEST_ATTENDEE);
   }
 
@@ -264,7 +265,7 @@ async function getSessionRole(uid: number, sid: string) {
 
   const roles = [];
   if (session.uid === uid) {
-    role.push(UserRole.USER_SELF);
+    roles.push(UserRole.USER_SELF);
   }
 
   return roles;
