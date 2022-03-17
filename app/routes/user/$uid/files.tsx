@@ -9,7 +9,7 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
-import { createFile, removeFile } from "~/utils/files";
+import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
@@ -61,7 +61,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw new Response("No file found", { status: 400 });
       }
 
-      await Promise.all(files.map((file) => createFile(file, { uid })));
+      await Promise.all(files.map((file) => createUserFile(file, uid)));
 
       return null;
     }

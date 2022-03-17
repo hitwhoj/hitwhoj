@@ -9,7 +9,7 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
-import { createFile, removeFile } from "~/utils/files";
+import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
@@ -40,9 +40,9 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 enum ActionType {
+  UploadData = "uploadData",
   UploadFile = "uploadFile",
   RemoveFile = "removeFile",
-  ModifyPrivacy = "modifyPrivacy",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -52,6 +52,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const _action = form.get("_action");
 
   switch (_action) {
+    case ActionType.UploadData:
     case ActionType.UploadFile: {
       const files = form
         .getAll("file")
@@ -61,7 +62,15 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw new Response("Invalid file", { status: 400 });
       }
 
-      await Promise.all(files.map((file) => createFile(file, { pid })));
+      await Promise.all(
+        files.map((file) => {
+          return createProblemFile(
+            file,
+            pid,
+            _action === ActionType.UploadData
+          );
+        })
+      );
 
       return null;
     }
@@ -73,38 +82,18 @@ export const action: ActionFunction = async ({ request, params }) => {
 
       return null;
     }
-
-    case ActionType.ModifyPrivacy: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
-
-      const file = await db.file.findUnique({
-        where: { fid },
-        select: { private: true },
-      });
-
-      if (!file) {
-        throw new Response("File not found", { status: 404 });
-      }
-
-      await db.file.update({
-        where: { fid },
-        data: { private: !file.private },
-      });
-
-      return null;
-    }
   }
 
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-function ProblemFileUploader() {
+function ProblemFileUploader({ action }: { action: ActionType }) {
   const fetcher = useFetcher();
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="file" name="file" multiple />
-      <button type="submit" name="_action" value={ActionType.UploadFile}>
+      <button type="submit" name="_action" value={action}>
         上传捏
       </button>
     </fetcher.Form>
@@ -123,13 +112,6 @@ function ProblemFileListItem({ file }: { file: ProblemFile }) {
       <td>{file.filesize}</td>
       <td>{file.mimetype}</td>
       <td>
-        {file.private ? (
-          <span style={{ color: "red" }}>隐藏</span>
-        ) : (
-          <span style={{ color: "lime" }}>公开</span>
-        )}
-      </td>
-      <td>
         <fetcher.Form method="post">
           <input type="hidden" name="fid" value={file.fid} />
           <button
@@ -139,14 +121,6 @@ function ProblemFileListItem({ file }: { file: ProblemFile }) {
             disabled={isFetching}
           >
             删除捏
-          </button>
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.ModifyPrivacy}
-            disabled={isFetching}
-          >
-            {file.private ? "公开" : "隐藏"}
           </button>
         </fetcher.Form>
       </td>
@@ -162,7 +136,6 @@ function ProblemFileList({ files }: { files: ProblemFile[] }) {
           <th>文件名</th>
           <th>文件大小</th>
           <th>文件类型</th>
-          <th>公开状态</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -181,8 +154,12 @@ export default function ProblemData() {
   return (
     <>
       <h2>测试数据</h2>
-      <ProblemFileUploader />
-      <ProblemFileList files={files} />
+      <ProblemFileUploader action={ActionType.UploadData} />
+      <ProblemFileList files={files.filter((file) => file.private)} />
+
+      <h2>附加文件</h2>
+      <ProblemFileUploader action={ActionType.UploadFile} />
+      <ProblemFileList files={files.filter((file) => !file.private)} />
     </>
   );
 }
