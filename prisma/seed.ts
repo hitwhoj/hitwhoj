@@ -50,7 +50,7 @@ async function seed() {
       title: "A + B Problem",
       description:
         "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$",
-      creator: { connect: { uid: alice } },
+      user: { connect: { uid: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
@@ -60,7 +60,7 @@ async function seed() {
       title: "A + B + C Problem",
       description:
         "# Description \n\ngive three number, output the sum of them.\n\n# Sample Input \n\n    114 514 1919\n\n# Sample Output \n\n    2547\n\n# Limits \n\n$a, b, c \\lt 10^6$",
-      creator: { connect: { uid: bob } },
+      user: { connect: { uid: bob } },
       tags: {
         connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],
       },
@@ -75,7 +75,9 @@ async function seed() {
       endTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
 
-      creator: { connect: { uid: charlie } },
+      user: { connect: { uid: charlie } },
+      attendees: { connect: [{ uid: david }, { uid: alice }] },
+      juries: { connect: { uid: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
       problems: { connect: [{ pid: p1 }, { pid: p2 }] },
     },
@@ -89,7 +91,7 @@ async function seed() {
       endTime: new Date(Date.now() + 3600000),
       system: ContestSystem.IOI,
 
-      creator: { connect: { uid: alice } },
+      user: { connect: { uid: alice } },
       tags: { create: [{ name: "a-soul" }] },
       problems: { connect: [{ pid: p1 }, { pid: p2 }] },
     },
@@ -100,7 +102,7 @@ async function seed() {
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
 
-      creator: { connect: { uid: david } },
+      user: { connect: { uid: david } },
       tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: { connect: [{ pid: p1 }, { pid: p2 }] },
     },
@@ -111,7 +113,7 @@ async function seed() {
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
 
-      creator: { connect: { uid: alice } },
+      user: { connect: { uid: alice } },
       tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ pid: p2 }, { pid: p1 }] },
     },
@@ -122,7 +124,7 @@ async function seed() {
       title: "嘉然可爱捏",
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
-      creator: { connect: { uid: alice } },
+      user: { connect: { uid: alice } },
       tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ pid: p2 }, { pid: p1 }] },
     },

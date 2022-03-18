@@ -22,6 +22,8 @@ model User {
 
   joinedAt DateTime @default(now())
 
+  role SystemUserRole @default(User)
+
   // ==== relations ====
 
   sessions UserSession[]
@@ -36,6 +38,13 @@ model User {
   juriedContests   Contest[] @relation("jury", references: [cid])
 
   records Record[]
+}
+
+enum SystemUserRole {
+  Su
+  Admin
+  User
+  Guest
 }
 
 model UserSession {
@@ -91,11 +100,14 @@ model Problem {
 
   tags ProblemTag[] @relation(references: [id])
 
-  uid     Int?
-  creator User? @relation(fields: [uid], references: [uid])
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
+
+  cid     Int?
+  contest Contest? @relation("belong", fields: [cid], references: [cid])
 
   files               File[]
-  includedContests    Contest[]    @relation(references: [cid])
+  includedContests    Contest[]    @relation("contain", references: [cid])
   includedProblemSets ProblemSet[] @relation(references: [sid])
 
   records Record[]
@@ -125,8 +137,8 @@ model ProblemSet {
 
   problems Problem[] @relation(references: [pid])
 
-  uid     Int?
-  creator User? @relation(fields: [uid], references: [uid])
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
 }
 
 model ProblemSetTag {
@@ -154,16 +166,17 @@ model Contest {
 
   tags ContestTag[] @relation(references: [id])
 
-  uid     Int?
-  creator User? @relation(fields: [uid], references: [uid])
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
 
-  problems Problem[] @relation(references: [pid])
+  problems Problem[] @relation("contain", references: [pid])
 
   mods      User[] @relation("mod", references: [uid])
   juries    User[] @relation("jury", references: [uid])
   attendees User[] @relation("attendee", references: [uid])
 
-  records Record[]
+  records           Record[]
+  exclusiveProblems Problem[] @relation("belong")
 }
 
 model ContestTag {

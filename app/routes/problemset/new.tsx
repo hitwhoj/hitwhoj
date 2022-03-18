@@ -1,9 +1,32 @@
-import { ActionFunction, Form, MetaFunction, redirect } from "remix";
+import {
+  ActionFunction,
+  Form,
+  LoaderFunction,
+  MetaFunction,
+  redirect,
+} from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { descriptionScheme, titleScheme } from "~/utils/scheme";
+import { findSessionUid } from "~/utils/sessions";
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const uid = await findSessionUid(request);
+
+  if (!uid) {
+    return redirect("/login");
+  }
+
+  return null;
+};
 
 export const action: ActionFunction = async ({ request }) => {
+  const uid = await findSessionUid(request);
+
+  if (!uid) {
+    return redirect("/login");
+  }
+
   const form = await request.formData();
 
   const title = invariant(titleScheme.safeParse(form.get("title")));
@@ -15,6 +38,7 @@ export const action: ActionFunction = async ({ request }) => {
     data: {
       title,
       description,
+      user: { connect: { uid } },
     },
   });
 
