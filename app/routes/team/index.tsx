@@ -1,4 +1,7 @@
-import { Link, Form, ActionFunction, redirect } from "remix";
+import { Link, Form, ActionFunction, redirect, LoaderFunction, json, useLoaderData } from "remix";
+import { db } from "~/utils/db.server";
+import { Team } from "@prisma/client";
+
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -9,7 +12,23 @@ export const action: ActionFunction = async ({ request }) => {
   return redirect(`/team/${teamName}`);
 };
 
+type LoaderData = {
+  teams: Team[]
+}
+
+export const loader: LoaderFunction = async () => {
+  const teams = await db.team.findMany(
+    {
+      take: 20
+    }
+  )
+
+  return json({ teams })
+};
+
 export default function TeamList() {
+  const { teams } = useLoaderData<LoaderData>();
+
   return (
     <>
       <div>
@@ -25,11 +44,21 @@ export default function TeamList() {
         </Form>
       </div>
       <h1> Public teamList </h1>
-      <ul>
-        <li>
-          <Link to="1">1队</Link>
-        </li>
-      </ul>
+      {teams.length ? (
+        <ul>
+          {teams.map((team) => (
+            <li key={team.tid}>
+              <Link to={`${team.tid}`}>
+                {team.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div>什么都没有捏</div>
+      )
+      }
     </>
+
   );
 }
