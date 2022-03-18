@@ -175,8 +175,8 @@ model Contest {
   juries    User[] @relation("jury", references: [uid])
   attendees User[] @relation("attendee", references: [uid])
 
-  records Record[]
-  Problem Problem[] @relation("belong")
+  records           Record[]
+  exclusiveProblems Problem[] @relation("belong")
 }
 
 model ContestTag {
