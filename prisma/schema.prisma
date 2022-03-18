@@ -218,6 +218,8 @@ model Role {
 
   uid  Int
   user User @relation(fields: [uid], references: [uid])
+
+  @@unique([uid, role])
 }
 
 enum UserRole {

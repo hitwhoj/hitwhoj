@@ -164,13 +164,12 @@ export async function guaranteePermission(
       roles: true,
     },
   });
-  const roles = (user &&
+  const roles: UserRole[] = (user &&
     user.roles.length &&
     user.roles.map((r) => {
       return r.role;
     })) || [UserRole.GUEST];
 
-  //TODO: check if pid, cid is null
   if (config?.pid) {
     roles.push(...(await getProblemRole(uid, config.pid)));
   }
@@ -187,7 +186,7 @@ export async function guaranteePermission(
     .reduce((perm, rolePerm) => perm | rolePerm, 0n);
 
   if ((userPermission & permission) !== permission) {
-    throw new Response("Permission denyed", { status: 401 });
+    throw new Response("Permission: Permission denyed", { status: 401 });
   }
 }
 
@@ -198,10 +197,10 @@ async function getProblemRole(uid: number, pid: number) {
     },
   });
   if (!problem) {
-    throw new Response("Problem not found!", { status: 404 });
+    throw new Response("Permission: Problem not found!", { status: 400 });
   }
 
-  const roles = [];
+  const roles: UserRole[] = [];
   if (problem.uid === uid) {
     roles.push(UserRole.PROBLEM_ADMIN);
   }
@@ -221,7 +220,7 @@ async function getContestRole(uid: number, cid: number) {
     },
   });
   if (!contest) {
-    throw new Response("Contest not found", { status: 404 });
+    throw new Response("Permission: Contest not found", { status: 400 });
   }
 
   const mods = contest.mods.map((m) => {
@@ -234,9 +233,9 @@ async function getContestRole(uid: number, cid: number) {
     return a.uid;
   });
 
-  const roles = [];
+  const roles: UserRole[] = [];
   if (contest.uid === uid) {
-    roles.push(UserRole.CONTEST_CREATER);
+    roles.push(UserRole.CONTEST_CREATOR);
   }
   if (mods.includes(uid)) {
     roles.push(UserRole.CONTEST_MOD);
@@ -259,11 +258,11 @@ async function getSessionRole(uid: number, sid: string) {
   });
   //avoid infomation leak
   //also sprach eryi
+  const roles: UserRole[] = [];
   if (!session) {
-    return [];
+    return roles;
   }
 
-  const roles = [];
   if (session.uid === uid) {
     roles.push(UserRole.USER_SELF);
   }
@@ -274,4 +273,54 @@ async function getSessionRole(uid: number, sid: string) {
 export async function modifyRole(
   uid: number,
   roles: UserRole[]
-): Promise<PermissionDoc> {}
+): Promise<void> {
+  const user = await db.user.findUnique({
+    where: {
+      uid: uid,
+    },
+  });
+  if (!user) {
+    throw new Response("Permission: User not found", { status: 400 });
+  }
+
+  await db.role.deleteMany({
+    where: {
+      uid: uid,
+    },
+  });
+  await db.role.createMany({
+    data: roles.map((r) => {
+      return {
+        uid: uid,
+        role: r,
+      };
+    }),
+  });
+}
+
+export async function createDefault(uid: number) {
+  const user = await db.user.findUnique({
+    where: {
+      uid: uid,
+    },
+  });
+  if (!user) {
+    throw new Response("Permission: User not found", { status: 400 });
+  }
+
+  const res = await db.role.count({
+    where: {
+      uid: uid,
+    },
+  });
+  if (res) {
+    throw new Response("Permission: User exists", { status: 400 });
+  }
+
+  await db.role.create({
+    data: {
+      uid: uid,
+      role: UserRole.USER,
+    },
+  });
+}
