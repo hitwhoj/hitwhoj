@@ -1,36 +1,33 @@
-import { Link,json, useLoaderData,LoaderFunction } from "remix";
+import { Link, json, useLoaderData, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
-import {User,TeamMember}from "@prisma/client"
+import { User, TeamMember } from "@prisma/client";
 
 type LoaderData = {
-  uid:number,
-  nickname:string
+  uid: number;
+  nickname: string;
 }[];
 
 export const loader: LoaderFunction = async ({ params }) => {
   const tid = params.teamId;
-  const result =await db.teamMember.findMany({
-    where:{
-      teamId:tid
+  const result = await db.teamMember.findMany({
+    where: {
+      teamId: tid,
     },
-    include:{
-      member:{
-        select:{
-          uid:true,
-          nickname:true
-        }
-      }
-    }
-  })
-  var data:LoaderData = [];
-  for(let i =0;i<result.length;i++){
-    data.push(result[i].member)
+    include: {
+      member: {
+        select: {
+          uid: true,
+          nickname: true,
+        },
+      },
+    },
+  });
+  var data: LoaderData = [];
+  for (let i = 0; i < result.length; i++) {
+    data.push(result[i].member);
   }
-  
 
-  return json(
-    data
-  );
+  return json(data);
 };
 
 export default function MemberList() {
@@ -48,16 +45,13 @@ export default function MemberList() {
         <ul>
           {data.map((member) => (
             <li key={member.uid}>
-              <Link to={`${member.uid}`}>
-                {member.nickname}
-              </Link>
+              <Link to={`${member.uid}`}>{member.nickname}</Link>
             </li>
           ))}
         </ul>
       ) : (
         <div>...?</div>
       )}
-
     </>
   );
 }

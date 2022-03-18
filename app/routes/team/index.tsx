@@ -1,7 +1,14 @@
-import { Link, Form, ActionFunction, redirect, LoaderFunction, json, useLoaderData } from "remix";
+import {
+  Link,
+  Form,
+  ActionFunction,
+  redirect,
+  LoaderFunction,
+  json,
+  useLoaderData,
+} from "remix";
 import { db } from "~/utils/db.server";
 import { Team } from "@prisma/client";
-
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -13,17 +20,15 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 type LoaderData = {
-  teams: Team[]
-}
+  teams: Team[];
+};
 
 export const loader: LoaderFunction = async () => {
-  const teams = await db.team.findMany(
-    {
-      take: 20
-    }
-  )
+  const teams = await db.team.findMany({
+    take: 20,
+  });
 
-  return json({ teams })
+  return json({ teams });
 };
 
 export default function TeamList() {
@@ -48,17 +53,13 @@ export default function TeamList() {
         <ul>
           {teams.map((team) => (
             <li key={team.tid}>
-              <Link to={`${team.tid}`}>
-                {team.name}
-              </Link>
+              <Link to={`${team.tid}`}>{team.name}</Link>
             </li>
           ))}
         </ul>
       ) : (
         <div>什么都没有捏</div>
-      )
-      }
+      )}
     </>
-
   );
 }

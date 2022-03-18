@@ -92,7 +92,7 @@ async function seed() {
     },
   });
 
-  const {sid:ts1} = await prisma.problemSet.create({
+  const { sid: ts1 } = await prisma.problemSet.create({
     data: {
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
@@ -115,32 +115,31 @@ async function seed() {
   });
 
   await prisma.team.create({
-    data:{
-      tid:"team1",
-      name:"team1",
-      creatorId:alice,
-
-    }
+    data: {
+      tid: "team1",
+      name: "team1",
+      creatorId: alice,
+    },
   });
   await prisma.teamMember.create({
-    data:{
-      memberId:alice,
-      teamId:"team1"
-    }
-  })
+    data: {
+      memberId: alice,
+      teamId: "team1",
+    },
+  });
   await prisma.teamHomework.create({
-    data:{
-      name:"homework1",
-      ddl:new Date(Date.now()),
-      updatedAt:new Date(Date.now()),
-      description:"this is a homework,without doubt",
-      creatorId:alice,
-      teamId:"team1",
-      problemsets:{
-        connect:[{sid:ts1}]
-      }
-    }
-  })
+    data: {
+      name: "homework1",
+      ddl: new Date(Date.now()),
+      updatedAt: new Date(Date.now()),
+      description: "this is a homework,without doubt",
+      creatorId: alice,
+      teamId: "team1",
+      problemsets: {
+        connect: [{ sid: ts1 }],
+      },
+    },
+  });
 }
 
 seed();

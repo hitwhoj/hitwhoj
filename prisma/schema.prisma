@@ -221,4 +221,3 @@ model TeamHomework {
 enum ContestSystem {
   ACM
 }
-
