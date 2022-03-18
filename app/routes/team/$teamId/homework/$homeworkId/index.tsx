@@ -1,7 +1,13 @@
-import { Link, json, useLoaderData } from "remix";
+import {
+  Link,
+  json,
+  useLoaderData,
+  ActionFunction,
+  redirect,
+  Form,
+} from "remix";
 import { LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
-import { TeamHomework } from "@prisma/client";
 
 type LoaderData = {
   name: string;
@@ -41,6 +47,30 @@ export const loader: LoaderFunction = async ({ params }) => {
   return json(data);
 };
 
+export const action: ActionFunction = async ({ params, request }) => {
+  const homeworkId = params.homeworkId ? params.homeworkId : "";
+  const teamId = params.teamId ? params.teamId : "";
+  const form = await request.formData();
+  const _action = form.get("_action");
+
+  if (_action == "delete") {
+    await db.teamHomework
+      .delete({
+        where: {
+          hid: homeworkId,
+        },
+      })
+      .catch(() => {
+        throw new Response("fail to delete", { status: 500 });
+      })
+      .then(() => {
+        return redirect(`/team/${teamId}/homework`);
+      });
+  }
+
+  return redirect(`/team/${teamId}/homework`);
+};
+
 export default function Record() {
   const data = useLoaderData<LoaderData>();
   console.log(data);
@@ -55,8 +85,12 @@ export default function Record() {
         <li>
           <Link to="edit">Edit</Link>{" "}
         </li>
-        <li>Delete</li>
       </ul>
+      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
+        <button type="submit" name="_action" value="delete">
+          Delete
+        </button>
+      </Form>
 
       <h3>ProblemSet List</h3>
       {data.problemSets.length ? (

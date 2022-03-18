@@ -39,7 +39,9 @@ export default function HomeworkList() {
     <>
       <h3>Operation</h3>
       <ul>
-        <li>创建作业</li>
+        <li>
+          <Link to="new">创建作业</Link>
+        </li>
       </ul>
 
       <h3> homeworkList </h3>
