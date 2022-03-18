@@ -12,8 +12,8 @@ type LoaderData = {
   team: Team
 }
 
-export const loader: LoaderFunction = async () => {
-  const { teamId } = useParams();
+export const loader: LoaderFunction = async ({params}) => {
+  const  teamId  = params.teamId;
   const team = await db.team.findUnique(
     {
       where: { tid: teamId }
