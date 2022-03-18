@@ -1,4 +1,9 @@
-import { Problem, ProblemSet, ProblemTag } from "@prisma/client";
+import {
+  Problem,
+  ProblemSet,
+  ProblemTag,
+  File as ProblemFile,
+} from "@prisma/client";
 import { json, Link, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -8,6 +13,7 @@ type LoaderData = {
   problem: Pick<Problem, "pid" | "title" | "description"> & {
     tags: Pick<ProblemTag, "name">[];
     includedProblemSets: Pick<ProblemSet, "sid" | "title">[];
+    files: ProblemFile[];
   };
 };
 
@@ -29,6 +35,14 @@ export const loader: LoaderFunction = async ({ params }) => {
         select: {
           sid: true,
           title: true,
+        },
+      },
+      files: {
+        where: {
+          private: false,
+        },
+        orderBy: {
+          filename: "asc",
         },
       },
     },
@@ -54,6 +68,14 @@ export default function ProblemIndex() {
       </ul>
       <h2>描述捏</h2>
       <div>{problem.description}</div>
+      <h2>相关文件</h2>
+      <ul>
+        {problem.files.map((file) => (
+          <li key={file.fid}>
+            <Link to={`/file/${file.fid}`}>{file.filename}</Link>
+          </li>
+        ))}
+      </ul>
       <h2>相关题单捏</h2>
       <ul>
         {problem.includedProblemSets.map(({ sid, title }) => (

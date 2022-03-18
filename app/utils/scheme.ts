@@ -10,6 +10,15 @@ export const idScheme = z
   .transform((x) => parseInt(x, 10));
 
 /**
+ * UUID scheme for any type of uuid.
+ */
+export const uuidScheme = z.string().regex(
+  // this is a copilot generated regex and idk what the fuck it is
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  "UUID must be a valid UUID"
+);
+
+/**
  * Username scheme for every user
  */
 export const usernameScheme = z
@@ -45,8 +54,8 @@ export const descriptionScheme = z
 export const emailScheme = z
   .string()
   .email("Email must be a valid email")
-  // TODO: maybe open it
-  .regex(/@(?:stu\.)?\.hit\.edu\.cn$/, "Email must be a HIT email");
+  // TODO: maybe requires modification
+  .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
 
 /**
  * Begin and end datetimeString, example: '2022-03-15T11:23'

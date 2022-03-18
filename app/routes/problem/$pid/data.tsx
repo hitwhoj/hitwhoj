@@ -1,4 +1,4 @@
-import { File as UserFile } from "@prisma/client";
+import type { File as ProblemFile } from "@prisma/client";
 import {
   ActionFunction,
   json,
@@ -9,22 +9,22 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
-import { createUserFile, removeFile } from "~/utils/files";
+import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
 type LoaderData = {
-  files: UserFile[];
+  files: ProblemFile[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
-  const user = await db.user.findUnique({
-    where: { uid },
+  const problem = await db.problem.findUnique({
+    where: { pid },
     select: {
-      createdFiles: {
+      files: {
         orderBy: {
           createdAt: "desc",
         },
@@ -32,68 +32,53 @@ export const loader: LoaderFunction = async ({ params }) => {
     },
   });
 
-  if (!user) {
-    throw new Response("User not found", { status: 404 });
+  if (!problem) {
+    throw new Response("Problem not found", { status: 404 });
   }
 
-  return json({ files: user.createdFiles });
+  return json({ files: problem.files });
 };
 
 enum ActionType {
+  UploadData = "uploadData",
   UploadFile = "uploadFile",
   RemoveFile = "removeFile",
-  ModifyPrivacy = "modifyPrivacy",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
   const form = await unstable_parseMultipartFormData(request, uploadHandler);
 
   const _action = form.get("_action");
 
   switch (_action) {
+    case ActionType.UploadData:
     case ActionType.UploadFile: {
       const files = form
         .getAll("file")
         .filter((file): file is File => file instanceof File);
 
       if (!files.length) {
-        throw new Response("No file found", { status: 400 });
+        throw new Response("Invalid file", { status: 400 });
       }
 
-      await Promise.all(files.map((file) => createUserFile(file, uid)));
+      await Promise.all(
+        files.map((file) => {
+          return createProblemFile(
+            file,
+            pid,
+            _action === ActionType.UploadData
+          );
+        })
+      );
 
       return null;
     }
 
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
       await removeFile(fid);
-
-      return null;
-    }
-
-    case ActionType.ModifyPrivacy: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
-
-      const file = await db.file.findUnique({
-        where: { fid },
-        select: { private: true },
-      });
-
-      if (!file) {
-        throw new Response("File not found", { status: 404 });
-      }
-
-      await db.file.update({
-        where: { fid },
-        data: { private: !file.private },
-      });
 
       return null;
     }
@@ -102,20 +87,20 @@ export const action: ActionFunction = async ({ request, params }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-function UserFileUploader() {
+function ProblemFileUploader({ action }: { action: ActionType }) {
   const fetcher = useFetcher();
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="file" name="file" multiple />
-      <button type="submit" name="_action" value={ActionType.UploadFile}>
+      <button type="submit" name="_action" value={action}>
         上传捏
       </button>
     </fetcher.Form>
   );
 }
 
-function UserFileListItem({ file }: { file: UserFile }) {
+function ProblemFileListItem({ file }: { file: ProblemFile }) {
   const fetcher = useFetcher();
   const isFetching = fetcher.state !== "idle";
 
@@ -127,13 +112,6 @@ function UserFileListItem({ file }: { file: UserFile }) {
       <td>{file.filesize}</td>
       <td>{file.mimetype}</td>
       <td>
-        {file.private ? (
-          <span style={{ color: "red" }}>隐藏</span>
-        ) : (
-          <span style={{ color: "lime" }}>公开</span>
-        )}
-      </td>
-      <td>
         <fetcher.Form method="post">
           <input type="hidden" name="fid" value={file.fid} />
           <button
@@ -144,21 +122,13 @@ function UserFileListItem({ file }: { file: UserFile }) {
           >
             删除捏
           </button>
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.ModifyPrivacy}
-            disabled={isFetching}
-          >
-            {file.private ? "公开" : "隐藏"}
-          </button>
         </fetcher.Form>
       </td>
     </tr>
   );
 }
 
-function UserFileList({ files }: { files: UserFile[] }) {
+function ProblemFileList({ files }: { files: ProblemFile[] }) {
   return (
     <table>
       <thead>
@@ -166,26 +136,32 @@ function UserFileList({ files }: { files: UserFile[] }) {
           <th>文件名</th>
           <th>文件大小</th>
           <th>文件类型</th>
-          <th>公开状态</th>
           <th>操作</th>
         </tr>
       </thead>
       <tbody>
         {files.map((file) => (
-          <UserFileListItem file={file} key={file.fid} />
+          <ProblemFileListItem file={file} key={file.fid} />
         ))}
       </tbody>
     </table>
   );
 }
 
-export default function UserFiles() {
+export default function ProblemData() {
   const { files } = useLoaderData<LoaderData>();
 
   return (
     <>
-      <UserFileUploader />
-      <UserFileList files={files} />
+      <h2>测试数据</h2>
+      <p>用于评测的数据文件</p>
+      <ProblemFileUploader action={ActionType.UploadData} />
+      <ProblemFileList files={files.filter((file) => file.private)} />
+
+      <h2>附加文件</h2>
+      <p>题目的附加资料，例如样例数据、PDF 题面等</p>
+      <ProblemFileUploader action={ActionType.UploadFile} />
+      <ProblemFileList files={files.filter((file) => !file.private)} />
     </>
   );
 }

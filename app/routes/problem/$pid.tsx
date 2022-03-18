@@ -59,6 +59,9 @@ export default function Problem() {
         <li>
           <Link to="submit">提交</Link>
         </li>
+        <li>
+          <Link to="data">数据</Link>
+        </li>
       </ul>
       <Outlet />
     </div>
