@@ -54,7 +54,7 @@ meta:
 
   // 交互题的交互程序，仅限 type 为 `interactive` 时有效
   "interactive": "interactive.cpp",
-  
+
   // 动态题目的生成数据代码，仅限 type 为 `dynamic` 时有效
   "mkdata": "mkdata.cpp",
   // 动态题目的标准代码，仅限 type 为 `dynamic` 时有效
@@ -64,7 +64,7 @@ meta:
   "time": 1000,
   // 全局默认内存限制 (byte)
   "memory": 256000000,
-  
+
   // 所有子任务，每个子任务中需要通过所有的数据点才能得到该子任务的分数
   "subtasks": [
     {
@@ -79,14 +79,19 @@ meta:
         { "input": "1.in", "output": "1.ans" },
         { "input": "2.in", "output": "2.ans" },
         // 也可以再次指定时空间限制
-        { "input": "2.in", "output": "2.ans", "time": 2000, "memory": 512000000 },
+        {
+          "input": "2.in",
+          "output": "2.ans",
+          "time": 2000,
+          "memory": 512000000
+        },
 
         // 对于 type 为 `dynamic` 时可以使用动态数据点
         // `args` 中的参数会传入 `mkdata` 的 argv 中
         { "args": "1000" },
         { "args": "1000" },
         // 时空间限制依旧可以特殊指定
-        { "args": "1000", "time": 2000, "memory": 512000000 },
+        { "args": "1000", "time": 2000, "memory": 512000000 }
       ]
     }
   ]
