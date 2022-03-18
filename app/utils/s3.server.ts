@@ -1,9 +1,9 @@
 import { BucketItem, Client } from "minio";
 
 class S3 {
-  client: Client;
-  bucket: string;
-  region: string;
+  private client: Client;
+  private bucket: string;
+  private region: string;
 
   constructor() {
     const endPoint = process.env.S3_END_POINT || "localhost";

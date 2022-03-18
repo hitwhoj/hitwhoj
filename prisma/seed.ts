@@ -83,6 +83,20 @@ async function seed() {
     },
   });
 
+  await prisma.contest.create({
+    data: {
+      title: "A-SOUL Contest",
+      description: "## Description\n\nThe A-SOUL contest",
+      beginTime: new Date(Date.now() - 3600000),
+      endTime: new Date(Date.now() + 3600000),
+      system: ContestSystem.IOI,
+
+      creator: { connect: { uid: alice } },
+      tags: { create: [{ name: "a-soul" }] },
+      problems: { connect: [{ pid: p1 }, { pid: p2 }] },
+    },
+  });
+
   await prisma.problemSet.create({
     data: {
       title: "Math Problem List",
