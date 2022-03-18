@@ -39,20 +39,59 @@ meta:
 
 ### config.json
 
-- `type`: 评测方式，可以是 `normal`, `interactive`, `dynamic` 中的一种。
-- `timeLimit?`: 全局默认的时间限制（ms, 默认 1000ms）
-- `memoryLimit?`: 全局默认的内存限制（byte, 默认 256MB）
-- `spj`: SPJ 程序的文件名（仅限 `interactive` 方式）
-- `mkdata`: 动态评测时生成测试数据的程序（仅限 `dynamic` 方式）
-- `std`: 标准程序（仅限 `dynamic` 方式）
-- `subtasks`: 一个数组，包含以下字段（仅限 `normal` 和 `dynamic` 方式）：
-  - `score`: 该子任务分数
-  - `timeLimit?`: 时间限制（可选）
-  - `memoryLimit?`: 内存限制（可选）
-  - `tasks`: 一个数组，包含所有测试点的输入输出文件
-    - `input`: 输入文件
-    - `output`: 输出文件
-    - `args`: 传入 mkdata 程序的参数（仅限 `dynamic` 方式，如果设置此字段则 `input` 和 `output` 字段会被忽略）
+```json
+{
+  // 评测方式，可以是 `default`, `interactive`, `dynamic`, `submit_answer` 中的一种。
+  "type": "default",
+
+  // 提答题的答案，仅限 type 为 `submit_answer` 时有效
+  "answer": "114514",
+
+  // Special Judge 类型，支持 `default`, `testlib` (可选, 默认为 `default`)
+  "checkerType": "default",
+  // Special Judge 源程序文件 (可选)
+  "checkerName": "spj.cpp",
+
+  // 交互题的交互程序，仅限 type 为 `interactive` 时有效
+  "interactive": "interactive.cpp",
+  
+  // 动态题目的生成数据代码，仅限 type 为 `dynamic` 时有效
+  "mkdata": "mkdata.cpp",
+  // 动态题目的标准代码，仅限 type 为 `dynamic` 时有效
+  "std": "std.cpp",
+
+  // 全局默认时间限制 (ms)
+  "time": 1000,
+  // 全局默认内存限制 (byte)
+  "memory": 256000000,
+  
+  // 所有子任务，每个子任务中需要通过所有的数据点才能得到该子任务的分数
+  "subtasks": [
+    {
+      // 子任务的分值
+      "score": 20,
+      // 子任务的特殊时空间限制
+      "time": 1000,
+      "memory": 256000000,
+      // 子任务的所有数据点
+      "cases": [
+        // 一般数据点
+        { "input": "1.in", "output": "1.ans" },
+        { "input": "2.in", "output": "2.ans" },
+        // 也可以再次指定时空间限制
+        { "input": "2.in", "output": "2.ans", "time": 2000, "memory": 512000000 },
+
+        // 对于 type 为 `dynamic` 时可以使用动态数据点
+        // `args` 中的参数会传入 `mkdata` 的 argv 中
+        { "args": "1000" },
+        { "args": "1000" },
+        // 时空间限制依旧可以特殊指定
+        { "args": "1000", "time": 2000, "memory": 512000000 },
+      ]
+    }
+  ]
+}
+```
 
 ### 样例 1：
 
@@ -60,7 +99,9 @@ meta:
 
 ```json
 {
-  "type": "normal",
+  "type": "default",
+  "checkerType": "testlib",
+  "checkerName": "spj.cpp",
   "subtasks": [
     {
       "score": 60,
@@ -91,15 +132,6 @@ meta:
 }
 ```
 
-### 样例 2：
-
-```json
-{
-  "type": "interactive",
-  "spj": "spj.cpp"
-}
-```
-
 其中 `spj.cpp` 可以使用 [testlib](https://github.com/MikeMirzayanov/testlib) 库。
 
 ```cpp
@@ -116,6 +148,17 @@ int main(int argc, char * argv[]) {
 }
 ```
 
+### 样例 2：
+
+```json
+{
+  "type": "interactive",
+  "interactive": "interactive.cpp"
+}
+```
+
+TODO: 添加交互题示例代码
+
 ### 样例 3：
 
 ```json
@@ -126,25 +169,24 @@ int main(int argc, char * argv[]) {
   "subtasks": [
     {
       "score": 60,
-      "timeLimit": 200,
-      "memoryLimit": 256000000,
+      "time": 200,
+      "memory": 256000000,
       "tasks": [
-        { "args": "1" },
-        { "args": "2" },
-        { "args": "3" },
-        { "args": "4" }
+        { "args": "10" },
+        { "args": "10" },
+        { "args": "10" },
+        { "args": "10" }
       ]
     },
     {
       "score": 20,
-      "tasks": [{ "args": "5" }, { "args": "6" }, { "args": "7" }]
+      "tasks": [{ "args": "1000" }, { "args": "1000" }, { "args": "1000" }]
     },
     {
       "score": 20,
       "tasks": [
-        { "args": "8" },
-        { "args": "9" },
-        // 或者也可以使用预先生成的数据
+        { "args": "100000" },
+        { "args": "100000" },
         { "input": "chain.in", "output": "chain.out" },
         {
           "input": "chrysanthemum_tree.in",
@@ -158,12 +200,14 @@ int main(int argc, char * argv[]) {
 
 其中 `mkdata.cpp` 中可以在 `main` 函数中读取到每个数据点的生成参数。
 
+注意千万不能使用 `srand(time(NULL))` 来初始化随机数，否则可能生成出来的随机数据都是一模一样的。
+
 ```cpp
 #include <bits/stdc++.h>
 using namespace std;
 int main(int argc,  char *argv[]) {
   int n = atoi(argv[1]);
-  srand(time(0) + n);
+  srand(/* 使用一些魔法 */);
   cout << n << endl;
   for (int i = 0; i < n; i++) {
     cout << rand() % n + 1 << endl;
