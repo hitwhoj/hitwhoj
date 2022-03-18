@@ -26,7 +26,7 @@ export default function teamDetail() {
   return (
     <>
       <h3>Details</h3>
-      <div>description:{team.description?team.description:"no description"}</div>
+      <div>{team.description?team.description:"no description"}</div>
   
       <h3>Modules</h3>
       <ul>
