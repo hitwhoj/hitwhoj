@@ -34,8 +34,8 @@ model User {
   moddedContests   Contest[] @relation("mod", references: [cid])
   juriedContests   Contest[] @relation("jury", references: [cid])
 
-  createdTeam Team[]
-  teamMember TeamMember[]
+  createdTeam     Team[]
+  teamMember      TeamMember[]
   createdHomework TeamHomework[]
 }
 
@@ -115,7 +115,7 @@ model ProblemSet {
   uid     Int?
   creator User? @relation(fields: [uid], references: [uid])
 
-  includeInHomework TeamHomework[]  
+  includeInHomework TeamHomework[]
 }
 
 model ProblemSetTag {
@@ -176,46 +176,49 @@ model ContestTag {
   contests Contest[] @relation(references: [cid])
 }
 
-model Team{
-  tid String @id @default(uuid())
-  name String @unique
-  createdAt DateTime @default(now())
+model Team {
+  tid         String   @id @default(uuid())
+  name        String   @unique
+  createdAt   DateTime @default(now())
   description String?
 
   // ==== relations ====
-  creator  User @relation(fields: [creatorId], references: [uid])
+  creator   User           @relation(fields: [creatorId], references: [uid])
   creatorId Int
-  members TeamMember[]
+  members   TeamMember[]
   homeworks TeamHomework[]
 }
 
-model TeamMember{
-  mid String @id @default(uuid())
+model TeamMember {
+  mid       String  @id @default(uuid())
   authority String?
 
   // ==== relations ====
-  member User @relation(fields: [memberId],references: [uid])
+  member   User   @relation(fields: [memberId], references: [uid])
   memberId Int
-  team Team @relation(fields: [teamId],references: [tid])
-  teamId String
+  team     Team   @relation(fields: [teamId], references: [tid])
+  teamId   String
+
+  @@unique([memberId, teamId])
 }
 
-model TeamHomework{
-  hid String @id @default(uuid())
-  name String
-  ddl DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model TeamHomework {
+  hid         String   @id @default(uuid())
+  name        String
+  ddl         DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   description String?
 
   // ==== relations ====
-  creator User @relation(fields: [creatorId],references: [uid])
-  creatorId Int
-  team Team @relation(fields: [teamId],references: [tid])
-  teamId String
+  creator     User         @relation(fields: [creatorId], references: [uid])
+  creatorId   Int
+  team        Team         @relation(fields: [teamId], references: [tid])
+  teamId      String
   problemsets ProblemSet[] @relation(references: [sid])
 }
 
 enum ContestSystem {
   ACM
 }
+
