@@ -1,326 +1,333 @@
-import { UserRole } from "@prisma/client";
+import { SystemUserRole } from "@prisma/client";
 
 import { db } from "./db.server";
 
-export { UserRole, RolePermission };
+let count = 0n;
 
-class RolePermission {
-  static ALL = -1n;
-  static DEFAULT = 0n;
-
-  /** user */
-  //userSession
-  static USER_SESSION_LIST_SELF = 1n << 10n;
-  static USER_SESSION_LIST = 1n << 11n;
-  static USER_SESSION_REMOVE = 1n << 12n;
-  static USER_SESSION_SIGN_UP = 1n << 13n;
-  static USER_SESSION_SIGN_IN = 1n << 14n;
-  static USER_SESSION_SIGN_OUT = 1n << 15n;
-  //userProfile
-  static USER_PROFILE_GET_SELF = 1n << 20n;
-  static USER_PROFILE_GET = 1n << 21n;
-  static USER_PROFILE_MODIFY_SELF = 1n << 22n;
-  static USER_PROFILE_MODIFY = 1n << 23n;
-  //userFile
-  static USER_FILE_LIST = 1n << 30n;
-  static USER_FILE_LIST_SELF = 1n << 31n;
-  static USER_FILE_UPLOAD = 1n << 32n;
-  static USER_FILE_UNLINK = 1n << 33n;
-  static USER_FILE_UNLINK_SELF = 1n << 34n;
-
-  /** problem */
-  //problemData
-  static PROBLEM_DATA_UPLOAD = 1n << 40n;
-  static PROBLEM_DATA_REMOVE = 1n << 41n;
-  //problemDetail
-  static PROBLEM_DETAIL_CREATE_WITH_ID = 1n << 50n;
-  static PROBLEM_DETAIL_CREATE = 1n << 51n;
-  static PROBLEM_DETAIL_MODIFY = 1n << 52n;
-  static PROBLEM_DETAIL_GET_DETAIL = 1n << 53n;
-  static PROBLEM_DETAIL_SEARCH = 1n << 54n;
-  static PROBLEM_DETAIL_REMOVE = 1n << 55n;
-  //problemList
-  static PROBLEM_LIST_CREATE = 1n << 60n;
-  static PROBLEM_LIST_MODIFY = 1n << 61n;
-  static PROBLEM_LIST_REMOVE = 1n << 62n;
-  static PROBLEM_LIST_GET_DETAIL = 1n << 63n;
-  static PROBLEM_LIST_SEARCH = 1n << 64n;
-  static PROBLEM_LIST_LIST = 1n << 65n;
-
-  /** contest */
-  //contestDetail
-  static CONTEST_DETAIL_CREATE = 1n << 70n;
-  static CONTEST_DETAIL_MODIFY = 1n << 71n;
+function perm() {
+  return 1n << count++;
 }
 
+export const Permissions = {
+  ALL: -1n,
+  DEFAULT: 0n,
+
+  USER_SESSION_LIST: perm(),
+  USER_SESSION_REMOVE: perm(),
+  USER_SESSION_SIGN_UP: perm(),
+  USER_SESSION_SIGN_IN: perm(),
+
+  USER_PROFILE_GET: perm(),
+  USER_PROFILE_MODIFY: perm(),
+
+  USER_FILE_LIST: perm(),
+  USER_FILE_UPLOAD: perm(),
+  USER_FILE_UNLINK: perm(),
+  USER_FILE_DOWNLOAD: perm(),
+
+  PROBLEM_GET: perm(),
+  PROBLEM_LIST: perm(),
+  PROBLEM_CREATE: perm(),
+  PROBLEM_MODIFY: perm(),
+  PROBLEM_REMOVE: perm(),
+  PROBLEM_SEARCH: perm(),
+
+  PROBLEM_SUBMIT: perm(),
+
+  PROBLEM_DATA_UPLOAD: perm(),
+  PROBLEM_DATA_REMOVE: perm(),
+  PROBLEM_DATA_DOWNLOAD: perm(),
+  PROBLEM_FILE_UPLOAD: perm(),
+  PROBLEM_FILE_REMOVE: perm(),
+  PROBLEM_FILE_DOWNLOAD: perm(),
+
+  PROBLEM_SET_GET: perm(),
+  PROBLEM_SET_LIST: perm(),
+  PROBLEM_SET_CREATE: perm(),
+  PROBLEM_SET_MODIFY: perm(),
+  PROBLEM_SET_REMOVE: perm(),
+  PROBLEM_SET_SEARCH: perm(),
+
+  CONTEST_GET: perm(),
+  CONTEST_LIST: perm(),
+  CONTEST_CREATE: perm(),
+  CONTEST_MODIFY: perm(),
+  CONTEST_REMOVE: perm(),
+  CONTEST_SEARCH: perm(),
+
+  CONTEST_PROBLEM_GET: perm(),
+  CONTEST_PROBLEM_LIST: perm(),
+  CONTEST_PROBLEM_SUBMIT: perm(),
+
+  RECORD_GET: perm(),
+  RECORD_LIST: perm(),
+  RECORD_VIEW_CODE: perm(),
+};
+
+enum CustomUserRole {
+  UserSelf = "UserSelf",
+
+  ProblemAdmin = "ProblemAdmin",
+
+  ContestAdmin = "ContestAdmin",
+  ContestMod = "ContestMod",
+  ContestJury = "ContestJury",
+  ContestAttendee = "ContestAttendee",
+}
+
+type UserRole = SystemUserRole | CustomUserRole;
+
 const PermissionDict: Record<UserRole, bigint> = {
-  // super user
-  [UserRole.SU]: RolePermission.ALL,
+  // 超级用户
+  [SystemUserRole.Su]: Permissions.ALL,
 
-  // administrator
-  [UserRole.ADMIN]:
-    RolePermission.DEFAULT |
-    RolePermission.USER_SESSION_LIST_SELF |
-    RolePermission.USER_SESSION_REMOVE |
-    RolePermission.USER_SESSION_SIGN_OUT |
-    RolePermission.USER_PROFILE_GET_SELF |
-    RolePermission.USER_PROFILE_GET |
-    RolePermission.USER_PROFILE_MODIFY_SELF |
-    RolePermission.USER_PROFILE_MODIFY |
-    RolePermission.USER_FILE_LIST |
-    RolePermission.USER_FILE_LIST_SELF |
-    RolePermission.USER_FILE_UPLOAD |
-    RolePermission.USER_FILE_UNLINK |
-    RolePermission.USER_FILE_UNLINK_SELF |
-    RolePermission.PROBLEM_DATA_UPLOAD |
-    RolePermission.PROBLEM_DATA_REMOVE |
-    RolePermission.PROBLEM_DETAIL_CREATE_WITH_ID |
-    RolePermission.PROBLEM_DETAIL_CREATE |
-    RolePermission.PROBLEM_DETAIL_MODIFY |
-    RolePermission.PROBLEM_DETAIL_GET_DETAIL |
-    RolePermission.PROBLEM_DETAIL_SEARCH |
-    RolePermission.PROBLEM_DETAIL_REMOVE |
-    RolePermission.PROBLEM_LIST_CREATE |
-    RolePermission.PROBLEM_LIST_MODIFY |
-    RolePermission.PROBLEM_LIST_REMOVE |
-    RolePermission.PROBLEM_LIST_GET_DETAIL |
-    RolePermission.PROBLEM_LIST_SEARCH |
-    RolePermission.PROBLEM_LIST_LIST |
-    RolePermission.CONTEST_DETAIL_CREATE |
-    RolePermission.CONTEST_DETAIL_MODIFY,
+  // 网站管理员比普通用户多的权限
+  [SystemUserRole.Admin]:
+    Permissions.DEFAULT |
+    Permissions.USER_SESSION_LIST |
+    Permissions.USER_SESSION_REMOVE |
+    Permissions.USER_PROFILE_GET |
+    Permissions.USER_PROFILE_MODIFY |
+    Permissions.USER_FILE_LIST |
+    Permissions.USER_FILE_UNLINK |
+    Permissions.USER_FILE_DOWNLOAD |
+    Permissions.PROBLEM_GET |
+    Permissions.PROBLEM_LIST |
+    Permissions.PROBLEM_CREATE |
+    Permissions.PROBLEM_MODIFY |
+    Permissions.PROBLEM_REMOVE |
+    Permissions.PROBLEM_SEARCH |
+    Permissions.PROBLEM_DATA_UPLOAD |
+    Permissions.PROBLEM_DATA_REMOVE |
+    Permissions.PROBLEM_DATA_DOWNLOAD |
+    Permissions.PROBLEM_FILE_UPLOAD |
+    Permissions.PROBLEM_FILE_REMOVE |
+    Permissions.PROBLEM_FILE_DOWNLOAD |
+    Permissions.PROBLEM_SET_GET |
+    Permissions.PROBLEM_SET_LIST |
+    Permissions.PROBLEM_SET_CREATE |
+    Permissions.PROBLEM_SET_MODIFY |
+    Permissions.PROBLEM_SET_REMOVE |
+    Permissions.PROBLEM_SET_SEARCH |
+    Permissions.CONTEST_GET |
+    Permissions.CONTEST_LIST |
+    Permissions.CONTEST_CREATE |
+    Permissions.CONTEST_MODIFY |
+    Permissions.CONTEST_REMOVE |
+    Permissions.CONTEST_SEARCH |
+    Permissions.CONTEST_PROBLEM_GET |
+    Permissions.CONTEST_PROBLEM_LIST |
+    Permissions.RECORD_GET |
+    Permissions.RECORD_LIST |
+    Permissions.RECORD_VIEW_CODE,
 
-  [UserRole.USER]:
-    RolePermission.DEFAULT |
-    RolePermission.USER_SESSION_LIST_SELF |
-    RolePermission.USER_SESSION_SIGN_OUT |
-    RolePermission.USER_PROFILE_GET_SELF |
-    RolePermission.USER_PROFILE_GET |
-    RolePermission.USER_PROFILE_MODIFY_SELF |
-    RolePermission.USER_FILE_LIST_SELF |
-    RolePermission.USER_FILE_UPLOAD |
-    RolePermission.USER_FILE_UNLINK_SELF |
-    RolePermission.PROBLEM_DETAIL_CREATE_WITH_ID |
-    RolePermission.PROBLEM_DETAIL_CREATE |
-    RolePermission.PROBLEM_DETAIL_GET_DETAIL |
-    RolePermission.PROBLEM_DETAIL_SEARCH |
-    RolePermission.PROBLEM_LIST_CREATE |
-    RolePermission.PROBLEM_LIST_GET_DETAIL |
-    RolePermission.PROBLEM_LIST_SEARCH |
-    RolePermission.PROBLEM_LIST_LIST,
+  // 普通用户的权限
+  [SystemUserRole.User]:
+    Permissions.DEFAULT |
+    Permissions.USER_PROFILE_GET |
+    Permissions.USER_FILE_DOWNLOAD |
+    Permissions.PROBLEM_GET |
+    Permissions.PROBLEM_LIST |
+    Permissions.PROBLEM_SEARCH |
+    Permissions.PROBLEM_FILE_DOWNLOAD |
+    Permissions.PROBLEM_SET_GET |
+    Permissions.PROBLEM_SET_LIST |
+    Permissions.PROBLEM_SET_SEARCH |
+    Permissions.CONTEST_GET |
+    Permissions.CONTEST_LIST |
+    Permissions.CONTEST_SEARCH |
+    Permissions.RECORD_GET |
+    Permissions.RECORD_LIST,
 
-  [UserRole.GUEST]:
-    RolePermission.DEFAULT |
-    RolePermission.USER_SESSION_SIGN_IN |
-    RolePermission.USER_SESSION_SIGN_UP |
-    RolePermission.USER_PROFILE_GET |
-    RolePermission.PROBLEM_DETAIL_GET_DETAIL |
-    RolePermission.PROBLEM_DETAIL_SEARCH |
-    RolePermission.PROBLEM_LIST_GET_DETAIL |
-    RolePermission.PROBLEM_LIST_SEARCH |
-    RolePermission.PROBLEM_LIST_LIST,
+  // 访客权限
+  [SystemUserRole.Guest]:
+    Permissions.DEFAULT |
+    Permissions.USER_SESSION_SIGN_UP |
+    Permissions.USER_SESSION_SIGN_IN |
+    Permissions.USER_PROFILE_GET |
+    Permissions.USER_FILE_DOWNLOAD |
+    Permissions.PROBLEM_GET |
+    Permissions.PROBLEM_LIST |
+    Permissions.PROBLEM_SEARCH |
+    Permissions.PROBLEM_FILE_DOWNLOAD |
+    Permissions.PROBLEM_SET_GET |
+    Permissions.PROBLEM_SET_LIST |
+    Permissions.PROBLEM_SET_SEARCH |
+    Permissions.CONTEST_GET |
+    Permissions.CONTEST_LIST |
+    Permissions.CONTEST_SEARCH |
+    Permissions.RECORD_GET |
+    Permissions.RECORD_LIST,
 
-  [UserRole.PROBLEM_ADMIN]:
-    RolePermission.DEFAULT |
-    RolePermission.PROBLEM_DATA_UPLOAD |
-    RolePermission.PROBLEM_DATA_REMOVE |
-    RolePermission.PROBLEM_DETAIL_MODIFY |
-    RolePermission.PROBLEM_DETAIL_REMOVE,
+  // 题目管理员
+  [CustomUserRole.ProblemAdmin]:
+    Permissions.DEFAULT |
+    Permissions.PROBLEM_MODIFY |
+    Permissions.PROBLEM_REMOVE |
+    Permissions.PROBLEM_DATA_UPLOAD |
+    Permissions.PROBLEM_DATA_REMOVE |
+    Permissions.PROBLEM_DATA_DOWNLOAD |
+    Permissions.PROBLEM_FILE_UPLOAD |
+    Permissions.PROBLEM_FILE_REMOVE |
+    Permissions.PROBLEM_FILE_DOWNLOAD |
+    Permissions.RECORD_VIEW_CODE,
 
-  [UserRole.CONTEST_CREATOR]:
-    RolePermission.DEFAULT | RolePermission.CONTEST_DETAIL_MODIFY,
+  // 比赛管理员
+  [CustomUserRole.ContestAdmin]:
+    Permissions.DEFAULT |
+    Permissions.CONTEST_MODIFY |
+    Permissions.CONTEST_REMOVE |
+    Permissions.CONTEST_PROBLEM_GET |
+    Permissions.CONTEST_PROBLEM_LIST |
+    Permissions.RECORD_VIEW_CODE,
 
-  [UserRole.CONTEST_MOD]:
-    RolePermission.DEFAULT | RolePermission.CONTEST_DETAIL_MODIFY,
+  // 比赛负责人
+  [CustomUserRole.ContestMod]:
+    Permissions.DEFAULT |
+    Permissions.CONTEST_MODIFY |
+    Permissions.CONTEST_REMOVE |
+    Permissions.CONTEST_PROBLEM_GET |
+    Permissions.CONTEST_PROBLEM_LIST |
+    Permissions.RECORD_VIEW_CODE,
 
-  [UserRole.CONTEST_JURY]: RolePermission.DEFAULT,
+  // 比赛裁判（负责赛事答疑）
+  [CustomUserRole.ContestJury]:
+    Permissions.DEFAULT |
+    Permissions.CONTEST_PROBLEM_GET |
+    Permissions.CONTEST_PROBLEM_LIST,
 
-  [UserRole.CONTEST_ATTENDEE]:
-    // TODO: submit code permission
-    RolePermission.DEFAULT,
+  // 比赛参赛者
+  [CustomUserRole.ContestAttendee]:
+    Permissions.DEFAULT |
+    Permissions.CONTEST_PROBLEM_GET |
+    Permissions.CONTEST_PROBLEM_LIST |
+    Permissions.CONTEST_PROBLEM_SUBMIT,
 
-  [UserRole.USER_SELF]:
-    RolePermission.DEFAULT | RolePermission.USER_SESSION_REMOVE,
+  // 已登录用户
+  [CustomUserRole.UserSelf]:
+    Permissions.DEFAULT |
+    Permissions.USER_FILE_LIST |
+    Permissions.USER_FILE_UPLOAD |
+    Permissions.USER_FILE_UNLINK |
+    Permissions.USER_FILE_DOWNLOAD |
+    Permissions.PROBLEM_SUBMIT,
 };
 
-export type PermissionDoc = {
-  _id: string;
-  roles: UserRole[];
-};
-
+// FIXME: 需要重新设计
 export async function guaranteePermission(
-  uid: number,
   permission: bigint,
   config?: {
+    uid: number;
     pid: number;
     cid: number;
-    sid: string;
+    rid: number;
   }
 ): Promise<void> {
-  const user = await db.user.findUnique({
-    where: {
-      uid: uid,
-    },
-    include: {
-      roles: true,
-    },
-  });
-  const roles: UserRole[] = (user &&
-    user.roles.length &&
-    user.roles.map((r) => {
-      return r.role;
-    })) || [UserRole.GUEST];
+  const roles: UserRole[] = [];
 
-  if (config?.pid) {
-    roles.push(...(await getProblemRole(uid, config.pid)));
+  if (config?.uid) {
+    const user = await db.user.findUnique({
+      where: { uid: config.uid },
+      select: { role: true },
+    });
+
+    if (!user) {
+      throw new Response("Permission: User not found", { status: 404 });
+    }
+
+    roles.push(user.role);
+  } else {
+    roles.push(SystemUserRole.Guest);
   }
-  if (config?.cid) {
-    roles.push(...(await getContestRole(uid, config.cid)));
+
+  if (config?.uid && config?.pid) {
+    roles.push(...(await getProblemRoles(config.uid, config.pid)));
   }
-  if (config?.sid) {
-    roles.push(...(await getSessionRole(uid, config.sid)));
+  if (config?.uid && config?.cid) {
+    roles.push(...(await getContestRoles(config.uid, config.cid)));
   }
-  console.log(roles);
+  if (config?.uid && config?.rid) {
+    roles.push(...(await getRecordRoles(config.uid, config.rid)));
+  }
 
   const userPermission = roles
     .map((role) => PermissionDict[role])
     .reduce((perm, rolePerm) => perm | rolePerm, 0n);
 
   if ((userPermission & permission) !== permission) {
-    throw new Response("Permission: Permission denyed", { status: 401 });
+    throw new Response("Permission denied", { status: 403 });
   }
 }
 
-async function getProblemRole(uid: number, pid: number) {
+export async function getProblemRoles(uid: number, pid: number) {
   const problem = await db.problem.findUnique({
-    where: {
-      pid: pid,
-    },
+    where: { pid },
+    select: { uid: true },
   });
+
   if (!problem) {
-    throw new Response("Permission: Problem not found!", { status: 400 });
+    throw new Response("Permissions: Problem not found", { status: 404 });
   }
 
   const roles: UserRole[] = [];
+
   if (problem.uid === uid) {
-    roles.push(UserRole.PROBLEM_ADMIN);
+    roles.push(CustomUserRole.ProblemAdmin);
   }
 
   return roles;
 }
 
-async function getContestRole(uid: number, cid: number) {
+export async function getContestRoles(uid: number, cid: number) {
   const contest = await db.contest.findUnique({
-    where: {
-      cid: cid,
-    },
-    include: {
-      mods: true,
-      juries: true,
-      attendees: true,
+    where: { cid },
+    select: {
+      user: { select: { uid: true } },
+      mods: { select: { uid: true } },
+      juries: { select: { uid: true } },
+      attendees: { select: { uid: true } },
     },
   });
+
   if (!contest) {
-    throw new Response("Permission: Contest not found", { status: 400 });
+    throw new Response("Permissions: Contest not found", { status: 404 });
   }
-
-  const mods = contest.mods.map((m) => {
-    return m.uid;
-  });
-  const juries = contest.juries.map((j) => {
-    return j.uid;
-  });
-  const attendees = contest.attendees.map((a) => {
-    return a.uid;
-  });
 
   const roles: UserRole[] = [];
-  if (contest.uid === uid) {
-    roles.push(UserRole.CONTEST_CREATOR);
+
+  if (contest.user.uid === uid) {
+    roles.push(CustomUserRole.ContestAdmin);
   }
-  if (mods.includes(uid)) {
-    roles.push(UserRole.CONTEST_MOD);
+  if (contest.mods.map(({ uid }) => uid).includes(uid)) {
+    roles.push(CustomUserRole.ContestMod);
   }
-  if (juries.includes(uid)) {
-    roles.push(UserRole.CONTEST_JURY);
+  if (contest.juries.map(({ uid }) => uid).includes(uid)) {
+    roles.push(CustomUserRole.ContestJury);
   }
-  if (attendees.includes(uid)) {
-    roles.push(UserRole.CONTEST_ATTENDEE);
+  if (contest.attendees.map(({ uid }) => uid).includes(uid)) {
+    roles.push(CustomUserRole.ContestAttendee);
   }
 
   return roles;
 }
 
-async function getSessionRole(uid: number, sid: string) {
-  const session = await db.userSession.findUnique({
-    where: {
-      session: sid,
-    },
+export async function getRecordRoles(uid: number, rid: number) {
+  const record = await db.record.findUnique({
+    where: { rid },
+    select: { uid: true },
   });
-  //avoid infomation leak
-  //also sprach eryi
-  const roles: UserRole[] = [];
-  if (!session) {
-    return roles;
+
+  if (!record) {
+    throw new Response("Permissions: Record not found", { status: 404 });
   }
 
-  if (session.uid === uid) {
-    roles.push(UserRole.USER_SELF);
+  // avoid infomation leak
+  // also sprach eryi
+  const roles: UserRole[] = [];
+
+  if (record.uid === uid) {
+    roles.push(CustomUserRole.UserSelf);
   }
 
   return roles;
-}
-
-export async function modifyRole(
-  uid: number,
-  roles: UserRole[]
-): Promise<void> {
-  const user = await db.user.findUnique({
-    where: {
-      uid: uid,
-    },
-  });
-  if (!user) {
-    throw new Response("Permission: User not found", { status: 400 });
-  }
-
-  await db.role.deleteMany({
-    where: {
-      uid: uid,
-    },
-  });
-  await db.role.createMany({
-    data: roles.map((r) => {
-      return {
-        uid: uid,
-        role: r,
-      };
-    }),
-  });
-}
-
-export async function createDefault(uid: number) {
-  const user = await db.user.findUnique({
-    where: {
-      uid: uid,
-    },
-  });
-  if (!user) {
-    throw new Response("Permission: User not found", { status: 400 });
-  }
-
-  const res = await db.role.count({
-    where: {
-      uid: uid,
-    },
-  });
-  if (res) {
-    throw new Response("Permission: User exists", { status: 400 });
-  }
-
-  await db.role.create({
-    data: {
-      uid: uid,
-      role: UserRole.USER,
-    },
-  });
 }

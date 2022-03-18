@@ -1,4 +1,10 @@
-import { ActionFunction, Form, MetaFunction, redirect } from "remix";
+import {
+  ActionFunction,
+  Form,
+  LoaderFunction,
+  MetaFunction,
+  redirect,
+} from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -10,8 +16,25 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
+import { findSessionUid } from "~/utils/sessions";
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const uid = await findSessionUid(request);
+
+  if (!uid) {
+    return redirect("/login");
+  }
+
+  return null;
+};
 
 export const action: ActionFunction = async ({ request }) => {
+  const uid = await findSessionUid(request);
+
+  if (!uid) {
+    return redirect("/login");
+  }
+
   const form = await request.formData();
 
   const title = invariant(titleScheme.safeParse(form.get("title")));
@@ -38,6 +61,7 @@ export const action: ActionFunction = async ({ request }) => {
       beginTime,
       endTime,
       system,
+      user: { connect: { uid } },
     },
   });
 
