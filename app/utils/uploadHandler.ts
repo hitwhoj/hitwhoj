@@ -1,5 +1,10 @@
-import { unstable_createMemoryUploadHandler } from "remix";
+import { unstable_createMemoryUploadHandler, UploadHandler } from "remix";
 
+/**
+ * FIXME: 当上传文件大小超过限制时，程序会直接崩溃
+ *
+ * @see https://github.com/remix-run/remix/issues/2230
+ */
 function createUploadHandler() {
   if (!process.env.MAX_FILE_SIZE) {
     console.warn("MAX_FILE_SIZE is not set, defaulting to 20MB");
@@ -13,12 +18,10 @@ function createUploadHandler() {
 }
 
 declare global {
-  var __uploadHandler:
-    | ReturnType<typeof unstable_createMemoryUploadHandler>
-    | undefined;
+  var __uploadHandler: UploadHandler | undefined;
 }
 
-let uploadHandler: ReturnType<typeof unstable_createMemoryUploadHandler>;
+let uploadHandler: UploadHandler;
 
 if (process.env.NODE_ENV === "production") {
   uploadHandler = createUploadHandler();
