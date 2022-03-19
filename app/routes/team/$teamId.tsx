@@ -1,6 +1,5 @@
 import {
   Outlet,
-  useParams,
   json,
   LoaderFunction,
   useLoaderData,

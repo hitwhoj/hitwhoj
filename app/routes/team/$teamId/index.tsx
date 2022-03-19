@@ -25,6 +25,10 @@ export default function teamDetail() {
       <h3>Details</h3>
       <div>{team.description ? team.description : "no description"}</div>
 
+      <h3>Operation</h3>
+      <ul>
+        <li>Dissolve Team</li>
+      </ul>
       <h3>Modules</h3>
       <ul>
         <li>

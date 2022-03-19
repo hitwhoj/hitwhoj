@@ -1,6 +1,5 @@
 import { Link, json, useLoaderData, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
-import { User, TeamMember } from "@prisma/client";
 
 type LoaderData = {
   uid: number;
@@ -36,8 +35,12 @@ export default function MemberList() {
     <>
       <h3>Operation</h3>
       <ul>
-        <li>添加成员</li>
-        <li>删除成员</li>
+        <li>
+          <Link to="new">添加成员</Link>{" "}
+        </li>
+        <li>
+          <Link to="del">删除成员</Link>{" "}
+        </li>
       </ul>
 
       <h3> memberList </h3>

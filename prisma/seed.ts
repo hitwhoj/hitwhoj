@@ -140,6 +140,28 @@ async function seed() {
       },
     },
   });
+  await prisma.team.update({
+    data: {
+      homeworks: {
+        create: {
+          ddl: new Date(Date.now()),
+          name: "作业来喽啊哈哈哈哈哈哈哈哈哈",
+          description: "不想做？不想做就别想拿分",
+          createdAt: new Date(Date.now()),
+          updatedAt: new Date(Date.now()),
+          creator: {
+            connect: { uid: alice },
+          },
+          problemsets: {
+            connect: [{ sid: ts1 }],
+          },
+        },
+      },
+    },
+    where: {
+      tid: "team1",
+    },
+  });
 }
 
 seed();

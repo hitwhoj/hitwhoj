@@ -16,7 +16,20 @@ export const action: ActionFunction = async ({ request }) => {
   const teamName = form.get("teamName")?.toString();
   if (!teamName)
     return new Response("teamName is not registered", { status: 400 });
-  return redirect(`/team/${teamName}`);
+
+  const teamId = await db.team.findUnique({
+    select: {
+      tid: true,
+    },
+    where: {
+      name: teamName,
+    },
+  });
+  if (!teamId) {
+    return new Response("team is not registered", { status: 400 });
+  }
+
+  return redirect(`/team/${teamId.tid}`);
 };
 
 type LoaderData = {
@@ -36,6 +49,7 @@ export default function TeamList() {
 
   return (
     <>
+      <h1>Team</h1>
       <div>
         <Form
           method="post"
@@ -48,7 +62,13 @@ export default function TeamList() {
           <button type="submit">search</button>
         </Form>
       </div>
-      <h1> Public teamList </h1>
+      <h3> Operation </h3>
+      <ul>
+        <li>
+          <Link to="new">创建队伍</Link>
+        </li>
+      </ul>
+      <h3> Public teamList </h3>
       {teams.length ? (
         <ul>
           {teams.map((team) => (
