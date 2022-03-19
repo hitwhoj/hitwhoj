@@ -196,7 +196,7 @@ model TeamMember {
   // ==== relations ====
   member   User   @relation(fields: [memberId], references: [uid])
   memberId Int
-  team     Team   @relation(fields: [teamId], references: [tid])
+  team     Team   @relation(fields: [teamId], references: [tid], onDelete: Cascade)
   teamId   String
 
   @@unique([memberId, teamId])
@@ -213,7 +213,7 @@ model TeamHomework {
   // ==== relations ====
   creator     User         @relation(fields: [creatorId], references: [uid])
   creatorId   Int
-  team        Team         @relation(fields: [teamId], references: [tid])
+  team        Team         @relation(fields: [teamId], references: [tid], onDelete: Cascade)
   teamId      String
   problemsets ProblemSet[] @relation(references: [sid])
 }

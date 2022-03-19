@@ -27,7 +27,9 @@ export default function teamDetail() {
 
       <h3>Operation</h3>
       <ul>
-        <li>Dissolve Team</li>
+        <li>
+          <Link to="dissolve">Dissolve Team</Link>{" "}
+        </li>
       </ul>
       <h3>Modules</h3>
       <ul>

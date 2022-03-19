@@ -48,7 +48,7 @@ export const action: ActionFunction = async ({ params, request }) => {
 export default function NewMember() {
   return (
     <>
-      <div>New Member</div>
+      <h3>New Member</h3>
       <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
         <input
           type="text"

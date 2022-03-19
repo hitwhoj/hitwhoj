@@ -20,23 +20,27 @@ export const action: ActionFunction = async ({ params, request }) => {
   for (let i = 0; i < userIds.length; i++) {
     users.push({ memberId: userIds[i], teamId: teamId });
   }
-  const creatorId = await db.team.findUnique({
-    where:{
-      tid:teamId
-    },
-    select:{
-      creatorId:true
-    }
-  }).catch(()=>{
-    throw new Response("del member fail", { status: 500 });
-  })
-  if(!creatorId?.creatorId){
+  const creatorId = await db.team
+    .findUnique({
+      where: {
+        tid: teamId,
+      },
+      select: {
+        creatorId: true,
+      },
+    })
+    .catch(() => {
+      throw new Response("del member fail", { status: 500 });
+    });
+  if (!creatorId?.creatorId) {
     throw new Response("del member fail", { status: 500 });
   }
 
-  for (let i = 0; i < users.length; i++){
-    if(users[i].memberId == creatorId.creatorId)
-    throw new Response("del member fail:can not del team creator", { status: 500 });
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].memberId == creatorId.creatorId)
+      throw new Response("del member fail:can not del team creator", {
+        status: 500,
+      });
   }
 
   for (let i = 0; i < users.length; i++)

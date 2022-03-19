@@ -1,7 +1,53 @@
+import { Form, ActionFunction, redirect } from "remix";
+import { db } from "~/utils/db.server";
+import { findSessionUid } from "~/utils/sessions";
+
+export const action: ActionFunction = async ({ request }) => {
+  const form = await request.formData();
+  const name = form.get("name")?.toString();
+  let description = form.get("description")?.toString();
+  description = description ? description : "";
+  if (!name) {
+    return new Response("team name is missing", { status: 400 });
+  }
+  const userId = await findSessionUid(request);
+  if (!userId) {
+    return new Response("log in is required", { status: 400 });
+  }
+  const { tid } = await db.team
+    .create({
+      data: {
+        name: name,
+        description: description,
+        createdAt: new Date(Date.now()),
+        creatorId: userId,
+        members: {
+          create: [{ memberId: userId }],
+        },
+      },
+    })
+    .catch(() => {
+      throw new Response("create team fail", { status: 500 });
+    });
+
+  return redirect(`/team/${tid}`);
+};
+
 export default function NewTeam() {
   return (
     <>
-      <div>New Team</div>
+      <h3>New Team</h3>
+
+      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
+        <input type="text" name="name" placeholder="Team name" required />
+        <textarea
+          name="description"
+          id="description"
+          cols={30}
+          rows={10}
+        ></textarea>
+        <button type="submit">Create</button>
+      </Form>
     </>
   );
 }
