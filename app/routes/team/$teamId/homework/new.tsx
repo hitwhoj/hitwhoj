@@ -1,4 +1,3 @@
-import { Response } from "node-fetch";
 import { Form, ActionFunction, redirect } from "remix";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
