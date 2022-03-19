@@ -183,7 +183,7 @@ model Team {
   description String?
 
   // ==== relations ====
-  creator   User           @relation(fields: [creatorId], references: [uid])
+  creator   User           @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
   creatorId Int
   members   TeamMember[]
   homeworks TeamHomework[]
@@ -194,7 +194,7 @@ model TeamMember {
   authority String?
 
   // ==== relations ====
-  member   User   @relation(fields: [memberId], references: [uid])
+  member   User   @relation(fields: [memberId], references: [uid], onDelete: Cascade)
   memberId Int
   team     Team   @relation(fields: [teamId], references: [tid], onDelete: Cascade)
   teamId   String
@@ -211,7 +211,7 @@ model TeamHomework {
   description String?
 
   // ==== relations ====
-  creator     User         @relation(fields: [creatorId], references: [uid])
+  creator     User         @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
   creatorId   Int
   team        Team         @relation(fields: [teamId], references: [tid], onDelete: Cascade)
   teamId      String

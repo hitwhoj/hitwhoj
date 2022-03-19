@@ -48,7 +48,7 @@ export default function MemberList() {
         <ul>
           {data.map((member) => (
             <li key={member.uid}>
-              <Link to={`${member.uid}`}>{member.nickname}</Link>
+              <Link to={`/user/${member.uid}`}>{member.nickname}</Link>
             </li>
           ))}
         </ul>
