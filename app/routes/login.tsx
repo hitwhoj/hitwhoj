@@ -16,20 +16,20 @@ export const meta: MetaFunction = () => ({
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const nickname = form.get("nickname")?.toString();
+  const username = form.get("username")?.toString();
   const password = form.get("password")?.toString();
 
-  if (!nickname || !password) {
-    return new Response("Nickname or password is missing", { status: 400 });
+  if (!username || !password) {
+    return new Response("Username or password is missing", { status: 400 });
   }
 
   const user = await db.user.findUnique({
-    where: { nickname },
+    where: { username },
     select: { password: true, uid: true },
   });
 
   if (!user) {
-    return new Response("Nickname is not registered", { status: 400 });
+    return new Response("Username is not registered", { status: 400 });
   }
 
   if (user.password !== password) {
@@ -51,7 +51,7 @@ export default function Login() {
     <>
       <h2>Login</h2>
       <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
-        <input type="text" name="nickname" placeholder="Nickname" required />
+        <input type="text" name="username" placeholder="Username" required />
         <input
           type="password"
           name="password"
