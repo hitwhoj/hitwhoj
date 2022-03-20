@@ -37,11 +37,11 @@ model User {
   moddedContests   Contest[] @relation("mod", references: [cid])
   juriedContests   Contest[] @relation("jury", references: [cid])
 
-<<<<<<< HEAD
+
   createdTeam     Team[]
   teamMember      TeamMember[]
   createdHomework TeamHomework[]
-=======
+
   records Record[]
 }
 
@@ -50,7 +50,7 @@ enum SystemUserRole {
   Admin
   User
   Guest
->>>>>>> dev
+
 }
 
 model UserSession {
@@ -141,17 +141,11 @@ model ProblemSet {
 
   tags ProblemSetTag[] @relation(references: [id])
 
-  problems Problem[] @relation(references: [pid])
-
-<<<<<<< HEAD
-  uid     Int?
-  creator User? @relation(fields: [uid], references: [uid])
-
+  problems          Problem[]      @relation(references: [pid])
   includeInHomework TeamHomework[]
-=======
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
->>>>>>> dev
+  uid               Int
+  user              User           @relation(fields: [uid], references: [uid])
+
 }
 
 model ProblemSetTag {

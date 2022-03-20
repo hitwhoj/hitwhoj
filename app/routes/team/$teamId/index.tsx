@@ -1,4 +1,4 @@
-import { Link, LoaderFunction, useParams, json, useLoaderData } from "remix";
+import { Link, LoaderFunction, json, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { Team } from "@prisma/client";
 

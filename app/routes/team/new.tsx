@@ -45,6 +45,7 @@ export default function NewTeam() {
           id="description"
           cols={30}
           rows={10}
+          placeholder="description(optional)"
         ></textarea>
         <button type="submit">Create</button>
       </Form>

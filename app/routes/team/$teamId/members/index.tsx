@@ -3,7 +3,7 @@ import { db } from "~/utils/db.server";
 
 type LoaderData = {
   uid: number;
-  nickname: string;
+  username: string;
 }[];
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -16,7 +16,7 @@ export const loader: LoaderFunction = async ({ params }) => {
       member: {
         select: {
           uid: true,
-          nickname: true,
+          username: true,
         },
       },
     },
@@ -48,7 +48,7 @@ export default function MemberList() {
         <ul>
           {data.map((member) => (
             <li key={member.uid}>
-              <Link to={`/user/${member.uid}`}>{member.nickname}</Link>
+              <Link to={`/user/${member.uid}`}>{member.username}</Link>
             </li>
           ))}
         </ul>

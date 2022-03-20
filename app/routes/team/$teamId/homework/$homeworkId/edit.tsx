@@ -111,6 +111,7 @@ export default function editHomework() {
           id="description"
           cols={30}
           rows={10}
+          placeholder="description(optional)"
         ></textarea>
         <input type="datetime-local" name="ddl" />
         <input

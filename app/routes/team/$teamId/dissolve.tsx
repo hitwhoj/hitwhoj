@@ -23,7 +23,7 @@ export const action: ActionFunction = async ({ params, request }) => {
           creatorId: true,
         },
       })
-      .catch((error) => {
+      .catch(() => {
         throw new Response("team search fail", { status: 500 });
       });
     if (!creator) {
