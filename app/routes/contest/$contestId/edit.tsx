@@ -358,13 +358,15 @@ function SystemEditor(props: { system: ContestSystem }) {
 
   return (
     <fetcher.Form method="post">
-      <select id="system" name="system" disabled={isUpdating} required>
+      <select
+        id="system"
+        name="system"
+        disabled={isUpdating}
+        required
+        defaultValue={props.system}
+      >
         {Object.values(ContestSystem).map((system) => (
-          <option
-            value={system}
-            key={system}
-            selected={system === props.system}
-          >
+          <option value={system} key={system}>
             {system}
           </option>
         ))}
