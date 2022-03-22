@@ -1,2 +1,3 @@
-
-* Added CHANGELOG.md
+- fix: use `defaultValue` in `<select>` instead of setting `selected` in `<option>`
+- feat: add redirect searchParams in `register.tsx`
+- Added CHANGELOG.md
