@@ -69,6 +69,21 @@ class S3 {
   }
 
   /**
+   * 以 Buffer 形式读取文件
+   */
+  readFileAsBuffer(filename: string) {
+    return new Promise<Buffer>((resolve, reject) => {
+      let data: any[] = [];
+      this.client.getObject(this.bucket, filename, (err, stream) => {
+        if (err) reject(err);
+        stream.on("data", (chunk) => data.push(chunk));
+        stream.on("end", () => resolve(Buffer.concat(data)));
+        stream.on("error", (err) => reject(err));
+      });
+    });
+  }
+
+  /**
    * 以文本形式读取文件
    */
   readFileAsText(filename: string) {
@@ -78,6 +93,7 @@ class S3 {
         if (err) reject(err);
         stream.on("data", (chunk) => (data += chunk));
         stream.on("end", () => resolve(data));
+        stream.on("error", (err) => reject(err));
       });
     });
   }
