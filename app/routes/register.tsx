@@ -10,6 +10,7 @@ import {
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { parseRedirectPathname } from "~/utils/tools";
@@ -28,6 +29,8 @@ export const action: ActionFunction = async ({ request }) => {
   if (password !== password2) {
     return new Response("Passwords do not match", { status: 400 });
   }
+
+  await guaranteePermission(request, Permissions.User.Session.Create);
 
   if (await db.user.findUnique({ where: { username } })) {
     return new Response("username is already taken", { status: 400 });

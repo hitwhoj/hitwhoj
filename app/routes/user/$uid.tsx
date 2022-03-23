@@ -22,7 +22,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const user = await db.user.findUnique({
     where: { uid },
-    select: { nickname: true, username: true },
+    select: {
+      nickname: true,
+      username: true,
+    },
   });
 
   if (!user) {

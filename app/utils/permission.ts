@@ -1,4 +1,5 @@
 import { SystemUserRole } from "@prisma/client";
+import { redirect } from "remix";
 
 import { db } from "./db.server";
 import { findSessionUid } from "./sessions";
@@ -13,19 +14,26 @@ export const Permissions = {
   ALL: -1n,
   DEFAULT: 0n,
 
-  USER_SESSION_CHECK: perm(),
-  USER_SESSION_DELETE: perm(),
-  USER_SESSION_SIGN_UP: perm(),
-  USER_SESSION_SIGN_IN: perm(),
-
-  USER_PROFILE_CHECK: perm(),
-  USER_PROFILE_MODIFY: perm(),
-
-  USER_FILE_CHECK: perm(),
-  USER_FILE_UPLOAD: perm(),
-  USER_FILE_DELETE: perm(),
-  USER_FILE_DOWNLOAD_PUBLIC: perm(),
-  USER_FILE_DOWNLOAD_PRIVATE: perm(),
+  User: {
+    Register: perm(),
+    Session: {
+      View: perm(),
+      Create: perm(),
+      Delete: perm(),
+    },
+    Profile: {
+      View: perm(),
+      Update: perm(),
+    },
+    File: {
+      View: perm(),
+      Create: perm(),
+      Update: perm(),
+      Delete: perm(),
+      DownloadPublic: perm(),
+      DownloadPrivate: perm(),
+    },
+  },
 };
 
 enum CustomUserRole {
@@ -41,39 +49,41 @@ const PermissionDict: Record<UserRole, bigint> = {
   // 网站管理员
   [SystemUserRole.Admin]:
     Permissions.DEFAULT |
-    Permissions.USER_PROFILE_CHECK |
-    Permissions.USER_PROFILE_MODIFY |
-    Permissions.USER_FILE_CHECK |
-    Permissions.USER_FILE_DELETE |
-    Permissions.USER_FILE_DOWNLOAD_PUBLIC |
-    Permissions.USER_FILE_DOWNLOAD_PRIVATE,
+    Permissions.User.Profile.View |
+    Permissions.User.Profile.Update |
+    Permissions.User.File.View |
+    Permissions.User.File.Update |
+    Permissions.User.File.Delete |
+    Permissions.User.File.DownloadPublic |
+    Permissions.User.File.DownloadPrivate,
 
   // 普通用户的权限
   [SystemUserRole.User]:
     Permissions.DEFAULT |
-    Permissions.USER_PROFILE_CHECK |
-    Permissions.USER_FILE_DOWNLOAD_PUBLIC,
+    Permissions.User.Profile.View |
+    Permissions.User.File.DownloadPublic,
 
   // 访客权限
   [SystemUserRole.Guest]:
     Permissions.DEFAULT |
-    Permissions.USER_SESSION_SIGN_IN |
-    Permissions.USER_SESSION_SIGN_UP |
-    Permissions.USER_PROFILE_CHECK |
-    Permissions.USER_FILE_DOWNLOAD_PUBLIC,
+    Permissions.User.Register |
+    Permissions.User.Session.Create |
+    Permissions.User.Profile.View |
+    Permissions.User.File.DownloadPublic,
 
   // 用户自己
   [CustomUserRole.UserSelf]:
     Permissions.DEFAULT |
-    Permissions.USER_SESSION_CHECK |
-    Permissions.USER_SESSION_DELETE |
-    Permissions.USER_PROFILE_CHECK |
-    Permissions.USER_PROFILE_MODIFY |
-    Permissions.USER_FILE_CHECK |
-    Permissions.USER_FILE_UPLOAD |
-    Permissions.USER_FILE_DELETE |
-    Permissions.USER_FILE_DOWNLOAD_PUBLIC |
-    Permissions.USER_FILE_DOWNLOAD_PRIVATE,
+    Permissions.User.Session.View |
+    Permissions.User.Session.Delete |
+    Permissions.User.Profile.View |
+    Permissions.User.Profile.Update |
+    Permissions.User.File.View |
+    Permissions.User.File.Create |
+    Permissions.User.File.Update |
+    Permissions.User.File.Delete |
+    Permissions.User.File.DownloadPublic |
+    Permissions.User.File.DownloadPrivate,
 };
 
 export type GuaranteePermissionInfo = {
@@ -112,15 +122,15 @@ export async function guaranteePermission(
   request: Request,
   permission: bigint,
   info?: GuaranteePermissionInfo
-): Promise<void> {
+) {
   const roles: UserRole[] = [];
 
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
   // 用户自身系统权限
-  if (uid) {
+  if (self) {
     const user = await db.user.findUnique({
-      where: { uid },
+      where: { uid: self },
       select: { role: true },
     });
 
@@ -134,7 +144,7 @@ export async function guaranteePermission(
   }
 
   // 用户对自身操作权限
-  if (info?.uid === uid) {
+  if (info?.uid === self) {
     roles.push(CustomUserRole.UserSelf);
   }
 
@@ -143,6 +153,15 @@ export async function guaranteePermission(
     .reduce((perm, rolePerm) => perm | rolePerm, 0n);
 
   if ((userPermission & permission) !== permission) {
+    // 没有权限
+    if (!self) {
+      // 如果没有登录，则跳转到登录页面
+      throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+    }
+
+    // 否则抛出 403
     throw new Response("Permission denied", { status: 403 });
   }
+
+  return self;
 }
