@@ -1,4 +1,6 @@
 import * as React from "react";
+import style from "./styles/global.css";
+import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import {
   json,
   Links,
@@ -16,12 +18,15 @@ import Layout from "./src/Layout";
 import { User } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
-import style from "./styles/global.css";
 
 export const links: LinksFunction = () => [
   {
     rel: "stylesheet",
     href: style,
+  },
+  {
+    rel: "stylesheet",
+    href: arcoStyle,
   },
 ];
 
