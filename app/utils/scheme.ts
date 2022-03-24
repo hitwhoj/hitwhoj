@@ -27,6 +27,11 @@ export const usernameScheme = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
 
 /**
+ * Password scheme for every user
+ */
+export const passwordScheme = z.string().nonempty("Password must be nonempty");
+
+/**
  * Nickname scheme for every user
  */
 export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");

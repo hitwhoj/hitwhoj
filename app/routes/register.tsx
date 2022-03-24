@@ -1,13 +1,18 @@
 import {
   ActionFunction,
   Form,
+  Link,
   MetaFunction,
   redirect,
   useActionData,
+  useSearchParams,
   useTransition,
 } from "remix";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
+import { parseRedirectPathname } from "~/utils/tools";
 
 export const meta: MetaFunction = () => ({
   title: "Register",
@@ -16,13 +21,9 @@ export const meta: MetaFunction = () => ({
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
 
-  const username = form.get("username")?.toString();
-  const password = form.get("password")?.toString();
-  const password2 = form.get("password2")?.toString();
-
-  if (!username || !password || !password2) {
-    return new Response("username or password is missing", { status: 400 });
-  }
+  const username = invariant(usernameScheme.safeParse(form.get("username")));
+  const password = invariant(passwordScheme.safeParse(form.get("password")));
+  const password2 = invariant(passwordScheme.safeParse(form.get("password2")));
 
   if (password !== password2) {
     return new Response("Passwords do not match", { status: 400 });
@@ -34,7 +35,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   const { uid } = await db.user.create({ data: { username, password } });
 
-  return redirect(`/user/${uid}`, {
+  return redirect(parseRedirectPathname(form.get("redirect")), {
     headers: {
       "Set-Cookie": await commitSession(uid),
     },
@@ -44,6 +45,9 @@ export const action: ActionFunction = async ({ request }) => {
 export default function Register() {
   const error = useActionData<string>();
   const { state } = useTransition();
+  const [searchParams] = useSearchParams();
+
+  const redirect = parseRedirectPathname(searchParams.get("redirect"));
 
   return (
     <>
@@ -68,11 +72,15 @@ export default function Register() {
           placeholder="Confirm Password"
           required
         />
+        <input type="hidden" name="redirect" value={redirect} />
         <button type="submit" disabled={state === "submitting"}>
           {state === "submitting" ? "Sign up..." : "Sign up"}
         </button>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </Form>
+      <Link to={redirect === "/" ? "/login" : `/login?redirect=${redirect}`}>
+        Log in
+      </Link>
     </>
   );
 }

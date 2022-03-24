@@ -14,7 +14,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   return null;
@@ -24,7 +24,7 @@ export const action: ActionFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   const form = await request.formData();

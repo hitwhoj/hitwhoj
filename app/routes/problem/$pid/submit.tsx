@@ -10,7 +10,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const self = await findSessionUid(request);
 
   if (!self) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   return null;
@@ -20,7 +20,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
