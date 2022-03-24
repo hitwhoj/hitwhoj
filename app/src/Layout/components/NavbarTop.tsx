@@ -1,37 +1,26 @@
 import { Link } from "remix";
 import { useContext } from "react";
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
-import Toolbar from "@mui/material/Toolbar";
 import { UserInfoContext } from "~/root";
 
 export default function NavbarLeft(props: { drawerWidth: string }) {
   const { user, uid } = useContext(UserInfoContext);
-  // console.log(user, uid);
 
   return (
-    <AppBar
-      color="inherit"
-      sx={{
-        width: `calc(100% - ${props.drawerWidth})`,
-        // height: `4rem`,
-        ml: `${props.drawerWidth}`,
-      }}
-    >
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
-        {user?.nickname} - {uid}
-        <Box sx={{ mr: "1vw" }}>
+    /**
+     * style={{
+     *  width: `calc(100% - ${props.drawerWidth})`,
+     *  margin-left: `${props.drawerWidth}`,
+     * }}
+     * */
+    <div>
+      <div>
+        username: {user?.nickname} - uid: {uid} - width: {props.drawerWidth}
+        <div>
           <Link to="/login"> login </Link>
-        </Box>
-        <Box sx={{ mr: "1vw" }}>
+        </div>
+        <div>
           <Link to="/register"> register </Link>
-        </Box>
+        </div>
         {/* { !user && (
           <Box sx={{ mr: "1vw" }}>
             <Link to="/login"> login </Link>
@@ -47,8 +36,7 @@ export default function NavbarLeft(props: { drawerWidth: string }) {
             <Link to="/register"> register </Link>
           </Box>
         )} */}
-        <Avatar />
-      </Toolbar>
-    </AppBar>
+      </div>
+    </div>
   );
 }
