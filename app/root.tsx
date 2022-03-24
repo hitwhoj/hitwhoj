@@ -1,19 +1,25 @@
 import * as React from "react";
 import {
+  json,
   Links,
   LinksFunction,
   LiveReload,
+  LoaderFunction,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
   useCatch,
+  useLoaderData,
 } from "remix";
 import { withEmotionCache } from "@emotion/react";
 import { unstable_useEnhancedEffect as useEnhancedEffect } from "@mui/material";
 import theme from "./src/theme";
 import ClientStyleContext from "./src/ClientStyleContext";
 import Layout from "./src/Layout";
+import { User } from "@prisma/client";
+import { db } from "~/utils/db.server";
+import { findSessionUid } from "~/utils/sessions";
 
 import style from "./styles/global.css";
 
@@ -70,14 +76,46 @@ const Document = withEmotionCache(
   }
 );
 
+type LoaderData = {
+  user: Pick<User, "nickname" | "avatar"> | null;
+  uid: number | null;
+};
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const uid = await findSessionUid(request);
+  if (!uid) {
+    return json({
+      user: null,
+      uid: null,
+    });
+  }
+  const user = await db.user.findUnique({
+    where: { uid },
+    select: { nickname: true, avatar: true },
+  });
+  return json({
+    user,
+    uid,
+  });
+};
+
+export const UserInfoContext = React.createContext<LoaderData>({
+  user: null,
+  uid: null,
+});
+
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
+  const { user, uid } = useLoaderData<LoaderData>();
+  console.log(user, uid);
   return (
     <Document>
-      <Layout>
-        <Outlet />
-      </Layout>
+      <UserInfoContext.Provider value={{ user, uid }}>
+        <Layout>
+          <Outlet />
+        </Layout>
+      </UserInfoContext.Provider>
     </Document>
   );
 }

@@ -19,7 +19,7 @@ It will automatically create a service and running on port 5432.
 
 Follow the steps below or you can just refer to this: https://juejin.cn/post/6973840027524530206
 
-1. Download the executable program from  [minio](https://min.io/).
+1. Download the executable program from [minio](https://min.io/).
 
 2. Start minio.exe:
 
@@ -31,7 +31,7 @@ Follow the steps below or you can just refer to this: https://juejin.cn/post/697
 
    1. Download [WinSW](https://github.com/winsw/winsw/releases), and copy it into the same folder with minio.exe, then rename it, for example `minio-server.exe`.
 
-   2. Touch the xml file with the same name, for example  `minio-server.xml` , write the config below:
+   2. Touch the xml file with the same name, for example `minio-server.xml` , write the config below:
 
       ```xml
       <service>
@@ -101,21 +101,21 @@ This project needs your node version to be 16, maybe you have to [install nvm](h
    ```bash
    # end point, defaults to localhost
    echo "S3_END_POINT=localhost" >> .env
-   
+
    # port number, defaults to 9000
    echo "S3_PORT=9000" >> .env
-   
+
    # enable SSL, defaults to false
    echo "S3_SSL=true" >> .env
-   
+
    # access key, defaults to "", choose one of the following:
    echo "S3_ACCESS_KEY=access_key" >> .env
    echo "S3_ROOT_USER=access_key" >> .env
-   
+
    # secret key, defaults to "", choose one of the following:
    echo "S3_SECRET_KEY=secret_key" >> .env
    echo "S3_ROOT_PASSWORD=secret_key" >> .env
-   
+
    # bucket name, defaults to ""
    echo "S3_BUCKET=bucket_name" >> .env
    ```
@@ -146,4 +146,3 @@ yarn dev
 ```
 
 Then enjoy ~~guguing~~ coding!
-
