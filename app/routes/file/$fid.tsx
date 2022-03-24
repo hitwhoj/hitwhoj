@@ -40,23 +40,30 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   // 用户上传的文件
   if (file.user?.uid) {
-    if (file.private) {
-      await guaranteePermission(
-        request,
-        Permissions.User.File.DownloadPrivate,
-        { uid: file.user.uid, fid: file.fid }
-      );
-    } else {
-      await guaranteePermission(request, Permissions.User.File.DownloadPublic, {
+    await guaranteePermission(
+      request,
+      file.private
+        ? Permissions.User.File.DownloadPrivate
+        : Permissions.User.File.DownloadPublic,
+      {
         uid: file.user.uid,
         fid: file.fid,
-      });
-    }
+      }
+    );
   }
 
-  // TODO: 检查是否有权限下载该题目的文件
+  // 检查是否有权限下载该题目的文件
   if (file.problem?.pid) {
-    throw new Response("Not implemented", { status: 501 });
+    await guaranteePermission(
+      request,
+      file.private
+        ? Permissions.Problem.Data.Download
+        : Permissions.Problem.File.Download,
+      {
+        pid: file.problem.pid,
+        fid: file.fid,
+      }
+    );
   }
 
   return json({ file });

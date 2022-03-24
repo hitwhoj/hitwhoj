@@ -7,6 +7,7 @@ import {
 import { json, Link, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
@@ -17,7 +18,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
   const problem = await db.problem.findUnique({
@@ -26,6 +27,7 @@ export const loader: LoaderFunction = async ({ params }) => {
       pid: true,
       title: true,
       description: true,
+      private: true,
       tags: {
         select: {
           name: true,
@@ -51,6 +53,16 @@ export const loader: LoaderFunction = async ({ params }) => {
   if (!problem) {
     throw new Response("Problem not found", { status: 404 });
   }
+
+  // 检查访问权限
+  await guaranteePermission(
+    request,
+    Permissions.Problem.File.View |
+      (problem.private
+        ? Permissions.Problem.ViewPrivate
+        : Permissions.Problem.ViewPublic),
+    { pid }
+  );
 
   return json({ problem });
 };

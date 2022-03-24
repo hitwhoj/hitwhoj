@@ -34,10 +34,32 @@ export const Permissions = {
       DownloadPrivate: perm(),
     },
   },
+
+  Problem: {
+    Create: perm(),
+    Update: perm(),
+    Delete: perm(),
+    ViewPublic: perm(),
+    ViewPrivate: perm(),
+    Submit: perm(),
+    Data: {
+      View: perm(),
+      Create: perm(),
+      Download: perm(),
+      Delete: perm(),
+    },
+    File: {
+      View: perm(),
+      Create: perm(),
+      Download: perm(),
+      Delete: perm(),
+    },
+  },
 };
 
 enum CustomUserRole {
   UserSelf = "UserSelf",
+  ProblemAdmin = "ProblemAdmin",
 }
 
 type UserRole = SystemUserRole | CustomUserRole;
@@ -55,13 +77,31 @@ const PermissionDict: Record<UserRole, bigint> = {
     Permissions.User.File.Update |
     Permissions.User.File.Delete |
     Permissions.User.File.DownloadPublic |
-    Permissions.User.File.DownloadPrivate,
+    Permissions.User.File.DownloadPrivate |
+    Permissions.Problem.Create |
+    Permissions.Problem.Update |
+    Permissions.Problem.Delete |
+    Permissions.Problem.ViewPublic |
+    Permissions.Problem.ViewPrivate |
+    Permissions.Problem.Data.View |
+    Permissions.Problem.Data.Create |
+    Permissions.Problem.Data.Download |
+    Permissions.Problem.Data.Delete |
+    Permissions.Problem.File.View |
+    Permissions.Problem.File.Create |
+    Permissions.Problem.File.Download |
+    Permissions.Problem.File.Delete |
+    Permissions.Problem.Submit,
 
   // 普通用户的权限
   [SystemUserRole.User]:
     Permissions.DEFAULT |
     Permissions.User.Profile.View |
-    Permissions.User.File.DownloadPublic,
+    Permissions.User.File.DownloadPublic |
+    Permissions.Problem.ViewPublic |
+    Permissions.Problem.File.View |
+    Permissions.Problem.File.Download |
+    Permissions.Problem.Submit,
 
   // 访客权限
   [SystemUserRole.Guest]:
@@ -69,7 +109,10 @@ const PermissionDict: Record<UserRole, bigint> = {
     Permissions.User.Register |
     Permissions.User.Session.Create |
     Permissions.User.Profile.View |
-    Permissions.User.File.DownloadPublic,
+    Permissions.User.File.DownloadPublic |
+    Permissions.Problem.ViewPublic |
+    Permissions.Problem.File.View |
+    Permissions.Problem.File.Download,
 
   // 用户自己
   [CustomUserRole.UserSelf]:
@@ -84,6 +127,23 @@ const PermissionDict: Record<UserRole, bigint> = {
     Permissions.User.File.Delete |
     Permissions.User.File.DownloadPublic |
     Permissions.User.File.DownloadPrivate,
+
+  // 题目创建者（管理员）
+  [CustomUserRole.ProblemAdmin]:
+    Permissions.DEFAULT |
+    Permissions.Problem.Create |
+    Permissions.Problem.Update |
+    Permissions.Problem.Delete |
+    Permissions.Problem.ViewPublic |
+    Permissions.Problem.ViewPrivate |
+    Permissions.Problem.Data.View |
+    Permissions.Problem.Data.Create |
+    Permissions.Problem.Data.Download |
+    Permissions.Problem.Data.Delete |
+    Permissions.Problem.File.View |
+    Permissions.Problem.File.Create |
+    Permissions.Problem.File.Download |
+    Permissions.Problem.File.Delete,
 };
 
 export type GuaranteePermissionInfo = {
@@ -144,8 +204,21 @@ export async function guaranteePermission(
   }
 
   // 用户对自身操作权限
-  if (info?.uid === self) {
+  if (self && info?.uid === self) {
     roles.push(CustomUserRole.UserSelf);
+  }
+
+  // 题目管理员的权限
+  if (self && info?.pid) {
+    // TODO: 只检查了是否是题目的创建者，没有判断其他可能的角色
+    const problem = await db.problem.findUnique({
+      where: { pid: info.pid },
+      select: { uid: true },
+    });
+
+    if (problem && problem.uid === self) {
+      roles.push(CustomUserRole.ProblemAdmin);
+    }
   }
 
   const userPermission = roles
