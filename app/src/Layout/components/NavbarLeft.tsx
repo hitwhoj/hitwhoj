@@ -1,4 +1,7 @@
 import { Link } from "remix";
+import { Menu, Message } from "@arco-design/web-react";
+import { IconAlignLeft } from "@arco-design/web-react/icon";
+
 // 左侧导航栏列表
 type Route = {
   name: string;
@@ -10,69 +13,70 @@ const navBarRoutes: Route[] = [
   {
     name: "problems",
     href: "/problem",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "problemSet",
     href: "/problemset",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "contest",
     href: "/contest",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "team",
     href: "/team",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "record",
     href: "/record",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "comments",
     href: "/comment",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
   {
     name: "docs",
     href: "/docs",
-    icon: <div />,
+    icon: <IconAlignLeft />,
   },
 ];
 
-export default function NavbarLeft(props: { drawerWidth: string }) {
+export default function NavbarLeft() {
   return (
-    /**
-     * sx={{
-        width: `${props.drawerWidth}`,
-        "& .MuiDrawer-paper": {
-          width: `${props.drawerWidth}`,
-          boxSizing: "border-box",
-        },
-      }}
-     */
     <div>
-      <div>
-        <Link to={"/"}>
-          <h1>HITwhOJ</h1>
-        </Link>
-      </div>
-      <div>
-        width-{props.drawerWidth}
-        <ul>
-          {navBarRoutes.map((route: Route) => (
-            <li key={route.href}>
-              <Link to={route.href} key={route.href}>
-                {route.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Link to={"/"}>
+        <div
+          style={{
+            height: "4rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <h1 style={{ color: "var(--color-text-1)" }}>HITwhOJ</h1>
+        </div>
+      </Link>
+      <Menu
+        onClickMenuItem={(key) =>
+          Message.info({ content: `You select ${key}`, showIcon: true })
+        }
+        style={{
+          width: "100%",
+        }}
+      >
+        {navBarRoutes.map((route) => (
+          <Menu.Item key={route.href}>
+            {route.icon}
+            {route.name}
+          </Menu.Item>
+        ))}
+      </Menu>
     </div>
   );
 }
