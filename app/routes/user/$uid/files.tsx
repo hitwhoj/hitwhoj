@@ -1,8 +1,11 @@
+import { Button, Switch, Table } from "@arco-design/web-react";
+import { ColumnProps } from "@arco-design/web-react/es/Table";
+import { IconDelete } from "@arco-design/web-react/icon";
 import { File as UserFile } from "@prisma/client";
+import { useRef } from "react";
 import {
   ActionFunction,
   json,
-  Link,
   LoaderFunction,
   unstable_parseMultipartFormData,
   useFetcher,
@@ -25,9 +28,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     where: { uid },
     select: {
       createdFiles: {
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: [{ createdAt: "desc" }, { filename: "asc" }],
       },
     },
   });
@@ -115,68 +116,75 @@ function UserFileUploader() {
   );
 }
 
-function UserFileListItem({ file }: { file: UserFile }) {
+function UserFilePrivacyModifier({ file }: { file: UserFile }) {
+  const fetcher = useFetcher();
+  const isFetching = fetcher.state !== "idle";
+  const ref = useRef<HTMLFormElement>(null);
+
+  return (
+    <fetcher.Form method="post" ref={ref}>
+      <input type="hidden" name="fid" value={file.fid} />
+      <input type="hidden" name="_action" value={ActionType.ModifyPrivacy} />
+      <Switch
+        disabled={isFetching}
+        defaultChecked={!file.private}
+        onChange={() => fetcher.submit(ref.current)}
+      />
+    </fetcher.Form>
+  );
+}
+
+function UserFileRemoveButton({ file }: { file: UserFile }) {
   const fetcher = useFetcher();
   const isFetching = fetcher.state !== "idle";
 
   return (
-    <tr style={{ opacity: isFetching ? 0.5 : 1 }}>
-      <td>
-        <Link to={`/file/${file.fid}`}>{file.filename}</Link>
-      </td>
-      <td>{file.filesize}</td>
-      <td>{file.mimetype}</td>
-      <td>
-        {file.private ? (
-          <span style={{ color: "red" }}>隐藏</span>
-        ) : (
-          <span style={{ color: "lime" }}>公开</span>
-        )}
-      </td>
-      <td>
-        <fetcher.Form method="post">
-          <input type="hidden" name="fid" value={file.fid} />
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.RemoveFile}
-            disabled={isFetching}
-          >
-            删除捏
-          </button>
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.ModifyPrivacy}
-            disabled={isFetching}
-          >
-            {file.private ? "公开" : "隐藏"}
-          </button>
-        </fetcher.Form>
-      </td>
-    </tr>
+    <fetcher.Form method="post">
+      <input type="hidden" name="fid" value={file.fid} />
+      <Button
+        type="primary"
+        status="danger"
+        htmlType="submit"
+        name="_action"
+        value={ActionType.RemoveFile}
+        disabled={isFetching}
+        icon={<IconDelete />}
+      />
+    </fetcher.Form>
   );
 }
 
+const columns: ColumnProps<UserFile>[] = [
+  {
+    title: "文件名",
+    dataIndex: "filename",
+    sorter: (a, b) =>
+      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+  },
+  {
+    title: "文件大小",
+    dataIndex: "filesize",
+    sorter: (a, b) => a.filesize - b.filesize,
+  },
+  {
+    title: "文件类型",
+    dataIndex: "mimetype",
+  },
+  {
+    title: "公开状态",
+    dataIndex: "private",
+    align: "center",
+    render: (_, file) => <UserFilePrivacyModifier file={file} />,
+  },
+  {
+    title: "操作",
+    dataIndex: "action",
+    render: (_, file) => <UserFileRemoveButton file={file} />,
+  },
+];
+
 function UserFileList({ files }: { files: UserFile[] }) {
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>文件名</th>
-          <th>文件大小</th>
-          <th>文件类型</th>
-          <th>公开状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {files.map((file) => (
-          <UserFileListItem file={file} key={file.fid} />
-        ))}
-      </tbody>
-    </table>
-  );
+  return <Table rowKey="fid" columns={columns} data={files} />;
 }
 
 export default function UserFiles() {
