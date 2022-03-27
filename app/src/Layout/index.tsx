@@ -37,6 +37,7 @@ export default function ({ children }: { children: React.ReactNode }) {
           <Content
             style={{
               backgroundColor: "var(--color-bg-4)",
+              marginTop: "1rem",
             }}
           >
             {children}

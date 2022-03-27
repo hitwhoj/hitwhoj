@@ -1,5 +1,5 @@
 import { Link } from "remix";
-import { Menu, Message } from "@arco-design/web-react";
+import { Menu } from "@arco-design/web-react";
 import { IconAlignLeft } from "@arco-design/web-react/icon";
 
 // 左侧导航栏列表
@@ -11,37 +11,37 @@ type Route = {
 
 const navBarRoutes: Route[] = [
   {
-    name: "problems",
+    name: "Problems",
     href: "/problem",
     icon: <IconAlignLeft />,
   },
   {
-    name: "problemSet",
+    name: "ProblemSet",
     href: "/problemset",
     icon: <IconAlignLeft />,
   },
   {
-    name: "contest",
+    name: "Contest",
     href: "/contest",
     icon: <IconAlignLeft />,
   },
   {
-    name: "team",
+    name: "Team",
     href: "/team",
     icon: <IconAlignLeft />,
   },
   {
-    name: "record",
+    name: "Record",
     href: "/record",
     icon: <IconAlignLeft />,
   },
   {
-    name: "comments",
+    name: "Comments",
     href: "/comment",
     icon: <IconAlignLeft />,
   },
   {
-    name: "docs",
+    name: "Docs",
     href: "/docs",
     icon: <IconAlignLeft />,
   },
@@ -63,18 +63,17 @@ export default function NavbarLeft() {
         </div>
       </Link>
       <Menu
-        onClickMenuItem={(key) =>
-          Message.info({ content: `You select ${key}`, showIcon: true })
-        }
         style={{
           width: "100%",
         }}
       >
         {navBarRoutes.map((route) => (
-          <Menu.Item key={route.href}>
-            {route.icon}
-            {route.name}
-          </Menu.Item>
+          <Link to={route.href} key={route.href}>
+            <Menu.Item key={route.href}>
+              {route.icon}
+              {route.name}
+            </Menu.Item>
+          </Link>
         ))}
       </Menu>
     </div>
