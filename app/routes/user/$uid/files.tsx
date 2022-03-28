@@ -163,14 +163,13 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.fid} />
       <Button
-        type="primary"
+        type="text"
         status="danger"
         htmlType="submit"
         name="_action"
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
-        size="small"
       />
     </fetcher.Form>
   );
@@ -180,13 +179,13 @@ const columns: ColumnProps<UserFile>[] = [
   {
     title: "文件名",
     dataIndex: "filename",
-    sorter: (a, b) =>
+    sorter: (a: UserFile, b: UserFile) =>
       a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
   },
   {
     title: "文件大小",
     dataIndex: "filesize",
-    sorter: (a, b) => a.filesize - b.filesize,
+    sorter: (a: UserFile, b: UserFile) => a.filesize - b.filesize,
   },
   {
     title: "文件类型",

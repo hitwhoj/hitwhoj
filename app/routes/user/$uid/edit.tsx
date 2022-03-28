@@ -55,7 +55,9 @@ export const action: ActionFunction = async ({ request, params }) => {
   const form = await request.formData();
 
   const username = invariant(usernameScheme.safeParse(form.get("username")));
-  const nickname = invariant(nicknameScheme.safeParse(form.get("nickname")));
+  const nickname = invariant(
+    nicknameScheme.or(emptyStringScheme).safeParse(form.get("nickname"))
+  );
   const avatar = invariant(
     z
       .string()
