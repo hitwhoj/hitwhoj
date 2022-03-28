@@ -1,6 +1,7 @@
 import { Contest } from "@prisma/client";
 import { LoaderFunction, json, useLoaderData, MetaFunction, Link } from "remix";
 import { db } from "~/utils/db.server";
+import { Table, Grid, Button } from "@arco-design/web-react";
 
 type LoaderData = {
   contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
@@ -26,49 +27,21 @@ export const meta: MetaFunction = () => ({
 });
 
 export function ContestState({ begin, end }: { begin: Date; end: Date }) {
-  if (end.getTime() < Date.now()) {
-    return (
-      <span
-        style={{
-          color: "white",
-          backgroundColor: "red",
-          borderRadius: "10px",
-          margin: "0 10px",
-          padding: "0 10px",
-        }}
-      >
-        已结束
-      </span>
-    );
-  } else if (begin.getTime() > Date.now()) {
-    return (
-      <span
-        style={{
-          color: "white",
-          backgroundColor: "blue",
-          borderRadius: "10px",
-          margin: "0 10px",
-          padding: "0 10px",
-        }}
-      >
-        未开始
-      </span>
-    );
-  } else {
-    return (
-      <span
-        style={{
-          color: "white",
-          backgroundColor: "green",
-          borderRadius: "10px",
-          margin: "0 10px",
-          padding: "0 10px",
-        }}
-      >
-        进行中
-      </span>
-    );
-  }
+  const status =
+    begin > new Date() ? "upcoming" : end < new Date() ? "ended" : "running";
+  return (
+    <span
+      style={{
+        color: "white",
+        backgroundColor:
+          status === "upcoming" ? "blue" : status === "ended" ? "red" : "green",
+        borderRadius: "10px",
+        padding: "0 10px",
+      }}
+    >
+      {status}
+    </span>
+  );
 }
 
 export function ContestList({
@@ -76,26 +49,52 @@ export function ContestList({
 }: {
   contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
 }) {
+  type ContestDetails = Pick<
+    Contest,
+    "cid" | "title" | "beginTime" | "endTime"
+  >;
+  const tableColumns = [
+    {
+      title: "CID",
+      dataIndex: "cid",
+      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+    },
+    {
+      title: "Title",
+      dataIndex: "title",
+      render: (col: string, contest: ContestDetails) => (
+        <Link
+          to={`${contest.cid}`}
+          // TODO: 写个hover样式qwq
+          style={{}}
+        >
+          {col}
+        </Link>
+      ),
+    },
+    {
+      title: "Status",
+      render: (_: any, contest: ContestDetails) => (
+        <ContestState
+          begin={new Date(contest.beginTime)}
+          end={new Date(contest.endTime)}
+        />
+      ),
+    },
+  ];
   return (
-    <ul>
-      {contests.map((contest) => (
-        <li key={contest.cid}>
-          <span
-            style={{
-              color: "grey",
-              marginRight: "10px",
-            }}
-          >
-            C{contest.cid}
-          </span>
-          <Link to={`/contest/${contest.cid}`}>{contest.title}</Link>
-          <ContestState
-            begin={new Date(contest.beginTime)}
-            end={new Date(contest.endTime)}
-          />
-        </li>
-      ))}
-    </ul>
+    <Table
+      columns={tableColumns}
+      data={contests}
+      rowKey="cid"
+      hover={false}
+      pagination={{
+        total: contests.length,
+        defaultPageSize: 20,
+        showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
+        showJumper: true,
+      }}
+    />
   );
 }
 
@@ -104,10 +103,17 @@ export default function ContestListIndex() {
 
   return (
     <>
-      <h1>Contest List</h1>
-      <Link to="new">
-        <button>创建比赛</button>
-      </Link>
+      <Grid.Row
+        justify="end"
+        align="center"
+        style={{
+          height: "3rem",
+        }}
+      >
+        <Link to="new">
+          <Button type="primary">Create Contest</Button>
+        </Link>
+      </Grid.Row>
       <ContestList contests={contests} />
     </>
   );
