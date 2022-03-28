@@ -1,3 +1,4 @@
+import { Descriptions } from "@arco-design/web-react";
 import { User } from "@prisma/client";
 import { json, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
@@ -32,30 +33,31 @@ export const loader: LoaderFunction = async ({ params }) => {
 export default function Profile() {
   const { user } = useLoaderData<LoaderData>();
 
+  const data = [
+    {
+      label: "用户名",
+      value: user.username,
+    },
+    {
+      label: "用户昵称",
+      value: user.nickname || "-",
+    },
+    {
+      label: "电子邮箱",
+      value: <a href={`mailto:${user.email}`}>{user.email}</a>,
+    },
+    {
+      label: "密码",
+      value: <code style={{ color: "red" }}>{user.password}</code>,
+    },
+  ];
+
   return (
-    <table>
-      <tbody>
-        <tr>
-          <th>UID</th>
-          <td>{user.uid}</td>
-        </tr>
-        <tr>
-          <th>Username</th>
-          <td>{user.username}</td>
-        </tr>
-        <tr>
-          <th>Nickname</th>
-          <td>{user.nickname}</td>
-        </tr>
-        <tr>
-          <th>E-Mail</th>
-          <td>{user.email}</td>
-        </tr>
-        <tr>
-          <th>Password</th>
-          <td>{user.password}</td>
-        </tr>
-      </tbody>
-    </table>
+    <Descriptions
+      column={1}
+      title="用户资料"
+      data={data}
+      labelStyle={{ paddingRight: 36 }}
+    />
   );
 }

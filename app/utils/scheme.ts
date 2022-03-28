@@ -37,6 +37,11 @@ export const passwordScheme = z.string().nonempty("Password must be nonempty");
 export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");
 
 /**
+ * Bio scheme
+ */
+export const bioScheme = z.string();
+
+/**
  * Tag scheme for any tags
  */
 export const tagScheme = z.string().nonempty("Tag must be nonempty");
@@ -61,6 +66,8 @@ export const emailScheme = z
   .email("Email must be a valid email")
   // TODO: maybe requires modification
   .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
+
+export const emptyStringScheme = z.string().length(0);
 
 /**
  * Begin and end datetimeString, example: '2022-03-15T11:23'
