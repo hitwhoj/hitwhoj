@@ -54,10 +54,9 @@ export default function UserProfile() {
   const { uid } = useContext(UserInfoContext);
 
   const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
-  console.log(uid === user.uid, currentTab);
 
   return (
-    <Space direction="vertical" size="medium">
+    <Space direction="vertical" size="medium" style={{ display: "flex" }}>
       <Space size="large" align="start">
         <Avatar size={60}>
           {user.avatar ? (

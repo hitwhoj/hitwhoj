@@ -165,6 +165,7 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
+        size="small"
       />
     </fetcher.Form>
   );
@@ -209,12 +210,7 @@ const columns: ColumnProps<UserFile>[] = [
 
 function UserFileList({ files }: { files: UserFile[] }) {
   return (
-    <Table
-      rowKey="fid"
-      columns={columns}
-      data={files}
-      pagination={{ showTotal: true }}
-    />
+    <Table rowKey="fid" columns={columns} data={files} pagination={false} />
   );
 }
 
@@ -222,7 +218,7 @@ export default function UserFiles() {
   const { files } = useLoaderData<LoaderData>();
 
   return (
-    <Space direction="vertical" size="medium">
+    <Space direction="vertical" size="medium" style={{ display: "flex" }}>
       <UserFileUploader />
       <UserFileList files={files} />
     </Space>

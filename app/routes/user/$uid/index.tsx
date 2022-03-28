@@ -34,10 +34,12 @@ export default function Profile() {
   const { user } = useLoaderData<LoaderData>();
 
   const data = [
-    { label: "UID", value: user.uid },
-    { label: "用户名", value: user.username },
     {
-      label: "昵称",
+      label: "用户名",
+      value: user.username,
+    },
+    {
+      label: "用户昵称",
       value: user.nickname || "-",
     },
     {
