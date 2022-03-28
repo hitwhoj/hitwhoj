@@ -13,6 +13,7 @@ datasource db {
 model User {
   uid Int @id @default(autoincrement())
 
+  bio      String @default("")
   email    String @default("")
   avatar   String @default("")
   nickname String @default("")
