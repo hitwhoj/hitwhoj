@@ -1,6 +1,6 @@
-import { Button, Switch, Table } from "@arco-design/web-react";
+import { Button, Space, Switch, Table } from "@arco-design/web-react";
 import { ColumnProps } from "@arco-design/web-react/es/Table";
-import { IconDelete } from "@arco-design/web-react/icon";
+import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { File as UserFile } from "@prisma/client";
 import { useRef } from "react";
 import {
@@ -105,13 +105,29 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 function UserFileUploader() {
   const fetcher = useFetcher();
+  const isUploading = fetcher.state !== "idle";
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <fetcher.Form method="post" encType="multipart/form-data">
-      <input type="file" name="file" multiple />
-      <button type="submit" name="_action" value={ActionType.UploadFile}>
-        上传捏
-      </button>
+    <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
+      <input
+        type="file"
+        name="file"
+        multiple
+        style={{ display: "none" }}
+        ref={inputRef}
+        onInput={() => fetcher.submit(formRef.current)}
+      />
+      <input type="hidden" name="_action" value={ActionType.UploadFile} />
+      <Button
+        type="primary"
+        icon={<IconUpload />}
+        onClick={() => inputRef.current?.click()}
+        loading={isUploading}
+      >
+        上传文件捏
+      </Button>
     </fetcher.Form>
   );
 }
@@ -126,9 +142,9 @@ function UserFilePrivacyModifier({ file }: { file: UserFile }) {
       <input type="hidden" name="fid" value={file.fid} />
       <input type="hidden" name="_action" value={ActionType.ModifyPrivacy} />
       <Switch
-        disabled={isFetching}
         defaultChecked={!file.private}
         onChange={() => fetcher.submit(ref.current)}
+        loading={isFetching}
       />
     </fetcher.Form>
   );
@@ -136,7 +152,7 @@ function UserFilePrivacyModifier({ file }: { file: UserFile }) {
 
 function UserFileRemoveButton({ file }: { file: UserFile }) {
   const fetcher = useFetcher();
-  const isFetching = fetcher.state !== "idle";
+  const isDeleting = fetcher.state !== "idle";
 
   return (
     <fetcher.Form method="post">
@@ -147,7 +163,7 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
         htmlType="submit"
         name="_action"
         value={ActionType.RemoveFile}
-        disabled={isFetching}
+        loading={isDeleting}
         icon={<IconDelete />}
       />
     </fetcher.Form>
@@ -169,9 +185,17 @@ const columns: ColumnProps<UserFile>[] = [
   {
     title: "文件类型",
     dataIndex: "mimetype",
+    filters: [
+      { text: "图片", value: "image" },
+      { text: "文档", value: "text" },
+      { text: "音频", value: "audio" },
+      { text: "视频", value: "video" },
+    ],
+    onFilter: (value: string, file: UserFile) =>
+      file.mimetype.startsWith(value),
   },
   {
-    title: "公开状态",
+    title: "公开",
     dataIndex: "private",
     align: "center",
     render: (_, file) => <UserFilePrivacyModifier file={file} />,
@@ -184,16 +208,23 @@ const columns: ColumnProps<UserFile>[] = [
 ];
 
 function UserFileList({ files }: { files: UserFile[] }) {
-  return <Table rowKey="fid" columns={columns} data={files} />;
+  return (
+    <Table
+      rowKey="fid"
+      columns={columns}
+      data={files}
+      pagination={{ showTotal: true }}
+    />
+  );
 }
 
 export default function UserFiles() {
   const { files } = useLoaderData<LoaderData>();
 
   return (
-    <>
+    <Space direction="vertical" size="medium">
       <UserFileUploader />
       <UserFileList files={files} />
-    </>
+    </Space>
   );
 }
