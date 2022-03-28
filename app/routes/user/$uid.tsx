@@ -1,7 +1,6 @@
 import { Avatar, Space, Tabs } from "@arco-design/web-react";
 import { IconUser } from "@arco-design/web-react/icon";
 import { User } from "@prisma/client";
-import { useContext } from "react";
 import {
   json,
   LoaderFunction,
@@ -11,16 +10,17 @@ import {
   useMatches,
   useNavigate,
 } from "remix";
-import { UserInfoContext } from "~/root";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "uid">;
+  self: number | null;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
   const user = await db.user.findUnique({
@@ -38,8 +38,11 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
+  const self = await findSessionUid(request);
+
   return json({
     user,
+    self,
   });
 };
 
@@ -48,10 +51,9 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
 });
 
 export default function UserProfile() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user, self } = useLoaderData<LoaderData>();
   const navigate = useNavigate();
   const { pathname } = useMatches().at(-1)!;
-  const { uid } = useContext(UserInfoContext);
 
   const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
@@ -65,20 +67,20 @@ export default function UserProfile() {
             <IconUser />
           )}
         </Avatar>
-        <Space direction="vertical">
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <span style={{ fontSize: "2em" }}>
             {user.nickname
               ? `${user.nickname} (${user.username})`
               : user.username}
           </span>
-          {user.bio ? <p>{user.bio}</p> : null}
-        </Space>
+          {user.bio && <span>{user.bio}</span>}
+        </div>
       </Space>
       {/* 导航栏 */}
       <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
         <Tabs.TabPane key="." title="资料" />
         <Tabs.TabPane key="files" title="文件" />
-        {uid === user.uid && <Tabs.TabPane key="edit" title="编辑" />}
+        {self === user.uid && <Tabs.TabPane key="edit" title="编辑" />}
       </Tabs>
       {/* 子页面 */}
       <Outlet />

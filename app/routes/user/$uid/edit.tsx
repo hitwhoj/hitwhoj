@@ -6,6 +6,7 @@ import {
   LoaderFunction,
   useLoaderData,
   Form as RemixForm,
+  useTransition,
 } from "remix";
 import { z } from "zod";
 import { db } from "~/utils/db.server";
@@ -97,6 +98,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 export default function UserEdit() {
   const { user } = useLoaderData<LoaderData>();
+  const { state } = useTransition();
+  const loading = state !== "idle";
 
   return (
     <RemixForm
@@ -109,6 +112,7 @@ export default function UserEdit() {
           name="username"
           style={{ width: 270 }}
           defaultValue={user.username}
+          disabled={loading}
           required
         />
       </Form.Item>
@@ -116,6 +120,7 @@ export default function UserEdit() {
         <Input
           name="nickname"
           defaultValue={user.nickname}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
@@ -124,6 +129,7 @@ export default function UserEdit() {
           name="email"
           type="email"
           defaultValue={user.email}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
@@ -132,19 +138,20 @@ export default function UserEdit() {
           name="avatar"
           defaultValue={user.avatar}
           placeholder="https://"
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
       <Form.Item label="个人介绍">
-        {/* TODO: 换成一个 Markdown 编辑器 */}
-        <Input.TextArea
+        <Input
           name="bio"
           defaultValue={user.bio}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
       <Form.Item wrapperCol={{ offset: 5 }}>
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" loading={loading}>
           确认修改
         </Button>
       </Form.Item>
