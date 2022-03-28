@@ -1,10 +1,10 @@
-import {ActionFunction, Form, MetaFunction, redirect} from "remix";
-import {findSessionUid} from "~/utils/sessions";
-import {invariant} from "~/utils/invariant";
-import {commentScheme, tagScheme} from "~/utils/scheme";
-import {db} from "~/utils/db.server";
+import { ActionFunction, Form, MetaFunction, redirect } from "remix";
+import { findSessionUid } from "~/utils/sessions";
+import { invariant } from "~/utils/invariant";
+import { commentScheme, tagScheme } from "~/utils/scheme";
+import { db } from "~/utils/db.server";
 
-export const action: ActionFunction = async ({request}) => {
+export const action: ActionFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
@@ -15,17 +15,17 @@ export const action: ActionFunction = async ({request}) => {
   const title = invariant(commentScheme.safeParse(form.get("title")));
   const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
-  const {id} = await db.comment.create({
-  data:{
+  const { id } = await db.comment.create({
+    data: {
       title,
-      user: {connect: {uid}},
+      user: { connect: { uid } },
       tags: {
         connectOrCreate: {
-          where: {name: tag},
-          create: {name: tag},
+          where: { name: tag },
+          create: { name: tag },
         },
       },
-    }
+    },
   });
 
   return redirect(`/comment/${id}`);
@@ -42,7 +42,7 @@ export default function CommentNew() {
       <Form method="post">
         <label>Title</label>
         <input name="title" />
-        <br/>
+        <br />
         <label>Tag</label>
         <input name="tag" />
         <button type="submit">Submit</button>

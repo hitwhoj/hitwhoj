@@ -1,5 +1,5 @@
 import { Comment, User, CommentTag } from "@prisma/client";
-import {json, Link, LoaderFunction, MetaFunction, useLoaderData} from "remix";
+import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
@@ -40,16 +40,19 @@ export const meta: MetaFunction = () => ({
 export function CommentItem({
   comment,
 }: {
-  comment: Comment & { user: Pick<User, "uid" | "username" | "avatar">; tags: Pick<CommentTag, "name">[]; };
+  comment: Comment & {
+    user: Pick<User, "uid" | "username" | "avatar">;
+    tags: Pick<CommentTag, "name">[];
+  };
 }) {
   return (
     <>
-      <img src={comment.user.avatar} alt="没有头像捏"/>
+      <img src={comment.user.avatar} alt="没有头像捏" />
       {comment.user.username}
 
       {"    发布时间:  " + comment.createdAt}
       {"    最近更新:  " + comment.updatedAt}
-      {"    标签:  " + comment.tags.map(tag => tag.name).join(", ")}
+      {"    标签:  " + comment.tags.map((tag) => tag.name).join(", ")}
       <Link to={`/comment/${comment.id}`}>
         <h2>{comment.title} ←←点这个进入comment页</h2>
       </Link>

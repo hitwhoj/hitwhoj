@@ -5,8 +5,8 @@ import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
-  comment: Comment & {tags: Pick<CommentTag, "name">[] };
-  replies: (Reply & {user: Pick<User, "uid" | "username" | "avatar">})[];
+  comment: Comment & { tags: Pick<CommentTag, "name">[] };
+  replies: (Reply & { user: Pick<User, "uid" | "username" | "avatar"> })[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -49,7 +49,11 @@ export const loader: LoaderFunction = async ({ params }) => {
   return { comment, replies };
 };
 
-export function ReplyList({ replies }: {replies: (Reply & {user: Pick<User, "uid" | "username" | "avatar">})[]}) {
+export function ReplyList({
+  replies,
+}: {
+  replies: (Reply & { user: Pick<User, "uid" | "username" | "avatar"> })[];
+}) {
   if (!replies.length) {
     return <p>暂无回复</p>;
   } else {
@@ -57,7 +61,7 @@ export function ReplyList({ replies }: {replies: (Reply & {user: Pick<User, "uid
       <div>
         {replies.map((reply) => (
           <p key={reply.id}>
-            <img src={reply.user.avatar} alt="没有头像捏"/>
+            <img src={reply.user.avatar} alt="没有头像捏" />
             {"   " + reply.user.username}
             <h4>{reply.content}</h4>
             Time: {reply.createdAt}
@@ -74,10 +78,10 @@ export default function Comment() {
     <>
       <h1>Comment: {comment.title}</h1>
       Tags:
-      {comment.tags.map(tag => tag.name).join(", ")}
-      <br/>
+      {comment.tags.map((tag) => tag.name).join(", ")}
+      <br />
       <button>unused report button</button>
-      <ReplyList replies={replies}/>
+      <ReplyList replies={replies} />
     </>
   );
 }
