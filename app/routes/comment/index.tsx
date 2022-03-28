@@ -1,10 +1,11 @@
-import { Comment, User } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { Comment, User, CommentTag } from "@prisma/client";
+import {json, Link, LoaderFunction, MetaFunction, useLoaderData} from "remix";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
   comments: (Comment & {
     user: Pick<User, "uid" | "username" | "avatar">;
+    tags: Pick<CommentTag, "name">[];
   })[];
 };
 
@@ -22,37 +23,37 @@ export const loader: LoaderFunction = async () => {
           avatar: true,
         },
       },
+      tags: {
+        select: {
+          name: true,
+        },
+      },
     },
   });
   return json({ comments });
 };
 
+export const meta: MetaFunction = () => ({
+  title: "Comment List",
+});
+
 export function CommentItem({
   comment,
 }: {
-  comment: Comment & { user: Pick<User, "uid" | "username" | "avatar"> };
+  comment: Comment & { user: Pick<User, "uid" | "username" | "avatar">; tags: Pick<CommentTag, "name">[]; };
 }) {
   return (
-    <div className="comment-item">
-      <div className="comment-item-header">
-        <div className="comment-item-header-left">
-          <img src={comment.user.avatar} alt="没有头像捏" />
-        </div>
-        <div className="comment-item-header-right">
-          <div className="comment-item-header-right-username">
-            {comment.user.username}
-          </div>
-          <div className="comment-item-header-right-time">
-            {comment.createdAt}
-          </div>
-        </div>
-      </div>
+    <>
+      <img src={comment.user.avatar} alt="没有头像捏"/>
+      {comment.user.username}
+
+      {"    发布时间:  " + comment.createdAt}
+      {"    最近更新:  " + comment.updatedAt}
+      {"    标签:  " + comment.tags.map(tag => tag.name).join(", ")}
       <Link to={`/comment/${comment.id}`}>
-        <h2 className="comment-item-content">
-          {comment.title} ←←点这个进入comment页
-        </h2>
+        <h2>{comment.title} ←←点这个进入comment页</h2>
       </Link>
-    </div>
+    </>
   );
 }
 
@@ -61,6 +62,7 @@ export function CommentList({
 }: {
   comments: (Comment & {
     user: Pick<User, "uid" | "username" | "avatar">;
+    tags: Pick<CommentTag, "name">[];
   })[];
 }) {
   return (

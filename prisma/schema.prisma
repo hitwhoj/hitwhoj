@@ -254,7 +254,7 @@ model Comment {
 
   tags CommentTag[] @relation(references: [id])
 
-  replys Reply[]
+  replies Reply[]
 }
 
 model Reply {
