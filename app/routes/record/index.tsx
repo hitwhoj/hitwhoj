@@ -1,5 +1,5 @@
 import { Problem, Record, User } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
@@ -36,6 +36,10 @@ export const loader: LoaderFunction = async () => {
 
   return json({ records });
 };
+
+export const meta: MetaFunction = () => ({
+  title: "提交记录 - HITwh OJ",
+});
 
 export default function RecordList() {
   const { records } = useLoaderData<LoaderData>();

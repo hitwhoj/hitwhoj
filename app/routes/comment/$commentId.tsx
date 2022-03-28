@@ -1,5 +1,5 @@
 import { Comment, Reply, User, CommentTag } from "@prisma/client";
-import { LoaderFunction, useLoaderData } from "remix";
+import { LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/db.server";
@@ -48,6 +48,10 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
   return { comment, replies };
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `讨论: ${data?.comment.title} - HITwh OJ`,
+});
 
 export function ReplyList({
   replies,

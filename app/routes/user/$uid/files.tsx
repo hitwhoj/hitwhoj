@@ -1,12 +1,13 @@
 import { Button, Space, Switch, Table } from "@arco-design/web-react";
 import { ColumnProps } from "@arco-design/web-react/es/Table";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import { File as UserFile } from "@prisma/client";
+import { File as UserFile, User } from "@prisma/client";
 import { useRef } from "react";
 import {
   ActionFunction,
   json,
   LoaderFunction,
+  MetaFunction,
   unstable_parseMultipartFormData,
   useFetcher,
   useLoaderData,
@@ -19,7 +20,9 @@ import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
 type LoaderData = {
-  files: UserFile[];
+  user: Pick<User, "nickname" | "username"> & {
+    createdFiles: UserFile[];
+  };
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -30,6 +33,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await db.user.findUnique({
     where: { uid },
     select: {
+      username: true,
+      nickname: true,
       createdFiles: {
         orderBy: [{ createdAt: "desc" }, { filename: "asc" }],
       },
@@ -40,8 +45,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json({ files: user.createdFiles });
+  return json({ user });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `用户文件: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
+});
 
 enum ActionType {
   UploadFile = "uploadFile",
@@ -219,7 +228,9 @@ function UserFileList({ files }: { files: UserFile[] }) {
 }
 
 export default function UserFiles() {
-  const { files } = useLoaderData<LoaderData>();
+  const {
+    user: { createdFiles: files },
+  } = useLoaderData<LoaderData>();
 
   return (
     <Space direction="vertical" size="medium" style={{ display: "flex" }}>

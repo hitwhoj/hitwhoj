@@ -36,9 +36,9 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `Contest: ${data.contest.title} - HITwh OJ`,
-  description: data.contest.description,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `比赛: ${data?.contest.title} - HITwh OJ`,
+  description: data?.contest.description,
 });
 
 function Time({ contest }: { contest: Contest }) {

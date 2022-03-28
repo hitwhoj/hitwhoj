@@ -16,7 +16,7 @@ import { commitSession } from "~/utils/sessions";
 import { parseRedirectPathname } from "~/utils/tools";
 
 export const meta: MetaFunction = () => ({
-  title: "Login",
+  title: "登录 - HITwh OJ",
 });
 
 export const action: ActionFunction = async ({ request }) => {

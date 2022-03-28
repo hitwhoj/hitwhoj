@@ -196,8 +196,8 @@ export const action: ActionFunction = async ({ params, request }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `Edit Contest: ${data.contest.title} - HITwh OJ`,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑比赛: ${data?.contest.title} - HITwh OJ`,
 });
 
 function ContestTagItem({ name }: { name: string }) {

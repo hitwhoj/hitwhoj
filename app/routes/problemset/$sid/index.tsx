@@ -1,5 +1,5 @@
 import { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
-import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import { json, Link, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -35,11 +35,6 @@ export const loader: LoaderFunction = async ({ params }) => {
     problemSet,
   });
 };
-
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `${data.problemSet.title} - HITwh OJ`,
-  description: data.problemSet.description,
-});
 
 export default function ProblemSetIndex() {
   const { problemSet } = useLoaderData<LoaderData>();

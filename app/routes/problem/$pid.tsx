@@ -45,9 +45,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ problem });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: data.problem.title,
-  description: data.problem.description,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题目: ${data?.problem.title} - HITwh OJ`,
+  description: data?.problem.description,
 });
 
 export default function Problem() {

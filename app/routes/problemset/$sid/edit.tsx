@@ -151,8 +151,8 @@ export const action: ActionFunction = async ({ params, request }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `Edit ProblemSet: ${data.problemSet.title} - HITwh OJ`,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
 
 function ProblemSetTagItem({ name }: { name: string }) {

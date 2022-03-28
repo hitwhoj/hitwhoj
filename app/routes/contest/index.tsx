@@ -23,7 +23,7 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Contest List",
+  title: "比赛列表 - HITwh OJ",
 });
 
 export function ContestState({ begin, end }: { begin: Date; end: Date }) {

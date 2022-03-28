@@ -34,7 +34,7 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Comment List",
+  title: "讨论列表 - HITwh OJ",
 });
 
 export function CommentItem({

@@ -1,7 +1,7 @@
 import { Link, MetaFunction } from "remix";
 
 export const meta: MetaFunction = () => ({
-  title: "Homepage",
+  title: "首页 - HITwh OJ",
 });
 
 export default function Index() {

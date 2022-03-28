@@ -19,7 +19,7 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Problem Set - HITwh OJ",
+  title: "题单列表 - HITwh OJ",
 });
 
 export default function ProblemsetList() {

@@ -25,7 +25,7 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Problem List",
+  title: "题目列表 - HITwh OJ",
 });
 
 export default function ProblemList() {

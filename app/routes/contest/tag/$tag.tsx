@@ -42,7 +42,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 export const meta: MetaFunction = ({ params }) => ({
-  title: `Contest Tag: ${params.tag} - HITwh OJ`,
+  title: `比赛标签: ${params.tag} - HITwh OJ`,
 });
 
 export default function ContestTag() {

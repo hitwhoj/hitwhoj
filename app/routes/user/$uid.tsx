@@ -46,8 +46,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `User: ${data.user.nickname || data.user.username} - HITwh OJ`,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
 export default function UserProfile() {
