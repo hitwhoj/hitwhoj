@@ -10,6 +10,7 @@ import {
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { parseRedirectPathname } from "~/utils/tools";
@@ -36,6 +37,11 @@ export const action: ActionFunction = async ({ request }) => {
   if (user.password !== password) {
     return new Response("Password is incorrect", { status: 400 });
   }
+
+  // TODO: 看起来有点奇怪
+  await guaranteePermission(request, Permissions.User.Session.Create, {
+    uid: user.uid,
+  });
 
   return redirect(parseRedirectPathname(form.get("redirect")), {
     headers: {

@@ -14,6 +14,7 @@ import {
 import { db } from "~/utils/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
@@ -21,8 +22,10 @@ type LoaderData = {
   files: UserFile[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+
+  await guaranteePermission(request, Permissions.User.File.View, { uid });
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -54,6 +57,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   switch (_action) {
     case ActionType.UploadFile: {
+      await guaranteePermission(request, Permissions.User.File.Create, { uid });
+
       const files = form
         .getAll("file")
         .filter((file): file is File => file instanceof File);
@@ -68,9 +73,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
+      await guaranteePermission(request, Permissions.User.File.Delete, { uid });
+
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
       await removeFile(fid);
 
@@ -78,9 +83,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.ModifyPrivacy: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
+      await guaranteePermission(request, Permissions.User.File.Update, { uid });
+
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
       const file = await db.file.findUnique({
         where: { fid },

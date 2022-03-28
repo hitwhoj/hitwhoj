@@ -4,13 +4,13 @@ import {
   ActionFunction,
   json,
   LoaderFunction,
-  redirect,
   useLoaderData,
   Form as RemixForm,
 } from "remix";
 import { z } from "zod";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import {
   bioScheme,
   emailScheme,
@@ -19,20 +19,15 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
-import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+
+  await guaranteePermission(request, Permissions.User.Profile.View, { uid });
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -53,18 +48,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
-  // FIXME: 检查权限
-  if (self !== uid) {
-    throw new Response("Permission denied", { status: 403 });
-  }
+  await guaranteePermission(request, Permissions.User.Profile.Update, { uid });
 
   const form = await request.formData();
 
