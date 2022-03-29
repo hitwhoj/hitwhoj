@@ -5,6 +5,7 @@ import {
   File as ProblemFile,
 } from "@prisma/client";
 import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
@@ -79,7 +80,9 @@ export default function ProblemIndex() {
         ))}
       </ul>
       <h2>描述捏</h2>
-      <div>{problem.description}</div>
+      <div>
+        <Markdown>{problem.description}</Markdown>
+      </div>
       <h2>相关文件</h2>
       <ul>
         {problem.files.map((file) => (

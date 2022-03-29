@@ -8,4 +8,11 @@ module.exports = {
   serverBuildDirectory: "server/build",
   devServerPort: 8002,
   ignoredRouteFiles: [".*"],
+  serverDependenciesToBundle: [
+    /^rehype.*/,
+    /^remark.*/,
+    /^unified.*/,
+    /^react-markdown.*/,
+    /^react-syntax-highlighter.*/,
+  ],
 };

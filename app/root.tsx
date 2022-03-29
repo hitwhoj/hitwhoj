@@ -1,6 +1,7 @@
 import * as React from "react";
 import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import katexStyle from "katex/dist/katex.css";
 import {
   json,
   Links,
@@ -20,6 +21,10 @@ import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 
 export const links: LinksFunction = () => [
+  {
+    rel: "stylesheet",
+    href: katexStyle,
+  },
   {
     rel: "stylesheet",
     href: style,
