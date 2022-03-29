@@ -84,3 +84,6 @@ export default function ProblemList() {
     />
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

@@ -50,3 +50,6 @@ export default function CommentNew() {
     </div>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

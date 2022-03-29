@@ -78,3 +78,6 @@ export default function Problem() {
     </div>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

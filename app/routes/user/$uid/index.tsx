@@ -68,3 +68,6 @@ export default function Profile() {
     />
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

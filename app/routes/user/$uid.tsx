@@ -87,3 +87,6 @@ export default function UserProfile() {
     </Space>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

@@ -239,3 +239,6 @@ export default function UserFiles() {
     </Space>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";
