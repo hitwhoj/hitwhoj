@@ -5,6 +5,7 @@ import {
   File as ProblemFile,
 } from "@prisma/client";
 import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
