@@ -5,11 +5,14 @@ import {
   useLoaderData,
   MetaFunction,
   Outlet,
-  Link,
+  useNavigate,
+  useMatches,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { Tabs } from "@arco-design/web-react";
+const TabPane = Tabs.TabPane;
 
 type LoaderData = {
   problem: Pick<Problem, "pid" | "title" | "description">;
@@ -41,6 +44,9 @@ export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
 
 export default function Problem() {
   const { problem } = useLoaderData<LoaderData>();
+  const navigate = useNavigate();
+  const { pathname } = useMatches().at(-1)!;
+  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
     <div>
@@ -52,17 +58,11 @@ export default function Problem() {
           {problem.title}
         </h1>
       </header>
-      <ul>
-        <li>
-          <Link to=".">查看</Link>
-        </li>
-        <li>
-          <Link to="submit">提交</Link>
-        </li>
-        <li>
-          <Link to="data">数据</Link>
-        </li>
-      </ul>
+      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
+        <TabPane key="." title="题面" />
+        <TabPane key="submit" title="提交" />
+        <TabPane key="data" title="数据" />
+      </Tabs>
       <Outlet />
     </div>
   );
