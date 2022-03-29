@@ -39,7 +39,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 export const meta: MetaFunction = ({ params }) => ({
-  title: `Tag: ${params.tag} - HITwh OJ`,
+  title: `题单标签: ${params.tag} - HITwh OJ`,
 });
 
 export default function ProblemSetTag() {
@@ -62,3 +62,6 @@ export default function ProblemSetTag() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

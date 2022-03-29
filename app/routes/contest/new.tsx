@@ -70,7 +70,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Create: Contest - HITwh OJ",
+  title: "创建比赛 - HITwh OJ",
 });
 
 export default function ContestNew() {
@@ -127,3 +127,6 @@ export default function ContestNew() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

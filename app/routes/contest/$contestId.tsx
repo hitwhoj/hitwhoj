@@ -29,9 +29,9 @@ export const loader: LoaderFunction = async ({ params }) => {
   return json({ contest });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: data.contest.title,
-  description: data.contest.description,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `比赛: ${data?.contest.title} - HITwh OJ`,
+  description: data?.contest.description,
 });
 
 export default function Contest() {
@@ -54,3 +54,6 @@ export default function Contest() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

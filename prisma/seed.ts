@@ -1,4 +1,4 @@
-import { ContestSystem, PrismaClient } from "@prisma/client";
+import { ContestSystem, PrismaClient, SystemUserRole } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -18,6 +18,7 @@ async function seed() {
       email: "alice@hit.edu.cn",
       username: "Alice",
       password: "alice",
+      role: SystemUserRole.Su,
     },
   });
 
@@ -26,6 +27,7 @@ async function seed() {
       email: "bob@hit.edu.cn",
       username: "Bob",
       password: "bob",
+      role: SystemUserRole.Admin,
     },
   });
 

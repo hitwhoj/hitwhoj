@@ -14,3 +14,6 @@ export const loader: LoaderFunction = async ({ request }) => {
     },
   });
 };
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

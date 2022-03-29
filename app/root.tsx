@@ -18,15 +18,17 @@ import Layout from "./src/Layout";
 import { User } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
+import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
+import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 
 export const links: LinksFunction = () => [
   {
     rel: "stylesheet",
-    href: style,
+    href: arcoStyle,
   },
   {
     rel: "stylesheet",
-    href: arcoStyle,
+    href: style,
   },
 ];
 
@@ -101,20 +103,10 @@ export default function App() {
 
 // https://remix.run/docs/en/v1/api/conventions#errorboundary
 export function ErrorBoundary({ error }: { error: Error }) {
-  console.error(error);
-
   return (
-    <Document title="Error!">
+    <Document title={`错误: ${error.message} - HITwh OJ`}>
       <Layout>
-        <div>
-          <h1>There was an error</h1>
-          <p>{error.message}</p>
-          <hr />
-          <p>
-            Hey, developer, you should replace this with what you want your
-            users to see.
-          </p>
-        </div>
+        <CustomErrorBoundary error={error} />
       </Layout>
     </Document>
   );
@@ -124,33 +116,10 @@ export function ErrorBoundary({ error }: { error: Error }) {
 export function CatchBoundary() {
   const caught = useCatch();
 
-  let message;
-  switch (caught.status) {
-    case 401:
-      message = (
-        <p>
-          Oops! Looks like you tried to visit a page that you do not have access
-          to.
-        </p>
-      );
-      break;
-    case 404:
-      message = (
-        <p>Oops! Looks like you tried to visit a page that does not exist.</p>
-      );
-      break;
-
-    default:
-      throw new Error(caught.data || caught.statusText);
-  }
-
   return (
-    <Document title={`${caught.status} ${caught.statusText}`}>
+    <Document title={`错误: ${caught.status} ${caught.statusText} - HITwh OJ`}>
       <Layout>
-        <h1>
-          {caught.status}: {caught.statusText}
-        </h1>
-        {message}
+        <CustomCatchBoundary />
       </Layout>
     </Document>
   );
