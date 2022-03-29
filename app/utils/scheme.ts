@@ -27,9 +27,19 @@ export const usernameScheme = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
 
 /**
+ * Password scheme for every user
+ */
+export const passwordScheme = z.string().nonempty("Password must be nonempty");
+
+/**
  * Nickname scheme for every user
  */
 export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");
+
+/**
+ * Bio scheme
+ */
+export const bioScheme = z.string();
 
 /**
  * Tag scheme for any tags
@@ -56,6 +66,8 @@ export const emailScheme = z
   .email("Email must be a valid email")
   // TODO: maybe requires modification
   .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
+
+export const emptyStringScheme = z.string().length(0);
 
 /**
  * Begin and end datetimeString, example: '2022-03-15T11:23'
@@ -84,3 +96,19 @@ export const systemScheme = z.nativeEnum(ContestSystem);
  * Code scheme for submitted code
  */
 export const codeScheme = z.string().nonempty("Code must be nonempty");
+
+/**
+ * Comment scheme for submitted comment
+ */
+export const commentScheme = z
+  .string()
+  .nonempty("Comment must be nonempty")
+  .min(10, "Comment must be at least 10 characters");
+
+/**
+ * Reply scheme for submitted reply
+ */
+export const replyScheme = z
+  .string()
+  .nonempty("Reply must be nonempty")
+  .min(5, "Reply must be at least 5 characters");

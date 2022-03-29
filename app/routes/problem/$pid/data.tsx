@@ -11,6 +11,7 @@ import {
 import { db } from "~/utils/db.server";
 import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
@@ -18,8 +19,16 @@ type LoaderData = {
   files: ProblemFile[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
+
+  // 检查是否有文件操作的权限
+  // TODO: 好像有点复杂
+  await guaranteePermission(
+    request,
+    Permissions.Problem.Data.View | Permissions.Problem.File.View,
+    { pid }
+  );
 
   const problem = await db.problem.findUnique({
     where: { pid },
@@ -42,6 +51,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 enum ActionType {
   UploadData = "uploadData",
   UploadFile = "uploadFile",
+  RemoveData = "removeData",
   RemoveFile = "removeFile",
 }
 
@@ -62,6 +72,16 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw new Response("Invalid file", { status: 400 });
       }
 
+      // 检查权限
+      await guaranteePermission(
+        request,
+        _action === ActionType.UploadData
+          ? Permissions.Problem.Data.Create
+          : Permissions.Problem.File.Create,
+        { pid }
+      );
+
+      // 保存文件
       await Promise.all(
         files.map((file) => {
           return createProblemFile(
@@ -75,9 +95,20 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
 
+    case ActionType.RemoveData:
     case ActionType.RemoveFile: {
       const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
+      // 检查权限
+      await guaranteePermission(
+        request,
+        _action === ActionType.RemoveData
+          ? Permissions.Problem.Data.Delete
+          : Permissions.Problem.File.Delete,
+        { pid }
+      );
+
+      // 删除文件
       await removeFile(fid);
 
       return null;
@@ -100,7 +131,13 @@ function ProblemFileUploader({ action }: { action: ActionType }) {
   );
 }
 
-function ProblemFileListItem({ file }: { file: ProblemFile }) {
+function ProblemFileListItem({
+  file,
+  action,
+}: {
+  file: ProblemFile;
+  action: ActionType;
+}) {
   const fetcher = useFetcher();
   const isFetching = fetcher.state !== "idle";
 
@@ -117,7 +154,7 @@ function ProblemFileListItem({ file }: { file: ProblemFile }) {
           <button
             type="submit"
             name="_action"
-            value={ActionType.RemoveFile}
+            value={action}
             disabled={isFetching}
           >
             删除捏
@@ -128,7 +165,13 @@ function ProblemFileListItem({ file }: { file: ProblemFile }) {
   );
 }
 
-function ProblemFileList({ files }: { files: ProblemFile[] }) {
+function ProblemFileList({
+  files,
+  action,
+}: {
+  files: ProblemFile[];
+  action: ActionType;
+}) {
   return (
     <table>
       <thead>
@@ -141,7 +184,7 @@ function ProblemFileList({ files }: { files: ProblemFile[] }) {
       </thead>
       <tbody>
         {files.map((file) => (
-          <ProblemFileListItem file={file} key={file.fid} />
+          <ProblemFileListItem file={file} key={file.fid} action={action} />
         ))}
       </tbody>
     </table>
@@ -156,12 +199,18 @@ export default function ProblemData() {
       <h2>测试数据</h2>
       <p>用于评测的数据文件</p>
       <ProblemFileUploader action={ActionType.UploadData} />
-      <ProblemFileList files={files.filter((file) => file.private)} />
+      <ProblemFileList
+        files={files.filter((file) => file.private)}
+        action={ActionType.RemoveData}
+      />
 
       <h2>附加文件</h2>
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
       <ProblemFileUploader action={ActionType.UploadFile} />
-      <ProblemFileList files={files.filter((file) => !file.private)} />
+      <ProblemFileList
+        files={files.filter((file) => !file.private)}
+        action={ActionType.RemoveFile}
+      />
     </>
   );
 }

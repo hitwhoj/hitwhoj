@@ -9,13 +9,14 @@ import {
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   problem: Pick<Problem, "pid" | "title" | "description">;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
   const problem = await db.problem.findUnique({
@@ -24,11 +25,21 @@ export const loader: LoaderFunction = async ({ params }) => {
       pid: true,
       title: true,
       description: true,
+      private: true,
     },
   });
 
   if (!problem) {
     throw new Response("Problem not found", { status: 404 });
+  }
+
+  // 检查访问权限
+  if (problem.private) {
+    await guaranteePermission(request, Permissions.Problem.ViewPrivate, {
+      pid,
+    });
+  } else {
+    await guaranteePermission(request, Permissions.Problem.ViewPublic, { pid });
   }
 
   return json({ problem });

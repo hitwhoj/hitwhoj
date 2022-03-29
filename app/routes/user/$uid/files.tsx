@@ -1,8 +1,11 @@
+import { Button, Space, Switch, Table } from "@arco-design/web-react";
+import { ColumnProps } from "@arco-design/web-react/es/Table";
+import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { File as UserFile } from "@prisma/client";
+import { useRef } from "react";
 import {
   ActionFunction,
   json,
-  Link,
   LoaderFunction,
   unstable_parseMultipartFormData,
   useFetcher,
@@ -11,6 +14,7 @@ import {
 import { db } from "~/utils/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
@@ -18,16 +22,16 @@ type LoaderData = {
   files: UserFile[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+
+  await guaranteePermission(request, Permissions.User.File.View, { uid });
 
   const user = await db.user.findUnique({
     where: { uid },
     select: {
       createdFiles: {
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: [{ createdAt: "desc" }, { filename: "asc" }],
       },
     },
   });
@@ -53,6 +57,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   switch (_action) {
     case ActionType.UploadFile: {
+      await guaranteePermission(request, Permissions.User.File.Create, { uid });
+
       const files = form
         .getAll("file")
         .filter((file): file is File => file instanceof File);
@@ -67,9 +73,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
+      await guaranteePermission(request, Permissions.User.File.Delete, { uid });
+
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
       await removeFile(fid);
 
@@ -77,9 +83,9 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.ModifyPrivacy: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")), {
-        status: 400,
-      });
+      await guaranteePermission(request, Permissions.User.File.Update, { uid });
+
+      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
       const file = await db.file.findUnique({
         where: { fid },
@@ -104,78 +110,111 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 function UserFileUploader() {
   const fetcher = useFetcher();
+  const isUploading = fetcher.state !== "idle";
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <fetcher.Form method="post" encType="multipart/form-data">
-      <input type="file" name="file" multiple />
-      <button type="submit" name="_action" value={ActionType.UploadFile}>
-        上传捏
-      </button>
+    <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
+      <input
+        type="file"
+        name="file"
+        multiple
+        style={{ display: "none" }}
+        ref={inputRef}
+        onInput={() => fetcher.submit(formRef.current)}
+      />
+      <input type="hidden" name="_action" value={ActionType.UploadFile} />
+      <Button
+        type="primary"
+        icon={<IconUpload />}
+        onClick={() => inputRef.current?.click()}
+        loading={isUploading}
+      >
+        上传文件捏
+      </Button>
     </fetcher.Form>
   );
 }
 
-function UserFileListItem({ file }: { file: UserFile }) {
+function UserFilePrivacyModifier({ file }: { file: UserFile }) {
   const fetcher = useFetcher();
   const isFetching = fetcher.state !== "idle";
+  const ref = useRef<HTMLFormElement>(null);
 
   return (
-    <tr style={{ opacity: isFetching ? 0.5 : 1 }}>
-      <td>
-        <Link to={`/file/${file.fid}`}>{file.filename}</Link>
-      </td>
-      <td>{file.filesize}</td>
-      <td>{file.mimetype}</td>
-      <td>
-        {file.private ? (
-          <span style={{ color: "red" }}>隐藏</span>
-        ) : (
-          <span style={{ color: "lime" }}>公开</span>
-        )}
-      </td>
-      <td>
-        <fetcher.Form method="post">
-          <input type="hidden" name="fid" value={file.fid} />
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.RemoveFile}
-            disabled={isFetching}
-          >
-            删除捏
-          </button>
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.ModifyPrivacy}
-            disabled={isFetching}
-          >
-            {file.private ? "公开" : "隐藏"}
-          </button>
-        </fetcher.Form>
-      </td>
-    </tr>
+    <fetcher.Form method="post" ref={ref}>
+      <input type="hidden" name="fid" value={file.fid} />
+      <input type="hidden" name="_action" value={ActionType.ModifyPrivacy} />
+      <Switch
+        defaultChecked={!file.private}
+        onChange={() => fetcher.submit(ref.current)}
+        loading={isFetching}
+      />
+    </fetcher.Form>
   );
 }
 
+function UserFileRemoveButton({ file }: { file: UserFile }) {
+  const fetcher = useFetcher();
+  const isDeleting = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input type="hidden" name="fid" value={file.fid} />
+      <Button
+        type="text"
+        status="danger"
+        htmlType="submit"
+        name="_action"
+        value={ActionType.RemoveFile}
+        loading={isDeleting}
+        icon={<IconDelete />}
+      />
+    </fetcher.Form>
+  );
+}
+
+const columns: ColumnProps<UserFile>[] = [
+  {
+    title: "文件名",
+    dataIndex: "filename",
+    sorter: (a: UserFile, b: UserFile) =>
+      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+  },
+  {
+    title: "文件大小",
+    dataIndex: "filesize",
+    sorter: (a: UserFile, b: UserFile) => a.filesize - b.filesize,
+  },
+  {
+    title: "文件类型",
+    dataIndex: "mimetype",
+    filters: [
+      { text: "图片", value: "image" },
+      { text: "文档", value: "text" },
+      { text: "音频", value: "audio" },
+      { text: "视频", value: "video" },
+    ],
+    onFilter: (value: string, file: UserFile) =>
+      file.mimetype.startsWith(value),
+  },
+  {
+    title: "公开",
+    dataIndex: "private",
+    align: "center",
+    render: (_, file) => <UserFilePrivacyModifier file={file} />,
+  },
+  {
+    title: "操作",
+    dataIndex: "action",
+    render: (_, file) => <UserFileRemoveButton file={file} />,
+  },
+];
+
 function UserFileList({ files }: { files: UserFile[] }) {
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>文件名</th>
-          <th>文件大小</th>
-          <th>文件类型</th>
-          <th>公开状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {files.map((file) => (
-          <UserFileListItem file={file} key={file.fid} />
-        ))}
-      </tbody>
-    </table>
+    <Table rowKey="fid" columns={columns} data={files} pagination={false} />
   );
 }
 
@@ -183,9 +222,9 @@ export default function UserFiles() {
   const { files } = useLoaderData<LoaderData>();
 
   return (
-    <>
+    <Space direction="vertical" size="medium" style={{ display: "flex" }}>
       <UserFileUploader />
       <UserFileList files={files} />
-    </>
+    </Space>
   );
 }

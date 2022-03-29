@@ -17,12 +17,13 @@ import {
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { findSessionUid } from "~/utils/sessions";
+import React from "react";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   return null;
@@ -32,7 +33,7 @@ export const action: ActionFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return redirect("/login");
+    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   const form = await request.formData();
@@ -108,7 +109,7 @@ export default function ContestNew() {
         <br />
         <label htmlFor="system">system: </label>
         {Object.values(ContestSystem).map((system) => (
-          <>
+          <React.Fragment key={system}>
             <input
               type="radio"
               name="system"
@@ -118,7 +119,7 @@ export default function ContestNew() {
               required
             />
             <label htmlFor={system}>{system}</label>
-          </>
+          </React.Fragment>
         ))}
         <br />
         <button type="submit">创建</button>
