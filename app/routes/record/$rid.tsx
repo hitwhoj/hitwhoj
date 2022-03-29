@@ -4,6 +4,7 @@ import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import Highlighter from "~/src/Highlighter";
 
 type LoaderData = {
   record: Pick<Record, "rid" | "detail" | "points" | "status">;
@@ -47,9 +48,7 @@ export default function Record() {
       <blockquote>
         <p>{record.detail}</p>
       </blockquote>
-      <pre>
-        <code>{code}</code>
-      </pre>
+      <Highlighter language="cpp" children={code} />
     </>
   );
 }
