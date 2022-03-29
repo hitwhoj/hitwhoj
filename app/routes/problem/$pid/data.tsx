@@ -2,7 +2,6 @@ import type { File as ProblemFile } from "@prisma/client";
 import {
   ActionFunction,
   json,
-  Link,
   LoaderFunction,
   unstable_parseMultipartFormData,
   useFetcher,
@@ -13,6 +12,10 @@ import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
+import { Table, Button, Space } from "@arco-design/web-react";
+import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
+import { ColumnProps } from "@arco-design/web-react/es/Table";
+import { useRef } from "react";
 
 type LoaderData = {
   files: ProblemFile[];
@@ -89,63 +92,87 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 function ProblemFileUploader({ action }: { action: ActionType }) {
   const fetcher = useFetcher();
+  const isUploading = fetcher.state !== "idle";
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <fetcher.Form method="post" encType="multipart/form-data">
-      <input type="file" name="file" multiple />
-      <button type="submit" name="_action" value={action}>
-        上传捏
-      </button>
+    <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
+      <input
+        type="file"
+        name="file"
+        multiple
+        style={{ display: "none" }}
+        ref={inputRef}
+        onInput={() => fetcher.submit(formRef.current)}
+      />
+      <input type="hidden" name="_action" value={action} />
+      <Button
+        type="primary"
+        icon={<IconUpload />}
+        onClick={() => inputRef.current?.click()}
+        loading={isUploading}
+      >
+        上传文件捏
+      </Button>
     </fetcher.Form>
   );
 }
 
-function ProblemFileListItem({ file }: { file: ProblemFile }) {
+function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
   const fetcher = useFetcher();
-  const isFetching = fetcher.state !== "idle";
+  const isDeleting = fetcher.state !== "idle";
 
   return (
-    <tr style={{ opacity: isFetching ? 0.5 : 1 }}>
-      <td>
-        <Link to={`/file/${file.fid}`}>{file.filename}</Link>
-      </td>
-      <td>{file.filesize}</td>
-      <td>{file.mimetype}</td>
-      <td>
-        <fetcher.Form method="post">
-          <input type="hidden" name="fid" value={file.fid} />
-          <button
-            type="submit"
-            name="_action"
-            value={ActionType.RemoveFile}
-            disabled={isFetching}
-          >
-            删除捏
-          </button>
-        </fetcher.Form>
-      </td>
-    </tr>
+    <fetcher.Form method="post">
+      <input type="hidden" name="fid" value={file.fid} />
+      <Button
+        type="primary"
+        status="danger"
+        htmlType="submit"
+        name="_action"
+        value={ActionType.RemoveFile}
+        loading={isDeleting}
+        icon={<IconDelete />}
+        size="small"
+      />
+    </fetcher.Form>
   );
 }
 
+const columns: ColumnProps<ProblemFile>[] = [
+  {
+    title: "文件名",
+    dataIndex: "filename",
+    sorter: (a, b) =>
+      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+  },
+  {
+    title: "文件大小",
+    dataIndex: "filesize",
+    sorter: (a, b) => a.filesize - b.filesize,
+  },
+  {
+    title: "文件类型",
+    dataIndex: "mimetype",
+    filters: [
+      { text: "图片", value: "image" },
+      { text: "文档", value: "text" },
+      { text: "音频", value: "audio" },
+      { text: "视频", value: "video" },
+    ],
+    onFilter: (value: string, file: ProblemFile) =>
+      file.mimetype.startsWith(value),
+  },
+  {
+    title: "操作",
+    dataIndex: "action",
+    render: (_, file) => <ProblemFileRemoveButton file={file} />,
+  },
+];
+
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>文件名</th>
-          <th>文件大小</th>
-          <th>文件类型</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {files.map((file) => (
-          <ProblemFileListItem file={file} key={file.fid} />
-        ))}
-      </tbody>
-    </table>
-  );
+  return <Table rowKey="fid" columns={columns} data={files} />;
 }
 
 export default function ProblemData() {
@@ -155,13 +182,17 @@ export default function ProblemData() {
     <>
       <h2>测试数据</h2>
       <p>用于评测的数据文件</p>
-      <ProblemFileUploader action={ActionType.UploadData} />
-      <ProblemFileList files={files.filter((file) => file.private)} />
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader action={ActionType.UploadData} />
+        <ProblemFileList files={files.filter((file) => file.private)} />
+      </Space>
 
       <h2>附加文件</h2>
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      <ProblemFileUploader action={ActionType.UploadFile} />
-      <ProblemFileList files={files.filter((file) => !file.private)} />
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader action={ActionType.UploadFile} />
+        <ProblemFileList files={files.filter((file) => !file.private)} />
+      </Space>
     </>
   );
 }
