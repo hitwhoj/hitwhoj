@@ -1,6 +1,4 @@
 import { SystemUserRole } from "@prisma/client";
-import { redirect } from "remix";
-
 import { db } from "./db.server";
 import { findSessionUid } from "./sessions";
 
@@ -228,8 +226,8 @@ export async function guaranteePermission(
   if ((userPermission & permission) !== permission) {
     // 没有权限
     if (!self) {
-      // 如果没有登录，则跳转到登录页面
-      throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+      // 如果没有登录，则返回一个 401 错误
+      throw new Response("Unauthorized", { status: 401 });
     }
 
     // 否则抛出 403

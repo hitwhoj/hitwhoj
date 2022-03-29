@@ -1,5 +1,5 @@
 import { Record } from "@prisma/client";
-import { json, LoaderFunction, useLoaderData } from "remix";
+import { json, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
@@ -36,6 +36,10 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 };
 
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `提交记录: ${data?.record.status} - HITwh OJ`,
+});
+
 export default function Record() {
   const { record, code } = useLoaderData<LoaderData>();
   return (
@@ -48,3 +52,6 @@ export default function Record() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

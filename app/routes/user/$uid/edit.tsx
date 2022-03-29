@@ -7,6 +7,7 @@ import {
   useLoaderData,
   Form as RemixForm,
   useTransition,
+  MetaFunction,
 } from "remix";
 import { z } from "zod";
 import { db } from "~/utils/db.server";
@@ -47,6 +48,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   return json({ user });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
+});
 
 export const action: ActionFunction = async ({ request, params }) => {
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
@@ -158,3 +163,6 @@ export default function UserEdit() {
     </RemixForm>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

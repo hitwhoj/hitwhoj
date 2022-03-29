@@ -1,6 +1,6 @@
 import { Descriptions } from "@arco-design/web-react";
 import { User } from "@prisma/client";
-import { json, LoaderFunction, useLoaderData } from "remix";
+import { json, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
@@ -33,6 +33,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ user });
 };
 
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
+});
+
 export default function Profile() {
   const { user } = useLoaderData<LoaderData>();
 
@@ -64,3 +68,6 @@ export default function Profile() {
     />
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";
