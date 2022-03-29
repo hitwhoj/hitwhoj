@@ -1,4 +1,4 @@
-import { Link } from "remix";
+import { NavLink } from "remix";
 import { Menu } from "@arco-design/web-react";
 import { IconAlignLeft } from "@arco-design/web-react/icon";
 
@@ -50,7 +50,7 @@ const navBarRoutes: Route[] = [
 export default function NavbarLeft() {
   return (
     <div>
-      <Link to={"/"}>
+      <NavLink to="/">
         <div
           style={{
             height: "4rem",
@@ -61,19 +61,19 @@ export default function NavbarLeft() {
         >
           <h1 style={{ color: "var(--color-text-1)" }}>HITwhOJ</h1>
         </div>
-      </Link>
+      </NavLink>
       <Menu
         style={{
           width: "100%",
         }}
       >
         {navBarRoutes.map((route) => (
-          <Link to={route.href} key={route.href}>
+          <NavLink prefetch="intent" to={route.href} key={route.href}>
             <Menu.Item key={route.href}>
               {route.icon}
               {route.name}
             </Menu.Item>
-          </Link>
+          </NavLink>
         ))}
       </Menu>
     </div>

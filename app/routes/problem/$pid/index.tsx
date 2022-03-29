@@ -4,8 +4,7 @@ import {
   ProblemTag,
   File as ProblemFile,
 } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
-import { Markdown } from "~/src/Markdown";
+import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
@@ -68,6 +67,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ problem });
 };
 
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题目: ${data?.problem.title} - HITwh OJ`,
+  description: data?.problem.description,
+});
+
 export default function ProblemIndex() {
   const { problem } = useLoaderData<LoaderData>();
 
@@ -102,3 +106,6 @@ export default function ProblemIndex() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

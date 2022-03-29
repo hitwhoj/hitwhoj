@@ -16,7 +16,7 @@ import { commitSession } from "~/utils/sessions";
 import { parseRedirectPathname } from "~/utils/tools";
 
 export const meta: MetaFunction = () => ({
-  title: "Register",
+  title: "注册 - HITwh OJ",
 });
 
 export const action: ActionFunction = async ({ request }) => {
@@ -87,3 +87,6 @@ export default function Register() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";
