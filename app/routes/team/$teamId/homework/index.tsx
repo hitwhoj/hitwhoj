@@ -1,9 +1,10 @@
 import { json, Link, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
+import { ContestSystem } from "@prisma/client";
 
 type LoaderData = {
-  hid: number;
-  name: string;
+  cid: number;
+  title: string;
 }[];
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -15,9 +16,12 @@ export const loader: LoaderFunction = async ({ params }) => {
     include: {
       homeworks: {
         select: {
-          hid: true,
-          name: true,
+          cid: true,
+          title: true,
         },
+        where:{
+          system:ContestSystem.Homework
+        }
       },
     },
   });
@@ -49,8 +53,8 @@ export default function HomeworkList() {
         {data.length ? (
           <ul>
             {data.map((homework) => (
-              <li key={homework.hid}>
-                <Link to={`${homework.hid}`}>{homework.name}</Link>
+              <li key={homework.cid}>
+                <Link to={`/contest/${homework.cid}`}>{homework.title}</Link>
               </li>
             ))}
           </ul>

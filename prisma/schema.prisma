@@ -41,7 +41,7 @@ model User {
 
   createdTeam     Team[]
   teamMember      TeamMember[]
-  createdHomework TeamHomework[]
+  // createdHomework TeamHomework[]
 
   records Record[]
   Comment Comment[]
@@ -145,7 +145,7 @@ model ProblemSet {
   tags ProblemSetTag[] @relation(references: [id])
 
   problems          Problem[]      @relation(references: [pid])
-  includeInHomework TeamHomework[]
+  // includeInHomework TeamHomework[]
   uid               Int
   user              User           @relation(fields: [uid], references: [uid])
 
@@ -187,6 +187,9 @@ model Contest {
 
   records           Record[]
   exclusiveProblems Problem[] @relation("belong")
+
+  team Team? @relation(fields: [tid],references: [tid])
+  tid String?
 }
 
 model ContestTag {
@@ -206,7 +209,7 @@ model Team {
   creator   User           @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
   creatorId Int
   members   TeamMember[]
-  homeworks TeamHomework[]
+  homeworks Contest[]
 }
 
 model TeamMember {
@@ -222,21 +225,21 @@ model TeamMember {
   @@unique([memberId, teamId])
 }
 
-model TeamHomework {
-  hid         String   @id @default(uuid())
-  name        String
-  ddl         DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  description String?
+// model TeamHomework {
+//   hid         String   @id @default(uuid())
+//   name        String
+//   ddl         DateTime
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+//   description String?
 
-  // ==== relations ====
-  creator     User         @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
-  creatorId   Int
-  team        Team         @relation(fields: [teamId], references: [tid], onDelete: Cascade)
-  teamId      String
-  problemsets ProblemSet[] @relation(references: [sid])
-}
+//   // ==== relations ====
+//   creator     User         @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
+//   creatorId   Int
+//   team        Team         @relation(fields: [teamId], references: [tid], onDelete: Cascade)
+//   teamId      String
+//   problemsets ProblemSet[] @relation(references: [sid])
+// }
 
 enum ContestSystem {
   /// ACM 赛制，每次错误提交都有罚时，榜单实时显示，最后一小时封榜，最后成绩以过题数、过题时间为准
