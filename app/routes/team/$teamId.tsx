@@ -3,22 +3,20 @@ import {
   json,
   LoaderFunction,
   useLoaderData,
-  MetaFunction,
+
 } from "remix";
 import { db } from "~/utils/db.server";
 import { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import {idScheme} from "~/utils/scheme"
 
-
-
-export const meta: MetaFunction = () => ({
-  title: "Team",
-});
-
 type LoaderData = {
   team: Team;
 };
+
+
+
+
 
 export const loader: LoaderFunction = async ({ params }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId))   ;

@@ -1,4 +1,4 @@
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { json, Link, LoaderFunction, useLoaderData,MetaFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { ContestSystem, Contest } from "@prisma/client";
 import {idScheme} from "~/utils/scheme"
@@ -6,6 +6,11 @@ import { invariant } from "~/utils/invariant";
 
 
 type LoaderData = Pick<Contest, "cid" | "title">[];
+
+export const meta: MetaFunction = () => ({
+  title: `Team Homework - HITwh OJ`,
+})
+
 
 export const loader: LoaderFunction = async ({ params }) => {
   const tid = invariant(idScheme.safeParse(params.teamId))   ;;

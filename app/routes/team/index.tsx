@@ -6,11 +6,17 @@ import {
   LoaderFunction,
   json,
   useLoaderData,
+  MetaFunction
 } from "remix";
 import { db } from "~/utils/db.server";
 import {teamNameScheme} from "~/utils/scheme"
 import { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
+
+
+export const meta: MetaFunction = () => ({
+  title: "Team List",
+});
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
