@@ -1,5 +1,4 @@
 import { BucketItem, Client } from "minio";
-import { string } from "zod";
 
 function readableToBuffer(stream: NodeJS.ReadableStream) {
   let data: any[] = [];

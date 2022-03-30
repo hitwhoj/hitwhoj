@@ -1,5 +1,4 @@
-import { File, Problem, User } from "@prisma/client";
-import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import { LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
