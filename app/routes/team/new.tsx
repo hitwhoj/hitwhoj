@@ -1,6 +1,14 @@
-import { Form, ActionFunction, redirect } from "remix";
+import { Form, ActionFunction, redirect, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const userId = await findSessionUid(request);
+  if (!userId) {
+    return redirect("/login");
+  }
+  return null;
+};
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -12,21 +20,19 @@ export const action: ActionFunction = async ({ request }) => {
   }
   const userId = await findSessionUid(request);
   if (!userId) {
-    return new Response("log in is required", { status: 400 });
+    return redirect("/login");
   }
-  const { tid } = await db.team
-    .create({
-      data: {
-        name: name,
-        description: description,
-        createdAt: new Date(Date.now()),
-        creatorId: userId,
-        members: {
-          create: [{ memberId: userId }],
-        },
+  const { tid } = await db.team.create({
+    data: {
+      name: name,
+      description: description,
+      createdAt: new Date(Date.now()),
+      creatorId: userId,
+      members: {
+        create: [{ memberId: userId }],
       },
-    })
-    
+    },
+  });
 
   return redirect(`/team/${tid}`);
 };

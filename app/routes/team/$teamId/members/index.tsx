@@ -8,7 +8,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   const tid = params.teamId;
   const result = await db.teamMember.findMany({
     where: {
-      teamId: tid,
+      teamId: Number(tid),
     },
     include: {
       member: {

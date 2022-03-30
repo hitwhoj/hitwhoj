@@ -70,7 +70,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       endTime,
       system,
       user: { connect: { uid } },
-      team: { connect: { tid: tid } },
+      team: { connect: { tid: Number(tid) } },
     },
   });
 

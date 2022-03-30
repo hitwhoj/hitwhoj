@@ -8,7 +8,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   const tid = params.teamId;
   const homeworks = await db.team.findUnique({
     where: {
-      tid: tid,
+      tid: Number(tid),
     },
     include: {
       homeworks: {

@@ -29,22 +29,20 @@ export const action: ActionFunction = async ({ params, request }) => {
       }
 
       for (let i = 0; i < users.length; i++) {
-        await db.team
-          .update({
-            data: {
-              members: {
-                create: [
-                  {
-                    member: { connect: users[i] },
-                  },
-                ],
-              },
+        await db.team.update({
+          data: {
+            members: {
+              create: [
+                {
+                  member: { connect: users[i] },
+                },
+              ],
             },
-            where: {
-              tid: teamId,
-            },
-          })
-          
+          },
+          where: {
+            tid: Number(teamId),
+          },
+        });
       }
       break;
     }
@@ -52,7 +50,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     case ActionType.DeleteMember: {
       var members: memberId = [];
       for (let i = 0; i < userIds.length; i++) {
-        members.push({ memberId: userIds[i], teamId: teamId });
+        members.push({ memberId: userIds[i], teamId: Number(teamId) });
       }
       for (let i = 0; i < members.length; i++)
         await db.team.update({
@@ -62,7 +60,7 @@ export const action: ActionFunction = async ({ params, request }) => {
             },
           },
           where: {
-            tid: teamId,
+            tid: Number(teamId),
           },
         });
       break;

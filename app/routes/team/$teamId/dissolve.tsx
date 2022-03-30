@@ -4,6 +4,10 @@ import { findSessionUid } from "~/utils/sessions";
 
 export const action: ActionFunction = async ({ params, request }) => {
   const userId = await findSessionUid(request);
+  if (!userId) {
+    return redirect("/login");
+  }
+
   const form = await request.formData();
   const teamId = params.teamId;
   const actionType = form.get("submit")?.toString();
@@ -14,16 +18,15 @@ export const action: ActionFunction = async ({ params, request }) => {
     throw new Response("team Id is missing", { status: 400 });
   }
   if (actionType == "dissolve") {
-    const creator = await db.team
-      .findUnique({
-        where: {
-          tid: teamId,
-        },
-        select: {
-          creatorId: true,
-        },
-      })
-      
+    const creator = await db.team.findUnique({
+      where: {
+        tid: Number(teamId),
+      },
+      select: {
+        creatorId: true,
+      },
+    });
+
     if (!creator) {
       throw new Response("team search fail", { status: 400 });
     }
@@ -34,13 +37,11 @@ export const action: ActionFunction = async ({ params, request }) => {
       );
     }
 
-    await db.team
-      .delete({
-        where: {
-          tid: teamId,
-        },
-      })
-      
+    await db.team.delete({
+      where: {
+        tid: Number(teamId),
+      },
+    });
   }
 
   return redirect(`/team`);

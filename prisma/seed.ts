@@ -261,7 +261,7 @@ async function seed() {
 
   await prisma.team.create({
     data: {
-      tid: "team1",
+      tid: 1,
       name: "team1",
       creatorId: alice,
     },
@@ -269,44 +269,9 @@ async function seed() {
   await prisma.teamMember.create({
     data: {
       memberId: alice,
-      teamId: "team1",
+      teamId: 1,
     },
   });
-  // await prisma.teamHomework.create({
-  //   data: {
-  //     name: "homework1",
-  //     ddl: new Date(Date.now()),
-  //     updatedAt: new Date(Date.now()),
-  //     description: "this is a homework,without doubt",
-  //     creatorId: alice,
-  //     teamId: "team1",
-  //     problemsets: {
-  //       connect: [{ sid: ts1 }],
-  //     },
-  //   },
-  // });
-  // await prisma.team.update({
-  //   data: {
-  //     homeworks: {
-  //       create: {
-  //         ddl: new Date(Date.now()),
-  //         name: "作业来喽啊哈哈哈哈哈哈哈哈哈",
-  //         description: "不想做？不想做就别想拿分",
-  //         createdAt: new Date(Date.now()),
-  //         updatedAt: new Date(Date.now()),
-  //         creator: {
-  //           connect: { uid: alice },
-  //         },
-  //         problemsets: {
-  //           connect: [{ sid: ts1 }],
-  //         },
-  //       },
-  //     },
-  //   },
-  //   where: {
-  //     tid: "team1",
-  //   },
-  // });
 }
 
 seed();

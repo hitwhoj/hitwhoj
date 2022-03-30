@@ -19,7 +19,7 @@ type LoaderData = {
 export const loader: LoaderFunction = async ({ params }) => {
   const teamId = params.teamId;
   const team = await db.team.findUnique({
-    where: { tid: teamId },
+    where: { tid: Number(teamId) },
   });
   if (!team) {
     throw new Response("Team not found", { status: 404 });

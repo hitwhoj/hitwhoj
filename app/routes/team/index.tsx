@@ -39,6 +39,9 @@ type LoaderData = {
 export const loader: LoaderFunction = async () => {
   const teams = await db.team.findMany({
     take: 20,
+    orderBy: {
+      name: "asc",
+    },
   });
 
   return json({ teams });
