@@ -6,6 +6,7 @@ import { useRef } from "react";
 import {
   ActionFunction,
   json,
+  Link,
   LoaderFunction,
   MetaFunction,
   unstable_parseMultipartFormData,
@@ -190,6 +191,11 @@ const columns: ColumnProps<UserFile>[] = [
     dataIndex: "filename",
     sorter: (a: UserFile, b: UserFile) =>
       a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+    render: (_, file) => (
+      <Link to={`/file/${file.fid}`} target="_blank" rel="noopener noreferrer">
+        {file.filename}
+      </Link>
+    ),
   },
   {
     title: "文件大小",
