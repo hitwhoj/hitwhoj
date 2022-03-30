@@ -110,9 +110,7 @@ export default function App() {
 export function ErrorBoundary({ error }: { error: Error }) {
   return (
     <Document title={`错误: ${error.message} - HITwh OJ`}>
-      <Layout>
-        <CustomErrorBoundary error={error} />
-      </Layout>
+      <CustomErrorBoundary error={error} />
     </Document>
   );
 }
@@ -123,9 +121,7 @@ export function CatchBoundary() {
 
   return (
     <Document title={`错误: ${caught.status} ${caught.statusText} - HITwh OJ`}>
-      <Layout>
-        <CustomCatchBoundary />
-      </Layout>
+      <CustomCatchBoundary />
     </Document>
   );
 }
