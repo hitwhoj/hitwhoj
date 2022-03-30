@@ -1,4 +1,4 @@
-import { Problem } from "@prisma/client";
+import type { Problem } from "@prisma/client";
 import {
   LoaderFunction,
   json,
@@ -50,7 +50,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
   description: data?.problem.description,
 });
 
-export default function Problem() {
+export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
 
   return (

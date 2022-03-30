@@ -40,7 +40,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
   title: `提交记录: ${data?.record.status} - HITwh OJ`,
 });
 
-export default function Record() {
+export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
   return (
     <>

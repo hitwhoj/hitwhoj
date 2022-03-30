@@ -86,7 +86,7 @@ function ContestProblemList({
   );
 }
 
-export default function contestIndex() {
+export default function ContestIndex() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (

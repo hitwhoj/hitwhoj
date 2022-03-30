@@ -39,8 +39,11 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Check formats
-        run: yarn prettier --check .
+      - name: Check formats and types
+        run: |
+          yarn fmt:check
+          yarn lint:check
+          yarn tsc
 
       - name: Postgres & MinIO
         run: |

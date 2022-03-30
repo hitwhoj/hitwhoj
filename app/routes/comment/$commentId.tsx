@@ -76,7 +76,7 @@ export function ReplyList({
   }
 }
 
-export default function Comment() {
+export default function CommentView() {
   const { comment, replies } = useLoaderData<LoaderData>();
   return (
     <>

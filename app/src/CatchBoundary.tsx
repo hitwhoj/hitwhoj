@@ -21,6 +21,7 @@ export function CatchBoundary() {
   const diana = (
     <a
       target="_blank"
+      rel="noreferrer"
       href="https://www.bilibili.com/s/video/BV1FX4y1g7u8?t=42.3"
     >
       <Button type="outline">关注嘉然</Button>

@@ -34,7 +34,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
   description: data?.contest.description,
 });
 
-export default function Contest() {
+export default function ContestView() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
