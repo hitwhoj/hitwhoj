@@ -1,6 +1,9 @@
 import { Form, redirect, ActionFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
+import { invariant } from "~/utils/invariant";
+import {idScheme} from "~/utils/scheme"
+
 
 export const action: ActionFunction = async ({ params, request }) => {
   const userId = await findSessionUid(request);
@@ -9,7 +12,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   }
 
   const form = await request.formData();
-  const teamId = params.teamId;
+  const teamId = invariant(idScheme.safeParse(params.teamId))   ;
   const actionType = form.get("submit")?.toString();
   if (!actionType) {
     throw new Response("submit fail", { status: 400 });

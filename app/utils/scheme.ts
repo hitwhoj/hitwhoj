@@ -112,3 +112,5 @@ export const replyScheme = z
   .string()
   .nonempty("Reply must be nonempty")
   .min(5, "Reply must be at least 5 characters");
+
+export const teamNameScheme = z.string().nonempty("TeamName must be nonempty")

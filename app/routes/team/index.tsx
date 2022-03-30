@@ -8,12 +8,14 @@ import {
   useLoaderData,
 } from "remix";
 import { db } from "~/utils/db.server";
+import {teamNameScheme} from "~/utils/scheme"
 import { Team } from "@prisma/client";
+import { invariant } from "~/utils/invariant";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
+  const teamName = invariant(teamNameScheme.safeParse(form.get("teamName")));
 
-  const teamName = form.get("teamName")?.toString();
   if (!teamName)
     return new Response("teamName is not registered", { status: 400 });
 

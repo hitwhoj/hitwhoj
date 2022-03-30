@@ -1,11 +1,13 @@
 import { Link, json, useLoaderData, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { User } from "@prisma/client";
+import { invariant } from "~/utils/invariant";
+import {idScheme} from "~/utils/scheme"
 
 type LoaderData = Pick<User, "uid" | "username">[];
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const tid = params.teamId;
+  const tid = invariant(idScheme.safeParse(params.teamId))   ;
   const result = await db.teamMember.findMany({
     where: {
       teamId: Number(tid),

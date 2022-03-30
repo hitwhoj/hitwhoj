@@ -18,6 +18,8 @@ import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { findSessionUid } from "~/utils/sessions";
 import React from "react";
+import {idScheme} from "~/utils/scheme"
+
 
 export const loader: LoaderFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
@@ -31,7 +33,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export const action: ActionFunction = async ({ params, request }) => {
   const uid = await findSessionUid(request);
-  const tid = params.teamId;
+  const tid = invariant(idScheme.safeParse(params.teamId))   ;
 
   console.log(tid);
 

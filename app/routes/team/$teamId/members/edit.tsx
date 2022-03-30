@@ -1,6 +1,9 @@
 import { Form, ActionFunction, redirect } from "remix";
 import { User, TeamMember } from "@prisma/client";
 import { db } from "~/utils/db.server";
+import { invariant } from "~/utils/invariant";
+import {idScheme} from "~/utils/scheme"
+
 
 enum ActionType {
   AddMember = "addMember",
@@ -11,7 +14,7 @@ type userId = Pick<User, "uid">[];
 type memberId = Pick<TeamMember, "memberId" | "teamId">[];
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const teamId = params.teamId ? params.teamId : "";
+  const teamId = invariant(idScheme.safeParse(params.teamId))   ;
   const form = await request.formData();
   const Members = form.get("Members")?.toString().split(",");
   const _action = form.get("_action");
