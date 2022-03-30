@@ -1,19 +1,19 @@
-import { Link, LoaderFunction, json, useLoaderData,MetaFunction } from "remix";
+import { Link, LoaderFunction, json, useLoaderData, MetaFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
-import {idScheme} from "~/utils/scheme"
+import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   team: Team;
 };
 
-export const meta: MetaFunction = ({data}:{data?:LoaderData}) => ({
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
   title: `Team: ${data?.team.name} - HITwh OJ`,
 });
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId))   ;
+  const teamId = invariant(idScheme.safeParse(params.teamId));
   const team = await db.team.findUnique({
     where: { tid: Number(teamId) },
   });

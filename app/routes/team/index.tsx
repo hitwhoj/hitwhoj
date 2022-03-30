@@ -6,13 +6,12 @@ import {
   LoaderFunction,
   json,
   useLoaderData,
-  MetaFunction
+  MetaFunction,
 } from "remix";
 import { db } from "~/utils/db.server";
-import {teamNameScheme} from "~/utils/scheme"
+import { teamNameScheme } from "~/utils/scheme";
 import { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
-
 
 export const meta: MetaFunction = () => ({
   title: "Team List",

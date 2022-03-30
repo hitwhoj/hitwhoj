@@ -2,7 +2,7 @@ import { Form, ActionFunction, redirect, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
-import {teamNameScheme,descriptionScheme} from "~/utils/scheme"
+import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await findSessionUid(request);
@@ -15,7 +15,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
   const name = invariant(teamNameScheme.safeParse(form.get("name")));
-  const description = invariant(descriptionScheme.safeParse( form.get("description")));
+  const description = invariant(
+    descriptionScheme.safeParse(form.get("description"))
+  );
 
   if (!name) {
     return new Response("team name is missing", { status: 400 });
