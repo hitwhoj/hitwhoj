@@ -1,10 +1,8 @@
 import { Link, json, useLoaderData, LoaderFunction } from "remix";
 import { db } from "~/utils/db.server";
+import { User } from "@prisma/client";
 
-type LoaderData = {
-  uid: number;
-  username: string;
-}[];
+type LoaderData = Pick<User, "uid" | "username">[];
 
 export const loader: LoaderFunction = async ({ params }) => {
   const tid = params.teamId;
@@ -36,10 +34,7 @@ export default function MemberList() {
       <h3>Operation</h3>
       <ul>
         <li>
-          <Link to="new">添加成员</Link>{" "}
-        </li>
-        <li>
-          <Link to="del">删除成员</Link>{" "}
+          <Link to="edit">编辑成员</Link>
         </li>
       </ul>
 

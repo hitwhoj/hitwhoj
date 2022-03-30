@@ -23,9 +23,7 @@ export const action: ActionFunction = async ({ params, request }) => {
           creatorId: true,
         },
       })
-      .catch(() => {
-        throw new Response("team search fail", { status: 500 });
-      });
+      
     if (!creator) {
       throw new Response("team search fail", { status: 500 });
     }
@@ -42,10 +40,7 @@ export const action: ActionFunction = async ({ params, request }) => {
           tid: teamId,
         },
       })
-      .catch((error) => {
-        console.log(error);
-        throw new Response("permisson fail:database fail", { status: 500 });
-      });
+      
   }
 
   return redirect(`/team`);

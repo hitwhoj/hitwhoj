@@ -26,9 +26,7 @@ export const action: ActionFunction = async ({ request }) => {
         },
       },
     })
-    .catch(() => {
-      throw new Response("create team fail", { status: 500 });
-    });
+    
 
   return redirect(`/team/${tid}`);
 };
