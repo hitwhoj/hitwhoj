@@ -4,9 +4,11 @@ import {
   ProblemTag,
   File as ProblemFile,
 } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData } from "remix";
+import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
@@ -17,7 +19,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
   const problem = await db.problem.findUnique({
@@ -26,6 +28,7 @@ export const loader: LoaderFunction = async ({ params }) => {
       pid: true,
       title: true,
       description: true,
+      private: true,
       tags: {
         select: {
           name: true,
@@ -52,8 +55,23 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
+  // 检查访问权限
+  await guaranteePermission(
+    request,
+    Permissions.Problem.File.View |
+      (problem.private
+        ? Permissions.Problem.ViewPrivate
+        : Permissions.Problem.ViewPublic),
+    { pid }
+  );
+
   return json({ problem });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题目: ${data?.problem.title} - HITwh OJ`,
+  description: data?.problem.description,
+});
 
 export default function ProblemIndex() {
   const { problem } = useLoaderData<LoaderData>();
@@ -67,7 +85,9 @@ export default function ProblemIndex() {
         ))}
       </ul>
       <h2>描述捏</h2>
-      <div>{problem.description}</div>
+      <div>
+        <Markdown>{problem.description}</Markdown>
+      </div>
       <h2>相关文件</h2>
       <ul>
         {problem.files.map((file) => (
@@ -87,3 +107,6 @@ export default function ProblemIndex() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

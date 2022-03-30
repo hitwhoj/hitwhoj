@@ -96,3 +96,19 @@ export const systemScheme = z.nativeEnum(ContestSystem);
  * Code scheme for submitted code
  */
 export const codeScheme = z.string().nonempty("Code must be nonempty");
+
+/**
+ * Comment scheme for submitted comment
+ */
+export const commentScheme = z
+  .string()
+  .nonempty("Comment must be nonempty")
+  .min(10, "Comment must be at least 10 characters");
+
+/**
+ * Reply scheme for submitted reply
+ */
+export const replyScheme = z
+  .string()
+  .nonempty("Reply must be nonempty")
+  .min(5, "Reply must be at least 5 characters");

@@ -10,6 +10,7 @@ import {
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 import { Tabs } from "@arco-design/web-react";
 const TabPane = Tabs.TabPane;
@@ -18,7 +19,7 @@ type LoaderData = {
   problem: Pick<Problem, "pid" | "title" | "description">;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
 
   const problem = await db.problem.findUnique({
@@ -27,6 +28,7 @@ export const loader: LoaderFunction = async ({ params }) => {
       pid: true,
       title: true,
       description: true,
+      private: true,
     },
   });
 
@@ -34,12 +36,21 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
+  // 检查访问权限
+  if (problem.private) {
+    await guaranteePermission(request, Permissions.Problem.ViewPrivate, {
+      pid,
+    });
+  } else {
+    await guaranteePermission(request, Permissions.Problem.ViewPublic, { pid });
+  }
+
   return json({ problem });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: data.problem.title,
-  description: data.problem.description,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题目: ${data?.problem.title} - HITwh OJ`,
+  description: data?.problem.description,
 });
 
 export default function Problem() {
@@ -67,3 +78,6 @@ export default function Problem() {
     </div>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

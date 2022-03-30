@@ -9,6 +9,8 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async () => {
+  // TODO: 按照用户是否有题目的访问权限来筛选题目
+
   const problems = await db.problem.findMany({
     orderBy: [{ pid: "asc" }],
     take: 20,
@@ -23,7 +25,7 @@ export const loader: LoaderFunction = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Problem List",
+  title: "题目列表 - HITwh OJ",
 });
 
 export default function ProblemList() {
@@ -82,3 +84,6 @@ export default function ProblemList() {
     />
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

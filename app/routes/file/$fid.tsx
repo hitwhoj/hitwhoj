@@ -2,6 +2,7 @@ import { File, Problem, User } from "@prisma/client";
 import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { uuidScheme } from "~/utils/scheme";
 
 type LoaderData = {
@@ -11,7 +12,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const fid = invariant(uuidScheme.safeParse(params.fid), { status: 404 });
 
   const file = await db.file.findUnique({
@@ -37,11 +38,39 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("File not found", { status: 404 });
   }
 
+  // 用户上传的文件
+  if (file.user?.uid) {
+    await guaranteePermission(
+      request,
+      file.private
+        ? Permissions.User.File.DownloadPrivate
+        : Permissions.User.File.DownloadPublic,
+      {
+        uid: file.user.uid,
+        fid: file.fid,
+      }
+    );
+  }
+
+  // 检查是否有权限下载该题目的文件
+  if (file.problem?.pid) {
+    await guaranteePermission(
+      request,
+      file.private
+        ? Permissions.Problem.Data.Download
+        : Permissions.Problem.File.Download,
+      {
+        pid: file.problem.pid,
+        fid: file.fid,
+      }
+    );
+  }
+
   return json({ file });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `File: ${data.file.filename} - HITwh OJ`,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `文件: ${data?.file.filename} - HITwh OJ`,
 });
 
 export default function FileIndex() {

@@ -4,13 +4,15 @@ import {
   ActionFunction,
   json,
   LoaderFunction,
-  redirect,
   useLoaderData,
   Form as RemixForm,
+  useTransition,
+  MetaFunction,
 } from "remix";
 import { z } from "zod";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import {
   bioScheme,
   emailScheme,
@@ -19,20 +21,15 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
-import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+
+  await guaranteePermission(request, Permissions.User.Profile.View, { uid });
 
   const user = await db.user.findUnique({
     where: { uid },
@@ -52,24 +49,21 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ user });
 };
 
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
+});
+
 export const action: ActionFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
   const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
 
-  // FIXME: 检查权限
-  if (self !== uid) {
-    throw new Response("Permission denied", { status: 403 });
-  }
+  await guaranteePermission(request, Permissions.User.Profile.Update, { uid });
 
   const form = await request.formData();
 
   const username = invariant(usernameScheme.safeParse(form.get("username")));
-  const nickname = invariant(nicknameScheme.safeParse(form.get("nickname")));
+  const nickname = invariant(
+    nicknameScheme.or(emptyStringScheme).safeParse(form.get("nickname"))
+  );
   const avatar = invariant(
     z
       .string()
@@ -109,6 +103,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 export default function UserEdit() {
   const { user } = useLoaderData<LoaderData>();
+  const { state } = useTransition();
+  const loading = state !== "idle";
 
   return (
     <RemixForm
@@ -121,6 +117,7 @@ export default function UserEdit() {
           name="username"
           style={{ width: 270 }}
           defaultValue={user.username}
+          disabled={loading}
           required
         />
       </Form.Item>
@@ -128,6 +125,7 @@ export default function UserEdit() {
         <Input
           name="nickname"
           defaultValue={user.nickname}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
@@ -136,6 +134,7 @@ export default function UserEdit() {
           name="email"
           type="email"
           defaultValue={user.email}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
@@ -144,22 +143,26 @@ export default function UserEdit() {
           name="avatar"
           defaultValue={user.avatar}
           placeholder="https://"
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
       <Form.Item label="个人介绍">
-        {/* TODO: 换成一个 Markdown 编辑器 */}
-        <Input.TextArea
+        <Input
           name="bio"
           defaultValue={user.bio}
+          disabled={loading}
           style={{ width: 270 }}
         />
       </Form.Item>
       <Form.Item wrapperCol={{ offset: 5 }}>
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" loading={loading}>
           确认修改
         </Button>
       </Form.Item>
     </RemixForm>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

@@ -39,6 +39,8 @@ model User {
   juriedContests   Contest[] @relation("jury", references: [cid])
 
   records Record[]
+  Comment Comment[]
+  Reply   Reply[]
 }
 
 enum SystemUserRole {
@@ -229,4 +231,46 @@ enum RecordStatus {
   RuntimeError
   CompileError
   SystemError
+}
+
+model CommentTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  comments Comment[] @relation(references: [id])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // === relations ===
+
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
+
+  tags CommentTag[] @relation(references: [id])
+
+  replies Reply[]
+}
+
+model Reply {
+  id Int @id @default(autoincrement())
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ==== relations ====
+
+  commentId Int
+  comment   Comment @relation(fields: [commentId], references: [id])
+
+  uid  Int
+  user User @relation(fields: [uid], references: [uid])
 }

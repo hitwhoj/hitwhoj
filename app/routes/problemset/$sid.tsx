@@ -11,10 +11,6 @@ import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 
-export const meta: MetaFunction = () => ({
-  title: "Problem List",
-});
-
 type LoaderData = {
   problemSet: ProblemSet;
 };
@@ -34,6 +30,11 @@ export const loader: LoaderFunction = async ({ params }) => {
     problemSet,
   });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题单: ${data?.problemSet.title} - HITwh OJ`,
+  description: data?.problemSet.description,
+});
 
 export default function Problemset() {
   const { problemSet } = useLoaderData<LoaderData>();
@@ -55,3 +56,6 @@ export default function Problemset() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

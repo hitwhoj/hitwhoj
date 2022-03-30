@@ -1,8 +1,9 @@
-import type { File as ProblemFile } from "@prisma/client";
+import type { File as ProblemFile, Problem } from "@prisma/client";
 import {
   ActionFunction,
   json,
   LoaderFunction,
+  MetaFunction,
   unstable_parseMultipartFormData,
   useFetcher,
   useLoaderData,
@@ -10,6 +11,7 @@ import {
 import { db } from "~/utils/db.server";
 import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
+import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 import { Table, Button, Space } from "@arco-design/web-react";
@@ -18,15 +20,26 @@ import { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useRef } from "react";
 
 type LoaderData = {
-  files: ProblemFile[];
+  problem: Pick<Problem, "title"> & {
+    files: ProblemFile[];
+  };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
+
+  // 检查是否有文件操作的权限
+  // TODO: 好像有点复杂
+  await guaranteePermission(
+    request,
+    Permissions.Problem.Data.View | Permissions.Problem.File.View,
+    { pid }
+  );
 
   const problem = await db.problem.findUnique({
     where: { pid },
     select: {
+      title: true,
       files: {
         orderBy: {
           createdAt: "desc",
@@ -39,12 +52,17 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return json({ files: problem.files });
+  return json({ problem });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑数据: ${data?.problem.title} - HITwh OJ`,
+});
 
 enum ActionType {
   UploadData = "uploadData",
   UploadFile = "uploadFile",
+  RemoveData = "removeData",
   RemoveFile = "removeFile",
 }
 
@@ -65,6 +83,16 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw new Response("Invalid file", { status: 400 });
       }
 
+      // 检查权限
+      await guaranteePermission(
+        request,
+        _action === ActionType.UploadData
+          ? Permissions.Problem.Data.Create
+          : Permissions.Problem.File.Create,
+        { pid }
+      );
+
+      // 保存文件
       await Promise.all(
         files.map((file) => {
           return createProblemFile(
@@ -78,9 +106,20 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
 
+    case ActionType.RemoveData:
     case ActionType.RemoveFile: {
       const fid = invariant(uuidScheme.safeParse(form.get("fid")));
 
+      // 检查权限
+      await guaranteePermission(
+        request,
+        _action === ActionType.RemoveData
+          ? Permissions.Problem.Data.Delete
+          : Permissions.Problem.File.Delete,
+        { pid }
+      );
+
+      // 删除文件
       await removeFile(fid);
 
       return null;
@@ -176,7 +215,9 @@ function ProblemFileList({ files }: { files: ProblemFile[] }) {
 }
 
 export default function ProblemData() {
-  const { files } = useLoaderData<LoaderData>();
+  const {
+    problem: { files },
+  } = useLoaderData<LoaderData>();
 
   return (
     <>
@@ -196,3 +237,6 @@ export default function ProblemData() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";
