@@ -1,13 +1,20 @@
+import { File } from "@prisma/client";
 import * as io from "socket.io";
+import { db } from "./db.server";
+import { s3 } from "./s3.server";
 
 /**
  * 客户端向测评机发送的请求
  */
 export type JudgeRequest = {
   /**
-   * 评测的 Record ID
+   * 当前任务 id
    */
   rid: number;
+  /**
+   * 评测所需要的所有文件
+   */
+  files: Pick<File, "fid" | "filename" | "updatedAt">[];
 };
 
 type RecordTestResult =
@@ -47,14 +54,16 @@ export type JudgeResponse = {
 
 export interface ServerEvent {
   task: () => void; // 评测机空闲，申请分发任务
-  result: (req: JudgeRequest, res: JudgeResponse) => void; // 评测机返回单个测试点结果
-  finish: (req: JudgeRequest) => void; // 评测机评测完成
+  result: (rid: number, res: JudgeResponse) => void; // 评测机返回单个测试点结果
+  finish: (rid: number) => void; // 评测机评测完成
   reject: (req: JudgeRequest) => void; // 评测机拒绝评测
+  fetch: (fid: string) => void; // 评测机同步文件
 }
 
 export interface ClientEvent {
   task: () => void; // 后端有新任务，发送广播到每个评测机
   dispatch: (req: JudgeRequest) => void; // 后端分配任务给评测机
+  fetch: (fid: string, buffer: Buffer) => void; // 后端同步文件
 }
 
 /**
@@ -127,8 +136,8 @@ class JudgeServer {
       });
 
       // 评测机返回单个测试点结果
-      socket.on("result", (req, res) => {
-        if (!this.timeout.has(req.rid)) {
+      socket.on("result", (rid, res) => {
+        if (!this.timeout.has(rid)) {
           // 任务已经过期，直接忽略该结果
           return;
         }
@@ -138,15 +147,15 @@ class JudgeServer {
       });
 
       // 评测机评测完成
-      socket.on("finish", (req) => {
-        const timeout = this.timeout.get(req.rid);
+      socket.on("finish", (rid) => {
+        const timeout = this.timeout.get(rid);
         if (!timeout) {
           // 任务已经过期，直接忽略该结果
           return;
         }
 
         // TODO: 评测完成
-        console.log("finish", req);
+        console.log("finish", rid);
 
         // 清理超时计时器
         clearInterval(timeout);
@@ -161,10 +170,26 @@ class JudgeServer {
         }
 
         // 将评测机拒绝的任务重新放回队列
-        this.push(req);
+        this.taskQueue.push(req);
 
         // 清理超时计时器
         clearInterval(timeout);
+      });
+
+      socket.on("fetch", async (fid) => {
+        const file = await db.file.findUnique({
+          where: { fid },
+          select: { pid: true, fid: true },
+        });
+
+        if (!file) {
+          return;
+        }
+
+        const buffer = await s3.readFileAsBuffer(
+          `/problem/${file.pid}/${file.fid}`
+        );
+        socket.emit("fetch", fid, buffer);
       });
     });
 
@@ -189,8 +214,33 @@ class JudgeServer {
   /**
    * 添加新任务
    */
-  push(task: JudgeRequest) {
-    this.taskQueue.push(task);
+  async push(rid: number) {
+    const record = await db.record.findUnique({
+      where: { rid },
+      select: {
+        problem: {
+          select: {
+            files: {
+              where: { private: true },
+              select: {
+                fid: true,
+                filename: true,
+                updatedAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!record) {
+      return;
+    }
+
+    this.taskQueue.push({
+      rid,
+      files: record.problem.files,
+    });
     this.broadcast();
   }
 }
