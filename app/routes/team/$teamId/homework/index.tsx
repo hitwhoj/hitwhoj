@@ -19,9 +19,9 @@ export const loader: LoaderFunction = async ({ params }) => {
           cid: true,
           title: true,
         },
-        where:{
-          system:ContestSystem.Homework
-        }
+        where: {
+          system: ContestSystem.Homework,
+        },
       },
     },
   });

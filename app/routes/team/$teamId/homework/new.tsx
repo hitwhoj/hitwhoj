@@ -29,14 +29,14 @@ export const loader: LoaderFunction = async ({ request }) => {
   return null;
 };
 
-export const action: ActionFunction = async ({params, request }) => {
+export const action: ActionFunction = async ({ params, request }) => {
   const uid = await findSessionUid(request);
   const tid = params.teamId;
-  
+
   console.log(tid);
 
-  if(!tid){
-    throw new Response("missing teamId",{status:500});
+  if (!tid) {
+    throw new Response("missing teamId", { status: 500 });
   }
 
   if (!uid) {
@@ -70,7 +70,7 @@ export const action: ActionFunction = async ({params, request }) => {
       endTime,
       system,
       user: { connect: { uid } },
-      team:{connect:{tid:tid}},
+      team: { connect: { tid: tid } },
     },
   });
 
