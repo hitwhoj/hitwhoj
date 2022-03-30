@@ -213,7 +213,6 @@ model Team {
 }
 
 model TeamMember {
-  mid       String  @id @default(uuid())
   authority String?
 
   // ==== relations ====
