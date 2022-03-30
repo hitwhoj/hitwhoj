@@ -32,7 +32,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Create: Comment - HITwh OJ",
+  title: "创建讨论 - HITwh OJ",
 });
 
 export default function CommentNew() {
@@ -50,3 +50,6 @@ export default function CommentNew() {
     </div>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

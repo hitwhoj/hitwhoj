@@ -1,9 +1,10 @@
-import type { File as ProblemFile } from "@prisma/client";
+import type { File as ProblemFile, Problem } from "@prisma/client";
 import {
   ActionFunction,
   json,
   Link,
   LoaderFunction,
+  MetaFunction,
   unstable_parseMultipartFormData,
   useFetcher,
   useLoaderData,
@@ -16,7 +17,9 @@ import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 
 type LoaderData = {
-  files: ProblemFile[];
+  problem: Pick<Problem, "title"> & {
+    files: ProblemFile[];
+  };
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -33,6 +36,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const problem = await db.problem.findUnique({
     where: { pid },
     select: {
+      title: true,
       files: {
         orderBy: {
           createdAt: "desc",
@@ -45,8 +49,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return json({ files: problem.files });
+  return json({ problem });
 };
+
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `编辑数据: ${data?.problem.title} - HITwh OJ`,
+});
 
 enum ActionType {
   UploadData = "uploadData",
@@ -192,7 +200,9 @@ function ProblemFileList({
 }
 
 export default function ProblemData() {
-  const { files } = useLoaderData<LoaderData>();
+  const {
+    problem: { files },
+  } = useLoaderData<LoaderData>();
 
   return (
     <>
@@ -214,3 +224,6 @@ export default function ProblemData() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

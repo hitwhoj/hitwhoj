@@ -1,4 +1,4 @@
-import { Problem } from "@prisma/client";
+import type { Problem } from "@prisma/client";
 import {
   LoaderFunction,
   json,
@@ -45,12 +45,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ problem });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: data.problem.title,
-  description: data.problem.description,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `题目: ${data?.problem.title} - HITwh OJ`,
+  description: data?.problem.description,
 });
 
-export default function Problem() {
+export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
 
   return (
@@ -78,3 +78,6 @@ export default function Problem() {
     </div>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

@@ -1,9 +1,10 @@
 import { Record } from "@prisma/client";
-import { json, LoaderFunction, useLoaderData } from "remix";
+import { json, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import Highlighter from "~/src/Highlighter";
 
 type LoaderData = {
   record: Pick<Record, "rid" | "detail" | "points" | "status">;
@@ -35,7 +36,11 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 };
 
-export default function Record() {
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `提交记录: ${data?.record.status} - HITwh OJ`,
+});
+
+export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
   return (
     <>
@@ -43,9 +48,10 @@ export default function Record() {
       <blockquote>
         <p>{record.detail}</p>
       </blockquote>
-      <pre>
-        <code>{code}</code>
-      </pre>
+      <Highlighter language="cpp" children={code} />
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

@@ -22,8 +22,10 @@ test_build:
     - yarn --version
     - yarn install --cache-folder "$(realpath .)/.cache/yarn"
 
-    # check formats
-    - yarn prettier --check .
+    # check format and type
+    - yarn fmt:check
+    - yarn lint:check
+    - yarn tsc
 
     # prisma
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
@@ -34,9 +36,6 @@ test_build:
     - export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
     - export S3_SECRET_KEY=$MINIO_SECRET_KEY
     - export S3_BUCKET=hitwhoj
-
-    # check types
-    - yarn tsc
 
     # build
     - yarn build

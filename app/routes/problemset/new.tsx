@@ -46,7 +46,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Create: Problem Set - HITwh OJ",
+  title: "创建题单 - HITwh OJ",
 });
 
 export default function ProblemSetNew() {
@@ -65,3 +65,6 @@ export default function ProblemSetNew() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

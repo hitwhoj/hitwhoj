@@ -8,7 +8,11 @@ const Header = Layout.Header;
 const Content = Layout.Content;
 const Footer = Layout.Footer;
 
-export default function ({ children }: { children: React.ReactNode }) {
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <Layout
       style={{

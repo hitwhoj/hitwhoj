@@ -69,8 +69,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json({ file });
 };
 
-export const meta: MetaFunction = ({ data }: { data: LoaderData }) => ({
-  title: `File: ${data.file.filename} - HITwh OJ`,
+export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+  title: `文件: ${data?.file.filename} - HITwh OJ`,
 });
 
 export default function FileIndex() {

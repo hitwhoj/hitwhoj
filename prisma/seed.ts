@@ -1,4 +1,4 @@
-import { ContestSystem, PrismaClient } from "@prisma/client";
+import { ContestSystem, PrismaClient, SystemUserRole } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -18,6 +18,7 @@ async function seed() {
       email: "alice@hit.edu.cn",
       username: "Alice",
       password: "alice",
+      role: SystemUserRole.Su,
     },
   });
 
@@ -26,6 +27,7 @@ async function seed() {
       email: "bob@hit.edu.cn",
       username: "Bob",
       password: "bob",
+      role: SystemUserRole.Admin,
     },
   });
 
@@ -49,7 +51,7 @@ async function seed() {
     data: {
       title: "A + B Problem",
       description:
-        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$",
+        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  cin >> a >> a;\n  cout << a + b << endl;\n}\n```",
       user: { connect: { uid: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
