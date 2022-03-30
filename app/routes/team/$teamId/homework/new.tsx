@@ -36,7 +36,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   console.log(tid);
 
   if (!tid) {
-    throw new Response("missing teamId", { status: 500 });
+    throw new Response("missing teamId", { status: 400 });
   }
 
   if (!uid) {

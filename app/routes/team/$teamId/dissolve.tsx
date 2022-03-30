@@ -8,10 +8,10 @@ export const action: ActionFunction = async ({ params, request }) => {
   const teamId = params.teamId;
   const actionType = form.get("submit")?.toString();
   if (!actionType) {
-    throw new Response("submit fail", { status: 500 });
+    throw new Response("submit fail", { status: 400 });
   }
   if (!teamId) {
-    throw new Response("team Id is missing", { status: 500 });
+    throw new Response("team Id is missing", { status: 400 });
   }
   if (actionType == "dissolve") {
     const creator = await db.team
@@ -25,12 +25,12 @@ export const action: ActionFunction = async ({ params, request }) => {
       })
       
     if (!creator) {
-      throw new Response("team search fail", { status: 500 });
+      throw new Response("team search fail", { status: 400 });
     }
     if (creator.creatorId != userId) {
       throw new Response(
         "permisson denied:only team creator can dissolve team",
-        { status: 500 }
+        { status: 400 }
       );
     }
 
