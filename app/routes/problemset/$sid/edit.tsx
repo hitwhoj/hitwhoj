@@ -293,6 +293,7 @@ function ProblemSetProblemItem({ pid }: { pid: number }) {
       <Button
         type="primary"
         status="danger"
+        htmlType="submit"
         name="_action"
         value={ActionType.DeleteProblem}
         loading={isDeleting}

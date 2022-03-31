@@ -91,7 +91,7 @@ function ContestProblemList({
   return <Table columns={tableColumns} data={problems} pagination={false} />;
 }
 
-export default function contestIndex() {
+export default function ContestIndex() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (

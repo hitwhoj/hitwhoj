@@ -13,9 +13,9 @@ import { codeScheme, idScheme } from "~/utils/scheme";
 import { judge } from "~/utils/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
-const TextArea = Input.TextArea;
 import { guaranteePermission, Permissions } from "~/utils/permission";
 import { Problem } from "@prisma/client";
+const TextArea = Input.TextArea;
 
 type LoaderData = {
   problem: Pick<Problem, "title">;
@@ -60,7 +60,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   });
 
   await s3.writeFile(`/record/${rid}`, Buffer.from(code));
-  judge.push({ rid });
+  judge.push(rid);
 
   return redirect(`/record/${rid}`);
 };

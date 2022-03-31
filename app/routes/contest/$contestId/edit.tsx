@@ -313,7 +313,7 @@ function TitleEditor({
       </FormItem>
       <FormItem label="描述" required labelCol={{ span: 2 }}>
         <TextArea
-          name="title"
+          name="description"
           defaultValue={description}
           disabled={isUpdating}
           autoSize={{ minRows: 2, maxRows: 6 }}
