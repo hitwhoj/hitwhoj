@@ -219,7 +219,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 
 function ContestTagItem({ name }: { name: string }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
 
   return (
     <fetcher.Form
@@ -246,7 +246,7 @@ function ContestTagItem({ name }: { name: string }) {
 
 function ProblemDeleteIcon({ pid }: { pid: number }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post" style={{ display: "inline" }}>
@@ -299,7 +299,7 @@ function TitleEditor({
   description: string;
 }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
+  const isUpdating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -337,7 +337,7 @@ function TitleEditor({
 
 function ContestTagCreator() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isCreating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -366,7 +366,7 @@ function ContestTagCreator() {
 
 function ContestProblemCreator() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isCreating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -395,7 +395,7 @@ function ContestProblemCreator() {
 
 function TimeEditor({ begin, end }: { begin: Date; end: Date }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
+  const isUpdating = fetcher.state === "submitting";
   const [beginTime, setBeginTime] = useState(begin.valueOf());
   const [endTime, setEndTime] = useState(end.valueOf() + 5 * 60 * 60 * 1000);
 
@@ -447,7 +447,7 @@ function TimeEditor({ begin, end }: { begin: Date; end: Date }) {
 
 function SystemEditor(props: { system: ContestSystem }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
+  const isUpdating = fetcher.state === "submitting";
   const [system, setSystem] = useState<ContestSystem>(props.system);
 
   return (

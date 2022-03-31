@@ -104,7 +104,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 export default function UserEdit() {
   const { user } = useLoaderData<LoaderData>();
   const { state } = useTransition();
-  const loading = state !== "idle";
+  const loading = state === "submitting";
 
   return (
     <RemixForm

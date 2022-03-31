@@ -169,7 +169,7 @@ function TitleEditor({
   description: string;
 }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
+  const isUpdating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post" style={{ maxWidth: 600 }}>
@@ -210,7 +210,7 @@ function TitleEditor({
 
 function ProblemSetTagItem({ name }: { name: string }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
@@ -238,7 +238,7 @@ function ProblemSetTagItem({ name }: { name: string }) {
 
 function ProblemSetTagCreator() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isCreating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -285,7 +285,7 @@ function ProblemSetTagEditor({ tags }: { tags: ProblemSetTag[] }) {
 
 function ProblemSetProblemItem({ pid }: { pid: number }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -305,7 +305,7 @@ function ProblemSetProblemItem({ pid }: { pid: number }) {
 
 function ProblemSetProblemCreator() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isCreating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">

@@ -89,7 +89,7 @@ export default function ContestNew() {
   const [endTime, setEndTime] = React.useState(Date.now() + 5 * 60 * 60 * 1000);
   const [system, setSystem] = React.useState<ContestSystem>(ContestSystem.ACM);
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isCreating = fetcher.state === "submitting";
 
   return (
     <>

@@ -55,7 +55,7 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemSetNew() {
   const { state } = useTransition();
-  const loading = state !== "idle";
+  const loading = state === "submitting";
 
   return (
     <>

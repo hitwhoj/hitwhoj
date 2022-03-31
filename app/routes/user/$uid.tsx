@@ -59,31 +59,35 @@ export default function UserProfile() {
 
   return (
     <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-      <Space size="large" align="start">
-        <Avatar size={60}>
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.nickname || user.username} />
-          ) : (
-            <IconUser />
-          )}
-        </Avatar>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontSize: "2em" }}>
-            {user.nickname
-              ? `${user.nickname} (${user.username})`
-              : user.username}
-          </span>
-          {user.bio && <span>{user.bio}</span>}
-        </div>
-      </Space>
-      {/* 导航栏 */}
-      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
-        <Tabs.TabPane key="." title="资料" />
-        <Tabs.TabPane key="files" title="文件" />
-        {self === user.uid && <Tabs.TabPane key="edit" title="编辑" />}
-      </Tabs>
-      {/* 子页面 */}
-      <Outlet />
+      <header>
+        <Space size="large" align="start">
+          <Avatar size={60}>
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.nickname || user.username} />
+            ) : (
+              <IconUser />
+            )}
+          </Avatar>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "2em" }}>
+              {user.nickname
+                ? `${user.nickname} (${user.username})`
+                : user.username}
+            </span>
+            {user.bio && <span>{user.bio}</span>}
+          </div>
+        </Space>
+      </header>
+      <nav>
+        <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
+          <Tabs.TabPane key="." title="资料" />
+          <Tabs.TabPane key="files" title="文件" />
+          {self === user.uid && <Tabs.TabPane key="edit" title="编辑" />}
+        </Tabs>
+      </nav>
+      <main>
+        <Outlet />
+      </main>
     </Space>
   );
 }

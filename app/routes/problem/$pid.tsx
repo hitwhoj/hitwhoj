@@ -12,7 +12,7 @@ import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
-import { Tabs } from "@arco-design/web-react";
+import { Space, Tabs } from "@arco-design/web-react";
 const TabPane = Tabs.TabPane;
 
 type LoaderData = {
@@ -60,7 +60,7 @@ export default function ProblemView() {
   const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
-    <div>
+    <Space size="medium" direction="vertical" style={{ display: "block" }}>
       <header>
         <h1>
           <span style={{ color: "grey", marginRight: "20px" }}>
@@ -74,8 +74,10 @@ export default function ProblemView() {
         <TabPane key="submit" title="提交" />
         <TabPane key="data" title="数据" />
       </Tabs>
-      <Outlet />
-    </div>
+      <main>
+        <Outlet />
+      </main>
+    </Space>
   );
 }
 

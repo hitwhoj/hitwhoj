@@ -2,7 +2,7 @@ import { Button, Space, Switch, Table } from "@arco-design/web-react";
 import { ColumnProps } from "@arco-design/web-react/es/Table";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { File as UserFile, User } from "@prisma/client";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ActionFunction,
   json,
@@ -120,9 +120,15 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 function UserFileUploader() {
   const fetcher = useFetcher();
-  const isUploading = fetcher.state !== "idle";
+  const isUploading = fetcher.state === "submitting";
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isUploading) {
+      formRef.current?.reset();
+    }
+  }, [isUploading]);
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
@@ -149,7 +155,7 @@ function UserFileUploader() {
 
 function UserFilePrivacyModifier({ file }: { file: UserFile }) {
   const fetcher = useFetcher();
-  const isFetching = fetcher.state !== "idle";
+  const isFetching = fetcher.state === "submitting";
   const ref = useRef<HTMLFormElement>(null);
 
   return (
@@ -167,13 +173,13 @@ function UserFilePrivacyModifier({ file }: { file: UserFile }) {
 
 function UserFileRemoveButton({ file }: { file: UserFile }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.fid} />
       <Button
-        type="text"
+        type="primary"
         status="danger"
         htmlType="submit"
         name="_action"
@@ -239,10 +245,16 @@ export default function UserFiles() {
   } = useLoaderData<LoaderData>();
 
   return (
-    <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-      <UserFileUploader />
-      <UserFileList files={files} />
-    </Space>
+    <>
+      <div>
+        <h2>用户文件</h2>
+        <p>上传即代表同意我们的用户手册（虽然没有这个东西）</p>
+      </div>
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <UserFileUploader />
+        <UserFileList files={files} />
+      </Space>
+    </>
   );
 }
 

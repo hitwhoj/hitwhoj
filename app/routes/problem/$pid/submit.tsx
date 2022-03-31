@@ -68,45 +68,39 @@ export const action: ActionFunction = async ({ request, params }) => {
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");
   return (
-    <>
-      <Form method="post">
-        <Space
-          direction="vertical"
-          size="small"
-          style={{ display: "flex", marginTop: "10px" }}
-        >
-          <Space
-            direction="horizontal"
-            size="medium"
-            style={{ display: "flex" }}
-          >
-            <Select
-              placeholder="Select a language"
-              style={{ width: "10rem" }}
-              options={[
-                { value: "c", label: "C" },
-                { value: "cpp", label: "C++" },
-                { value: "java", label: "Java" },
-              ]}
-              onChange={(value) => setLanguage(value)}
-            />
-            <Button type="primary" htmlType="submit">
-              提交捏
-            </Button>
-            <input type="hidden" name="language" value={language} />
-          </Space>
-          <TextArea
-            name="code"
-            placeholder="Paste your code here desu~"
-            required
-            autoSize={{
-              minRows: 10,
-              maxRows: 20,
-            }}
+    <Form method="post">
+      <Space
+        direction="vertical"
+        size="medium"
+        style={{ display: "flex", marginTop: "10px" }}
+      >
+        <Space direction="horizontal" size="medium" style={{ display: "flex" }}>
+          <Select
+            placeholder="Select a language"
+            style={{ width: "10rem" }}
+            options={[
+              { value: "c", label: "C" },
+              { value: "cpp", label: "C++" },
+              { value: "java", label: "Java" },
+            ]}
+            onChange={(value) => setLanguage(value)}
           />
+          <Button type="primary" htmlType="submit">
+            提交捏
+          </Button>
+          <input type="hidden" name="language" value={language} />
         </Space>
-      </Form>
-    </>
+        <TextArea
+          name="code"
+          placeholder="Paste your code here desu~"
+          required
+          autoSize={{
+            minRows: 10,
+            maxRows: 20,
+          }}
+        />
+      </Space>
+    </Form>
   );
 }
 
