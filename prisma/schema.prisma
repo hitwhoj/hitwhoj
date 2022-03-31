@@ -71,12 +71,13 @@ model File {
   filesize  Int
   mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   /// 是否允许公开下载
   ///
   /// - 对于题目数据文件，如果设置为公开，则可以在题目页面下载
   /// - 对于用户上传文件，如果设置为私密，则只有用户自己可以下载
+  ///
+  /// 注意即使用户设置某文件为公开，其他用户也无法查看到该用户上传的所有公开文件
   private Boolean @default(true)
 
   // ==== relations ====
@@ -206,6 +207,8 @@ model Record {
   status RecordStatus @default(Pending)
   detail String       @default("")
   points String       @default("[]")
+
+  language String
 
   submittedAt DateTime @default(now())
 
