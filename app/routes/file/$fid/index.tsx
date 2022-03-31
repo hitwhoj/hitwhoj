@@ -1,7 +1,6 @@
 import { Button } from "@arco-design/web-react";
 import { File } from "@prisma/client";
 import { json, Link, LoaderFunction, useLoaderData, useParams } from "remix";
-import Highlighter from "~/src/Highlighter";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
@@ -39,7 +38,7 @@ export default function FileIndex() {
   } else if (file.mimetype.startsWith("video/")) {
     return <video controls src={filelink} style={{ width: "100%" }} />;
   } else if (file.mimetype.startsWith("image/")) {
-    return <img src={filelink} style={{ width: "100%" }} />;
+    return <img src={filelink} alt={file.filename} style={{ width: "100%" }} />;
   } else {
     return (
       <Link to={filelink} target="_blank" rel="noreferrer noopener">

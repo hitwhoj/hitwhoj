@@ -98,6 +98,14 @@ export const systemScheme = z.nativeEnum(ContestSystem);
 export const codeScheme = z.string().nonempty("Code must be nonempty");
 
 /**
+ * Submitted language
+ */
+export const languageScheme = z
+  .string()
+  .nonempty("Language must be nonempty")
+  .regex(/^\w+$/, "Language must be alphanumeric");
+
+/**
  * Comment scheme for submitted comment
  */
 export const commentScheme = z

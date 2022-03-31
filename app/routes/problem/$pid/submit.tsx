@@ -9,7 +9,7 @@ import {
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
-import { codeScheme, idScheme } from "~/utils/scheme";
+import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { judge } from "~/utils/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
@@ -52,10 +52,10 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   const form = await request.formData();
   const code = invariant(codeScheme.safeParse(form.get("code")));
-  // const language = invariant(codeScheme.safeParse(form.get("language")));
+  const language = invariant(languageScheme.safeParse(form.get("language")));
 
   const { rid } = await db.record.create({
-    data: { pid, uid },
+    data: { pid, uid, language },
     select: { rid: true },
   });
 
