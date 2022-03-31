@@ -28,7 +28,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Record not found", { status: 404 });
   }
 
-  const code = await s3.readFileAsText(`/record/${record.rid}`);
+  const code = (await s3.readFileAsBuffer(`/record/${record.rid}`)).toString();
 
   return json({
     record,

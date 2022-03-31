@@ -1,5 +1,14 @@
 import { BucketItem, Client } from "minio";
 
+function readableToBuffer(stream: NodeJS.ReadableStream) {
+  let data: any[] = [];
+  return new Promise<Buffer>((resolve, reject) => {
+    stream.on("data", (chunk) => data.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(data)));
+    stream.on("error", (err) => reject(err));
+  });
+}
+
 class S3 {
   private client: Client;
   private bucket: string;
@@ -69,24 +78,30 @@ class S3 {
   }
 
   /**
-   * 以文本形式读取文件
-   */
-  readFileAsText(filename: string) {
-    return new Promise<string>((resolve, reject) => {
-      let data: string = "";
-      this.client.getObject(this.bucket, filename, (err, stream) => {
-        if (err) reject(err);
-        stream.on("data", (chunk) => (data += chunk));
-        stream.on("end", () => resolve(data));
-      });
-    });
-  }
-
-  /**
    * 读取部分文件
    */
   readFilePartial(filename: string, offset: number, length: number) {
     return this.client.getPartialObject(this.bucket, filename, offset, length);
+  }
+
+  /**
+   * 以 Buffer 形式读取文件
+   */
+  async readFileAsBuffer(filename: string) {
+    return await readableToBuffer(await this.readFile(filename));
+  }
+
+  /**
+   * 以 Buffer 形式读取部分文件
+   */
+  async readFilePartialAsBuffer(
+    filename: string,
+    offset: number,
+    length: number
+  ) {
+    return await readableToBuffer(
+      await this.readFilePartial(filename, offset, length)
+    );
   }
 
   /**
