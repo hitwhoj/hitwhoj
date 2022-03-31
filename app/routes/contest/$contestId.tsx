@@ -1,3 +1,4 @@
+import { Tabs } from "@arco-design/web-react";
 import { Contest } from "@prisma/client";
 import {
   LoaderFunction,
@@ -5,11 +6,13 @@ import {
   useLoaderData,
   MetaFunction,
   Outlet,
-  Link,
+  useNavigate,
+  useMatches,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+const TabPane = Tabs.TabPane;
 
 type LoaderData = {
   contest: Contest;
@@ -36,20 +39,17 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 
 export default function Contest() {
   const { contest } = useLoaderData<LoaderData>();
+  const navigate = useNavigate();
+  const { pathname } = useMatches().at(-1)!;
+  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
     <>
       <h1>{contest.title}</h1>
-      {/* 比赛导航 */}
-      <ul>
-        <li>
-          <Link to=".">详情</Link>
-        </li>
-        <li>
-          <Link to="edit">编辑</Link>
-        </li>
-      </ul>
-      {/* 比赛页面 */}
+      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
+        <TabPane key="." title="详情" />
+        <TabPane key="edit" title="编辑" />
+      </Tabs>
       <Outlet />
     </>
   );

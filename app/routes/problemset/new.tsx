@@ -60,11 +60,7 @@ export default function ProblemSetNew() {
   return (
     <>
       <h1>创建题单</h1>
-      <RemixForm
-        method="post"
-        className="arco-form arco-form-horizontal arco-form-size-default"
-        style={{ maxWidth: 600 }}
-      >
+      <RemixForm method="post" style={{ maxWidth: 600 }}>
         <FormItem label="标题" required labelCol={{ span: 3 }}>
           <Input
             name="title"
@@ -84,7 +80,7 @@ export default function ProblemSetNew() {
           />
         </FormItem>
         <FormItem label=" " labelCol={{ span: 3 }}>
-          <Button type="primary" htmlType="submit" disabled={loading}>
+          <Button type="primary" htmlType="submit" loading={loading}>
             创建题单
           </Button>
         </FormItem>

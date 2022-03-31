@@ -172,11 +172,7 @@ function TitleEditor({
   const isUpdating = fetcher.state !== "idle";
 
   return (
-    <fetcher.Form
-      method="post"
-      className="arco-form arco-form-horizontal arco-form-size-default"
-      style={{ maxWidth: 600 }}
-    >
+    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
       <FormItem label="标题" labelCol={{ span: 3 }} required>
         <Input
           id="title"
@@ -201,7 +197,7 @@ function TitleEditor({
         <Button
           type="primary"
           htmlType="submit"
-          disabled={isUpdating}
+          loading={isUpdating}
           name="_action"
           value={ActionType.UpdateInformation}
         >
@@ -232,7 +228,7 @@ function ProblemSetTagItem({ name }: { name: string }) {
         {name}
         <Button
           icon={isDeleting ? <IconLoading /> : <IconDelete />}
-          disabled={isDeleting}
+          loading={isDeleting}
           onClick={() => fetcher.submit(formRef.current)}
         />
       </Tag>
@@ -260,7 +256,7 @@ function ProblemSetTagCreator() {
           htmlType="submit"
           name="_action"
           value={ActionType.CreateTag}
-          disabled={isCreating}
+          loading={isCreating}
         >
           添加捏
         </Button>
@@ -299,7 +295,7 @@ function ProblemSetProblemItem({ pid }: { pid: number }) {
         status="danger"
         name="_action"
         value={ActionType.DeleteProblem}
-        disabled={isDeleting}
+        loading={isDeleting}
         icon={<IconDelete />}
       />
     </fetcher.Form>
@@ -326,7 +322,7 @@ function ProblemSetProblemCreator() {
           htmlType="submit"
           name="_action"
           value={ActionType.CreateProblem}
-          disabled={isCreating}
+          loading={isCreating}
         >
           添加捏
         </Button>
