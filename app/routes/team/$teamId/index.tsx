@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   return json({ team });
 };
 
-export default function teamDetail() {
+export default function TeamDetail() {
   const { team } = useLoaderData<LoaderData>();
   return (
     <>
