@@ -1,51 +1,45 @@
 import React from "react";
-import { Layout, Divider } from "@arco-design/web-react";
+import { Layout } from "@arco-design/web-react";
 import NavbarLeft from "./components/NavbarLeft";
 import NavbarTop from "./components/NavbarTop";
+import { User } from "@prisma/client";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
 const Content = Layout.Content;
 const Footer = Layout.Footer;
 
-export default function MainLayout({
-  children,
-}: {
+type LayoutProps = {
+  theme: string;
+  user: Pick<User, "uid" | "username" | "nickname" | "avatar"> | null;
   children: React.ReactNode;
-}) {
+};
+
+export default function MainLayout({ theme, user, children }: LayoutProps) {
   return (
     <Layout
       style={{
-        minHeight: "100vh",
+        height: "100vh",
+        flexDirection: "row",
+        overflow: "hidden",
       }}
     >
       <Sider breakpoint="lg" width="12rem" collapsible>
         <NavbarLeft />
       </Sider>
-      <Layout>
+      <Layout style={{ height: "100%" }}>
         <Header>
-          <NavbarTop />
+          <NavbarTop theme={theme} user={user} />
         </Header>
-        <Divider
-          style={{
-            margin: "0",
-            // borderColor: "var(--color-text-4)",
-          }}
-        />
         <Layout
           style={{
             backgroundColor: "var(--color-bg-3)",
             padding: "0 5%",
+            boxShadow: "0 0 10px #0000001b inset",
+            overflow: "auto",
           }}
         >
-          <Content
-            style={{
-              backgroundColor: "var(--color-bg-3)",
-              marginTop: "1rem",
-            }}
-          >
-            {children}
-          </Content>
+          <Content style={{ marginTop: "1rem" }}>{children}</Content>
           <Footer>Footer</Footer>
         </Layout>
       </Layout>

@@ -2,6 +2,7 @@ import type { File as ProblemFile, Problem } from "@prisma/client";
 import {
   ActionFunction,
   json,
+  Link,
   LoaderFunction,
   MetaFunction,
   unstable_parseMultipartFormData,
@@ -17,7 +18,7 @@ import { uploadHandler } from "~/utils/uploadHandler";
 import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { ColumnProps } from "@arco-design/web-react/es/Table";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -129,11 +130,23 @@ export const action: ActionFunction = async ({ request, params }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-function ProblemFileUploader({ action }: { action: ActionType }) {
+function ProblemFileUploader({
+  action,
+  uploadText,
+}: {
+  action: ActionType;
+  uploadText: string;
+}) {
   const fetcher = useFetcher();
-  const isUploading = fetcher.state !== "idle";
+  const isUploading = fetcher.state === "submitting";
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isUploading) {
+      formRef.current?.reset();
+    }
+  }, [isUploading]);
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
@@ -152,7 +165,7 @@ function ProblemFileUploader({ action }: { action: ActionType }) {
         onClick={() => inputRef.current?.click()}
         loading={isUploading}
       >
-        上传文件捏
+        {uploadText}
       </Button>
     </fetcher.Form>
   );
@@ -160,7 +173,7 @@ function ProblemFileUploader({ action }: { action: ActionType }) {
 
 function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isDeleting = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post">
@@ -185,6 +198,11 @@ const columns: ColumnProps<ProblemFile>[] = [
     dataIndex: "filename",
     sorter: (a, b) =>
       a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+    render: (_, file) => (
+      <Link to={`/file/${file.fid}`} target="_blank" rel="noreferrer noopener">
+        {file.filename}
+      </Link>
+    ),
   },
   {
     title: "文件大小",
@@ -220,21 +238,37 @@ export default function ProblemData() {
   } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h2>测试数据</h2>
-      <p>用于评测的数据文件</p>
-      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <ProblemFileUploader action={ActionType.UploadData} />
-        <ProblemFileList files={files.filter((file) => file.private)} />
-      </Space>
+    <div className="problem-data-grid">
+      <div>
+        <h2>测试数据</h2>
+        <p>用于评测的数据文件</p>
+      </div>
 
-      <h2>附加文件</h2>
-      <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <ProblemFileUploader action={ActionType.UploadFile} />
-        <ProblemFileList files={files.filter((file) => !file.private)} />
-      </Space>
-    </>
+      <div>
+        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+          <ProblemFileUploader
+            action={ActionType.UploadData}
+            uploadText="上传数据捏"
+          />
+          <ProblemFileList files={files.filter((file) => file.private)} />
+        </Space>
+      </div>
+
+      <div>
+        <h2>附加文件</h2>
+        <p>题目的附加资料，例如样例数据、PDF 题面等</p>
+      </div>
+
+      <div>
+        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+          <ProblemFileUploader
+            action={ActionType.UploadFile}
+            uploadText="上传文件捏"
+          />
+          <ProblemFileList files={files.filter((file) => !file.private)} />
+        </Space>
+      </div>
+    </div>
   );
 }
 

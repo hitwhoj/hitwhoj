@@ -12,9 +12,17 @@ export type JudgeRequest = {
    */
   rid: number;
   /**
+   * 选手代码
+   */
+  code: string;
+  /**
+   * 选手选择的语言
+   */
+  language: string;
+  /**
    * 评测所需要的所有文件
    */
-  files: Pick<File, "fid" | "filename" | "updatedAt">[];
+  files: Pick<File, "fid" | "filename">[];
 };
 
 type RecordTestResult =
@@ -218,6 +226,7 @@ class JudgeServer {
     const record = await db.record.findUnique({
       where: { rid },
       select: {
+        language: true,
         problem: {
           select: {
             files: {
@@ -225,7 +234,6 @@ class JudgeServer {
               select: {
                 fid: true,
                 filename: true,
-                updatedAt: true,
               },
             },
           },
@@ -237,8 +245,12 @@ class JudgeServer {
       return;
     }
 
+    const code = (await s3.readFileAsBuffer(`/record/${rid}`)).toString();
+
     this.taskQueue.push({
       rid,
+      code,
+      language: record.language,
       files: record.problem.files,
     });
     this.broadcast();
