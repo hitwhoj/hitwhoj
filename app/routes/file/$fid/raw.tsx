@@ -4,6 +4,17 @@ import { invariant } from "~/utils/invariant";
 import { s3 } from "~/utils/s3.server";
 import { uuidScheme } from "~/utils/scheme";
 
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent#encoding_for_content-disposition_and_link_headers
+ */
+function encodeRFC5987ValueChars(str: string) {
+  return encodeURIComponent(str)
+    .replace(/['()*]/g, (c) => "%" + c.charCodeAt(0).toString(16))
+    .replace(/%(7C|60|5E)/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
+}
+
 function parseRange(range: string, filesize: number): [number, number] | false {
   if (!range.startsWith("bytes=")) {
     return false;
@@ -33,6 +44,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     where: { fid },
     select: {
       fid: true,
+      filename: true,
       filesize: true,
       mimetype: true,
       pid: true,
@@ -80,12 +92,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   // 返回整体文件
   else {
-    // 直接下载文件，防止 XSS 注入
-    headers.set("Content-Disposition", "attachment");
     // FIXME: 如果 Context-Type 是 application/javascript，则会被解析为脚本？
     headers.set("Content-Type", file.mimetype);
-    // 文件永远不会变，于是可以设置可以添加永久 Caching
+    // 文件永远不会变，于是可以设置添加永久 Caching
     headers.set("Cache-Control", "public, max-age=31536000");
+    // 直接下载文件，防止 XSS 注入
+    headers.set(
+      "Content-Disposition",
+      "attachment; filename*=UTF-8''" + encodeRFC5987ValueChars(file.filename)
+    );
 
     return new Response(await s3.readFileAsBuffer(filepath), {
       status: 200,

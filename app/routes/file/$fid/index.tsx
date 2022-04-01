@@ -1,4 +1,4 @@
-import { Button } from "@arco-design/web-react";
+import { Button, Image, Space } from "@arco-design/web-react";
 import { File } from "@prisma/client";
 import { json, Link, LoaderFunction, useLoaderData, useParams } from "remix";
 import { db } from "~/utils/db.server";
@@ -31,19 +31,29 @@ export default function FileIndex() {
   const { file } = useLoaderData<LoaderData>();
   const { fid } = useParams();
 
-  const filelink = `/file/${fid}/${file.filename}`;
+  const filelink = `/file/${fid}/raw`;
 
-  if (file.mimetype.startsWith("audio/")) {
-    return <audio controls src={filelink} style={{ width: "100%" }} />;
-  } else if (file.mimetype.startsWith("video/")) {
-    return <video controls src={filelink} style={{ width: "100%" }} />;
-  } else if (file.mimetype.startsWith("image/")) {
-    return <img src={filelink} alt={file.filename} style={{ width: "100%" }} />;
-  } else {
-    return (
-      <Link to={filelink} target="_blank" rel="noreferrer noopener">
+  return (
+    <Space direction="vertical" style={{ display: "flex" }} size="medium">
+      {file.mimetype.startsWith("audio/") ? (
+        <audio controls src={filelink} style={{ maxWidth: "100%" }} />
+      ) : file.mimetype.startsWith("video/") ? (
+        <video
+          controls
+          src={filelink}
+          style={{ maxHeight: "80vh", maxWidth: "100%" }}
+        />
+      ) : file.mimetype.startsWith("image/") ? (
+        <Image src={filelink} alt={file.filename} />
+      ) : null}
+      <Link
+        to={filelink}
+        target="_blank"
+        rel="noreferrer noopener"
+        aria-label="download"
+      >
         <Button type="primary">Download</Button>
       </Link>
-    );
-  }
+    </Space>
+  );
 }
