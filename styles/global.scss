@@ -10,7 +10,13 @@ a:visited,
 a:hover,
 a:active {
   text-decoration: none;
+  color: inherit;
+}
+
+body[arco-theme="dark"] {
   color: var(--color-text-1);
+  background-color: var(--color-bg-1);
+  color-scheme: dark;
 }
 
 // used in /problem/$pid/data.tsx
