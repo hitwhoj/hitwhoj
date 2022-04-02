@@ -1,9 +1,9 @@
 import {
   ActionFunction,
-  Form,
   LoaderFunction,
   MetaFunction,
   redirect,
+  useFetcher,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -18,6 +18,17 @@ import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { findSessionUid } from "~/utils/sessions";
 import React from "react";
+import {
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  Button,
+} from "@arco-design/web-react";
+const FormItem = Form.Item;
+const TextArea = Input.TextArea;
+const RangePicker = DatePicker.RangePicker;
+const Option = Select.Option;
 
 export const loader: LoaderFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
@@ -74,56 +85,80 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestNew() {
+  const [beginTime, setBeginTime] = React.useState(Date.now());
+  const [endTime, setEndTime] = React.useState(Date.now() + 5 * 60 * 60 * 1000);
+  const [system, setSystem] = React.useState<ContestSystem>(ContestSystem.ACM);
+  const fetcher = useFetcher();
+  const isCreating = fetcher.state === "submitting";
+
   return (
     <>
       <h1>创建比赛</h1>
-      <Form method="post">
-        <label htmlFor="title">标题</label>
-        <input type="text" name="title" id="title" required />
-        <br />
-        <label htmlFor="description">描述</label>
-        <input type="text" name="description" id="description" required />
-        <br />
-        <label htmlFor="beginTime">开始时间</label>
-        <input
-          type="datetime-local"
-          name="beginTime"
-          id="beginTime"
-          defaultValue={getDatetimeLocal(Date.now())}
-          required
-        />
-        <br />
-        <label htmlFor="endTime">结束时间</label>
-        <input
-          type="datetime-local"
-          name="endTime"
-          id="endTime"
-          defaultValue={getDatetimeLocal(Date.now() + 5 * 60 * 60 * 1000)}
-          required
-        />
-        <input
-          type="hidden"
-          name="timezone"
-          value={new Date().getTimezoneOffset()}
-        />
-        <br />
-        <label htmlFor="system">system: </label>
-        {Object.values(ContestSystem).map((system) => (
-          <React.Fragment key={system}>
-            <input
-              type="radio"
-              name="system"
-              id={system}
-              value={system}
-              defaultChecked={system === ContestSystem.ACM}
-              required
-            />
-            <label htmlFor={system}>{system}</label>
-          </React.Fragment>
-        ))}
-        <br />
-        <button type="submit">创建</button>
-      </Form>
+      <fetcher.Form method="post" style={{ maxWidth: 600 }}>
+        <FormItem label="标题" required labelCol={{ span: 3 }}>
+          <Input name="title" id="title" required />
+        </FormItem>
+        <FormItem label="描述" required labelCol={{ span: 3 }}>
+          <TextArea
+            name="description"
+            id="description"
+            required
+            autoSize={{
+              minRows: 3,
+              maxRows: 10,
+            }}
+          />
+        </FormItem>
+        <FormItem label="时间" required labelCol={{ span: 3 }}>
+          <input
+            type="hidden"
+            name="beginTime"
+            value={getDatetimeLocal(beginTime)}
+            required
+          />
+          <input
+            type="hidden"
+            name="endTime"
+            value={getDatetimeLocal(endTime)}
+            required
+          />
+          <input
+            type="hidden"
+            name="timezone"
+            value={new Date().getTimezoneOffset()}
+          />
+          <RangePicker
+            defaultValue={[beginTime, endTime]}
+            showTime={{ format: "HH:mm" }}
+            format="YYYY-MM-DD HH:mm"
+            allowClear={false}
+            onChange={(dates) => {
+              setBeginTime(new Date(dates[0]).valueOf());
+              setEndTime(new Date(dates[1]).valueOf());
+            }}
+          />
+        </FormItem>
+        <FormItem label="赛制" required labelCol={{ span: 3 }}>
+          <input type="hidden" name="system" value={system} required />
+          <Select
+            value={system}
+            onChange={(value) => {
+              setSystem(value as ContestSystem);
+            }}
+            style={{ width: 150 }}
+          >
+            {Object.values(ContestSystem).map((system) => (
+              <Option key={system} value={system} />
+            ))}
+          </Select>
+        </FormItem>
+        <FormItem label=" " labelCol={{ span: 3 }}>
+          <Button type="primary" htmlType="submit" loading={isCreating}>
+            {" "}
+            创建比赛{" "}
+          </Button>
+        </FormItem>
+      </fetcher.Form>
     </>
   );
 }

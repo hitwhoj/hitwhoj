@@ -5,12 +5,15 @@ import {
   useLoaderData,
   MetaFunction,
   Outlet,
-  Link,
+  useNavigate,
+  useMatches,
 } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
+import { Space, Tabs } from "@arco-design/web-react";
+const TabPane = Tabs.TabPane;
 
 type LoaderData = {
   problem: Pick<Problem, "pid" | "title" | "description">;
@@ -52,9 +55,12 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 
 export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
+  const navigate = useNavigate();
+  const { pathname } = useMatches().at(-1)!;
+  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
-    <div>
+    <Space size="medium" direction="vertical" style={{ display: "block" }}>
       <header>
         <h1>
           <span style={{ color: "grey", marginRight: "20px" }}>
@@ -63,19 +69,15 @@ export default function ProblemView() {
           {problem.title}
         </h1>
       </header>
-      <ul>
-        <li>
-          <Link to=".">查看</Link>
-        </li>
-        <li>
-          <Link to="submit">提交</Link>
-        </li>
-        <li>
-          <Link to="data">数据</Link>
-        </li>
-      </ul>
-      <Outlet />
-    </div>
+      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
+        <TabPane key="." title="题面" />
+        <TabPane key="submit" title="提交" />
+        <TabPane key="data" title="数据" />
+      </Tabs>
+      <main>
+        <Outlet />
+      </main>
+    </Space>
   );
 }
 

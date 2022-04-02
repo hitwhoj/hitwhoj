@@ -1,3 +1,4 @@
+import { Space, Table, Tag } from "@arco-design/web-react";
 import { Contest, ContestTag, Problem, Team } from "@prisma/client";
 import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
@@ -62,13 +63,13 @@ function Time({ contest }: { contest: Contest }) {
 
 function ContestTags({ tags }: { tags: ContestTag[] }) {
   return tags.length ? (
-    <ul>
+    <Space size="medium">
       {tags.map((tag) => (
-        <li key={tag.name}>
-          <Link to={`/contest/tag/${tag.name}`}>#{tag.name}</Link>
-        </li>
+        <Link to={`/contest/tag/${tag.name}`} key={tag.name}>
+          <Tag>#{tag.name}</Tag>
+        </Link>
       ))}
-    </ul>
+    </Space>
   ) : (
     <div>没有标签捏</div>
   );
@@ -79,17 +80,21 @@ function ContestProblemList({
 }: {
   problems: Pick<Problem, "pid" | "title">[];
 }) {
-  return problems.length ? (
-    <ol>
-      {problems.map((problem) => (
-        <li key={problem.pid}>
-          <Link to={`/problem/${problem.pid}`}>{problem.title}</Link>
-        </li>
-      ))}
-    </ol>
-  ) : (
-    <div>没有题目捏</div>
-  );
+  const tableColumns = [
+    {
+      title: "PID",
+      dataIndex: "pid",
+      render: (pid: string) => <Link to={`${pid}`}>{pid}</Link>,
+    },
+    {
+      title: "Title",
+      dataIndex: "title",
+      render: (title: string, problem: Pick<Problem, "pid" | "title">) => (
+        <Link to={`${problem.pid}`}>{title}</Link>
+      ),
+    },
+  ];
+  return <Table columns={tableColumns} data={problems} pagination={false} />;
 }
 
 export default function ContestIndex() {

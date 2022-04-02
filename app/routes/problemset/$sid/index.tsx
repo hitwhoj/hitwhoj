@@ -3,6 +3,7 @@ import { json, Link, LoaderFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { Space, Tag, Table } from "@arco-design/web-react";
 
 type LoaderData = {
   problemSet: ProblemSet & {
@@ -38,31 +39,52 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export default function ProblemSetIndex() {
   const { problemSet } = useLoaderData<LoaderData>();
+  const tableColumns = [
+    {
+      title: "PID",
+      dataIndex: "pid",
+      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+    },
+    {
+      title: "Title",
+      dataIndex: "title",
+      render: (col: string, problem: Pick<Problem, "pid" | "title">) => (
+        <Link to={`${problem.pid}`}>{col}</Link>
+      ),
+    },
+  ];
 
   return (
     <>
       <p>{problemSet.description}</p>
       <h2>标签</h2>
       {problemSet.tags.length ? (
-        <ul>
+        <Space size="medium">
           {problemSet.tags.map((tag) => (
-            <li key={tag.name}>
-              <Link to={`/problemset/tag/${tag.name}`}>#{tag.name}</Link>
-            </li>
+            <Link to={`/problemset/tag/${tag.name}`} key={tag.name}>
+              <Tag>#{tag.name}</Tag>
+            </Link>
           ))}
-        </ul>
+        </Space>
       ) : (
         <div>没有标签捏</div>
       )}
       <h2>题目</h2>
       {problemSet.problems.length ? (
-        <ol>
-          {problemSet.problems.map((problem) => (
-            <li key={problem.pid}>
-              <Link to={`/problem/${problem.pid}`}>{problem.title}</Link>
-            </li>
-          ))}
-        </ol>
+        <Table
+          columns={tableColumns}
+          data={problemSet.problems}
+          rowKey="pid"
+          hover={false}
+          // TODO: 毕竟这是个假的分页qwq
+          pagination={{
+            total: problemSet.problems.length,
+            defaultPageSize: 20,
+            showTotal: (total: number) =>
+              `Total ${Math.ceil(total / 20)} pages`,
+            showJumper: true,
+          }}
+        />
       ) : (
         <div>没有题目捏</div>
       )}

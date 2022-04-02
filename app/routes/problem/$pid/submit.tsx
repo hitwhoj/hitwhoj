@@ -9,10 +9,13 @@ import {
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
-import { codeScheme, idScheme } from "~/utils/scheme";
+import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { judge } from "~/utils/judge.server";
+import { Button, Input, Space, Select } from "@arco-design/web-react";
+import { useState } from "react";
 import { guaranteePermission, Permissions } from "~/utils/permission";
 import { Problem } from "@prisma/client";
+const TextArea = Input.TextArea;
 
 type LoaderData = {
   problem: Pick<Problem, "title">;
@@ -49,9 +52,10 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   const form = await request.formData();
   const code = invariant(codeScheme.safeParse(form.get("code")));
+  const language = invariant(languageScheme.safeParse(form.get("language")));
 
   const { rid } = await db.record.create({
-    data: { pid, uid },
+    data: { pid, uid, language },
     select: { rid: true },
   });
 
@@ -62,13 +66,41 @@ export const action: ActionFunction = async ({ request, params }) => {
 };
 
 export default function ProblemSubmit() {
+  const [language, setLanguage] = useState("");
   return (
-    <>
-      <Form method="post">
-        <textarea name="code" placeholder="#include <...>" required />
-        <button>提交捏</button>
-      </Form>
-    </>
+    <Form method="post">
+      <Space
+        direction="vertical"
+        size="medium"
+        style={{ display: "flex", marginTop: "10px" }}
+      >
+        <Space direction="horizontal" size="medium" style={{ display: "flex" }}>
+          <Select
+            placeholder="Select a language"
+            style={{ width: "10rem" }}
+            options={[
+              { value: "c", label: "C" },
+              { value: "cpp", label: "C++" },
+              { value: "java", label: "Java" },
+            ]}
+            onChange={(value) => setLanguage(value)}
+          />
+          <Button type="primary" htmlType="submit">
+            提交捏
+          </Button>
+          <input type="hidden" name="language" value={language} />
+        </Space>
+        <TextArea
+          name="code"
+          placeholder="Paste your code here desu~"
+          required
+          autoSize={{
+            minRows: 10,
+            maxRows: 20,
+          }}
+        />
+      </Space>
+    </Form>
   );
 }
 
