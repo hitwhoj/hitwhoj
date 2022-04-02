@@ -7,7 +7,10 @@ import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
-  user: Pick<User, "uid" | "username" | "nickname" | "email" | "password">;
+  user: Pick<
+    User,
+    "uid" | "bio" | "username" | "nickname" | "email" | "password"
+  >;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -19,6 +22,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     where: { uid },
     select: {
       uid: true,
+      bio: true,
       username: true,
       nickname: true,
       email: true,
@@ -35,6 +39,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
+  description: data?.user.bio,
 });
 
 export default function Profile() {
