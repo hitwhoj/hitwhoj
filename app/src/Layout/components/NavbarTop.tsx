@@ -1,5 +1,5 @@
 import { Link, NavLink } from "remix";
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import {
   Grid,
   Avatar,
@@ -11,26 +11,15 @@ import {
   Divider,
 } from "@arco-design/web-react";
 import { IconUser, IconSun, IconMoon } from "@arco-design/web-react/icon";
-import { User } from "@prisma/client";
+import { ThemeContext } from "~/utils/context/theme";
+import { UserInfoContext } from "~/utils/context/user";
 
 const Row = Grid.Row;
 const MenuItem = Menu.Item;
 
-type NavbarTopProps = {
-  theme: string;
-  user: Pick<User, "uid" | "username" | "nickname" | "avatar"> | null;
-};
-
-export default function NavbarTop({
-  theme: initialTheme,
-  user,
-}: NavbarTopProps) {
-  const [theme, setTheme] = useState<string>(initialTheme);
-
-  useEffect(() => {
-    document.body.setAttribute("arco-theme", theme);
-    document.cookie = `theme=${theme}; path=/; max-age=31536000`;
-  }, [theme]);
+export default function NavbarTop() {
+  const { theme, setTheme } = useContext(ThemeContext);
+  const user = useContext(UserInfoContext);
 
   return (
     <Row

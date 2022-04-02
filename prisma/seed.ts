@@ -42,6 +42,8 @@ async function seed() {
       email: "bob@hit.edu.cn",
       username: "Bob",
       password: "bob",
+      nickname: "嘉然小姐的狗",
+      bio: "好想做嘉然小姐的狗啊",
       role: SystemUserRole.Admin,
     },
   });
@@ -51,6 +53,8 @@ async function seed() {
       email: "charlie@hit.edu.cn",
       username: "Charlie",
       password: "charlie",
+      nickname: "陈睿",
+      bio: "bilibili 董事长兼 CEO",
     },
   });
 
@@ -59,6 +63,7 @@ async function seed() {
       email: "david@hit.edu.cn",
       username: "David",
       password: "david",
+      nickname: "蒙古上单",
     },
   });
 
@@ -66,7 +71,7 @@ async function seed() {
     data: {
       title: "A + B Problem",
       description:
-        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  cin >> a >> a;\n  cout << a + b << endl;\n}\n```",
+        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n}\n```",
       user: { connect: { uid: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
@@ -76,7 +81,7 @@ async function seed() {
     data: {
       title: "A + B + C Problem",
       description:
-        "# Description \n\ngive three number, output the sum of them.\n\n# Sample Input \n\n    114 514 1919\n\n# Sample Output \n\n    2547\n\n# Limits \n\n$a, b, c \\lt 10^6$",
+        "## Description \n\ngive three number, output the sum of them.\n\n## Sample Input \n\n    114 514 1919\n\n## Sample Output \n\n    2547\n\n## Limits \n\n$a, b, c \\lt 10^6$\n\n## Hint\n\n$$\nE=mc^2\n$$\n\n```\nthis is text/plain\n```\n\n```\nthis is unrecognized language\n```",
       user: { connect: { uid: bob } },
       private: false,
       tags: {

@@ -11,10 +11,10 @@ export function Markdown({ children }: { children: string }) {
       components={{
         code({ node, inline, className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || "");
-          return !inline && match ? (
+          return !inline ? (
             <Highlighter
               children={String(children).replace(/\n$/, "")}
-              language={match[1]}
+              language={match ? match[1] : "plain"}
             />
           ) : (
             <code className={className} {...props}>

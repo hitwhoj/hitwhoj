@@ -2,7 +2,6 @@ import React from "react";
 import { Layout } from "@arco-design/web-react";
 import NavbarLeft from "./components/NavbarLeft";
 import NavbarTop from "./components/NavbarTop";
-import { User } from "@prisma/client";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -10,12 +9,10 @@ const Content = Layout.Content;
 const Footer = Layout.Footer;
 
 type LayoutProps = {
-  theme: string;
-  user: Pick<User, "uid" | "username" | "nickname" | "avatar"> | null;
   children: React.ReactNode;
 };
 
-export default function MainLayout({ theme, user, children }: LayoutProps) {
+export default function MainLayout({ children }: LayoutProps) {
   return (
     <Layout
       style={{
@@ -29,7 +26,7 @@ export default function MainLayout({ theme, user, children }: LayoutProps) {
       </Sider>
       <Layout style={{ height: "100%" }}>
         <Header>
-          <NavbarTop theme={theme} user={user} />
+          <NavbarTop />
         </Header>
         <Layout
           style={{

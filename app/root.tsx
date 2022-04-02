@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useState } from "react";
 import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import katexStyle from "katex/dist/katex.css";
@@ -16,12 +16,13 @@ import {
   useLoaderData,
 } from "remix";
 import Layout from "./src/Layout";
-import { User } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
+import { Theme, ThemeContext } from "./utils/context/theme";
+import { UserInfo, UserInfoContext } from "./utils/context/user";
 
 export const links: LinksFunction = () => [
   {
@@ -39,9 +40,8 @@ export const links: LinksFunction = () => [
 ];
 
 type LoaderData = {
-  theme: "light" | "dark";
-  user: Pick<User, "uid" | "username" | "nickname" | "avatar"> | null;
-  uid: number | null;
+  theme: Theme;
+  user: UserInfo;
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -49,10 +49,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const uid = await findSessionUid(request);
 
   if (!uid) {
-    return json({
-      theme,
-      user: null,
-    });
+    return json({ theme, user: null });
   }
 
   const user = await db.user.findUnique({
@@ -65,16 +62,13 @@ export const loader: LoaderFunction = async ({ request }) => {
     },
   });
 
-  return json({
-    theme,
-    user,
-  });
+  return json({ theme, user });
 };
 
 interface DocumentProps {
   children: React.ReactNode;
   title?: string;
-  theme?: string;
+  theme?: Theme;
 }
 
 const Document = ({ children, title, theme }: DocumentProps) => {
@@ -87,7 +81,7 @@ const Document = ({ children, title, theme }: DocumentProps) => {
         <Meta />
         <Links />
       </head>
-      <body {...(theme && { "arco-theme": theme })}>
+      <body arco-theme={theme ?? "light"}>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -100,17 +94,27 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
-  const { user, theme } = useLoaderData<LoaderData>();
+  const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+
+  useEffect(() => {
+    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT`;
+  }, [theme]);
 
   return (
     <Document theme={theme}>
-      <Layout theme={theme} user={user}>
-        <Outlet />
-      </Layout>
+      <UserInfoContext.Provider value={user}>
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+          <Layout>
+            <Outlet />
+          </Layout>
+        </ThemeContext.Provider>
+      </UserInfoContext.Provider>
     </Document>
   );
 }
 
+// FIXME: ErrorBoundary 和 CatchBoundary 好像没法同步主题
 // https://remix.run/docs/en/v1/api/conventions#errorboundary
 export function ErrorBoundary({ error }: { error: Error }) {
   return (

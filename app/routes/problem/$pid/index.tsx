@@ -84,10 +84,9 @@ export default function ProblemIndex() {
           <li key={tag.name}>#{tag.name}</li>
         ))}
       </ul>
-      <h2>描述捏</h2>
-      <div>
+      <article>
         <Markdown>{problem.description}</Markdown>
-      </div>
+      </article>
       <h2>相关文件</h2>
       <ul>
         {problem.files.map((file) => (
