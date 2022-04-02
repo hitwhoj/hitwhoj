@@ -9,7 +9,7 @@ type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
     problems: Pick<Problem, "pid" | "title">[];
-    team: Pick<Team, "tid">;
+    team?: Pick<Team, "tid">;
   };
 };
 
@@ -104,7 +104,7 @@ export default function ContestIndex() {
     <>
       <Time contest={contest} />
       <p>{contest.description}</p>
-      <p>Belong To Team:{contest.team.tid ? contest.team.tid : ""}</p>
+      <p>Belong To Team:{contest.team?.tid ? contest.team.tid : ""}</p>
       <h2>标签</h2>
       <ContestTags tags={contest.tags} />
       <h2>题目</h2>
