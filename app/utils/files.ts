@@ -22,6 +22,8 @@ export async function createUserFile(file: File, uid: number) {
     Buffer.from(await file.arrayBuffer()),
     file.type
   );
+
+  return fid;
 }
 
 /**
@@ -51,6 +53,8 @@ export async function createProblemFile(
     Buffer.from(await file.arrayBuffer()),
     file.type
   );
+
+  return fid;
 }
 
 /**

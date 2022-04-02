@@ -1,4 +1,7 @@
 import { ContestSystem, PrismaClient, SystemUserRole } from "@prisma/client";
+import { createUserFile } from "~/utils/files";
+import { readFile } from "fs/promises";
+import { File } from "@web-std/file";
 
 const prisma = new PrismaClient();
 
@@ -18,8 +21,20 @@ async function seed() {
       email: "alice@hit.edu.cn",
       username: "Alice",
       password: "alice",
+      nickname: "嘉然今天吃什么",
+      bio: "这里是嘉然！别看我小小的，我超能吃还超可爱的哦~",
       role: SystemUserRole.Su,
     },
+  });
+
+  const jiaran = await createUserFile(
+    new File([await readFile("prisma/image/jiaran.jpg")], "avatar.jpg"),
+    alice
+  );
+
+  await prisma.user.update({
+    where: { uid: alice },
+    data: { avatar: `/file/${jiaran}/raw` },
   });
 
   const { uid: bob } = await prisma.user.create({
@@ -63,6 +78,7 @@ async function seed() {
       description:
         "# Description \n\ngive three number, output the sum of them.\n\n# Sample Input \n\n    114 514 1919\n\n# Sample Output \n\n    2547\n\n# Limits \n\n$a, b, c \\lt 10^6$",
       user: { connect: { uid: bob } },
+      private: false,
       tags: {
         connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],
       },
