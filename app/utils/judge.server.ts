@@ -1,73 +1,75 @@
-import { File } from "@prisma/client";
 import * as io from "socket.io";
 import { db } from "./db.server";
 import { s3 } from "./s3.server";
 
-/**
- * 客户端向测评机发送的请求
- */
+// 客户端向测评机发送的请求
 export type JudgeRequest = {
-  /**
-   * 当前任务 id
-   */
-  rid: number;
-  /**
-   * 选手代码
-   */
-  code: string;
-  /**
-   * 选手选择的语言
-   */
-  language: string;
-  /**
-   * 评测所需要的所有文件
-   */
-  files: Pick<File, "fid" | "filename">[];
+  rid: number; // 当前任务 id
+  code: string; // 选手代码
+  language: string; // 选手选择的语言
+  files: Array<{ fid: string; filename: string }>; // 评测所需要的所有文件
 };
 
-type RecordTestResult =
-  | "Accepted"
-  | "WrongAnswer"
-  | "TimeLimitExceeded"
-  | "MemoryLimitExceeded"
-  | "RuntimeError"
-  | "SystemError"
-  | "Unknown";
+// 子任务评测结果
+export type SubtaskResult =
+  | "Pending" // 等待中
+  | "Running" // 运行中
+  | "Accepted" // 正确
+  | "WrongAnswer" // 错误答案
+  | "TimeLimitExceeded" // 超时
+  | "MemoryLimitExceeded" // 超内存
+  | "RuntimeError" // 运行时错误（返回值不是 0）
+  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
 
-/**
- * 单个数据点的评测结果
- */
-export type JudgeResponse = {
-  /**
-   * 测试点的分值
-   */
-  pointId: number;
-  /**
-   * 测试点结果
-   */
-  result: RecordTestResult;
-  /**
-   * 评测结果附加信息
-   */
-  message: string;
-  /**
-   * 程序运行时间 (ms)
-   */
-  time: number;
-  /**
-   * 程序所使用的内存 (byte)
-   */
-  memory: number;
+// 单点评测的结果
+export type TaskResult = SubtaskResult | "Skipped"; // 跳过（子任务前面已经出错）
+
+// 最终评测结果
+export type Result =
+  | SubtaskResult // 子任务结果
+  | "Compiling" // 编译中
+  | "CompileError"; // 编译错误（或者编译器超时等）
+
+// 单个数据点的评测结果
+export type JudgeTaskResult = {
+  result: TaskResult; // 测试点结果
+  message: string; // 评测结果附加信息
+  time: number; // 程序运行时间 (ms)
+  memory: number; // 程序所使用的内存 (byte)
 };
 
+// 子任务的评测结果
+export type JudgeSubtaskResult = {
+  score: number; // 子任务得分
+  result: SubtaskResult; // 子任务结果
+  message: string; // 子任务附加信息（如果有）
+  time: number; // 子任务运行全部时间 (ms)
+  memory: number; // 子任务运行最大内存 (byte)
+  tasks: Array<JudgeTaskResult>; // 子任务的评测结果
+};
+
+// 评测结果
+export type JudgeResult = {
+  rid: number; // 任务 id
+  score: number; // 最终得分
+  result: Result; // 评测结果
+  message: string; // 编译器的输出（包括 stderr 和 stdout）
+  time: number; // 评测运行总时间 (ms)
+  memory: number; // 评测运行最大内存 (byte)
+  subtasks: Array<JudgeSubtaskResult>; // 每个测试点的评测结果
+};
+
+// 评测机发送给网站的事件
 export interface ServerEvent {
   task: () => void; // 评测机空闲，申请分发任务
-  result: (rid: number, res: JudgeResponse) => void; // 评测机返回单个测试点结果
-  finish: (rid: number) => void; // 评测机评测完成
+  result: (rid: number, res: JudgeResult) => void; // 更新评测结果
+  finish: (rid: number, res: JudgeResult) => void; // 评测机评测完成，返回最终结果
   reject: (req: JudgeRequest) => void; // 评测机拒绝评测
   fetch: (fid: string) => void; // 评测机同步文件
 }
 
+// 网站向评测机发送的事件
 export interface ClientEvent {
   task: () => void; // 后端有新任务，发送广播到每个评测机
   dispatch: (req: JudgeRequest) => void; // 后端分配任务给评测机
@@ -105,6 +107,7 @@ class JudgeServer {
 
   constructor() {
     const privateKey = process.env.JUDGE_PRIVATE_KEY;
+    const port = parseInt(process.env.JUDGE_PORT || "3000");
 
     if (!privateKey) {
       console.warn(
@@ -205,6 +208,10 @@ class JudgeServer {
     setInterval(() => {
       this.broadcast();
     }, 1000);
+
+    // 启动服务
+    this.server.listen(port);
+    console.log(`Judge Server listening on port ${port}`);
   }
 
   /**
