@@ -1,5 +1,5 @@
 import { Space, Table, Tag } from "@arco-design/web-react";
-import { Contest, ContestTag, Problem } from "@prisma/client";
+import { Contest, ContestTag, Problem, Team } from "@prisma/client";
 import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -9,6 +9,7 @@ type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
     problems: Pick<Problem, "pid" | "title">[];
+    team?: Pick<Team, "tid">;
   };
 };
 
@@ -19,6 +20,11 @@ export const loader: LoaderFunction = async ({ params }) => {
     where: { cid },
     include: {
       tags: true,
+      team: {
+        select: {
+          tid: true,
+        },
+      },
       problems: {
         select: {
           pid: true,
@@ -98,6 +104,7 @@ export default function ContestIndex() {
     <>
       <Time contest={contest} />
       <p>{contest.description}</p>
+      <p>Belong To Team:{contest.team?.tid ? contest.team.tid : ""}</p>
       <h2>标签</h2>
       <ContestTags tags={contest.tags} />
       <h2>题目</h2>

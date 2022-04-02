@@ -126,7 +126,7 @@ async function seed() {
     },
   });
 
-  await prisma.problemSet.create({
+  const { sid: ts1 } = await prisma.problemSet.create({
     data: {
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
@@ -275,6 +275,20 @@ async function seed() {
         commentId: comment2,
       },
     ],
+  });
+
+  await prisma.team.create({
+    data: {
+      tid: 1,
+      name: "team1",
+      creatorId: alice,
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      memberId: alice,
+      teamId: 1,
+    },
   });
 }
 

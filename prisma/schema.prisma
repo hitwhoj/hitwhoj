@@ -38,6 +38,11 @@ model User {
   moddedContests   Contest[] @relation("mod", references: [cid])
   juriedContests   Contest[] @relation("jury", references: [cid])
 
+
+  createdTeam Team[]
+  teamMember  TeamMember[]
+  // createdHomework TeamHomework[]
+
   records Record[]
   Comment Comment[]
   Reply   Reply[]
@@ -48,6 +53,7 @@ enum SystemUserRole {
   Admin
   User
   Guest
+
 }
 
 model UserSession {
@@ -140,9 +146,10 @@ model ProblemSet {
   tags ProblemSetTag[] @relation(references: [id])
 
   problems Problem[] @relation(references: [pid])
+  // includeInHomework TeamHomework[]
+  uid      Int
+  user     User      @relation(fields: [uid], references: [uid])
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
 }
 
 model ProblemSetTag {
@@ -181,6 +188,9 @@ model Contest {
 
   records           Record[]
   exclusiveProblems Problem[] @relation("belong")
+
+  team Team? @relation(fields: [tid], references: [tid])
+  tid  Int?
 }
 
 model ContestTag {
@@ -188,6 +198,31 @@ model ContestTag {
   name String @unique
 
   contests Contest[] @relation(references: [cid])
+}
+
+model Team {
+  tid         Int      @id @default(autoincrement())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  description String?
+
+  // ==== relations ====
+  creator   User         @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
+  creatorId Int
+  members   TeamMember[]
+  homeworks Contest[]
+}
+
+model TeamMember {
+  authority String?
+
+  // ==== relations ====
+  member   User @relation(fields: [memberId], references: [uid], onDelete: Cascade)
+  memberId Int
+  team     Team @relation(fields: [teamId], references: [tid], onDelete: Cascade)
+  teamId   Int
+
+  @@unique([memberId, teamId])
 }
 
 enum ContestSystem {
