@@ -9,7 +9,7 @@
     "fmt:check": "prettier --check .",
     "lint": "eslint --ext ts,tsx app server -f pretty --fix",
     "lint:check": "eslint --ext ts,tsx app server -f pretty",
-    "postinstall": "remix setup node && prisma generate",
+    "postinstall": "patch-package && remix setup node && prisma generate",
     "start": "cross-env NODE_ENV=production node --require esbuild-register server/index.ts",
     "start:dev": "cross-env NODE_ENV=development node --require esbuild-register server/index.ts",
     "install:fonts": "mkdirp public/build/_assets/fonts/ && copyfiles -f node_modules/katex/dist/fonts/* public/build/_assets/fonts/"
@@ -58,6 +58,7 @@
     "eslint": "^8.12.0",
     "eslint-formatter-pretty": "^4.1.0",
     "mkdirp": "^1.0.4",
+    "patch-package": "^6.4.7",
     "prettier": "^2.6.0",
     "prettier-plugin-prisma": "^3.11.0",
     "prisma": "^3.11.0",

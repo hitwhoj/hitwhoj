@@ -1,0 +1,20 @@
+diff --git a/node_modules/@remix-run/react/esm/transition.js b/node_modules/@remix-run/react/esm/transition.js
+index f9c66f5..efbb239 100644
+--- a/node_modules/@remix-run/react/esm/transition.js
++++ b/node_modules/@remix-run/react/esm/transition.js
+@@ -1166,11 +1166,10 @@ function findNearestBoundary(matchWithError, matches) {
+ function makeLoaderData(state, results, matches) {
+   let newData = {};
+ 
+-  for (let {
+-    match,
+-    value
+-  } of results) {
+-    newData[match.route.id] = value;
++  for (let result of results) {
++    if (!isCatchResult(result) && !isErrorResult(result)) {
++      newData[result.match.route.id] = result.value;
++    }
+   }
+ 
+   let loaderData = {};

@@ -1,0 +1,26 @@
+diff --git a/node_modules/prisma/build/index.js b/node_modules/prisma/build/index.js
+index 65d8654..4b35271 100755
+--- a/node_modules/prisma/build/index.js
++++ b/node_modules/prisma/build/index.js
+@@ -108814,7 +108814,7 @@ async function main() {
+     } catch (e) {
+       debug12("Error from cli/src/bin.ts");
+       debug12(e);
+-    }
++    }/*
+     const checkResult = await checkpoint2.check({
+       product: "prisma",
+       cli_path_hash: cliPathHash,
+@@ -108831,7 +108831,7 @@ async function main() {
+     const shouldHide = process.env.PRISMA_HIDE_UPDATE_MESSAGE;
+     if (checkResult.status === "ok" && checkResult.data.outdated && !shouldHide) {
+       printUpdateMessage(checkResult);
+-    }
++    }*/
+   } catch (e) {
+     debug12(e);
+   }
+diff --git a/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node b/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node
+new file mode 100755
+index 0000000..b6dc550
+Binary files /dev/null and b/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node differ
