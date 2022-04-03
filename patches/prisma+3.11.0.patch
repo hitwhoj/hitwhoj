@@ -20,7 +20,3 @@ index 65d8654..4b35271 100755
    } catch (e) {
      debug12(e);
    }
-diff --git a/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node b/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node
-new file mode 100755
-index 0000000..b6dc550
-Binary files /dev/null and b/node_modules/prisma/libquery_engine-debian-openssl-1.1.x.so.node differ
