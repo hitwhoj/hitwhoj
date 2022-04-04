@@ -46,11 +46,8 @@ export default function NavbarTop() {
                 <Menu>
                   <NavLink to={`/user/${user.uid}`}>
                     <MenuItem key="user">
-                      {user.nickname && <div></div>}
-                      <div>
-                        <b>{user.nickname} </b>
-                        <span>@{user.username}</span>
-                      </div>
+                      {user.nickname && <b>{user.nickname} </b>}
+                      <span>@{user.username}</span>
                     </MenuItem>
                   </NavLink>
                   <Divider style={{ margin: "5px 0" }} />
