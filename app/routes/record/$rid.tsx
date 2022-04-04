@@ -7,7 +7,17 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 
 type LoaderData = {
-  record: Pick<Record, "rid" | "detail" | "points" | "status">;
+  record: Pick<
+    Record,
+    | "rid"
+    | "status"
+    | "message"
+    | "language"
+    | "score"
+    | "time"
+    | "memory"
+    | "subtasks"
+  >;
   code: string;
 };
 
@@ -18,9 +28,13 @@ export const loader: LoaderFunction = async ({ params }) => {
     where: { rid },
     select: {
       rid: true,
-      detail: true,
-      points: true,
       status: true,
+      message: true,
+      language: true,
+      score: true,
+      time: true,
+      memory: true,
+      subtasks: true,
     },
   });
 
@@ -45,10 +59,22 @@ export default function RecordView() {
   return (
     <>
       <h1>{record.status}</h1>
-      <blockquote>
-        <p>{record.detail}</p>
-      </blockquote>
-      <Highlighter language="cpp" children={code} />
+      <p>Score: {record.score}</p>
+      <p>Time: {record.time} ms</p>
+      <p>Memory: {record.memory} byte</p>
+      {record.message && (
+        <>
+          <h2>Compiler Message</h2>
+          <Highlighter language="text" children={record.message} />
+        </>
+      )}
+      <h2>Result</h2>
+      <Highlighter
+        language="text"
+        children={JSON.stringify(JSON.parse(record.subtasks), null, 2)}
+      />
+      <h2>Source Code</h2>
+      <Highlighter language={record.language} children={code} />
     </>
   );
 }

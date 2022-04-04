@@ -239,36 +239,32 @@ enum ContestSystem {
 model Record {
   rid Int @id @default(autoincrement())
 
-  status RecordStatus @default(Pending)
-  detail String       @default("")
-  points String       @default("[]")
+  /// 评测状态（结果）
+  status   String @default("Pending")
+  /// 得分
+  score    Float  @default(0)
+  /// 评测信息（错误信息）
+  message  String @default("")
+  /// 评测总时间 (ms)
+  time     Int    @default(0)
+  /// 评测最大内存 (byte)
+  memory   Int    @default(0)
+  /// 具体每一个测试点的评测结果，由于结构过于复杂，这里直接用 JSON 保存
+  subtasks String @default("[]")
 
-  language String
-
+  /// 提交语言，一般就是源文件的后缀名
+  language    String
   submittedAt DateTime @default(now())
 
   // ==== relations ====
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  submitter User     @relation(fields: [submitterId], references: [uid])
+  problem   Problem  @relation(fields: [problemId], references: [pid])
+  contest   Contest? @relation(fields: [contestId], references: [cid])
 
-  pid     Int
-  problem Problem @relation(fields: [pid], references: [pid])
-
-  cid     Int?
-  contest Contest? @relation(fields: [cid], references: [cid])
-}
-
-enum RecordStatus {
-  Pending
-  Judging
-  Accepted
-  WrongAnswer
-  TimeLimitExceeded
-  MemoryLimitExceeded
-  RuntimeError
-  CompileError
-  SystemError
+  submitterId Int
+  problemId   Int
+  contestId   Int?
 }
 
 model CommentTag {

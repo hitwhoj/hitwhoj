@@ -7,11 +7,14 @@ export type JudgeRequest = {
   rid: number; // 当前任务 id
   code: string; // 选手代码
   language: string; // 选手选择的语言
-  files: Array<{ fid: string; filename: string }>; // 评测所需要的所有文件
+  files: {
+    fid: string;
+    filename: string;
+  }[]; // 评测所需要的所有文件
 };
 
-// 子任务评测结果
-export type SubtaskResult =
+// 单点评测的结果
+export type TaskStatus =
   | "Pending" // 等待中
   | "Running" // 运行中
   | "Accepted" // 正确
@@ -20,51 +23,36 @@ export type SubtaskResult =
   | "MemoryLimitExceeded" // 超内存
   | "RuntimeError" // 运行时错误（返回值不是 0）
   | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
-
-// 单点评测的结果
-export type TaskResult = SubtaskResult | "Skipped"; // 跳过（子任务前面已经出错）
-
-// 最终评测结果
-export type Result =
-  | SubtaskResult // 子任务结果
-  | "Compiling" // 编译中
-  | "CompileError"; // 编译错误（或者编译器超时等）
+  | "UnknownError" // 未知错误（评测机遇到了未知的问题）
+  | "Skipped"; // 跳过（子任务前面已经出错）
 
 // 单个数据点的评测结果
-export type JudgeTaskResult = {
-  result: TaskResult; // 测试点结果
+export type TaskResult = {
+  status: TaskStatus; // 测试点结果
   message: string; // 评测结果附加信息
   time: number; // 程序运行时间 (ms)
   memory: number; // 程序所使用的内存 (byte)
 };
 
 // 子任务的评测结果
-export type JudgeSubtaskResult = {
-  score: number; // 子任务得分
-  result: SubtaskResult; // 子任务结果
+export type SubtaskResult = {
+  score: number; // 子任务总分（不是具体得到的分数，具体得分会根据子任务评测结果计算）
   message: string; // 子任务附加信息（如果有）
-  time: number; // 子任务运行全部时间 (ms)
-  memory: number; // 子任务运行最大内存 (byte)
-  tasks: Array<JudgeTaskResult>; // 子任务的评测结果
+  tasks: TaskResult[]; // 子任务的评测结果
 };
 
 // 评测结果
 export type JudgeResult = {
   rid: number; // 任务 id
-  score: number; // 最终得分
-  result: Result; // 评测结果
-  message: string; // 编译器的输出（包括 stderr 和 stdout）
-  time: number; // 评测运行总时间 (ms)
-  memory: number; // 评测运行最大内存 (byte)
-  subtasks: Array<JudgeSubtaskResult>; // 每个测试点的评测结果
+  message: string; // 评测附加信息，包括编译器输出和 SPJ 的输出信息等
+  subtasks?: SubtaskResult[]; // 每个测试点的评测结果，如果不提供这个字段说明是编译错误！！！
 };
 
 // 评测机发送给网站的事件
 export interface ServerEvent {
   task: () => void; // 评测机空闲，申请分发任务
-  result: (rid: number, res: JudgeResult) => void; // 更新评测结果
-  finish: (rid: number, res: JudgeResult) => void; // 评测机评测完成，返回最终结果
+  result: (res: JudgeResult) => void; // 更新评测结果
+  finish: (res: JudgeResult) => void; // 评测机评测完成，返回最终结果
   reject: (req: JudgeRequest) => void; // 评测机拒绝评测
   fetch: (fid: string) => void; // 评测机同步文件
 }
@@ -75,6 +63,34 @@ export interface ClientEvent {
   dispatch: (req: JudgeRequest) => void; // 后端分配任务给评测机
   fetch: (fid: string, buffer: Buffer) => void; // 后端同步文件
 }
+
+// ==== 以上为评测机通信的接口 ====
+// ==== 以下为评测机的实现 ====
+
+export type SubtaskStatus =
+  | "Pending" // 等待中
+  | "Running" // 运行中
+  | "Accepted" // 正确
+  | "WrongAnswer" // 错误答案
+  | "TimeLimitExceeded" // 超时
+  | "MemoryLimitExceeded" // 超内存
+  | "RuntimeError" // 运行时错误（返回值不是 0）
+  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
+
+// 评测结果
+export type JudgeStatus =
+  | "Pending" // 等待中
+  | "Compiling" // 编译中
+  | "CompileError" // 编译错误
+  | "Running" // 运行中
+  | "Accepted" // 正确
+  | "WrongAnswer" // 错误答案
+  | "TimeLimitExceeded" // 超时
+  | "MemoryLimitExceeded" // 超内存
+  | "RuntimeError" // 运行时错误（返回值不是 0）
+  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
 
 /**
  * 后端服务器
@@ -101,9 +117,12 @@ export interface ClientEvent {
  * 考虑评测机超时的情况，后端服务器当分配任务之后启动一个计时器，如果评测机在规定时间内没有发送任何数据包回来，则将评测结果设置为 UnknownError，并且丢弃任何之后收到的关于该任务的数据包。
  */
 class JudgeServer {
-  private server = new io.Server<ServerEvent, ClientEvent>();
-  private timeout = new Map<number, NodeJS.Timeout>();
-  private taskQueue: JudgeRequest[] = [];
+  // Socket IO 服务器，用于接收来自评测机的链接
+  #server = new io.Server<ServerEvent, ClientEvent>();
+  // 评测超时定时器
+  #timeout = new Map<number, NodeJS.Timeout>();
+  // 当前评测任务队列
+  #taskQueue: JudgeRequest[] = [];
 
   constructor() {
     const privateKey = process.env.JUDGE_PRIVATE_KEY;
@@ -115,7 +134,7 @@ class JudgeServer {
       );
     } else {
       // 验证请求
-      this.server.use((socket, next) => {
+      this.#server.use((socket, next) => {
         if (socket.handshake.auth.key !== privateKey) {
           socket.disconnect();
           return;
@@ -124,49 +143,74 @@ class JudgeServer {
       });
     }
 
-    this.server.on("connect", (socket) => {
+    this.#server.on("connect", (socket) => {
       // 评测机请求分配任务
       socket.on("task", () => {
         // 若队列中无任务，则什么也不做
-        if (this.taskQueue.length === 0) {
+        if (this.#taskQueue.length === 0) {
           return;
         }
 
         // 发送任务给评测机
-        const task = this.taskQueue.shift()!;
+        const task = this.#taskQueue.shift()!;
         socket.emit("dispatch", task);
 
-        this.timeout.set(
-          task.rid,
-          setInterval(() => {
-            // TODO: 评测超时
-            console.log("timeout", task);
-            this.timeout.delete(task.rid);
-          }, 60000)
+        // 启动超时计时器
+        const timeout = setTimeout(() => {
+          // TODO: 评测超时
+          console.log(`Task ${task.rid} timed out`);
+          // 异步更新数据库
+          updateDatabase(
+            {
+              rid: task.rid,
+              message:
+                "[JudgeServer] Judge Timeout\n[JudgeServer] You can report this issue to Administrator.",
+              subtasks: [],
+            },
+            "SystemError"
+          );
+
+          this.#timeout.delete(task.rid);
+        }, 60000);
+        this.#timeout.set(task.rid, timeout);
+
+        console.log(`Task ${task.rid} dispatched`);
+        // 任务分配成功，将状态改成 Compiling
+        updateDatabase(
+          {
+            rid: task.rid,
+            message: "",
+            subtasks: [],
+          },
+          "Compiling"
         );
       });
 
-      // 评测机返回单个测试点结果
-      socket.on("result", (rid, res) => {
-        if (!this.timeout.has(rid)) {
+      // 评测机返回评测进度更新
+      socket.on("result", (res) => {
+        if (!this.#timeout.has(res.rid)) {
           // 任务已经过期，直接忽略该结果
           return;
         }
 
-        // TODO: 记录单点评测结果
-        console.log("result", res);
+        // TODO: 评测结果有更新
+        console.log(`Task ${res.rid} update: ${JSON.stringify(res)}`);
+        // 异步更新数据库
+        updateDatabase(res);
       });
 
       // 评测机评测完成
-      socket.on("finish", (rid) => {
-        const timeout = this.timeout.get(rid);
+      socket.on("finish", (res) => {
+        const timeout = this.#timeout.get(res.rid);
         if (!timeout) {
           // 任务已经过期，直接忽略该结果
           return;
         }
 
         // TODO: 评测完成
-        console.log("finish", rid);
+        console.log(`Task ${res.rid} finished: ${JSON.stringify(res)}`);
+        // 异步更新数据库
+        updateDatabase(res);
 
         // 清理超时计时器
         clearInterval(timeout);
@@ -174,62 +218,82 @@ class JudgeServer {
 
       // 评测机拒绝评测任务
       socket.on("reject", (req) => {
-        const timeout = this.timeout.get(req.rid);
+        const timeout = this.#timeout.get(req.rid);
         if (!timeout) {
           // 任务已经过期，直接忽略该结果
           return;
         }
 
         // 将评测机拒绝的任务重新放回队列
-        this.taskQueue.push(req);
+        this.#pushTask(req);
 
         // 清理超时计时器
         clearInterval(timeout);
       });
 
+      // 评测机请求获取数据文件
       socket.on("fetch", async (fid) => {
         const file = await db.file.findUnique({
           where: { fid },
-          select: { pid: true, fid: true },
+          select: { pid: true, private: true, fid: true },
         });
 
-        if (!file) {
+        // 如果文件不存在，或者不是题目数据文件，则直接返回
+        if (!file || !(file.pid && file.private)) {
           return;
         }
 
         const buffer = await s3.readFileAsBuffer(
           `/problem/${file.pid}/${file.fid}`
         );
+        // 发送文件给评测机
         socket.emit("fetch", fid, buffer);
       });
     });
 
     // 设置定时广播
     setInterval(() => {
-      this.broadcast();
+      this.#broadcast();
     }, 1000);
 
     // 启动服务
-    this.server.listen(port);
-    console.log(`Judge Server listening on port ${port}`);
+    this.#server.listen(port);
+    console.log(`Judge server listening on port ${port}`);
   }
 
   /**
    * 向所有评测机广播目前有待领取的任务
    */
-  private broadcast() {
-    if (!this.taskQueue.length) {
+  #broadcast() {
+    if (!this.#taskQueue.length) {
       // 没有任务，不广播
       return;
     }
 
-    this.server.emit("task");
+    this.#server.emit("task");
+  }
+
+  #pushTask(task: JudgeRequest) {
+    this.#taskQueue.push(task);
+    this.#broadcast();
+
+    // TODO: 加入队伍，开始等待评测机认领
+    console.log(`Task ${task.rid} pushed`);
+    updateDatabase(
+      {
+        rid: task.rid,
+        message: "",
+        subtasks: [],
+      },
+      "Pending"
+    );
   }
 
   /**
    * 添加新任务
    */
   async push(rid: number) {
+    // 获取评测任务题目的所有数据文件信息
     const record = await db.record.findUnique({
       where: { rid },
       select: {
@@ -252,17 +316,116 @@ class JudgeServer {
       return;
     }
 
-    const code = (await s3.readFileAsBuffer(`/record/${rid}`)).toString();
+    const code = (await s3.readFileAsBuffer(`/record/${rid}`)).toString("utf8");
 
-    this.taskQueue.push({
+    this.#pushTask({
       rid,
       code,
       language: record.language,
       files: record.problem.files,
     });
-    this.broadcast();
   }
 }
+
+/**
+ * 判断 Subtask 的状态
+ */
+function analyzeSubtaskStatus(subtask: SubtaskResult): SubtaskStatus {
+  const tasks = subtask.tasks.map((task) => task.status);
+
+  // 如果全都为 Pending，则为 Pending
+  if (tasks.every((status) => status === "Pending")) {
+    return "Pending";
+  }
+
+  // 如果有至少一个不是 Pending，但是仍然存在 Pending 或者 Running，则为 Running
+  if (tasks.some((status) => status === "Pending" || status === "Running")) {
+    return "Running";
+  }
+
+  // 如果全都为 Accepted，则为 Accepted
+  if (tasks.every((status) => status === "Accepted")) {
+    return "Accepted";
+  }
+
+  // 否则返回第一个不是 Accepted 的状态
+  return tasks.find((status) => status !== "Accepted") as SubtaskStatus;
+}
+
+/**
+ * 判断评测任务的状态
+ */
+function analyzeStatus(subtasks?: SubtaskResult[]): JudgeStatus {
+  if (!subtasks) {
+    return "CompileError";
+  }
+
+  const tasks = subtasks.map((subtask) => analyzeSubtaskStatus(subtask));
+
+  // 如果有一个为 Pending 或者 Running，则为 Running
+  if (tasks.some((status) => status === "Pending" || status === "Running")) {
+    return "Running";
+  }
+
+  // 如果全都为 Accepted，则为 Accepted
+  if (tasks.every((status) => status === "Accepted")) {
+    return "Accepted";
+  }
+
+  // 否则返回第一个不是 Accepted 的状态
+  return tasks.find((status) => status !== "Accepted") as JudgeStatus;
+}
+
+function analyzeScore(subtasks: SubtaskResult[]) {
+  return subtasks
+    .map((subtask) =>
+      subtask.tasks.every((task) => task.status === "Accepted")
+        ? subtask.score
+        : 0
+    )
+    .reduce((a, b) => a + b, 0);
+}
+
+function analyzeTime(subtasks: SubtaskResult[]) {
+  return subtasks
+    .map((subtask) => subtask.tasks.map((task) => task.time))
+    .flat()
+    .reduce((a, b) => a + b, 0);
+}
+
+function analyzeMemory(subtasks: SubtaskResult[]) {
+  return Math.max(
+    ...subtasks
+      .map((subtask) => subtask.tasks.map((task) => task.memory))
+      .flat()
+  );
+}
+
+/**
+ * 更新数据库
+ */
+function updateDatabase(
+  res: JudgeResult,
+  status: JudgeStatus = analyzeStatus(res.subtasks)
+) {
+  const score = res.subtasks ? analyzeScore(res.subtasks) : 0;
+  const time = res.subtasks ? analyzeTime(res.subtasks) : 0;
+  const memory = res.subtasks ? analyzeMemory(res.subtasks) : 0;
+
+  return db.record.update({
+    where: { rid: res.rid },
+    data: {
+      status,
+      score,
+      time,
+      memory,
+      message: res.message,
+      subtasks: JSON.stringify(res.subtasks),
+    },
+  });
+}
+
+// 下面用于防止开发环境的时候启动多个 JudgeServer
 
 declare global {
   var __judge: JudgeServer | undefined;

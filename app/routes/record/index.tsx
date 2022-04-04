@@ -5,7 +5,7 @@ import { db } from "~/utils/db.server";
 type LoaderData = {
   records: (Pick<Record, "rid" | "status" | "submittedAt"> & {
     problem: Pick<Problem, "pid" | "title">;
-    user: Pick<User, "uid" | "username">;
+    submitter: Pick<User, "uid" | "username">;
   })[];
 };
 
@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async () => {
           title: true,
         },
       },
-      user: {
+      submitter: {
         select: {
           uid: true,
           username: true,
@@ -72,8 +72,8 @@ export default function RecordList() {
                 </Link>
               </td>
               <td>
-                <Link to={`/user/${record.user.uid}`}>
-                  {record.user.username}
+                <Link to={`/user/${record.submitter.uid}`}>
+                  {record.submitter.username}
                 </Link>
               </td>
               <td>{new Date(record.submittedAt).toLocaleString()}</td>
