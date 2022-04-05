@@ -145,7 +145,7 @@ class JudgeServer {
 
     this.#server.on("connect", (socket) => {
       // 评测机请求分配任务
-      socket.on("task", () => {
+      socket.on("task", async () => {
         // 若队列中无任务，则什么也不做
         if (this.#taskQueue.length === 0) {
           return;
@@ -156,11 +156,13 @@ class JudgeServer {
         socket.emit("dispatch", task);
 
         // 启动超时计时器
-        const timeout = setTimeout(() => {
+        const timeout = setTimeout(async () => {
           // TODO: 评测超时
           console.log(`Task ${task.rid} timed out`);
-          // 异步更新数据库
-          updateDatabase(
+          this.#timeout.delete(task.rid);
+
+          // 更新数据库，记录超时错误
+          await updateDatabase(
             {
               rid: task.rid,
               message:
@@ -169,14 +171,12 @@ class JudgeServer {
             },
             "SystemError"
           );
-
-          this.#timeout.delete(task.rid);
         }, 60000);
         this.#timeout.set(task.rid, timeout);
 
         console.log(`Task ${task.rid} dispatched`);
         // 任务分配成功，将状态改成 Compiling
-        updateDatabase(
+        await updateDatabase(
           {
             rid: task.rid,
             message: "",
@@ -187,7 +187,7 @@ class JudgeServer {
       });
 
       // 评测机返回评测进度更新
-      socket.on("result", (res) => {
+      socket.on("result", async (res) => {
         if (!this.#timeout.has(res.rid)) {
           // 任务已经过期，直接忽略该结果
           return;
@@ -195,25 +195,25 @@ class JudgeServer {
 
         // TODO: 评测结果有更新
         console.log(`Task ${res.rid} update: ${JSON.stringify(res)}`);
-        // 异步更新数据库
-        updateDatabase(res);
+        // 更新数据库
+        await updateDatabase(res);
       });
 
       // 评测机评测完成
-      socket.on("finish", (res) => {
+      socket.on("finish", async (res) => {
         const timeout = this.#timeout.get(res.rid);
         if (!timeout) {
           // 任务已经过期，直接忽略该结果
           return;
         }
 
-        // TODO: 评测完成
-        console.log(`Task ${res.rid} finished: ${JSON.stringify(res)}`);
-        // 异步更新数据库
-        updateDatabase(res);
-
         // 清理超时计时器
         clearInterval(timeout);
+
+        // TODO: 评测完成
+        console.log(`Task ${res.rid} finished: ${JSON.stringify(res)}`);
+        // 更新数据库
+        await updateDatabase(res);
       });
 
       // 评测机拒绝评测任务
@@ -376,6 +376,9 @@ function analyzeStatus(subtasks?: SubtaskResult[]): JudgeStatus {
   return tasks.find((status) => status !== "Accepted") as JudgeStatus;
 }
 
+/**
+ * 统计获得的总分
+ */
 function analyzeScore(subtasks: SubtaskResult[]) {
   return subtasks
     .map((subtask) =>
@@ -386,6 +389,9 @@ function analyzeScore(subtasks: SubtaskResult[]) {
     .reduce((a, b) => a + b, 0);
 }
 
+/**
+ * 统计总用时
+ */
 function analyzeTime(subtasks: SubtaskResult[]) {
   return subtasks
     .map((subtask) => subtask.tasks.map((task) => task.time))
@@ -393,18 +399,20 @@ function analyzeTime(subtasks: SubtaskResult[]) {
     .reduce((a, b) => a + b, 0);
 }
 
+/**
+ * 统计最大内存
+ */
 function analyzeMemory(subtasks: SubtaskResult[]) {
-  return Math.max(
-    ...subtasks
-      .map((subtask) => subtask.tasks.map((task) => task.memory))
-      .flat()
-  );
+  return subtasks
+    .map((subtask) => subtask.tasks.map((task) => task.memory))
+    .flat()
+    .reduce((a, b) => Math.max(a, b), 0);
 }
 
 /**
  * 更新数据库
  */
-function updateDatabase(
+async function updateDatabase(
   res: JudgeResult,
   status: JudgeStatus = analyzeStatus(res.subtasks)
 ) {
@@ -412,7 +420,7 @@ function updateDatabase(
   const time = res.subtasks ? analyzeTime(res.subtasks) : 0;
   const memory = res.subtasks ? analyzeMemory(res.subtasks) : 0;
 
-  return db.record.update({
+  await db.record.update({
     where: { rid: res.rid },
     data: {
       status,
@@ -421,6 +429,10 @@ function updateDatabase(
       memory,
       message: res.message,
       subtasks: JSON.stringify(res.subtasks),
+    },
+    select: {
+      rid: true,
+      status: true,
     },
   });
 }
