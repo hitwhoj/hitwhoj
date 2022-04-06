@@ -1,96 +1,7 @@
 import * as io from "socket.io";
 import { db } from "./db.server";
 import { s3 } from "./s3.server";
-
-// 客户端向测评机发送的请求
-export type JudgeRequest = {
-  rid: number; // 当前任务 id
-  code: string; // 选手代码
-  language: string; // 选手选择的语言
-  files: {
-    fid: string;
-    filename: string;
-  }[]; // 评测所需要的所有文件
-};
-
-// 单点评测的结果
-export type TaskStatus =
-  | "Pending" // 等待中
-  | "Running" // 运行中
-  | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError" // 未知错误（评测机遇到了未知的问题）
-  | "Skipped"; // 跳过（子任务前面已经出错）
-
-// 单个数据点的评测结果
-export type TaskResult = {
-  status: TaskStatus; // 测试点结果
-  message: string; // 评测结果附加信息
-  time: number; // 程序运行时间 (ms)
-  memory: number; // 程序所使用的内存 (byte)
-};
-
-// 子任务的评测结果
-export type SubtaskResult = {
-  score: number; // 子任务总分（不是具体得到的分数，具体得分会根据子任务评测结果计算）
-  message: string; // 子任务附加信息（如果有）
-  tasks: TaskResult[]; // 子任务的评测结果
-};
-
-// 评测结果
-export type JudgeResult = {
-  rid: number; // 任务 id
-  message: string; // 评测附加信息，包括编译器输出和 SPJ 的输出信息等
-  subtasks?: SubtaskResult[]; // 每个测试点的评测结果，如果不提供这个字段说明是编译错误！！！
-};
-
-// 评测机发送给网站的事件
-export interface ServerEvent {
-  task: () => void; // 评测机空闲，申请分发任务
-  result: (res: JudgeResult) => void; // 更新评测结果
-  finish: (res: JudgeResult) => void; // 评测机评测完成，返回最终结果
-  reject: (req: JudgeRequest) => void; // 评测机拒绝评测
-  fetch: (fid: string) => void; // 评测机同步文件
-}
-
-// 网站向评测机发送的事件
-export interface ClientEvent {
-  task: () => void; // 后端有新任务，发送广播到每个评测机
-  dispatch: (req: JudgeRequest) => void; // 后端分配任务给评测机
-  fetch: (fid: string, buffer: Buffer) => void; // 后端同步文件
-}
-
-// ==== 以上为评测机通信的接口 ====
-// ==== 以下为评测机的实现 ====
-
-export type SubtaskStatus =
-  | "Pending" // 等待中
-  | "Running" // 运行中
-  | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
-
-// 评测结果
-export type JudgeStatus =
-  | "Pending" // 等待中
-  | "Compiling" // 编译中
-  | "CompileError" // 编译错误
-  | "Running" // 运行中
-  | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
+import { ClientEvent, JudgeRequest, JudgeResult, ServerEvent } from "./types";
 
 /**
  * 后端服务器
@@ -162,28 +73,22 @@ class JudgeServer {
           this.#timeout.delete(task.rid);
 
           // 更新数据库，记录超时错误
-          await updateDatabase(
-            {
-              rid: task.rid,
-              message:
-                "[JudgeServer] Judge Timeout\n[JudgeServer] You can report this issue to Administrator.",
-              subtasks: [],
-            },
-            "SystemError"
-          );
+          await updateDatabase({
+            rid: task.rid,
+            status: "CompileError",
+            message:
+              "[JudgeServer] Judge Timeout\n[JudgeServer] You can report this issue to Administrator.",
+          });
         }, 60000);
         this.#timeout.set(task.rid, timeout);
 
         console.log(`Task ${task.rid} dispatched`);
-        // 任务分配成功，将状态改成 Compiling
-        await updateDatabase(
-          {
-            rid: task.rid,
-            message: "",
-            subtasks: [],
-          },
-          "Compiling"
-        );
+        // 任务分配成功，更新数据库
+        await updateDatabase({
+          rid: task.rid,
+          status: "Judging",
+          message: "",
+        });
       });
 
       // 评测机返回评测进度更新
@@ -273,20 +178,17 @@ class JudgeServer {
     this.#server.emit("task");
   }
 
-  #pushTask(task: JudgeRequest) {
+  async #pushTask(task: JudgeRequest) {
     this.#taskQueue.push(task);
     this.#broadcast();
 
     // TODO: 加入队伍，开始等待评测机认领
     console.log(`Task ${task.rid} pushed`);
-    updateDatabase(
-      {
-        rid: task.rid,
-        message: "",
-        subtasks: [],
-      },
-      "Pending"
-    );
+    await updateDatabase({
+      rid: task.rid,
+      status: "Pending",
+      message: "",
+    });
   }
 
   /**
@@ -328,107 +230,23 @@ class JudgeServer {
 }
 
 /**
- * 判断 Subtask 的状态
- */
-function analyzeSubtaskStatus(subtask: SubtaskResult): SubtaskStatus {
-  const tasks = subtask.tasks.map((task) => task.status);
-
-  // 如果全都为 Pending，则为 Pending
-  if (tasks.every((status) => status === "Pending")) {
-    return "Pending";
-  }
-
-  // 如果有至少一个不是 Pending，但是仍然存在 Pending 或者 Running，则为 Running
-  if (tasks.some((status) => status === "Pending" || status === "Running")) {
-    return "Running";
-  }
-
-  // 如果全都为 Accepted，则为 Accepted
-  if (tasks.every((status) => status === "Accepted")) {
-    return "Accepted";
-  }
-
-  // 否则返回第一个不是 Accepted 的状态
-  return tasks.find((status) => status !== "Accepted") as SubtaskStatus;
-}
-
-/**
- * 判断评测任务的状态
- */
-function analyzeStatus(subtasks?: SubtaskResult[]): JudgeStatus {
-  if (!subtasks) {
-    return "CompileError";
-  }
-
-  const tasks = subtasks.map((subtask) => analyzeSubtaskStatus(subtask));
-
-  // 如果有一个为 Pending 或者 Running，则为 Running
-  if (tasks.some((status) => status === "Pending" || status === "Running")) {
-    return "Running";
-  }
-
-  // 如果全都为 Accepted，则为 Accepted
-  if (tasks.every((status) => status === "Accepted")) {
-    return "Accepted";
-  }
-
-  // 否则返回第一个不是 Accepted 的状态
-  return tasks.find((status) => status !== "Accepted") as JudgeStatus;
-}
-
-/**
- * 统计获得的总分
- */
-function analyzeScore(subtasks: SubtaskResult[]) {
-  return subtasks
-    .map((subtask) =>
-      subtask.tasks.every((task) => task.status === "Accepted")
-        ? subtask.score
-        : 0
-    )
-    .reduce((a, b) => a + b, 0);
-}
-
-/**
- * 统计总用时
- */
-function analyzeTime(subtasks: SubtaskResult[]) {
-  return subtasks
-    .map((subtask) => subtask.tasks.map((task) => task.time))
-    .flat()
-    .reduce((a, b) => a + b, 0);
-}
-
-/**
- * 统计最大内存
- */
-function analyzeMemory(subtasks: SubtaskResult[]) {
-  return subtasks
-    .map((subtask) => subtask.tasks.map((task) => task.memory))
-    .flat()
-    .reduce((a, b) => Math.max(a, b), 0);
-}
-
-/**
  * 更新数据库
  */
 async function updateDatabase(
-  res: JudgeResult,
-  status: JudgeStatus = analyzeStatus(res.subtasks)
+  res:
+    | JudgeResult
+    | (Pick<JudgeResult, "status" | "rid" | "message"> &
+        Partial<Omit<JudgeResult, "status" | "rid" | "message">>)
 ) {
-  const score = res.subtasks ? analyzeScore(res.subtasks) : 0;
-  const time = res.subtasks ? analyzeTime(res.subtasks) : 0;
-  const memory = res.subtasks ? analyzeMemory(res.subtasks) : 0;
-
   await db.record.update({
     where: { rid: res.rid },
     data: {
-      status,
-      score,
-      time,
-      memory,
+      status: res.status,
+      score: res.score ?? 0,
+      time: res.time ?? 0,
+      memory: res.memory ?? 0,
       message: res.message,
-      subtasks: JSON.stringify(res.subtasks),
+      subtasks: JSON.stringify(res.subtasks ?? []),
     },
     select: {
       rid: true,
