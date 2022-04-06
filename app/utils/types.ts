@@ -14,14 +14,42 @@ export type TaskStatus =
   | "Pending" // 等待中
   | "Running" // 运行中
   | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "OutputLimitExceeded" // 超输出
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError" // 未知错误（评测机遇到了未知的问题）
+  | "Wrong Answer" // 错误答案
+  | "Time Limit Exceeded" // 超时
+  | "Memory Limit Exceeded" // 超内存
+  | "Output Limit Exceeded" // 超输出
+  | "Runtime Error" // 运行时错误（返回值不是 0）
+  | "System Error" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "Unknown Error" // 未知错误（评测机遇到了未知的问题）
   | "Skipped"; // 跳过（子任务前面已经出错）
+
+export type SubtaskStatus =
+  | "Pending" // 等待中
+  | "Running" // 运行中
+  | "Accepted" // 正确
+  | "Wrong Answer" // 错误答案
+  | "Time Limit Exceeded" // 超时
+  | "Memory Limit Exceeded" // 超内存
+  | "Output Limit Exceeded" // 超输出
+  | "Runtime Error" // 运行时错误（返回值不是 0）
+  | "System Error" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "Unknown Error"; // 未知错误（评测机遇到了未知的问题）
+
+// 评测结果
+export type JudgeStatus =
+  | "Pending" // 等待中
+  | "Judging" // 评测中（已经分配给了评测机）
+  | "Compiling" // 编译中
+  | "Compile Error" // 编译错误
+  | "Running" // 运行中
+  | "Accepted" // 正确
+  | "Wrong Answer" // 错误答案
+  | "Time Limit Exceeded" // 超时
+  | "Memory Limit Exceeded" // 超内存
+  | "Output Limit Exceeded" // 超输出
+  | "Runtime Error" // 运行时错误（返回值不是 0）
+  | "System Error" // 系统错误（比如没有找到文件，题目配置错误等）
+  | "Unknown Error"; // 未知错误（评测机遇到了未知的问题）
 
 // 单个数据点的评测结果
 export type TaskResult = {
@@ -67,29 +95,3 @@ export interface ClientEvent {
   dispatch: (req: JudgeRequest) => void; // 后端分配任务给评测机
   fetch: (fid: string, buffer: Buffer) => void; // 后端同步文件
 }
-
-export type SubtaskStatus =
-  | "Pending" // 等待中
-  | "Running" // 运行中
-  | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）
-
-// 评测结果
-export type JudgeStatus =
-  | "Pending" // 等待中
-  | "Judging" // 评测中（已经分配给了评测机）
-  | "Compiling" // 编译中
-  | "CompileError" // 编译错误
-  | "Running" // 运行中
-  | "Accepted" // 正确
-  | "WrongAnswer" // 错误答案
-  | "TimeLimitExceeded" // 超时
-  | "MemoryLimitExceeded" // 超内存
-  | "RuntimeError" // 运行时错误（返回值不是 0）
-  | "SystemError" // 系统错误（比如没有找到文件，题目配置错误等）
-  | "UnknownError"; // 未知错误（评测机遇到了未知的问题）

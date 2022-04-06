@@ -7,7 +7,12 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { Collapse, List, Space, Tag } from "@arco-design/web-react";
 import { IconClockCircle, IconStorage } from "@arco-design/web-react/icon";
-import { SubtaskResult } from "~/utils/types";
+import {
+  JudgeStatus,
+  SubtaskResult,
+  SubtaskStatus,
+  TaskStatus,
+} from "~/utils/types";
 
 type LoaderData = {
   record: Pick<
@@ -59,28 +64,76 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 
 function ResultMessage({ message }: { message: string }) {
   return (
-    <span style={{ textOverflow: "ellipsis" }} title={message}>
+    <span style={{ color: "rgb(var(--gray-6))" }} title={message}>
       {message}
     </span>
   );
 }
 
-function Status({ status }: { status: string }) {
-  if (status === "Accepted") {
-    return <span style={{ color: "rgb(var(--green-6))" }}>Accepted</span>;
+function Status({
+  status,
+}: {
+  status: JudgeStatus | SubtaskStatus | TaskStatus;
+}) {
+  let color: string;
+  switch (status) {
+    case "Accepted": {
+      color = "green";
+      break;
+    }
+
+    case "Compile Error":
+    case "Memory Limit Exceeded":
+    case "Output Limit Exceeded":
+    case "Runtime Error":
+    case "System Error":
+    case "Time Limit Exceeded":
+    case "Unknown Error":
+    case "Wrong Answer": {
+      color = "red";
+      break;
+    }
+
+    case "Compiling":
+    case "Judging":
+    case "Running": {
+      color = "yellow";
+      break;
+    }
+
+    case "Pending":
+    case "Skipped": {
+      color = "gray";
+      break;
+    }
+
+    default: {
+      color = "blue";
+      break;
+    }
   }
-  if (status.endsWith("Error")) {
-    return <span style={{ color: "rgb(var(--red-6))" }}>{status}</span>;
-  }
-  return <span>{status}</span>;
+
+  return <b style={{ color: `rgb(var(--${color}-6))` }}>{status}</b>;
 }
 
 function TimeTag({ time }: { time: number }) {
-  return <Tag icon={<IconClockCircle />}>{time}ms</Tag>;
+  return <Tag icon={<IconClockCircle />}>{time < 0 ? "N/A" : `${time}ms`}</Tag>;
 }
 
 function MemoryTag({ memory }: { memory: number }) {
-  return <Tag icon={<IconStorage />}>{memory / 1024}KB</Tag>;
+  return (
+    <Tag icon={<IconStorage />}>
+      {memory < 0
+        ? "N/A"
+        : memory < 1024
+        ? `${memory}B`
+        : memory < 1024 * 1024
+        ? `${(memory / 1024).toFixed(2)}KB`
+        : memory < 1024 * 1024 * 1024
+        ? `${(memory / 1024 / 1024).toFixed(2)}MB`
+        : `${(memory / 1024 / 1024 / 1024).toFixed(2)}GB`}
+    </Tag>
+  );
 }
 
 function TimeMemory({ time, memory }: { time: number; memory: number }) {
@@ -98,9 +151,7 @@ export default function RecordView() {
 
   return (
     <>
-      <h1>
-        {record.score} {record.status}
-      </h1>
+      <h1>{record.status}</h1>
       <TimeMemory time={record.time} memory={record.memory} />
       {record.message && (
         <>
@@ -111,7 +162,15 @@ export default function RecordView() {
       {subtasks.length > 0 && (
         <>
           <h2>Result</h2>
-          <Collapse style={{ whiteSpace: "nowrap" }}>
+          <Collapse
+            style={{ whiteSpace: "nowrap" }}
+            defaultActiveKey={subtasks
+              .map((subtask, i) => [subtask.status, i.toString()])
+              .filter(
+                ([status, _]) => status !== "Accepted" && status !== "Pending"
+              )
+              .map(([_, name]) => name)}
+          >
             {subtasks.map((item, index) => (
               <Collapse.Item
                 key={index}

@@ -75,7 +75,7 @@ class JudgeServer {
           // 更新数据库，记录超时错误
           await updateDatabase({
             rid: task.rid,
-            status: "CompileError",
+            status: "System Error",
             message:
               "[JudgeServer] Judge Timeout\n[JudgeServer] You can report this issue to Administrator.",
           });
@@ -243,8 +243,8 @@ async function updateDatabase(
     data: {
       status: res.status,
       score: res.score ?? 0,
-      time: res.time ?? 0,
-      memory: res.memory ?? 0,
+      time: res.time ?? -1,
+      memory: res.memory ?? -1,
       message: res.message,
       subtasks: JSON.stringify(res.subtasks ?? []),
     },
