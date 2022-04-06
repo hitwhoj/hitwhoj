@@ -5,9 +5,9 @@ import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
-import { Collapse, Divider, List, Space, Tag } from "@arco-design/web-react";
+import { Collapse, List, Space, Tag } from "@arco-design/web-react";
 import { IconClockCircle, IconStorage } from "@arco-design/web-react/icon";
-import { JudgeResult, SubtaskResult } from "~/utils/types";
+import { SubtaskResult } from "~/utils/types";
 
 type LoaderData = {
   record: Pick<
@@ -117,7 +117,7 @@ export default function RecordView() {
                 key={index}
                 name={index.toString()}
                 header={
-                  <Space style={{ flex: 1 }}>
+                  <Space>
                     <span>Subtask #{index + 1}</span>
                     <Status status={item.status} />
                     <ResultMessage message={item.message} />
@@ -125,10 +125,8 @@ export default function RecordView() {
                 }
                 extra={<TimeMemory time={item.time} memory={item.memory} />}
               >
-                <List
-                  size="small"
-                  dataSource={item.tasks}
-                  render={(task, index) => (
+                <List size="small">
+                  {item.tasks.map((task, index) => (
                     <List.Item
                       key={index}
                       children={
@@ -142,8 +140,8 @@ export default function RecordView() {
                         <TimeMemory time={task.time} memory={task.memory} />
                       }
                     />
-                  )}
-                />
+                  ))}
+                </List>
               </Collapse.Item>
             ))}
           </Collapse>
