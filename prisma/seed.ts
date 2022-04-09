@@ -1,5 +1,5 @@
 import { ContestSystem, PrismaClient, SystemUserRole } from "@prisma/client";
-import { createUserFile } from "~/utils/files";
+import { createProblemFile, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
 import { File } from "@web-std/file";
 
@@ -71,11 +71,57 @@ async function seed() {
     data: {
       title: "A + B Problem",
       description:
-        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n}\n```",
+        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 2 \\times 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n}\n```",
       user: { connect: { uid: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
+
+  // 上传题目数据
+  await Promise.all(
+    [
+      new File([Buffer.from("1 2\n")], "1.in"),
+      new File([Buffer.from("3\n")], "1.out"),
+      new File([Buffer.from("114 514\n")], "2.in"),
+      new File([Buffer.from("628\n")], "2.out"),
+      new File([Buffer.from("1919 810\n")], "3.in"),
+      new File([Buffer.from("2729\n")], "3.out"),
+      new File([Buffer.from("114514 1919810\n")], "4.in"),
+      new File([Buffer.from("2034324\n")], "4.out"),
+      new File([Buffer.from("2147483647 1\n")], "5.in"),
+      new File([Buffer.from("2147483648\n")], "5.out"),
+      new File(
+        [
+          Buffer.from(
+            JSON.stringify({
+              type: "normal",
+              subtasks: [
+                {
+                  score: 60,
+                  tasks: [
+                    { input: "1.in", output: "1.out" },
+                    { input: "2.in", output: "2.out" },
+                  ],
+                },
+                {
+                  score: 20,
+                  tasks: [
+                    { input: "3.in", output: "3.out" },
+                    { input: "4.in", output: "4.out" },
+                  ],
+                },
+                {
+                  score: 20,
+                  tasks: [{ input: "5.in", output: "5.out" }],
+                },
+              ],
+            })
+          ),
+        ],
+        "config.json"
+      ),
+    ].map((file) => createProblemFile(file, p1, true))
+  );
 
   const { pid: p2 } = await prisma.problem.create({
     data: {

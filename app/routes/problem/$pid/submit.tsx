@@ -55,7 +55,11 @@ export const action: ActionFunction = async ({ request, params }) => {
   const language = invariant(languageScheme.safeParse(form.get("language")));
 
   const { rid } = await db.record.create({
-    data: { pid, uid, language },
+    data: {
+      problemId: pid,
+      submitterId: uid,
+      language,
+    },
     select: { rid: true },
   });
 
