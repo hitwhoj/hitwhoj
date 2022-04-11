@@ -14,9 +14,9 @@ export function getCookie(request: Request, name: string) {
 }
 
 export function commitCookie(name: string, value: string) {
-  return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Expires=Fri, 31 Dec 9999 23:59:59 GMT; Secure`;
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Expires=Fri, 31 Dec 9999 23:59:59 GMT`;
 }
 
 export function destroyCookie(name: string) {
-  return `${name}=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure`;
+  return `${name}=; Path=/; HttpOnly; SameSite=Strict; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
