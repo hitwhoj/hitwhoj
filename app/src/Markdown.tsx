@@ -1,29 +1,56 @@
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
+import remarkGemoji from "remark-gemoji";
 import rehypeKatex from "rehype-katex";
-import Highlighter from "./Highlighter";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import rehypeHighlight from "rehype-highlight";
 
-export function Markdown({ children }: { children: string }) {
+/** @see https://www.npmjs.com/package/rehype-sanitize */
+const sanitizeOptions = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    code: [...(defaultSchema.attributes?.code || []), "className"],
+    span: [...(defaultSchema.attributes?.span || []), "className", "style"],
+  },
+};
+
+type Props = {
+  children: string;
+};
+
+/** 渲染 Markdown */
+export function Markdown({ children }: Props) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+      remarkPlugins={[remarkGfm, remarkMath, remarkGemoji]}
+      remarkRehypeOptions={{ allowDangerousHtml: true }}
+      rehypePlugins={[
+        rehypeKatex,
+        rehypeRaw,
+        rehypeHighlight,
+        [rehypeSanitize, sanitizeOptions],
+      ]}
       components={{
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || "");
-          return !inline ? (
-            <Highlighter
-              children={String(children).replace(/\n$/, "")}
-              language={match ? match[1] : "plain"}
-            />
-          ) : (
-            <code className={className} {...props}>
+        a({ children, node, ...props }) {
+          const externalLink =
+            !props.href?.startsWith("#") && !props.href?.startsWith("/");
+          const externalProps = externalLink && {
+            target: "_blank",
+            rel: "noreferrer noopener",
+          };
+
+          return (
+            <a {...props} {...externalProps}>
               {children}
-            </code>
+            </a>
           );
         },
       }}
-      children={children}
-    />
+    >
+      {children}
+    </ReactMarkdown>
   );
 }
