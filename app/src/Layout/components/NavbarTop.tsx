@@ -1,4 +1,4 @@
-import { Link, NavLink } from "remix";
+import { Link, NavLink } from "@remix-run/react";
 import { useContext } from "react";
 import {
   Grid,

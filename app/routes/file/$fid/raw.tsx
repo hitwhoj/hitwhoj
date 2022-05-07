@@ -1,4 +1,4 @@
-import { LoaderFunction } from "remix";
+import type { LoaderFunction } from "@remix-run/node";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { s3 } from "~/utils/s3.server";

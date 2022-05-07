@@ -1,11 +1,7 @@
-import { Contest } from "@prisma/client";
-import {
-  json,
-  LoaderFunction,
-  MetaFunction,
-  useLoaderData,
-  useParams,
-} from "remix";
+import type { Contest } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";

@@ -1,18 +1,17 @@
 import { Button, Space, Switch, Table } from "@arco-design/web-react";
-import { ColumnProps } from "@arco-design/web-react/es/Table";
+import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import { File as UserFile, User } from "@prisma/client";
+import type { File as UserFile, User } from "@prisma/client";
 import { useEffect, useRef } from "react";
-import {
+
+import type {
   ActionFunction,
-  json,
-  Link,
   LoaderFunction,
   MetaFunction,
-  unstable_parseMultipartFormData,
-  useFetcher,
-  useLoaderData,
-} from "remix";
+} from "@remix-run/node";
+import { json, unstable_parseMultipartFormData } from "@remix-run/node";
+
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";

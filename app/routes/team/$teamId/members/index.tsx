@@ -1,6 +1,8 @@
-import { Link, json, useLoaderData, LoaderFunction } from "remix";
+import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
-import { User } from "@prisma/client";
+import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 

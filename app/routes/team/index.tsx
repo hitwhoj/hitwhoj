@@ -1,16 +1,13 @@
-import {
-  Link,
-  Form,
+import type {
   ActionFunction,
-  redirect,
   LoaderFunction,
-  json,
-  useLoaderData,
   MetaFunction,
-} from "remix";
+} from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form, Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { teamNameScheme } from "~/utils/scheme";
-import { Team } from "@prisma/client";
+import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 
 export const meta: MetaFunction = () => ({

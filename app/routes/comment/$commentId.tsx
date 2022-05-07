@@ -1,5 +1,6 @@
-import { Comment, Reply, User, CommentTag } from "@prisma/client";
-import { LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import type { Comment, Reply, User, CommentTag } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/db.server";

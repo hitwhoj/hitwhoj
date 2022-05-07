@@ -1,4 +1,4 @@
-import { NavLink } from "remix";
+import { NavLink } from "@remix-run/react";
 import { Menu } from "@arco-design/web-react";
 import { IconAlignLeft } from "@arco-design/web-react/icon";
 

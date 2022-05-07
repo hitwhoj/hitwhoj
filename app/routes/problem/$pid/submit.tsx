@@ -1,11 +1,10 @@
-import {
+import type {
   ActionFunction,
-  Form,
-  json,
   LoaderFunction,
   MetaFunction,
-  redirect,
-} from "remix";
+} from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
 import { invariant } from "~/utils/invariant";
@@ -14,7 +13,7 @@ import { judge } from "~/utils/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import { guaranteePermission, Permissions } from "~/utils/permission";
-import { Problem } from "@prisma/client";
+import type { Problem } from "@prisma/client";
 const TextArea = Input.TextArea;
 
 type LoaderData = {

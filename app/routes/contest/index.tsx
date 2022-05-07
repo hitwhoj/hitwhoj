@@ -1,5 +1,7 @@
-import { Contest } from "@prisma/client";
-import { LoaderFunction, json, useLoaderData, MetaFunction, Link } from "remix";
+import type { Contest } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { Table, Grid, Button } from "@arco-design/web-react";
 

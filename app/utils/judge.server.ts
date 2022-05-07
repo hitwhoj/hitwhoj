@@ -1,7 +1,12 @@
 import * as io from "socket.io";
 import { db } from "./db.server";
 import { s3 } from "./s3.server";
-import { ClientEvent, JudgeRequest, JudgeResult, ServerEvent } from "./types";
+import type {
+  ClientEvent,
+  JudgeRequest,
+  JudgeResult,
+  ServerEvent,
+} from "./types";
 
 /**
  * 后端服务器

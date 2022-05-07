@@ -1,6 +1,8 @@
 import { Button, Image, Space } from "@arco-design/web-react";
-import { File } from "@prisma/client";
-import { json, Link, LoaderFunction, useLoaderData, useParams } from "remix";
+import type { File } from "@prisma/client";
+import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";

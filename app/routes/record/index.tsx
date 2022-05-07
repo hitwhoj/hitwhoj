@@ -1,5 +1,7 @@
-import { Problem, Record, User } from "@prisma/client";
-import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import type { Problem, Record, User } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {

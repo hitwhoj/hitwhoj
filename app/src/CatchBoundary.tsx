@@ -1,5 +1,5 @@
 import { Button, Result, Space } from "@arco-design/web-react";
-import { Link, useCatch, useLocation, useNavigate } from "remix";
+import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
 
 export function CatchBoundary() {
   const caught = useCatch();

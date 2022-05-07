@@ -1,4 +1,6 @@
-import { Form, redirect, ActionFunction } from "remix";
+import type { ActionFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";

@@ -1,4 +1,5 @@
-import { BucketItem, Client } from "minio";
+import type { BucketItem } from "minio";
+import { Client } from "minio";
 
 function readableToBuffer(stream: NodeJS.ReadableStream) {
   let data: any[] = [];

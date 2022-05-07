@@ -1,5 +1,5 @@
-import { json } from "remix";
-import { SafeParseReturnType } from "zod";
+import { json } from "@remix-run/node";
+import type { SafeParseReturnType } from "zod";
 
 /**
  * Throw an error when the invariant condition fails.

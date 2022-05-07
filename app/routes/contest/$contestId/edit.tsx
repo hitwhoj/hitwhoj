@@ -1,13 +1,12 @@
-import { Contest, ContestSystem, ContestTag, Problem } from "@prisma/client";
-import {
-  json,
-  useFetcher,
-  MetaFunction,
-  useLoaderData,
+import type { Contest, ContestTag, Problem } from "@prisma/client";
+import { ContestSystem } from "@prisma/client";
+import type {
   ActionFunction,
   LoaderFunction,
-  Link,
-} from "remix";
+  MetaFunction,
+} from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import {

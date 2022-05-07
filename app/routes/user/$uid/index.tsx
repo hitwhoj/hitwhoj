@@ -1,6 +1,8 @@
 import { Descriptions } from "@arco-design/web-react";
-import { User } from "@prisma/client";
-import { json, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import type { User } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { guaranteePermission, Permissions } from "~/utils/permission";

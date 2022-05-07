@@ -1,5 +1,7 @@
-import { Form, ActionFunction, redirect } from "remix";
-import { User, TeamMember } from "@prisma/client";
+import type { ActionFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
+import type { User, TeamMember } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";

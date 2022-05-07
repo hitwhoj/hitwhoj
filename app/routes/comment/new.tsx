@@ -1,4 +1,6 @@
-import { ActionFunction, Form, MetaFunction, redirect } from "remix";
+import type { ActionFunction, MetaFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { commentScheme, tagScheme } from "~/utils/scheme";

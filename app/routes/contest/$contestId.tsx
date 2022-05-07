@@ -1,14 +1,13 @@
 import { Tabs } from "@arco-design/web-react";
-import { Contest } from "@prisma/client";
+import type { Contest } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
-  LoaderFunction,
-  json,
-  useLoaderData,
-  MetaFunction,
   Outlet,
-  useNavigate,
+  useLoaderData,
   useMatches,
-} from "remix";
+  useNavigate,
+} from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";

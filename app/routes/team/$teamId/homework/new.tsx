@@ -1,10 +1,10 @@
-import {
+import type {
   ActionFunction,
-  Form,
   LoaderFunction,
   MetaFunction,
-  redirect,
-} from "remix";
+} from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import {

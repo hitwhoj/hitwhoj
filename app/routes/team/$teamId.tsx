@@ -1,6 +1,8 @@
-import { Outlet, json, LoaderFunction, useLoaderData } from "remix";
+import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
-import { Team } from "@prisma/client";
+import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 

@@ -1,14 +1,13 @@
 import type { File as ProblemFile, Problem } from "@prisma/client";
-import {
+
+import type {
   ActionFunction,
-  json,
-  Link,
   LoaderFunction,
   MetaFunction,
-  unstable_parseMultipartFormData,
-  useFetcher,
-  useLoaderData,
-} from "remix";
+} from "@remix-run/node";
+import { json, unstable_parseMultipartFormData } from "@remix-run/node";
+
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { createProblemFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
@@ -17,7 +16,7 @@ import { idScheme, uuidScheme } from "~/utils/scheme";
 import { uploadHandler } from "~/utils/uploadHandler";
 import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import { ColumnProps } from "@arco-design/web-react/es/Table";
+import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
 
 type LoaderData = {

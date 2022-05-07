@@ -24,6 +24,7 @@
     "@arco-design/web-react": "^2.30.2",
     "@prisma/client": "^3.11.0",
     "@remix-run/express": "^1.4.3",
+    "@remix-run/node": "^1.4.3",
     "@remix-run/react": "^1.4.3",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
@@ -41,7 +42,6 @@
     "remark-gemoji": "^7.0.1",
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
-    "remix": "^1.4.3",
     "socket.io": "^4.4.1",
     "zod": "^3.13.4"
   },

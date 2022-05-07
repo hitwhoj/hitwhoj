@@ -1,4 +1,5 @@
-import { Link, MetaFunction } from "remix";
+import type { MetaFunction } from "@remix-run/node";
+import { Link } from "@remix-run/react";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",

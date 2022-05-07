@@ -1,4 +1,5 @@
-import { unstable_createMemoryUploadHandler, UploadHandler } from "remix";
+import type { UploadHandler } from "@remix-run/node";
+import { unstable_createMemoryUploadHandler } from "@remix-run/node";
 
 /**
  * FIXME: 当上传文件大小超过限制时，程序会直接崩溃

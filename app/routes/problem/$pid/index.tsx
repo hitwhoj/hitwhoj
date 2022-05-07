@@ -1,10 +1,12 @@
-import {
+import type {
   Problem,
   ProblemSet,
   ProblemTag,
   File as ProblemFile,
 } from "@prisma/client";
-import { json, Link, LoaderFunction, MetaFunction, useLoaderData } from "remix";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";

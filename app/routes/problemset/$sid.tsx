@@ -1,13 +1,12 @@
-import { ProblemSet } from "@prisma/client";
+import type { ProblemSet } from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
-  json,
-  useNavigate,
-  LoaderFunction,
-  MetaFunction,
   Outlet,
   useLoaderData,
   useMatches,
-} from "remix";
+  useNavigate,
+} from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";

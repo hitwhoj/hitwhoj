@@ -2,27 +2,30 @@ import { useEffect, useState } from "react";
 import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import katexStyle from "katex/dist/katex.css";
+import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+
 import {
-  json,
   Links,
-  LinksFunction,
   LiveReload,
-  LoaderFunction,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
   useCatch,
   useLoaderData,
-} from "remix";
+} from "@remix-run/react";
+
 import Layout from "./src/Layout";
 import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
-import { Theme, ThemeContext } from "./utils/context/theme";
-import { UserInfo, UserInfoContext } from "./utils/context/user";
+import type { Theme } from "./utils/context/theme";
+import { ThemeContext } from "./utils/context/theme";
+import type { UserInfo } from "./utils/context/user";
+import { UserInfoContext } from "./utils/context/user";
 
 export const links: LinksFunction = () => [
   {

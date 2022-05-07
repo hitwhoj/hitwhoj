@@ -1,14 +1,16 @@
 import { Button, Form, Input } from "@arco-design/web-react";
-import { User } from "@prisma/client";
-import {
+import type { User } from "@prisma/client";
+import type {
   ActionFunction,
-  json,
   LoaderFunction,
-  useLoaderData,
-  Form as RemixForm,
-  useTransition,
   MetaFunction,
-} from "remix";
+} from "@remix-run/node";
+import { json } from "@remix-run/node";
+import {
+  Form as RemixForm,
+  useLoaderData,
+  useTransition,
+} from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
