@@ -1,0 +1,13 @@
+diff --git a/node_modules/@remix-run/node/parseMultipartFormData.js b/node_modules/@remix-run/node/parseMultipartFormData.js
+index 135edba..269f037 100644
+--- a/node_modules/@remix-run/node/parseMultipartFormData.js
++++ b/node_modules/@remix-run/node/parseMultipartFormData.js
+@@ -84,7 +84,7 @@ async function internalParseFormData(contentType, body, abortController, uploadH
+               // *after* busboy has finished. Rethrow the error for surfacing
+               // in the Promise.all(fileWorkQueue) below.
+ 
+-              throw error;
++              // throw error;
+             } finally {
+               filestream.resume();
+             }
