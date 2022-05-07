@@ -3,15 +3,15 @@
   "name": "hitwhoj",
   "scripts": {
     "build": "sass --no-source-map styles:app/styles && remix build && yarn install:fonts",
-    "clean": "rimraf public/build server/build app/styles .cache",
+    "clean": "rimraf public/build build app/styles .cache",
     "dev": "yarn install:fonts && concurrently -n \"REMIX,SASS,NODE\" \"remix watch\" \"sass --no-source-map --watch styles:app/styles\" \"yarn start:dev\"",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
-    "lint": "eslint --ext ts,tsx app server -f pretty --fix",
-    "lint:check": "eslint --ext ts,tsx app server -f pretty",
-    "postinstall": "patch-package && remix setup node && prisma generate",
-    "start": "cross-env NODE_ENV=production node --require esbuild-register server/index.ts",
-    "start:dev": "cross-env NODE_ENV=development node --require esbuild-register server/index.ts",
+    "lint": "eslint --ext ts,tsx app -f pretty --fix",
+    "lint:check": "eslint --ext ts,tsx app -f pretty",
+    "postinstall": "patch-package && prisma generate",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "start:dev": "cross-env NODE_ENV=development node server.js",
     "install:fonts": "mkdirp public/build/_assets/fonts/ && copyfiles -f node_modules/katex/dist/fonts/* public/build/_assets/fonts/"
   },
   "prisma": {

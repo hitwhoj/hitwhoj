@@ -4,7 +4,7 @@ node_modules
 /.idea
 
 /.cache
-/server/build
+/build
 /public/build
 /app/styles
 .env
