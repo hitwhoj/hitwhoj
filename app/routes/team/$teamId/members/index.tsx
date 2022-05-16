@@ -1,14 +1,15 @@
 import type { LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 
-type LoaderData = Pick<User, "id" | "username">[];
+type LoaderData = {
+  members: Pick<User, "id" | "username">[];
+};
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
   const result = await db.teamMember.findMany({
     where: { teamId },
@@ -22,11 +23,13 @@ export const loader: LoaderFunction = async ({ params }) => {
     },
   });
 
-  return json(result.map(({ user }) => user));
+  return {
+    members: result.map(({ user }) => user),
+  };
 };
 
 export default function MemberList() {
-  const data = useLoaderData<LoaderData>();
+  const { members } = useLoaderData<LoaderData>();
   return (
     <>
       <h3>Operation</h3>
@@ -37,9 +40,9 @@ export default function MemberList() {
       </ul>
 
       <h3> memberList </h3>
-      {data.length ? (
+      {members.length ? (
         <ul>
-          {data.map((member) => (
+          {members.map((member) => (
             <li key={member.id}>
               <Link to={`/user/${member.id}`}>{member.username}</Link>
             </li>

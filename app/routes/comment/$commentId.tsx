@@ -7,10 +7,10 @@ import { db } from "~/utils/db.server";
 
 type LoaderData = {
   comment: Comment & { tags: Pick<CommentTag, "name">[] };
-  replies: (Reply & { user: Pick<User, "id" | "username" | "avatar"> })[];
+  replies: (Reply & { creator: Pick<User, "id" | "username" | "avatar"> })[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const commentId = invariant(idScheme.safeParse(params.commentId), {
     status: 404,
   });
@@ -37,6 +37,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     include: {
       creator: {
         select: {
+          id: true,
           username: true,
           avatar: true,
         },
@@ -50,14 +51,14 @@ export const loader: LoaderFunction = async ({ params }) => {
   return { comment, replies };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,
 });
 
 export function ReplyList({
   replies,
 }: {
-  replies: (Reply & { user: Pick<User, "id" | "username" | "avatar"> })[];
+  replies: (Reply & { creator: Pick<User, "id" | "username" | "avatar"> })[];
 }) {
   if (!replies.length) {
     return <p>暂无回复</p>;
@@ -66,8 +67,8 @@ export function ReplyList({
       <div>
         {replies.map((reply) => (
           <p key={reply.id}>
-            <img src={reply.user.avatar} alt="没有头像捏" />
-            {"   " + reply.user.username}
+            <img src={reply.creator.avatar} alt="没有头像捏" />
+            {"   " + reply.creator.username}
             <h4>{reply.content}</h4>
             Time: {reply.createdAt}
           </p>

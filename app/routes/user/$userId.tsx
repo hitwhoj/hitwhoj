@@ -2,24 +2,23 @@ import { Avatar, Space, Tabs } from "@arco-design/web-react";
 import { IconUser } from "@arco-design/web-react/icon";
 import type { User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import {
   Outlet,
   useLoaderData,
   useMatches,
   useNavigate,
 } from "@remix-run/react";
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;
-  self: number | null;
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
@@ -37,20 +36,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  const self = await findSessionUid(request);
-
-  return json({
-    user,
-    self,
-  });
+  return { user };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
 export default function UserProfile() {
-  const { user, self } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<LoaderData>();
+  const self = useContext(UserInfoContext);
   const navigate = useNavigate();
   const { pathname } = useMatches().at(-1)!;
 
@@ -81,7 +76,7 @@ export default function UserProfile() {
         <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
           <Tabs.TabPane key="." title="资料" />
           <Tabs.TabPane key="files" title="文件" />
-          {self === user.id && <Tabs.TabPane key="edit" title="编辑" />}
+          {self?.id === user.id && <Tabs.TabPane key="edit" title="编辑" />}
         </Tabs>
       </nav>
       <main>

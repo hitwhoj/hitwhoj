@@ -1,6 +1,5 @@
 import type { Contest } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { Table, Grid, Button } from "@arco-design/web-react";
@@ -9,7 +8,7 @@ type LoaderData = {
   contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   const contests = await db.contest.findMany({
     orderBy: [{ id: "asc" }],
     take: 20,
@@ -21,7 +20,7 @@ export const loader: LoaderFunction = async () => {
     },
   });
 
-  return json({ contests });
+  return { contests };
 };
 
 export const meta: MetaFunction = () => ({

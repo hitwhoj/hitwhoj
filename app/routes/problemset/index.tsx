@@ -1,6 +1,5 @@
 import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { Table, Grid, Button } from "@arco-design/web-react";
@@ -9,18 +8,16 @@ type LoaderData = {
   problemSets: ProblemSet[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   const problemSets = await db.problemSet.findMany({
-    orderBy: {
-      id: "asc",
-    },
+    orderBy: [{ id: "asc" }],
     take: 20,
   });
 
-  return json({ problemSets });
+  return { problemSets };
 };
 
-export const meta: MetaFunction = () => ({
+export const meta: MetaFunction<LoaderData> = () => ({
   title: "题单列表 - HITwh OJ",
 });
 

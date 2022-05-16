@@ -1,7 +1,6 @@
 import { Space, Table, Tag } from "@arco-design/web-react";
 import type { Contest, ContestTag, Problem, Team } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -11,11 +10,11 @@ type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
     problems: Pick<Problem, "id" | "title">[];
-    team?: Pick<Team, "id" | "name">;
+    team: Pick<Team, "id" | "name"> | null;
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const contestId = invariant(idScheme.safeParse(params.contestId), {
     status: 404,
   });
@@ -43,12 +42,12 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({
+  return {
     contest,
-  });
+  };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `比赛: ${data?.contest.title} - HITwh OJ`,
   description: data?.contest.description,
 });

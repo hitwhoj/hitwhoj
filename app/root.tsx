@@ -3,7 +3,6 @@ import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import katexStyle from "katex/dist/katex.css";
 import type { LinksFunction, LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import {
   Links,
@@ -44,15 +43,15 @@ export const links: LinksFunction = () => [
 
 type LoaderData = {
   theme: Theme;
-  user: UserInfo;
+  user: UserInfo | null;
 };
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
   const self = await findSessionUid(request);
 
   if (!self) {
-    return json({ theme, user: null });
+    return { theme, user: null };
   }
 
   const user = await db.user.findUnique({
@@ -65,7 +64,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     },
   });
 
-  return json({ theme, user });
+  return { theme, user };
 };
 
 interface DocumentProps {

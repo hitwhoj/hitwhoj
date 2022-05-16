@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => ({
   title: "登录 - HITwh OJ",
 });
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
 
   const username = invariant(usernameScheme.safeParse(form.get("username")));

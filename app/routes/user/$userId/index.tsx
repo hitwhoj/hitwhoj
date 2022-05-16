@@ -1,7 +1,6 @@
 import { Descriptions } from "@arco-design/web-react";
 import type { User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -14,7 +13,7 @@ type LoaderData = {
   >;
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
@@ -33,10 +32,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json({ user });
+  return { user };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
   description: data?.user.bio,
 });

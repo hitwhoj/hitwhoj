@@ -1,17 +1,16 @@
 import type { Comment, User, CommentTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
   comments: (Comment & {
-    user: Pick<User, "id" | "username" | "avatar">;
+    creator: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   })[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   const comments = await db.comment.findMany({
     orderBy: {
       createdAt: "desc",
@@ -32,7 +31,7 @@ export const loader: LoaderFunction = async () => {
       },
     },
   });
-  return json({ comments });
+  return { comments };
 };
 
 export const meta: MetaFunction = () => ({
@@ -43,14 +42,14 @@ export function CommentItem({
   comment,
 }: {
   comment: Comment & {
-    user: Pick<User, "id" | "username" | "avatar">;
+    creator: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   };
 }) {
   return (
     <>
-      <img src={comment.user.avatar} alt="没有头像捏" />
-      {comment.user.username}
+      <img src={comment.creator.avatar} alt="没有头像捏" />
+      {comment.creator.username}
 
       {"    发布时间:  " + comment.createdAt}
       {"    最近更新:  " + comment.updatedAt}
@@ -66,7 +65,7 @@ export function CommentList({
   comments,
 }: {
   comments: (Comment & {
-    user: Pick<User, "id" | "username" | "avatar">;
+    creator: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   })[];
 }) {

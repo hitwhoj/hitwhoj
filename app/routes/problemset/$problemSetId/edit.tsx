@@ -4,7 +4,6 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -27,7 +26,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
     status: 404,
   });
@@ -49,7 +48,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet });
+  return { problemSet };
 };
 
 enum ActionType {
@@ -159,7 +158,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
 

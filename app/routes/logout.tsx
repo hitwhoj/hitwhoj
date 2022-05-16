@@ -2,7 +2,7 @@ import type { LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { destroySession, findSession } from "~/utils/sessions";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction<Response> = async ({ request }) => {
   const session = await findSession(request);
 
   if (!session) {

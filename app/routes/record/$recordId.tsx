@@ -1,6 +1,5 @@
 import type { Record } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
@@ -31,7 +30,7 @@ type LoaderData = {
   code: string;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const recordId = invariant(idScheme.safeParse(params.recordId), {
     status: 404,
   });
@@ -56,13 +55,13 @@ export const loader: LoaderFunction = async ({ params }) => {
 
   const code = (await s3.readFile(`/record/${record.id}`)).toString();
 
-  return json({
+  return {
     record,
     code,
-  });
+  };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交记录: ${data?.record.status} - HITwh OJ`,
 });
 

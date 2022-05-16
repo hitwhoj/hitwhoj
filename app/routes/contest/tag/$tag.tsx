@@ -1,6 +1,5 @@
 import type { Contest } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -11,7 +10,7 @@ type LoaderData = {
   contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const tag = invariant(tagScheme.safeParse(params.tag), {
     status: 404,
   });
@@ -34,10 +33,10 @@ export const loader: LoaderFunction = async ({ params }) => {
     },
   });
 
-  return json({ contests });
+  return { contests };
 };
 
-export const meta: MetaFunction = ({ params }) => ({
+export const meta: MetaFunction<LoaderData> = ({ params }) => ({
   title: `比赛标签: ${params.tag} - HITwh OJ`,
 });
 

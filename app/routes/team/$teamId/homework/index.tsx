@@ -1,5 +1,4 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import type { Contest } from "@prisma/client";
@@ -7,13 +6,15 @@ import { ContestSystem } from "@prisma/client";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 
-type LoaderData = Pick<Contest, "id" | "title">[];
+type LoaderData = {
+  homeworks: Pick<Contest, "id" | "title">[];
+};
 
-export const meta: MetaFunction = () => ({
+export const meta: MetaFunction<LoaderData> = () => ({
   title: `Team Homework - HITwh OJ`,
 });
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
 
   const homeworks = await db.team.findUnique({
@@ -35,12 +36,14 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Team not found", { status: 404 });
   }
 
-  return json(homeworks.contests);
+  return {
+    homeworks: homeworks.contests,
+  };
 };
 
 export default function HomeworkList() {
-  const data = useLoaderData<LoaderData>();
-  console.log(data);
+  const { homeworks } = useLoaderData<LoaderData>();
+
   return (
     <>
       <h3>Operation</h3>
@@ -52,9 +55,9 @@ export default function HomeworkList() {
 
       <h3> homeworkList </h3>
       <div>
-        {data.length ? (
+        {homeworks.length ? (
           <ul>
-            {data.map((homework) => (
+            {homeworks.map((homework) => (
               <li key={homework.id}>
                 <Link to={`/contest/${homework.id}`}>{homework.title}</Link>
               </li>

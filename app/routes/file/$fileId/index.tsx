@@ -1,7 +1,6 @@
 import { Button, Image, Space } from "@arco-design/web-react";
 import type { File } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -11,7 +10,7 @@ type LoaderData = {
   file: Pick<File, "id" | "mimetype" | "filename">;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const fileId = invariant(uuidScheme.safeParse(params.fileId), {
     status: 404,
   });
@@ -29,7 +28,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("File not found", { status: 404 });
   }
 
-  return json({ file });
+  return { file };
 };
 
 export default function FileIndex() {

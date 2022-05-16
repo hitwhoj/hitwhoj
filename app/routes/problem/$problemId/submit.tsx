@@ -3,7 +3,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { s3 } from "~/utils/s3.server";
@@ -20,7 +20,7 @@ type LoaderData = {
   problem: Pick<Problem, "title">;
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const problemId = invariant(idScheme.safeParse(params.problemId), {
     status: 404,
   });
@@ -34,14 +34,14 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return json({ problem });
+  return { problem };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交题目: ${data?.problem.title} - HITwh OJ`,
 });
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction<Response> = async ({ request, params }) => {
   const problemId = invariant(idScheme.safeParse(params.problemId), {
     status: 404,
   });
@@ -65,7 +65,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  judge.push(recordId);
+  await judge.push(recordId);
 
   return redirect(`/record/${recordId}`);
 };

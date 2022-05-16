@@ -177,7 +177,7 @@ async function seed() {
     },
   });
 
-  const { id: ts1 } = await prisma.problemSet.create({
+  await prisma.problemSet.create({
     data: {
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",

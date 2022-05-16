@@ -24,18 +24,18 @@ export const loader: LoaderFunction = async ({ request }) => {
   const self = await findSessionUid(request);
 
   if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   return null;
 };
 
-export const action: ActionFunction = async ({ params, request }) => {
+export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
   const self = await findSessionUid(request);
 
   if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   const form = await request.formData();

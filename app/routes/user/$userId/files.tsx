@@ -9,7 +9,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json, unstable_parseMultipartFormData } from "@remix-run/node";
+import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
@@ -24,7 +24,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
@@ -42,10 +42,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json({ user });
+  return { user };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `用户文件: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 

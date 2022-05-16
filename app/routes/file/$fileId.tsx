@@ -1,5 +1,4 @@
 import type { LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -9,7 +8,7 @@ type LoaderData = {
   filename: string;
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const fileId = invariant(uuidScheme.safeParse(params.fileId), {
     status: 404,
   });
@@ -29,7 +28,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("File not found", { status: 404 });
   }
 
-  return json({ filename: file.filename });
+  return { filename: file.filename };
 };
 
 export default function FileIndex() {

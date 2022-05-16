@@ -6,11 +6,11 @@ import { invariant } from "~/utils/invariant";
 import { commentScheme, tagScheme } from "~/utils/scheme";
 import { db } from "~/utils/db.server";
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction<Response> = async ({ request }) => {
   const self = await findSessionUid(request);
 
   if (!self) {
-    return redirect(`/login?redirect=${new URL(request.url).pathname}`);
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   const form = await request.formData();

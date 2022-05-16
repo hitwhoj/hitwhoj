@@ -1,5 +1,4 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import type { Team } from "@prisma/client";
@@ -10,11 +9,11 @@ type LoaderData = {
   team: Team;
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `Team: ${data?.team.name} - HITwh OJ`,
 });
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -23,7 +22,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Team not found", { status: 404 });
   }
 
-  return json({ team });
+  return { team };
 };
 
 export default function TeamDetail() {

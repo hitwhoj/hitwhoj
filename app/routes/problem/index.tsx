@@ -1,6 +1,5 @@
 import type { Problem } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { Table } from "@arco-design/web-react";
@@ -10,7 +9,7 @@ type LoaderData = {
   problems: Pick<Problem, "id" | "title" | "private">[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   // TODO: 按照用户是否有题目的访问权限来筛选题目
 
   const problems = await db.problem.findMany({
@@ -23,7 +22,7 @@ export const loader: LoaderFunction = async () => {
     },
   });
 
-  return json({ problems });
+  return { problems };
 };
 
 export const meta: MetaFunction = () => ({

@@ -1,6 +1,5 @@
 import type { Problem, Record, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 
@@ -11,7 +10,7 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   const records = await db.record.findMany({
     orderBy: {
       submittedAt: "desc",
@@ -36,7 +35,7 @@ export const loader: LoaderFunction = async () => {
     take: 20,
   });
 
-  return json({ records });
+  return { records };
 };
 
 export const meta: MetaFunction = () => ({

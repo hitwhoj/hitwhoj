@@ -7,11 +7,11 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 
-export const action: ActionFunction = async ({ params, request }) => {
+export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
   const self = await findSessionUid(request);
   if (!self) {
-    return redirect("/login");
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
   if (!teamId) {

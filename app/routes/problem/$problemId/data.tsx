@@ -5,7 +5,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json, unstable_parseMultipartFormData } from "@remix-run/node";
+import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
@@ -29,7 +29,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const problemId = invariant(idScheme.safeParse(params.problemId), {
     status: 404,
   });
@@ -55,10 +55,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return json({ problem });
+  return { problem };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑数据: ${data?.problem.title} - HITwh OJ`,
 });
 

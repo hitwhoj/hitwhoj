@@ -1,6 +1,5 @@
 import type { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -14,7 +13,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
     status: 404,
   });
@@ -36,9 +35,9 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({
+  return {
     problemSet,
-  });
+  };
 };
 
 export default function ProblemSetIndex() {

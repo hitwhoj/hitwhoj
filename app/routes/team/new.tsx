@@ -10,12 +10,12 @@ import { TeamMemberRole } from "@prisma/client";
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await findSessionUid(request);
   if (!userId) {
-    return redirect("/login");
+    throw redirect("/login");
   }
   return null;
 };
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
   const name = invariant(teamNameScheme.safeParse(form.get("name")));
   const description = invariant(
@@ -23,11 +23,11 @@ export const action: ActionFunction = async ({ request }) => {
   );
 
   if (!name) {
-    return new Response("team name is missing", { status: 400 });
+    throw new Response("team name is missing", { status: 400 });
   }
   const userId = await findSessionUid(request);
   if (!userId) {
-    return redirect("/login");
+    throw redirect("/login");
   }
   const { id: teamId } = await db.team.create({
     data: {

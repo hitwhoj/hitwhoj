@@ -5,7 +5,6 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import {
   Form as RemixForm,
   useLoaderData,
@@ -27,7 +26,7 @@ type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
 };
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
@@ -45,10 +44,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     throw new Response("User not found", { status: 404 });
   }
 
-  return json({ user });
+  return { user };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 

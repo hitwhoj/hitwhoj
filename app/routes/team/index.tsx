@@ -3,7 +3,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { teamNameScheme } from "~/utils/scheme";
@@ -14,19 +14,19 @@ export const meta: MetaFunction = () => ({
   title: "Team List",
 });
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
   const teamName = invariant(teamNameScheme.safeParse(form.get("teamName")));
 
   if (!teamName)
-    return new Response("teamName is not registered", { status: 400 });
+    throw new Response("teamName is not registered", { status: 400 });
 
   const team = await db.team.findUnique({
     select: { id: true },
     where: { name: teamName },
   });
   if (!team) {
-    return new Response("team is not registered", { status: 400 });
+    throw new Response("team is not registered", { status: 400 });
   }
 
   return redirect(`/team/${team.id}`);
@@ -36,7 +36,7 @@ type LoaderData = {
   teams: Team[];
 };
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction<LoaderData> = async () => {
   const teams = await db.team.findMany({
     take: 20,
     orderBy: {
@@ -44,7 +44,7 @@ export const loader: LoaderFunction = async () => {
     },
   });
 
-  return json({ teams });
+  return { teams };
 };
 
 export default function TeamList() {

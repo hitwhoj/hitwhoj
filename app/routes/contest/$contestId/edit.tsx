@@ -5,7 +5,6 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
@@ -43,7 +42,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const contestId = invariant(idScheme.safeParse(params.contestId), {
     status: 404,
   });
@@ -65,7 +64,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest });
+  return { contest };
 };
 
 enum ActionType {
@@ -206,7 +205,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   throw new Response("I'm a teapot", { status: 418 });
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑比赛: ${data?.contest.title} - HITwh OJ`,
 });
 

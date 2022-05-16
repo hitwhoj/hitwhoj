@@ -1,6 +1,5 @@
 import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import {
   Outlet,
   useLoaderData,
@@ -17,7 +16,7 @@ type LoaderData = {
   problemSet: ProblemSet;
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
     status: 404,
   });
@@ -30,12 +29,12 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({
+  return {
     problemSet,
-  });
+  };
 };
 
-export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `题单: ${data?.problemSet.title} - HITwh OJ`,
   description: data?.problemSet.description,
 });
