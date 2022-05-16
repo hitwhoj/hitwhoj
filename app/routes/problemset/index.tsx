@@ -27,7 +27,7 @@ export default function ProblemsetList() {
     {
       title: "#",
       dataIndex: "id",
-      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+      render: (col: string) => <Link to={`/problemset/${col}`}>{col}</Link>,
     },
     {
       title: "Title",

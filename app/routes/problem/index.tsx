@@ -49,7 +49,7 @@ export default function ProblemList() {
     {
       title: "#",
       dataIndex: "id",
-      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+      render: (col: string) => <Link to={`/problem/${col}`}>{col}</Link>,
     },
     {
       title: "Title",
@@ -59,7 +59,7 @@ export default function ProblemList() {
         problem: Pick<Problem, "id" | "title" | "private">
       ) => (
         <Link
-          to={`${problem.id}`}
+          to={`/problem/${problem.id}`}
           // TODO: 写个hover样式qwq
           style={{}}
         >

@@ -55,14 +55,14 @@ export function ContestList({
     {
       title: "#",
       dataIndex: "id",
-      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+      render: (col: string) => <Link to={`/contest/${col}`}>{col}</Link>,
     },
     {
       title: "Title",
       dataIndex: "title",
       render: (col: string, contest: ContestDetails) => (
         <Link
-          to={`${contest.id}`}
+          to={`/contest/${contest.id}`}
           // TODO: 写个hover样式qwq
           style={{}}
         >

@@ -46,13 +46,13 @@ export default function ProblemSetIndex() {
     {
       title: "#",
       dataIndex: "id",
-      render: (col: string) => <Link to={`${col}`}>{col}</Link>,
+      render: (col: string) => <Link to={`/problem/${col}`}>{col}</Link>,
     },
     {
       title: "Title",
       dataIndex: "title",
       render: (col: string, problem: Pick<Problem, "id" | "title">) => (
-        <Link to={`${problem.id}`}>{col}</Link>
+        <Link to={`/problem/${problem.id}`}>{col}</Link>
       ),
     },
   ];

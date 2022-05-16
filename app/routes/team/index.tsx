@@ -76,7 +76,7 @@ export default function TeamList() {
         <ul>
           {teams.map((team) => (
             <li key={team.id}>
-              <Link to={`${team.id}`}>{team.name}</Link>
+              <Link to={`/team/${team.id}`}>{team.name}</Link>
             </li>
           ))}
         </ul>

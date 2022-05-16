@@ -270,7 +270,7 @@ function ContestProblemList({
       title: "Title",
       dataIndex: "title",
       render: (title: string, problem: Pick<Problem, "id" | "title">) => (
-        <Link to={`${problem.id}`}>{title}</Link>
+        <Link to={`/problem/${problem.id}`}>{title}</Link>
       ),
     },
     {

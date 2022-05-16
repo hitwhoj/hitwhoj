@@ -62,10 +62,10 @@ export default function RecordList() {
           {records.map((record) => (
             <tr key={record.id}>
               <td>
-                <Link to={`${record.id}`}>{record.id}</Link>
+                <Link to={`/record/${record.id}`}>{record.id}</Link>
               </td>
               <td>
-                <Link to={`${record.id}`}>{record.status}</Link>
+                <Link to={`/record/${record.id}`}>{record.status}</Link>
               </td>
               <td>
                 <Link to={`/problem/${record.problem.id}`}>
