@@ -6,7 +6,7 @@ import { db } from "~/utils/db.server";
 
 type LoaderData = {
   comments: (Comment & {
-    user: Pick<User, "uid" | "username" | "avatar">;
+    user: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   })[];
 };
@@ -18,9 +18,9 @@ export const loader: LoaderFunction = async () => {
     },
     take: 20,
     include: {
-      user: {
+      creator: {
         select: {
-          uid: true,
+          id: true,
           username: true,
           avatar: true,
         },
@@ -43,7 +43,7 @@ export function CommentItem({
   comment,
 }: {
   comment: Comment & {
-    user: Pick<User, "uid" | "username" | "avatar">;
+    user: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   };
 }) {
@@ -66,7 +66,7 @@ export function CommentList({
   comments,
 }: {
   comments: (Comment & {
-    user: Pick<User, "uid" | "username" | "avatar">;
+    user: Pick<User, "id" | "username" | "avatar">;
     tags: Pick<CommentTag, "name">[];
   })[];
 }) {

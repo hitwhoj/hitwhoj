@@ -18,10 +18,12 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
+  const contestId = invariant(idScheme.safeParse(params.contestId), {
+    status: 404,
+  });
 
   const contest = await db.contest.findUnique({
-    where: { cid },
+    where: { id: contestId },
   });
 
   if (!contest) {

@@ -19,7 +19,7 @@ import type {
 type LoaderData = {
   record: Pick<
     Record,
-    | "rid"
+    | "id"
     | "status"
     | "message"
     | "language"
@@ -32,12 +32,14 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const rid = invariant(idScheme.safeParse(params.rid), { status: 404 });
+  const recordId = invariant(idScheme.safeParse(params.recordId), {
+    status: 404,
+  });
 
   const record = await db.record.findUnique({
-    where: { rid },
+    where: { id: recordId },
     select: {
-      rid: true,
+      id: true,
       status: true,
       message: true,
       language: true,
@@ -52,7 +54,7 @@ export const loader: LoaderFunction = async ({ params }) => {
     throw new Response("Record not found", { status: 404 });
   }
 
-  const code = (await s3.readFileAsBuffer(`/record/${record.rid}`)).toString();
+  const code = (await s3.readFile(`/record/${record.id}`)).toString();
 
   return json({
     record,

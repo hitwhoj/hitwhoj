@@ -144,18 +144,16 @@ class JudgeServer {
       // 评测机请求获取数据文件
       socket.on("fetch", async (fid) => {
         const file = await db.file.findUnique({
-          where: { fid },
-          select: { pid: true, private: true, fid: true },
+          where: { id: fid },
+          select: { id: true, dataProblemId: true },
         });
 
         // 如果文件不存在，或者不是题目数据文件，则直接返回
-        if (!file || !(file.pid && file.private)) {
+        if (!file || !file.dataProblemId) {
           return;
         }
 
-        const buffer = await s3.readFileAsBuffer(
-          `/problem/${file.pid}/${file.fid}`
-        );
+        const buffer = await s3.readFile(`/file/${file.id}`);
         // 发送文件给评测机
         socket.emit("fetch", fid, buffer);
       });
@@ -199,18 +197,17 @@ class JudgeServer {
   /**
    * 添加新任务
    */
-  async push(rid: number) {
+  async push(recordId: number) {
     // 获取评测任务题目的所有数据文件信息
     const record = await db.record.findUnique({
-      where: { rid },
+      where: { id: recordId },
       select: {
         language: true,
         problem: {
           select: {
             files: {
-              where: { private: true },
               select: {
-                fid: true,
+                id: true,
                 filename: true,
               },
             },
@@ -223,13 +220,16 @@ class JudgeServer {
       return;
     }
 
-    const code = (await s3.readFileAsBuffer(`/record/${rid}`)).toString("utf8");
+    const code = (await s3.readFile(`/record/${recordId}`)).toString("utf8");
 
     this.#pushTask({
-      rid,
+      rid: recordId,
       code,
       language: record.language,
-      files: record.problem.files,
+      files: record.problem.files.map(({ id, filename }) => ({
+        fid: id,
+        filename,
+      })),
     });
   }
 }
@@ -244,7 +244,7 @@ async function updateDatabase(
         Partial<Omit<JudgeResult, "status" | "rid" | "message">>)
 ) {
   await db.record.update({
-    where: { rid: res.rid },
+    where: { id: res.rid },
     data: {
       status: res.status,
       score: res.score ?? 0,
@@ -252,10 +252,6 @@ async function updateDatabase(
       memory: res.memory ?? -1,
       message: res.message,
       subtasks: JSON.stringify(res.subtasks ?? []),
-    },
-    select: {
-      rid: true,
-      status: true,
     },
   });
 }

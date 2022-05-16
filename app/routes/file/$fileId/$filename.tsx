@@ -38,29 +38,20 @@ function parseRange(range: string, filesize: number): [number, number] | false {
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const fid = invariant(uuidScheme.safeParse(params.fid), { status: 404 });
-
-  const file = await db.file.findUnique({
-    where: { fid },
-    select: {
-      fid: true,
-      filename: true,
-      filesize: true,
-      mimetype: true,
-      pid: true,
-      uid: true,
-    },
+  const fileId = invariant(uuidScheme.safeParse(params.fileId), {
+    status: 404,
   });
 
-  // 权限在父级已经检查过了，这里不需要再检查
+  const file = await db.file.findUnique({
+    where: { id: fileId },
+    select: { id: true, filesize: true, mimetype: true, filename: true },
+  });
 
   if (!file) {
     throw new Response("File not found", { status: 404 });
   }
 
-  const filepath = file.pid
-    ? `/problem/${file.pid}/${file.fid}`
-    : `/user/${file.uid}/${file.fid}`;
+  const filepath = `/files/${file.id}`;
 
   const headers = new Headers();
   headers.set("Accept-Ranges", "bytes");
@@ -82,7 +73,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     headers.set("Content-Range", `bytes ${start}-${end}/${file.filesize}`);
 
     return new Response(
-      await s3.readFilePartialAsBuffer(filepath, start, end - start + 1),
+      await s3.readFilePartial(filepath, start, end - start + 1),
       {
         status: 206,
         headers,
@@ -102,7 +93,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       "attachment; filename*=UTF-8''" + encodeRFC5987ValueChars(file.filename)
     );
 
-    return new Response(await s3.readFileAsBuffer(filepath), {
+    return new Response(await s3.readFile(filepath), {
       status: 200,
       headers,
     });

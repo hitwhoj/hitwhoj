@@ -8,7 +8,7 @@ import { tagScheme } from "~/utils/scheme";
 import { ContestList } from "~/routes/contest";
 
 type LoaderData = {
-  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
+  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -17,10 +17,10 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 
   const contests = await db.contest.findMany({
-    orderBy: [{ cid: "asc" }],
+    orderBy: [{ id: "asc" }],
     take: 20,
     select: {
-      cid: true,
+      id: true,
       title: true,
       beginTime: true,
       endTime: true,

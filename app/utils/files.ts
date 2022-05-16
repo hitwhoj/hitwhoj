@@ -1,60 +1,67 @@
 import { db } from "./db.server";
 import { s3 } from "./s3.server";
 
-/**
- * 将文件上传到 MinIO，并在数据库中保存文件信息
- *
- * @param file 文件对象
- * @param uid 用户 ID
- */
-export async function createUserFile(file: File, uid: number) {
-  const { fid } = await db.file.create({
+/** 创建用户文件 */
+export async function createUserFile(file: File, userId: number) {
+  const { id: fileId } = await db.file.create({
     data: {
-      user: { connect: { uid } },
       filename: file.name,
       filesize: file.size,
       mimetype: file.type,
+      user: { connect: { id: userId } },
+    },
+    select: {
+      id: true,
     },
   });
 
   await s3.writeFile(
-    `/user/${uid}/${fid}`,
+    `/file/${fileId}`,
     Buffer.from(await file.arrayBuffer()),
     file.type
   );
 
-  return fid;
+  return fileId;
 }
 
-/**
- * 上传文件到 MinIO，并在数据库中保存文件信息
- *
- * @param file 文件对象
- * @param pid 题目 ID
- * @param priv 是否为数据文件
- */
-export async function createProblemFile(
-  file: File,
-  pid: number,
-  priv: boolean
-) {
-  const { fid } = await db.file.create({
+/** 上传题目文件 */
+export async function createProblemFile(file: File, problemId: number) {
+  const { id: fileId } = await db.file.create({
     data: {
-      problem: { connect: { pid } },
       filename: file.name,
       filesize: file.size,
       mimetype: file.type,
-      private: priv,
+      fileProblem: { connect: { id: problemId } },
     },
   });
 
   await s3.writeFile(
-    `/problem/${pid}/${fid}`,
+    `/file/${fileId}`,
     Buffer.from(await file.arrayBuffer()),
     file.type
   );
 
-  return fid;
+  return fileId;
+}
+
+/** 上传题目数据 */
+export async function createProblemData(file: File, problemId: number) {
+  const { id: fileId } = await db.file.create({
+    data: {
+      filename: file.name,
+      filesize: file.size,
+      mimetype: file.type,
+      dataProblem: { connect: { id: problemId } },
+    },
+  });
+
+  await s3.writeFile(
+    `/file/${fileId}`,
+    Buffer.from(await file.arrayBuffer()),
+    file.type
+  );
+
+  return fileId;
 }
 
 /**
@@ -62,27 +69,17 @@ export async function createProblemFile(
  *
  * 如果文件不存在，则会抛出 Response 异常
  */
-export async function removeFile(fid: string) {
+export async function removeFile(fileId: string) {
   const file = await db.file.delete({
-    where: { fid },
-    select: {
-      fid: true,
-      user: { select: { uid: true } },
-      problem: { select: { pid: true } },
-    },
+    where: { id: fileId },
+    select: { id: true },
   });
 
   if (!file) {
     throw new Response("File not found", { status: 404 });
   }
 
-  if (file.user) {
-    await s3.removeFile(`/user/${file.user.uid}/${file.fid}`);
-  } else if (file.problem) {
-    await s3.removeFile(`/problem/${file.problem.pid}/${file.fid}`);
-  } else {
-    throw new Response("File not found", { status: 404 });
-  }
+  await s3.removeFile(`/file/${file.id}`);
 }
 
 /**
@@ -90,25 +87,15 @@ export async function removeFile(fid: string) {
  *
  * 如果文件不存在，则会抛出 Response 异常
  */
-export async function readFile(fid: string) {
+export async function readFile(fileId: string) {
   const file = await db.file.findUnique({
-    where: { fid },
-    select: {
-      fid: true,
-      user: { select: { uid: true } },
-      problem: { select: { pid: true } },
-    },
+    where: { id: fileId },
+    select: { id: true },
   });
 
   if (!file) {
     throw new Response("File not found", { status: 404 });
   }
 
-  if (file.user) {
-    return await s3.readFile(`/user/${file.user.uid}/${file.fid}`);
-  } else if (file.problem) {
-    return await s3.readFile(`/problem/${file.problem.pid}/${file.fid}`);
-  } else {
-    throw new Response("File not found", { status: 404 });
-  }
+  return await s3.readFile(`/file/${file.id}`);
 }

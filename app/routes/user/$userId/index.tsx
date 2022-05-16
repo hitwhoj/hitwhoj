@@ -5,25 +5,22 @@ import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 
 type LoaderData = {
   user: Pick<
     User,
-    "uid" | "bio" | "username" | "nickname" | "email" | "password"
+    "id" | "bio" | "username" | "nickname" | "email" | "password"
   >;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
-
-  await guaranteePermission(request, Permissions.User.Profile.View, { uid });
+  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
-    where: { uid },
+    where: { id: userId },
     select: {
-      uid: true,
+      id: true,
       bio: true,
       username: true,
       nickname: true,

@@ -2,21 +2,24 @@ import { Button, Image, Space } from "@arco-design/web-react";
 import type { File } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useParams } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
 
 type LoaderData = {
-  file: Pick<File, "mimetype" | "filename">;
+  file: Pick<File, "id" | "mimetype" | "filename">;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const fid = invariant(uuidScheme.safeParse(params.fid), { status: 404 });
+  const fileId = invariant(uuidScheme.safeParse(params.fileId), {
+    status: 404,
+  });
 
   const file = await db.file.findUnique({
-    where: { fid },
+    where: { id: fileId },
     select: {
+      id: true,
       mimetype: true,
       filename: true,
     },
@@ -31,9 +34,8 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export default function FileIndex() {
   const { file } = useLoaderData<LoaderData>();
-  const { fid } = useParams();
 
-  const filelink = `/file/${fid}/raw`;
+  const filelink = `/file/${file.id}/${file.filename}`;
 
   return (
     <Space direction="vertical" style={{ display: "flex" }} size="medium">

@@ -19,18 +19,18 @@ function createUploadHandler() {
 }
 
 declare global {
-  var __uploadHandler: UploadHandler | undefined;
+  var __handler: UploadHandler | undefined;
 }
 
-let uploadHandler: UploadHandler;
+let handler: UploadHandler;
 
 if (process.env.NODE_ENV === "production") {
-  uploadHandler = createUploadHandler();
+  handler = createUploadHandler();
 } else {
-  if (!global.__uploadHandler) {
-    global.__uploadHandler = createUploadHandler();
+  if (!global.__handler) {
+    global.__handler = createUploadHandler();
   }
-  uploadHandler = global.__uploadHandler;
+  handler = global.__handler;
 }
 
-export { uploadHandler };
+export { handler };

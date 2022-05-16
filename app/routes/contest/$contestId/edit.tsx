@@ -39,20 +39,22 @@ const Option = Select.Option;
 type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
-    problems: Pick<Problem, "pid" | "title">[];
+    problems: Pick<Problem, "id" | "title">[];
   };
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
+  const contestId = invariant(idScheme.safeParse(params.contestId), {
+    status: 404,
+  });
 
   const contest = await db.contest.findUnique({
-    where: { cid },
+    where: { id: contestId },
     include: {
       tags: true,
       problems: {
         select: {
-          pid: true,
+          id: true,
           title: true,
         },
       },
@@ -77,23 +79,21 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
+  const contestId = invariant(idScheme.safeParse(params.contestId), {
+    status: 404,
+  });
   const form = await request.formData();
 
   const _action = form.get("_action");
 
   switch (_action) {
     case ActionType.CreateProblem: {
-      const pid = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme.safeParse(form.get("pid")));
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
-          problems: {
-            connect: {
-              pid,
-            },
-          },
+          problems: { connect: { id: problemId } },
         },
       });
 
@@ -101,17 +101,11 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteProblem: {
-      const pid = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme.safeParse(form.get("pid")));
 
       await db.contest.update({
-        where: { cid },
-        data: {
-          problems: {
-            disconnect: {
-              pid,
-            },
-          },
-        },
+        where: { id: contestId },
+        data: { problems: { disconnect: { id: problemId } } },
       });
 
       return null;
@@ -121,7 +115,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
           tags: {
             connectOrCreate: {
@@ -139,7 +133,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
           tags: {
             disconnect: {
@@ -159,7 +153,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       );
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
           title,
           description,
@@ -185,7 +179,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       );
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
           beginTime,
           endTime,
@@ -199,7 +193,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       const system = invariant(systemScheme.safeParse(form.get("system")));
 
       await db.contest.update({
-        where: { cid },
+        where: { id: contestId },
         data: {
           system,
         },
@@ -265,25 +259,25 @@ function ProblemDeleteIcon({ pid }: { pid: number }) {
 function ContestProblemList({
   problems,
 }: {
-  problems: Pick<Problem, "pid" | "title">[];
+  problems: Pick<Problem, "id" | "title">[];
 }) {
   const tableColumns = [
     {
-      title: "PID",
-      dataIndex: "pid",
-      render: (pid: string) => <Link to={`${pid}`}>{pid}</Link>,
+      title: "#",
+      dataIndex: "id",
+      render: (id: string) => <Link to={`/problem/${id}`}>{id}</Link>,
     },
     {
       title: "Title",
       dataIndex: "title",
-      render: (title: string, problem: Pick<Problem, "pid" | "title">) => (
-        <Link to={`${problem.pid}`}>{title}</Link>
+      render: (title: string, problem: Pick<Problem, "id" | "title">) => (
+        <Link to={`${problem.id}`}>{title}</Link>
       ),
     },
     {
       title: "option",
-      render: (_: any, problem: Pick<Problem, "pid" | "title">) => (
-        <ProblemDeleteIcon pid={problem.pid} />
+      render: (_: any, problem: Pick<Problem, "id" | "title">) => (
+        <ProblemDeleteIcon pid={problem.id} />
       ),
     },
   ];

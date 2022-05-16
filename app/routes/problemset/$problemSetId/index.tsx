@@ -10,20 +10,22 @@ import { Space, Tag, Table } from "@arco-design/web-react";
 type LoaderData = {
   problemSet: ProblemSet & {
     tags: ProblemSetTag[];
-    problems: Pick<Problem, "pid" | "title">[];
+    problems: Pick<Problem, "id" | "title">[];
   };
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+    status: 404,
+  });
 
   const problemSet = await db.problemSet.findUnique({
-    where: { sid },
+    where: { id: problemSetId },
     include: {
       tags: true,
       problems: {
         select: {
-          pid: true,
+          id: true,
           title: true,
         },
       },
@@ -43,15 +45,15 @@ export default function ProblemSetIndex() {
   const { problemSet } = useLoaderData<LoaderData>();
   const tableColumns = [
     {
-      title: "PID",
-      dataIndex: "pid",
+      title: "#",
+      dataIndex: "id",
       render: (col: string) => <Link to={`${col}`}>{col}</Link>,
     },
     {
       title: "Title",
       dataIndex: "title",
-      render: (col: string, problem: Pick<Problem, "pid" | "title">) => (
-        <Link to={`${problem.pid}`}>{col}</Link>
+      render: (col: string, problem: Pick<Problem, "id" | "title">) => (
+        <Link to={`${problem.id}`}>{col}</Link>
       ),
     },
   ];
@@ -76,7 +78,6 @@ export default function ProblemSetIndex() {
         <Table
           columns={tableColumns}
           data={problemSet.problems}
-          rowKey="pid"
           hover={false}
           // TODO: 毕竟这是个假的分页qwq
           pagination={{

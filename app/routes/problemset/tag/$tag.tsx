@@ -46,9 +46,9 @@ export default function ProblemSetTag() {
       <h1>Tag: {tag}</h1>
       <ul>
         {problemSets.map((problemSet) => (
-          <li key={problemSet.sid}>
-            <Link to={`/problemset/${problemSet.sid}`}>
-              <span style={{ color: "red" }}>S{problemSet.sid}</span>
+          <li key={problemSet.id}>
+            <Link to={`/problemset/${problemSet.id}`}>
+              <span style={{ color: "red" }}>S{problemSet.id}</span>
               {problemSet.title}
             </Link>
           </li>

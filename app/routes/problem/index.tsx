@@ -7,17 +7,17 @@ import { Table } from "@arco-design/web-react";
 
 // TODO: 分页
 type LoaderData = {
-  problems: Pick<Problem, "pid" | "title" | "private">[];
+  problems: Pick<Problem, "id" | "title" | "private">[];
 };
 
 export const loader: LoaderFunction = async () => {
   // TODO: 按照用户是否有题目的访问权限来筛选题目
 
   const problems = await db.problem.findMany({
-    orderBy: [{ pid: "asc" }],
+    orderBy: [{ id: "asc" }],
     take: 20,
     select: {
-      pid: true,
+      id: true,
       title: true,
       private: true,
     },
@@ -48,8 +48,8 @@ export default function ProblemList() {
    *  */
   const tableColumns = [
     {
-      title: "PID",
-      dataIndex: "pid",
+      title: "#",
+      dataIndex: "id",
       render: (col: string) => <Link to={`${col}`}>{col}</Link>,
     },
     {
@@ -57,10 +57,10 @@ export default function ProblemList() {
       dataIndex: "title",
       render: (
         col: string,
-        problem: Pick<Problem, "pid" | "title" | "private">
+        problem: Pick<Problem, "id" | "title" | "private">
       ) => (
         <Link
-          to={`${problem.pid}`}
+          to={`${problem.id}`}
           // TODO: 写个hover样式qwq
           style={{}}
         >
@@ -74,7 +74,6 @@ export default function ProblemList() {
     <Table
       columns={tableColumns}
       data={problems}
-      rowKey="pid"
       hover={false}
       // TODO: 毕竟这是个假的分页qwq
       pagination={{

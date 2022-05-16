@@ -74,34 +74,18 @@ class S3 {
   /**
    * 读取整个文件
    */
-  readFile(filename: string) {
-    return this.client.getObject(this.bucket, filename);
+  async readFile(filename: string) {
+    return await readableToBuffer(
+      await this.client.getObject(this.bucket, filename)
+    );
   }
 
   /**
    * 读取部分文件
    */
-  readFilePartial(filename: string, offset: number, length: number) {
-    return this.client.getPartialObject(this.bucket, filename, offset, length);
-  }
-
-  /**
-   * 以 Buffer 形式读取文件
-   */
-  async readFileAsBuffer(filename: string) {
-    return await readableToBuffer(await this.readFile(filename));
-  }
-
-  /**
-   * 以 Buffer 形式读取部分文件
-   */
-  async readFilePartialAsBuffer(
-    filename: string,
-    offset: number,
-    length: number
-  ) {
+  async readFilePartial(filename: string, offset: number, length: number) {
     return await readableToBuffer(
-      await this.readFilePartial(filename, offset, length)
+      await this.client.getPartialObject(this.bucket, filename, offset, length)
     );
   }
 

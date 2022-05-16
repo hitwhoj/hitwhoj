@@ -10,26 +10,29 @@ import { idScheme } from "~/utils/scheme";
 type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
-    problems: Pick<Problem, "pid" | "title">[];
-    team?: Pick<Team, "tid">;
+    problems: Pick<Problem, "id" | "title">[];
+    team?: Pick<Team, "id" | "name">;
   };
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const cid = invariant(idScheme.safeParse(params.contestId), { status: 404 });
+  const contestId = invariant(idScheme.safeParse(params.contestId), {
+    status: 404,
+  });
 
   const contest = await db.contest.findUnique({
-    where: { cid },
+    where: { id: contestId },
     include: {
       tags: true,
       team: {
         select: {
-          tid: true,
+          id: true,
+          name: true,
         },
       },
       problems: {
         select: {
-          pid: true,
+          id: true,
           title: true,
         },
       },
@@ -80,19 +83,19 @@ function ContestTags({ tags }: { tags: ContestTag[] }) {
 function ContestProblemList({
   problems,
 }: {
-  problems: Pick<Problem, "pid" | "title">[];
+  problems: Pick<Problem, "id" | "title">[];
 }) {
   const tableColumns = [
     {
-      title: "PID",
-      dataIndex: "pid",
-      render: (pid: string) => <Link to={`${pid}`}>{pid}</Link>,
+      title: "#",
+      dataIndex: "id",
+      render: (id: string) => <Link to={`/problem/${id}`}>{id}</Link>,
     },
     {
       title: "Title",
       dataIndex: "title",
-      render: (title: string, problem: Pick<Problem, "pid" | "title">) => (
-        <Link to={`${problem.pid}`}>{title}</Link>
+      render: (title: string, problem: Pick<Problem, "id" | "title">) => (
+        <Link to={`/problem/${problem.id}`}>{title}</Link>
       ),
     },
   ];
@@ -106,7 +109,12 @@ export default function ContestIndex() {
     <>
       <Time contest={contest} />
       <p>{contest.description}</p>
-      <p>Belong To Team:{contest.team?.tid ? contest.team.tid : ""}</p>
+      <p>
+        Belong To Team:{" "}
+        {contest.team && (
+          <Link to={`/team/${contest.team.id}`}>{contest.team.name}</Link>
+        )}
+      </p>
       <h2>标签</h2>
       <ContestTags tags={contest.tags} />
       <h2>题目</h2>

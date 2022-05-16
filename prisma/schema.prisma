@@ -10,14 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// 用户
 model User {
-  uid Int @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
+  username String @unique
 
   bio      String @default("")
   email    String @default("")
   avatar   String @default("")
   nickname String @default("")
-  username String @unique
 
   password String
 
@@ -33,19 +34,16 @@ model User {
   createdProblems    Problem[]
   createdProblemSets ProblemSet[]
   createdContests    Contest[]
+  createdComments    Comment[]
+  createdReplies     Reply[]
+  createdRecords     Record[]
 
-  attendedContests Contest[] @relation("attendee", references: [cid])
-  moddedContests   Contest[] @relation("mod", references: [cid])
-  juriedContests   Contest[] @relation("jury", references: [cid])
+  // TODO: reference?
+  attendedContests Contest[] @relation("attendee", references: [id])
+  moddedContests   Contest[] @relation("mod", references: [id])
+  juriedContests   Contest[] @relation("jury", references: [id])
 
-
-  createdTeam Team[]
-  teamMember  TeamMember[]
-  // createdHomework TeamHomework[]
-
-  records Record[]
-  Comment Comment[]
-  Reply   Reply[]
+  attendedTeams TeamMember[]
 }
 
 enum SystemUserRole {
@@ -53,50 +51,41 @@ enum SystemUserRole {
   Admin
   User
   Guest
-
 }
 
 model UserSession {
-  session String @id @default(uuid())
+  session    String   @id @default(uuid())
+  lastActive DateTime @default(now())
 
   // ==== relations ====
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
-/// 所有文件，包括：
-///
-/// - 用户上传文件
-/// - 题目数据文件
-/// - 题目附加文件（pdf 之类的）
+/// 所有文件
 model File {
-  fid String @id @default(uuid())
+  id String @id @default(uuid())
 
   filename  String
   filesize  Int
   mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
 
-  /// 是否允许公开下载
-  ///
-  /// - 对于题目数据文件，如果设置为公开，则可以在题目页面下载
-  /// - 对于用户上传文件，如果设置为私密，则只有用户自己可以下载
-  ///
-  /// 注意即使用户设置某文件为公开，其他用户也无法查看到该用户上传的所有公开文件
-  private Boolean @default(true)
-
   // ==== relations ====
 
-  uid  Int?
-  user User? @relation(fields: [uid], references: [uid])
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
 
-  pid     Int?
-  problem Problem? @relation(fields: [pid], references: [pid])
+  dataProblem   Problem? @relation("data", fields: [dataProblemId], references: [id])
+  dataProblemId Int?
+
+  fileProblem   Problem? @relation("file", fields: [fileProblemId], references: [id])
+  fileProblemId Int?
 }
 
 model Problem {
-  pid Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   title       String
   description String
@@ -106,32 +95,30 @@ model Problem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ==== relations ====
-
   tags ProblemTag[] @relation(references: [id])
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
 
-  cid     Int?
-  contest Contest? @relation("belong", fields: [cid], references: [cid])
+  data                File[]       @relation("data")
+  files               File[]       @relation("file")
+  includedContests    Contest[]    @relation(references: [id])
+  includedProblemSets ProblemSet[] @relation(references: [id])
+  relatedRecords      Record[]
 
-  files               File[]
-  includedContests    Contest[]    @relation("contain", references: [cid])
-  includedProblemSets ProblemSet[] @relation(references: [sid])
-
-  records Record[]
+  team   Team? @relation(fields: [teamId], references: [id])
+  teamId Int?
 }
 
 model ProblemTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problems Problem[] @relation(references: [pid])
+  problems Problem[] @relation(references: [id])
 }
 
 model ProblemSet {
-  sid Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   title       String
   description String
@@ -141,26 +128,22 @@ model ProblemSet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ==== relations ====
+  tags     ProblemSetTag[] @relation(references: [id])
+  problems Problem[]       @relation(references: [id])
 
-  tags ProblemSetTag[] @relation(references: [id])
-
-  problems Problem[] @relation(references: [pid])
-  // includeInHomework TeamHomework[]
-  uid      Int
-  user     User      @relation(fields: [uid], references: [uid])
-
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
 }
 
 model ProblemSetTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problemSets ProblemSet[] @relation(references: [sid])
+  problemSets ProblemSet[] @relation(references: [id])
 }
 
 model Contest {
-  cid Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   title       String
   description String
@@ -173,56 +156,28 @@ model Contest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ==== relations ====
-
   tags ContestTag[] @relation(references: [id])
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
 
-  problems Problem[] @relation("contain", references: [pid])
+  problems Problem[] @relation(references: [id])
 
-  mods      User[] @relation("mod", references: [uid])
-  juries    User[] @relation("jury", references: [uid])
-  attendees User[] @relation("attendee", references: [uid])
+  mods      User[] @relation("mod", references: [id])
+  juries    User[] @relation("jury", references: [id])
+  attendees User[] @relation("attendee", references: [id])
 
-  records           Record[]
-  exclusiveProblems Problem[] @relation("belong")
+  relatedRecords Record[]
 
-  team Team? @relation(fields: [tid], references: [tid])
-  tid  Int?
+  team   Team? @relation(fields: [teamId], references: [id])
+  teamId Int?
 }
 
 model ContestTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  contests Contest[] @relation(references: [cid])
-}
-
-model Team {
-  tid         Int      @id @default(autoincrement())
-  name        String   @unique
-  createdAt   DateTime @default(now())
-  description String?
-
-  // ==== relations ====
-  creator   User         @relation(fields: [creatorId], references: [uid], onDelete: Cascade)
-  creatorId Int
-  members   TeamMember[]
-  homeworks Contest[]
-}
-
-model TeamMember {
-  authority String?
-
-  // ==== relations ====
-  member   User @relation(fields: [memberId], references: [uid], onDelete: Cascade)
-  memberId Int
-  team     Team @relation(fields: [teamId], references: [tid], onDelete: Cascade)
-  teamId   Int
-
-  @@unique([memberId, teamId])
+  contests Contest[] @relation(references: [id])
 }
 
 enum ContestSystem {
@@ -236,8 +191,38 @@ enum ContestSystem {
   Homework
 }
 
+model Team {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  createdAt   DateTime @default(now())
+  description String?
+
+  members  TeamMember[]
+  contests Contest[]
+  problems Problem[]
+}
+
+model TeamMember {
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId Int
+
+  role TeamMemberRole @default(Member)
+
+  @@unique([userId, teamId])
+}
+
+enum TeamMemberRole {
+  Owner
+  Admin
+  Member
+}
+
 model Record {
-  rid Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   /// 评测状态（结果）
   status   String @default("Pending")
@@ -258,13 +243,14 @@ model Record {
 
   // ==== relations ====
 
-  submitter User     @relation(fields: [submitterId], references: [uid])
-  problem   Problem  @relation(fields: [problemId], references: [pid])
-  contest   Contest? @relation(fields: [contestId], references: [cid])
-
+  submitter   User @relation(fields: [submitterId], references: [id])
   submitterId Int
-  problemId   Int
-  contestId   Int?
+
+  problem   Problem @relation(fields: [problemId], references: [id])
+  problemId Int
+
+  contest   Contest? @relation(fields: [contestId], references: [id])
+  contestId Int?
 }
 
 model CommentTag {
@@ -284,8 +270,8 @@ model Comment {
 
   // === relations ===
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
 
   tags CommentTag[] @relation(references: [id])
 
@@ -305,6 +291,6 @@ model Reply {
   commentId Int
   comment   Comment @relation(fields: [commentId], references: [id])
 
-  uid  Int
-  user User @relation(fields: [uid], references: [uid])
+  creatorId Int
+  creator   User @relation(fields: [creatorId], references: [id])
 }

@@ -5,6 +5,7 @@ import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
+import { TeamMemberRole } from "@prisma/client";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await findSessionUid(request);
@@ -28,19 +29,18 @@ export const action: ActionFunction = async ({ request }) => {
   if (!userId) {
     return redirect("/login");
   }
-  const { tid } = await db.team.create({
+  const { id: teamId } = await db.team.create({
     data: {
       name: name,
       description: description,
       createdAt: new Date(Date.now()),
-      creatorId: userId,
       members: {
-        create: [{ memberId: userId }],
+        create: [{ userId: userId, role: TeamMemberRole.Owner }],
       },
     },
   });
 
-  return redirect(`/team/${tid}`);
+  return redirect(`/team/${teamId}`);
 };
 
 export default function NewTeam() {

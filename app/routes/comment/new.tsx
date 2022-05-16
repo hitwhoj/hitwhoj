@@ -7,9 +7,9 @@ import { commentScheme, tagScheme } from "~/utils/scheme";
 import { db } from "~/utils/db.server";
 
 export const action: ActionFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -20,7 +20,7 @@ export const action: ActionFunction = async ({ request }) => {
   const { id } = await db.comment.create({
     data: {
       title,
-      user: { connect: { uid } },
+      creator: { connect: { id: self } },
       tags: {
         connectOrCreate: {
           where: { name: tag },

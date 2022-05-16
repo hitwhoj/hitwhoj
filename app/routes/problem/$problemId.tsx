@@ -9,22 +9,23 @@ import {
 } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 import { Space, Tabs } from "@arco-design/web-react";
 const TabPane = Tabs.TabPane;
 
 type LoaderData = {
-  problem: Pick<Problem, "pid" | "title" | "description">;
+  problem: Pick<Problem, "id" | "title" | "description">;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
+  const problemId = invariant(idScheme.safeParse(params.problemId), {
+    status: 404,
+  });
 
   const problem = await db.problem.findUnique({
-    where: { pid },
+    where: { id: problemId },
     select: {
-      pid: true,
+      id: true,
       title: true,
       description: true,
       private: true,
@@ -33,15 +34,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   if (!problem) {
     throw new Response("Problem not found", { status: 404 });
-  }
-
-  // 检查访问权限
-  if (problem.private) {
-    await guaranteePermission(request, Permissions.Problem.ViewPrivate, {
-      pid,
-    });
-  } else {
-    await guaranteePermission(request, Permissions.Problem.ViewPublic, { pid });
   }
 
   return json({ problem });
@@ -63,7 +55,7 @@ export default function ProblemView() {
       <header>
         <h1>
           <span style={{ color: "grey", marginRight: "20px" }}>
-            P{problem.pid}
+            P{problem.id}
           </span>
           {problem.title}
         </h1>

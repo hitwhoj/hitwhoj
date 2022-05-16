@@ -49,16 +49,16 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async ({ request }) => {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return json({ theme, user: null });
   }
 
   const user = await db.user.findUnique({
-    where: { uid },
+    where: { id: self },
     select: {
-      uid: true,
+      id: true,
       username: true,
       nickname: true,
       avatar: true,

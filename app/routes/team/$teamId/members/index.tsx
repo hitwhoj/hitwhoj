@@ -6,29 +6,23 @@ import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 
-type LoaderData = Pick<User, "uid" | "username">[];
+type LoaderData = Pick<User, "id" | "username">[];
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const tid = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme.safeParse(params.teamId));
   const result = await db.teamMember.findMany({
-    where: {
-      teamId: Number(tid),
-    },
-    include: {
-      member: {
+    where: { teamId },
+    select: {
+      user: {
         select: {
-          uid: true,
+          id: true,
           username: true,
         },
       },
     },
   });
-  var data: LoaderData = [];
-  for (let i = 0; i < result.length; i++) {
-    data.push(result[i].member);
-  }
 
-  return json(data);
+  return json(result.map(({ user }) => user));
 };
 
 export default function MemberList() {
@@ -46,8 +40,8 @@ export default function MemberList() {
       {data.length ? (
         <ul>
           {data.map((member) => (
-            <li key={member.uid}>
-              <Link to={`/user/${member.uid}`}>{member.username}</Link>
+            <li key={member.id}>
+              <Link to={`/user/${member.id}`}>{member.username}</Link>
             </li>
           ))}
         </ul>

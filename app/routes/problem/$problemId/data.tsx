@@ -9,11 +9,14 @@ import { json, unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
-import { createProblemFile, removeFile } from "~/utils/files";
+import {
+  createProblemData,
+  createProblemFile,
+  removeFile,
+} from "~/utils/files";
 import { invariant } from "~/utils/invariant";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import { idScheme, uuidScheme } from "~/utils/scheme";
-import { uploadHandler } from "~/utils/uploadHandler";
+import { handler } from "~/utils/handler.server";
 import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
@@ -22,25 +25,25 @@ import { useEffect, useRef } from "react";
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
     files: ProblemFile[];
+    data: ProblemFile[];
   };
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
-
-  // 检查是否有文件操作的权限
-  // TODO: 好像有点复杂
-  await guaranteePermission(
-    request,
-    Permissions.Problem.Data.View | Permissions.Problem.File.View,
-    { pid }
-  );
+  const problemId = invariant(idScheme.safeParse(params.problemId), {
+    status: 404,
+  });
 
   const problem = await db.problem.findUnique({
-    where: { pid },
+    where: { id: problemId },
     select: {
       title: true,
       files: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      data: {
         orderBy: {
           createdAt: "desc",
         },
@@ -67,8 +70,10 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
-  const form = await unstable_parseMultipartFormData(request, uploadHandler);
+  const problemId = invariant(idScheme.safeParse(params.problemId), {
+    status: 404,
+  });
+  const form = await unstable_parseMultipartFormData(request, handler);
 
   const _action = form.get("_action");
 
@@ -83,23 +88,12 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw new Response("Invalid file", { status: 400 });
       }
 
-      // 检查权限
-      await guaranteePermission(
-        request,
-        _action === ActionType.UploadData
-          ? Permissions.Problem.Data.Create
-          : Permissions.Problem.File.Create,
-        { pid }
-      );
-
       // 保存文件
       await Promise.all(
         files.map((file) => {
-          return createProblemFile(
-            file,
-            pid,
-            _action === ActionType.UploadData
-          );
+          return _action === ActionType.UploadData
+            ? createProblemData(file, problemId)
+            : createProblemFile(file, problemId);
         })
       );
 
@@ -109,15 +103,6 @@ export const action: ActionFunction = async ({ request, params }) => {
     case ActionType.RemoveData:
     case ActionType.RemoveFile: {
       const fid = invariant(uuidScheme.safeParse(form.get("fid")));
-
-      // 检查权限
-      await guaranteePermission(
-        request,
-        _action === ActionType.RemoveData
-          ? Permissions.Problem.Data.Delete
-          : Permissions.Problem.File.Delete,
-        { pid }
-      );
 
       // 删除文件
       await removeFile(fid);
@@ -176,7 +161,7 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
 
   return (
     <fetcher.Form method="post">
-      <input type="hidden" name="fid" value={file.fid} />
+      <input type="hidden" name="fid" value={file.id} />
       <Button
         type="primary"
         status="danger"
@@ -198,7 +183,7 @@ const columns: ColumnProps<ProblemFile>[] = [
     sorter: (a, b) =>
       a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
     render: (_, file) => (
-      <Link to={`/file/${file.fid}`} target="_blank" rel="noreferrer noopener">
+      <Link to={`/file/${file.id}`} target="_blank">
         {file.filename}
       </Link>
     ),
@@ -233,7 +218,7 @@ function ProblemFileList({ files }: { files: ProblemFile[] }) {
 
 export default function ProblemData() {
   const {
-    problem: { files },
+    problem: { files, data },
   } = useLoaderData<LoaderData>();
 
   return (
@@ -249,7 +234,7 @@ export default function ProblemData() {
             action={ActionType.UploadData}
             uploadText="上传数据捏"
           />
-          <ProblemFileList files={files.filter((file) => file.private)} />
+          <ProblemFileList files={files} />
         </Space>
       </div>
 
@@ -264,7 +249,7 @@ export default function ProblemData() {
             action={ActionType.UploadFile}
             uploadText="上传文件捏"
           />
-          <ProblemFileList files={files.filter((file) => !file.private)} />
+          <ProblemFileList files={data} />
         </Space>
       </div>
     </div>

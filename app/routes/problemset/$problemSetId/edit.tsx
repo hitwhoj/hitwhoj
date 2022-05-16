@@ -23,20 +23,22 @@ const TextArea = Input.TextArea;
 type LoaderData = {
   problemSet: ProblemSet & {
     tags: ProblemSetTag[];
-    problems: Pick<Problem, "pid" | "title">[];
+    problems: Pick<Problem, "id" | "title">[];
   };
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+    status: 404,
+  });
 
   const problemSet = await db.problemSet.findUnique({
-    where: { sid },
+    where: { id: problemSetId },
     include: {
       tags: true,
       problems: {
         select: {
-          pid: true,
+          id: true,
           title: true,
         },
       },
@@ -59,21 +61,23 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+    status: 404,
+  });
   const form = await request.formData();
 
   const _action = form.get("_action");
 
   switch (_action) {
     case ActionType.CreateProblem: {
-      const pid = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme.safeParse(form.get("pid")));
 
       await db.problemSet.update({
-        where: { sid },
+        where: { id: problemSetId },
         data: {
           problems: {
             connect: {
-              pid,
+              id: problemId,
             },
           },
         },
@@ -83,14 +87,14 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteProblem: {
-      const pid = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme.safeParse(form.get("pid")));
 
       await db.problemSet.update({
-        where: { sid },
+        where: { id: problemSetId },
         data: {
           problems: {
             disconnect: {
-              pid,
+              id: problemId,
             },
           },
         },
@@ -103,7 +107,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
       await db.problemSet.update({
-        where: { sid },
+        where: { id: problemSetId },
         data: {
           tags: {
             connectOrCreate: {
@@ -121,7 +125,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       const tag = invariant(tagScheme.safeParse(form.get("tag")));
 
       await db.problemSet.update({
-        where: { sid },
+        where: { id: problemSetId },
         data: {
           tags: {
             disconnect: {
@@ -141,7 +145,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       );
 
       await db.problemSet.update({
-        where: { sid },
+        where: { id: problemSetId },
         data: {
           title,
           description,
@@ -333,36 +337,31 @@ function ProblemSetProblemCreator() {
 function ProblemEditor({
   problems,
 }: {
-  problems: Pick<Problem, "pid" | "title">[];
+  problems: Pick<Problem, "id" | "title">[];
 }) {
   const tableColumns = [
     {
-      title: "pid",
-      dataIndex: "pid",
-      render: (pid: number) => <Link to={`/problem/${pid}`}>{pid}</Link>,
+      title: "#",
+      dataIndex: "id",
+      render: (id: number) => <Link to={`/problem/${id}`}>{id}</Link>,
     },
     {
       title: "title",
       dataIndex: "title",
-      render: (title: string, problem: Pick<Problem, "pid" | "title">) => (
-        <Link to={`/problem/${problem.pid}`}>{title}</Link>
+      render: (title: string, problem: Pick<Problem, "id" | "title">) => (
+        <Link to={`/problem/${problem.id}`}>{title}</Link>
       ),
     },
     {
       title: "操作",
-      render: (_: any, problem: Pick<Problem, "pid" | "title">) => (
-        <ProblemSetProblemItem pid={problem.pid} />
+      render: (_: any, problem: Pick<Problem, "id" | "title">) => (
+        <ProblemSetProblemItem pid={problem.id} />
       ),
     },
   ];
   return (
     <>
-      <Table
-        columns={tableColumns}
-        data={problems}
-        rowKey="pid"
-        pagination={false}
-      />
+      <Table columns={tableColumns} data={problems} pagination={false} />
       <br />
       <ProblemSetProblemCreator />
     </>

@@ -33,16 +33,16 @@ export async function findSessionUid(request: Request) {
 
   const userSession = await db.userSession.findUnique({
     where: { session },
-    select: { uid: true },
+    select: { userId: true },
   });
 
-  return userSession && userSession.uid;
+  return userSession && userSession.userId;
 }
 
-export async function commitSession(uid: number) {
+export async function commitSession(userId: number) {
   const { session } = await db.userSession.create({
     data: {
-      user: { connect: { uid } },
+      user: { connect: { id: userId } },
     },
   });
 

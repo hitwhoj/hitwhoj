@@ -39,22 +39,22 @@ export default function NavbarTop() {
           uncheckedIcon={<IconMoon />}
         />
         {user ? (
-          <Link to={`/user/${user.uid}`}>
+          <Link to={`/user/${user.id}`}>
             <Dropdown
               position="bottom"
               droplist={
                 <Menu>
-                  <NavLink to={`/user/${user.uid}`}>
+                  <NavLink to={`/user/${user.id}`}>
                     <MenuItem key="user">
                       {user.nickname && <b>{user.nickname} </b>}
                       <span>@{user.username}</span>
                     </MenuItem>
                   </NavLink>
                   <Divider style={{ margin: "5px 0" }} />
-                  <NavLink to={`/user/${user.uid}`}>
+                  <NavLink to={`/user/${user.id}`}>
                     <MenuItem key="profile">资料</MenuItem>
                   </NavLink>
-                  <NavLink to={`/user/${user.uid}/edit`}>
+                  <NavLink to={`/user/${user.id}/edit`}>
                     <MenuItem key="settings">设置</MenuItem>
                   </NavLink>
                   <NavLink to="/logout">

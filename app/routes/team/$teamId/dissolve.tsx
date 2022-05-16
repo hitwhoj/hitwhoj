@@ -5,48 +5,40 @@ import { db } from "~/utils/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { TeamMemberRole } from "@prisma/client";
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const userId = await findSessionUid(request);
-  if (!userId) {
+  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const self = await findSessionUid(request);
+  if (!self) {
     return redirect("/login");
   }
 
-  const form = await request.formData();
-  const teamId = invariant(idScheme.safeParse(params.teamId));
-  const actionType = form.get("submit")?.toString();
-  if (!actionType) {
-    throw new Response("submit fail", { status: 400 });
-  }
   if (!teamId) {
     throw new Response("team Id is missing", { status: 400 });
   }
-  if (actionType == "dissolve") {
-    const creator = await db.team.findUnique({
-      where: {
-        tid: Number(teamId),
-      },
-      select: {
-        creatorId: true,
-      },
-    });
 
-    if (!creator) {
-      throw new Response("team search fail", { status: 400 });
-    }
-    if (creator.creatorId != userId) {
-      throw new Response(
-        "permisson denied:only team creator can dissolve team",
-        { status: 400 }
-      );
-    }
+  const teamMember = await db.teamMember.findUnique({
+    where: { userId_teamId: { teamId, userId: self } },
+    select: { role: true },
+  });
 
-    await db.team.delete({
-      where: {
-        tid: Number(teamId),
-      },
+  if (!teamMember) {
+    throw new Response("You are not in this team", { status: 403 });
+  }
+
+  if (teamMember.role !== TeamMemberRole.Owner) {
+    throw new Response("Permisson denied: only owner can dissolve team", {
+      status: 403,
     });
   }
+
+  await db.teamMember.deleteMany({
+    where: { teamId },
+  });
+  await db.team.delete({
+    where: { id: teamId },
+  });
 
   return redirect(`/team`);
 };

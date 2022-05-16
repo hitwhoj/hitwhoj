@@ -12,7 +12,7 @@ type LoaderData = {
 export const loader: LoaderFunction = async () => {
   const problemSets = await db.problemSet.findMany({
     orderBy: {
-      sid: "asc",
+      id: "asc",
     },
     take: 20,
   });
@@ -28,8 +28,8 @@ export default function ProblemsetList() {
   const { problemSets } = useLoaderData<LoaderData>();
   const tableColumns = [
     {
-      title: "SID",
-      dataIndex: "sid",
+      title: "#",
+      dataIndex: "id",
       render: (col: string) => <Link to={`${col}`}>{col}</Link>,
     },
     {
@@ -37,7 +37,7 @@ export default function ProblemsetList() {
       dataIndex: "title",
       render: (col: string, problemSet: ProblemSet) => (
         <Link
-          to={`${problemSet.sid}`}
+          to={`/problemset/${problemSet.id}`}
           // TODO: 写个hover样式qwq
           style={{}}
         >
@@ -63,7 +63,6 @@ export default function ProblemsetList() {
       <Table
         columns={tableColumns}
         data={problemSets}
-        rowKey="cid"
         hover={false}
         pagination={{
           total: problemSets.length,

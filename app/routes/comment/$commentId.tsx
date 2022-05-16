@@ -7,7 +7,7 @@ import { db } from "~/utils/db.server";
 
 type LoaderData = {
   comment: Comment & { tags: Pick<CommentTag, "name">[] };
-  replies: (Reply & { user: Pick<User, "uid" | "username" | "avatar"> })[];
+  replies: (Reply & { user: Pick<User, "id" | "username" | "avatar"> })[];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -17,7 +17,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
-      user: {
+      creator: {
         select: {
           nickname: true,
         },
@@ -35,7 +35,7 @@ export const loader: LoaderFunction = async ({ params }) => {
   const replies = await db.reply.findMany({
     where: { commentId },
     include: {
-      user: {
+      creator: {
         select: {
           username: true,
           avatar: true,
@@ -57,7 +57,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 export function ReplyList({
   replies,
 }: {
-  replies: (Reply & { user: Pick<User, "uid" | "username" | "avatar"> })[];
+  replies: (Reply & { user: Pick<User, "id" | "username" | "avatar"> })[];
 }) {
   if (!replies.length) {
     return <p>暂无回复</p>;

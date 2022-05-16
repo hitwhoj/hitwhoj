@@ -31,9 +31,9 @@ const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -41,9 +41,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -66,18 +66,18 @@ export const action: ActionFunction = async ({ request }) => {
   );
   const system = invariant(systemScheme.safeParse(form.get("system")));
 
-  const { cid } = await db.contest.create({
+  const { id: contestId } = await db.contest.create({
     data: {
       title,
       description,
       beginTime,
       endTime,
       system,
-      user: { connect: { uid } },
+      creator: { connect: { id: self } },
     },
   });
 
-  return redirect(`/contest/${cid}`);
+  return redirect(`/contest/${contestId}`);
 };
 
 export const meta: MetaFunction = () => ({

@@ -7,39 +7,35 @@ import { ContestSystem } from "@prisma/client";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 
-type LoaderData = Pick<Contest, "cid" | "title">[];
+type LoaderData = Pick<Contest, "id" | "title">[];
 
 export const meta: MetaFunction = () => ({
   title: `Team Homework - HITwh OJ`,
 });
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const tid = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme.safeParse(params.teamId));
+
   const homeworks = await db.team.findUnique({
-    where: {
-      tid: Number(tid),
-    },
-    include: {
-      homeworks: {
-        select: {
-          cid: true,
-          title: true,
-        },
+    where: { id: teamId },
+    select: {
+      contests: {
         where: {
           system: ContestSystem.Homework,
+        },
+        select: {
+          id: true,
+          title: true,
         },
       },
     },
   });
-  if (!homeworks?.homeworks) {
-    return json([]);
+
+  if (!homeworks) {
+    throw new Response("Team not found", { status: 404 });
   }
 
-  var data: LoaderData = [];
-  for (let i = 0; i < homeworks?.homeworks.length; i++) {
-    data.push(homeworks?.homeworks[i] as any);
-  }
-  return json(data);
+  return json(homeworks.contests);
 };
 
 export default function HomeworkList() {
@@ -59,8 +55,8 @@ export default function HomeworkList() {
         {data.length ? (
           <ul>
             {data.map((homework) => (
-              <li key={homework.cid}>
-                <Link to={`/contest/${homework.cid}`}>{homework.title}</Link>
+              <li key={homework.id}>
+                <Link to={`/contest/${homework.id}`}>{homework.title}</Link>
               </li>
             ))}
           </ul>

@@ -14,9 +14,9 @@ const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -24,9 +24,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -37,15 +37,15 @@ export const action: ActionFunction = async ({ request }) => {
     descriptionScheme.safeParse(form.get("description"))
   );
 
-  const { sid } = await db.problemSet.create({
+  const { id: problemSetId } = await db.problemSet.create({
     data: {
       title,
       description,
-      user: { connect: { uid } },
+      creator: { connect: { id: self } },
     },
   });
 
-  return redirect(`/problemset/${sid}`);
+  return redirect(`/problemset/${problemSetId}`);
 };
 
 export const meta: MetaFunction = () => ({

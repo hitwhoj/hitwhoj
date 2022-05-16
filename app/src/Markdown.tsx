@@ -6,6 +6,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
+import { Link } from "@remix-run/react";
 
 /** @see https://www.npmjs.com/package/rehype-sanitize */
 const sanitizeOptions = {
@@ -35,18 +36,18 @@ export function Markdown({ children }: Props) {
       ]}
       components={{
         a({ children, node, ...props }) {
-          const externalLink =
+          const isExternalLink =
             !props.href?.startsWith("#") && !props.href?.startsWith("/");
-          const externalProps = externalLink && {
-            target: "_blank",
-            rel: "noreferrer noopener",
-          };
 
-          return (
-            <a {...props} {...externalProps}>
-              {children}
-            </a>
-          );
+          if (isExternalLink) {
+            return (
+              <a {...props} target="_blank" rel="noreferrer noopener">
+                {children}
+              </a>
+            );
+          } else {
+            return <Link to={props.href ?? "#"}>{children}</Link>;
+          }
         },
       }}
     >

@@ -6,15 +6,15 @@ import { db } from "~/utils/db.server";
 import { Table, Grid, Button } from "@arco-design/web-react";
 
 type LoaderData = {
-  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
+  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
 };
 
 export const loader: LoaderFunction = async () => {
   const contests = await db.contest.findMany({
-    orderBy: [{ cid: "asc" }],
+    orderBy: [{ id: "asc" }],
     take: 20,
     select: {
-      cid: true,
+      id: true,
       title: true,
       beginTime: true,
       endTime: true,
@@ -49,16 +49,13 @@ export function ContestState({ begin, end }: { begin: Date; end: Date }) {
 export function ContestList({
   contests,
 }: {
-  contests: Pick<Contest, "cid" | "title" | "beginTime" | "endTime">[];
+  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
 }) {
-  type ContestDetails = Pick<
-    Contest,
-    "cid" | "title" | "beginTime" | "endTime"
-  >;
+  type ContestDetails = Pick<Contest, "id" | "title" | "beginTime" | "endTime">;
   const tableColumns = [
     {
-      title: "CID",
-      dataIndex: "cid",
+      title: "#",
+      dataIndex: "id",
       render: (col: string) => <Link to={`${col}`}>{col}</Link>,
     },
     {
@@ -66,7 +63,7 @@ export function ContestList({
       dataIndex: "title",
       render: (col: string, contest: ContestDetails) => (
         <Link
-          to={`${contest.cid}`}
+          to={`${contest.id}`}
           // TODO: 写个hover样式qwq
           style={{}}
         >
@@ -88,7 +85,6 @@ export function ContestList({
     <Table
       columns={tableColumns}
       data={contests}
-      rowKey="cid"
       hover={false}
       pagination={{
         total: contests.length,

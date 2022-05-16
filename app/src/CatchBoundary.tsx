@@ -24,7 +24,7 @@ export function CatchBoundary() {
       rel="noreferrer"
       href="https://www.bilibili.com/s/video/BV1FX4y1g7u8?t=42.3"
     >
-      <Button type="outline">关注嘉然</Button>
+      <Button type="outline">关注嘉然（不推荐）</Button>
     </a>
   );
 

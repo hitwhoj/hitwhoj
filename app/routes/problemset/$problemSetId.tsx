@@ -18,10 +18,12 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const sid = invariant(idScheme.safeParse(params.sid), { status: 404 });
+  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+    status: 404,
+  });
 
   const problemSet = await db.problemSet.findUnique({
-    where: { sid },
+    where: { id: problemSetId },
   });
 
   if (!problemSet) {

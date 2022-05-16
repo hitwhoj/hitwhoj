@@ -15,21 +15,21 @@ import { idScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
-  user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "uid">;
+  user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;
   self: number | null;
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
+  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
-    where: { uid },
+    where: { id: userId },
     select: {
       nickname: true,
       username: true,
       avatar: true,
       bio: true,
-      uid: true,
+      id: true,
     },
   });
 
@@ -81,7 +81,7 @@ export default function UserProfile() {
         <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
           <Tabs.TabPane key="." title="资料" />
           <Tabs.TabPane key="files" title="文件" />
-          {self === user.uid && <Tabs.TabPane key="edit" title="编辑" />}
+          {self === user.id && <Tabs.TabPane key="edit" title="编辑" />}
         </Tabs>
       </nav>
       <main>

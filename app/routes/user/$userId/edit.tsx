@@ -14,7 +14,6 @@ import {
 import { z } from "zod";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import {
   bioScheme,
   emailScheme,
@@ -29,12 +28,10 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
-
-  await guaranteePermission(request, Permissions.User.Profile.View, { uid });
+  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const user = await db.user.findUnique({
-    where: { uid },
+    where: { id: userId },
     select: {
       username: true,
       nickname: true,
@@ -56,9 +53,7 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 });
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const uid = invariant(idScheme.safeParse(params.uid), { status: 404 });
-
-  await guaranteePermission(request, Permissions.User.Profile.Update, { uid });
+  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
 
   const form = await request.formData();
 
@@ -66,6 +61,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const nickname = invariant(
     nicknameScheme.or(emptyStringScheme).safeParse(form.get("nickname"))
   );
+  // TODO: avatar should not be like this
   const avatar = invariant(
     z
       .string()
@@ -82,15 +78,15 @@ export const action: ActionFunction = async ({ request, params }) => {
 
   const user = await db.user.findUnique({
     where: { username },
-    select: { uid: true },
+    select: { id: true },
   });
 
-  if (user && user.uid !== uid) {
+  if (user && user.id !== userId) {
     throw new Response("Username already taken", { status: 400 });
   }
 
   await db.user.update({
-    where: { uid },
+    where: { id: userId },
     data: {
       username,
       nickname,

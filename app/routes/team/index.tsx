@@ -21,19 +21,15 @@ export const action: ActionFunction = async ({ request }) => {
   if (!teamName)
     return new Response("teamName is not registered", { status: 400 });
 
-  const teamId = await db.team.findUnique({
-    select: {
-      tid: true,
-    },
-    where: {
-      name: teamName,
-    },
+  const team = await db.team.findUnique({
+    select: { id: true },
+    where: { name: teamName },
   });
-  if (!teamId) {
+  if (!team) {
     return new Response("team is not registered", { status: 400 });
   }
 
-  return redirect(`/team/${teamId.tid}`);
+  return redirect(`/team/${team.id}`);
 };
 
 type LoaderData = {
@@ -79,8 +75,8 @@ export default function TeamList() {
       {teams.length ? (
         <ul>
           {teams.map((team) => (
-            <li key={team.tid}>
-              <Link to={`${team.tid}`}>{team.name}</Link>
+            <li key={team.id}>
+              <Link to={`${team.id}`}>{team.name}</Link>
             </li>
           ))}
         </ul>

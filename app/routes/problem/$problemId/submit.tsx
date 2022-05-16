@@ -12,8 +12,8 @@ import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { judge } from "~/utils/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import type { Problem } from "@prisma/client";
+import { findSessionUid } from "~/utils/sessions";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
@@ -21,12 +21,12 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
-
-  await guaranteePermission(request, Permissions.Problem.Submit, { pid });
+  const problemId = invariant(idScheme.safeParse(params.problemId), {
+    status: 404,
+  });
 
   const problem = await db.problem.findUnique({
-    where: { pid },
+    where: { id: problemId },
     select: { title: true },
   });
 
@@ -42,30 +42,32 @@ export const meta: MetaFunction = ({ data }: { data?: LoaderData }) => ({
 });
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const pid = invariant(idScheme.safeParse(params.pid), { status: 404 });
+  const problemId = invariant(idScheme.safeParse(params.problemId), {
+    status: 404,
+  });
 
-  // 检查提交权限，用户必定已经登录
-  const uid = (await guaranteePermission(request, Permissions.Problem.Submit, {
-    pid,
-  }))!;
+  const self = await findSessionUid(request);
+  if (!self) {
+    throw redirect("/login");
+  }
 
   const form = await request.formData();
   const code = invariant(codeScheme.safeParse(form.get("code")));
   const language = invariant(languageScheme.safeParse(form.get("language")));
 
-  const { rid } = await db.record.create({
+  const { id: recordId } = await db.record.create({
     data: {
-      problemId: pid,
-      submitterId: uid,
       language,
+      submitter: { connect: { id: self } },
+      problem: { connect: { id: problemId } },
     },
-    select: { rid: true },
+    select: { id: true },
   });
 
-  await s3.writeFile(`/record/${rid}`, Buffer.from(code));
-  judge.push(rid);
+  await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
+  judge.push(recordId);
 
-  return redirect(`/record/${rid}`);
+  return redirect(`/record/${recordId}`);
 };
 
 export default function ProblemSubmit() {

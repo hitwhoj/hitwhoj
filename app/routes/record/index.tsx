@@ -5,9 +5,9 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 
 type LoaderData = {
-  records: (Pick<Record, "rid" | "status" | "submittedAt"> & {
-    problem: Pick<Problem, "pid" | "title">;
-    submitter: Pick<User, "uid" | "username">;
+  records: (Pick<Record, "id" | "status" | "submittedAt"> & {
+    problem: Pick<Problem, "id" | "title">;
+    submitter: Pick<User, "id" | "username">;
   })[];
 };
 
@@ -17,18 +17,18 @@ export const loader: LoaderFunction = async () => {
       submittedAt: "desc",
     },
     select: {
-      rid: true,
+      id: true,
       status: true,
       submittedAt: true,
       problem: {
         select: {
-          pid: true,
+          id: true,
           title: true,
         },
       },
       submitter: {
         select: {
-          uid: true,
+          id: true,
           username: true,
         },
       },
@@ -61,20 +61,20 @@ export default function RecordList() {
         </thead>
         <tbody>
           {records.map((record) => (
-            <tr key={record.rid}>
+            <tr key={record.id}>
               <td>
-                <Link to={`${record.rid}`}>{record.rid}</Link>
+                <Link to={`${record.id}`}>{record.id}</Link>
               </td>
               <td>
-                <Link to={`${record.rid}`}>{record.status}</Link>
+                <Link to={`${record.id}`}>{record.status}</Link>
               </td>
               <td>
-                <Link to={`/problem/${record.problem.pid}`}>
+                <Link to={`/problem/${record.problem.id}`}>
                   {record.problem.title}
                 </Link>
               </td>
               <td>
-                <Link to={`/user/${record.submitter.uid}`}>
+                <Link to={`/user/${record.submitter.id}`}>
                   {record.submitter.username}
                 </Link>
               </td>

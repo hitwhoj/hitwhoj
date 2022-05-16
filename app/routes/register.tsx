@@ -9,7 +9,6 @@ import {
 } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
-import { guaranteePermission, Permissions } from "~/utils/permission";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { parseRedirectPathname } from "~/utils/tools";
@@ -29,17 +28,15 @@ export const action: ActionFunction = async ({ request }) => {
     return new Response("Passwords do not match", { status: 400 });
   }
 
-  await guaranteePermission(request, Permissions.User.Session.Create);
-
   if (await db.user.findUnique({ where: { username } })) {
     return new Response("username is already taken", { status: 400 });
   }
 
-  const { uid } = await db.user.create({ data: { username, password } });
+  const { id: userId } = await db.user.create({ data: { username, password } });
 
   return redirect(parseRedirectPathname(form.get("redirect")), {
     headers: {
-      "Set-Cookie": await commitSession(uid),
+      "Set-Cookie": await commitSession(userId),
     },
   });
 };

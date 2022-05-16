@@ -21,9 +21,9 @@ import React from "react";
 import { idScheme } from "~/utils/scheme";
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const uid = await findSessionUid(request);
+  const self = await findSessionUid(request);
 
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -31,16 +31,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const uid = await findSessionUid(request);
-  const tid = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const self = await findSessionUid(request);
 
-  console.log(tid);
-
-  if (!tid) {
-    throw new Response("missing teamId", { status: 400 });
-  }
-
-  if (!uid) {
+  if (!self) {
     return redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -63,19 +57,19 @@ export const action: ActionFunction = async ({ params, request }) => {
   );
   const system = invariant(systemScheme.safeParse(ContestSystem.Homework));
 
-  const { cid } = await db.contest.create({
+  const { id: contestId } = await db.contest.create({
     data: {
       title,
       description,
       beginTime,
       endTime,
       system,
-      user: { connect: { uid } },
-      team: { connect: { tid: Number(tid) } },
+      team: { connect: { id: teamId } },
+      creator: { connect: { id: self } },
     },
   });
 
-  return redirect(`/contest/${cid}`);
+  return redirect(`/contest/${contestId}`);
 };
 
 export const meta: MetaFunction = () => ({

@@ -1,7 +1,5 @@
 import type { ActionFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import type { User, TeamMember } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -10,68 +8,51 @@ enum ActionType {
   AddMember = "addMember",
   DeleteMember = "deleteMember",
 }
-type userId = Pick<User, "uid">[];
-
-type memberId = Pick<TeamMember, "memberId" | "teamId">[];
 
 export const action: ActionFunction = async ({ params, request }) => {
   const teamId = invariant(idScheme.safeParse(params.teamId));
   const form = await request.formData();
-  const Members = form.get("Members")?.toString().split(",");
+
+  const member = invariant(idScheme.safeParse(form.get("member")));
   const _action = form.get("_action");
-  var userIds = Members?.map(Number);
-  if (!userIds) {
-    return new Response("userId is missing", { status: 400 });
-  }
 
   switch (_action) {
     case ActionType.AddMember: {
-      var users: userId = [];
-      for (let i = 0; i < userIds.length; i++) {
-        users.push({ uid: userIds[i] });
-        console.log(users[i]);
-      }
-
-      for (let i = 0; i < users.length; i++) {
-        await db.team.update({
-          data: {
-            members: {
-              create: [
-                {
-                  member: { connect: users[i] },
-                },
-              ],
+      await db.team.update({
+        where: { id: teamId },
+        data: {
+          members: {
+            connectOrCreate: {
+              where: { userId_teamId: { userId: member, teamId } },
+              create: { userId: member },
             },
           },
-          where: {
-            tid: Number(teamId),
-          },
-        });
-      }
-      break;
+        },
+      });
+
+      return null;
     }
 
     case ActionType.DeleteMember: {
-      var members: memberId = [];
-      for (let i = 0; i < userIds.length; i++) {
-        members.push({ memberId: userIds[i], teamId: Number(teamId) });
-      }
-      for (let i = 0; i < members.length; i++)
-        await db.team.update({
-          data: {
-            members: {
-              deleteMany: members,
+      await db.team.update({
+        where: { id: teamId },
+        data: {
+          members: {
+            disconnect: {
+              userId_teamId: {
+                userId: member,
+                teamId,
+              },
             },
           },
-          where: {
-            tid: Number(teamId),
-          },
-        });
-      break;
+        },
+      });
+
+      return null;
     }
   }
 
-  return redirect(`/team/${teamId}/members`);
+  throw new Response("Invalid action", { status: 400 });
 };
 
 export default function MemberEdit() {
@@ -79,15 +60,9 @@ export default function MemberEdit() {
     <>
       <p>编辑成员</p>
       <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
-        <input
-          type="text"
-          name="Members"
-          placeholder="memberId(join with',')"
-          required
-        />
-
+        <input type="text" name="member" placeholder="User ID" required />
         <button type="submit" name="_action" value={ActionType.AddMember}>
-          New
+          Add
         </button>
         <button type="submit" name="_action" value={ActionType.DeleteMember}>
           Del
