@@ -234,7 +234,7 @@ export default function ProblemData() {
             action={ActionType.UploadData}
             uploadText="上传数据捏"
           />
-          <ProblemFileList files={files} />
+          <ProblemFileList files={data} />
         </Space>
       </div>
 
@@ -249,7 +249,7 @@ export default function ProblemData() {
             action={ActionType.UploadFile}
             uploadText="上传文件捏"
           />
-          <ProblemFileList files={data} />
+          <ProblemFileList files={files} />
         </Space>
       </div>
     </div>

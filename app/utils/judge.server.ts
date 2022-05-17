@@ -73,8 +73,8 @@ class JudgeServer {
 
         // 启动超时计时器
         const timeout = setTimeout(async () => {
-          // TODO: 评测超时
-          console.log(`Task ${task.rid} timed out`);
+          // 评测超时
+          console.warn(`Task ${task.rid} timed out`);
           this.#timeout.delete(task.rid);
 
           // 更新数据库，记录超时错误
@@ -103,8 +103,8 @@ class JudgeServer {
           return;
         }
 
-        // TODO: 评测结果有更新
-        console.log(`Task ${res.rid} update: ${JSON.stringify(res)}`);
+        // 评测结果有更新
+        // console.log(`Task ${res.rid} update: ${JSON.stringify(res)}`);
         // 更新数据库
         await updateDatabase(res);
       });
@@ -120,8 +120,8 @@ class JudgeServer {
         // 清理超时计时器
         clearInterval(timeout);
 
-        // TODO: 评测完成
-        console.log(`Task ${res.rid} finished: ${JSON.stringify(res)}`);
+        // 评测完成
+        console.log(`Task ${res.rid} finished`);
         // 更新数据库
         await updateDatabase(res);
       });
@@ -143,6 +143,7 @@ class JudgeServer {
 
       // 评测机请求获取数据文件
       socket.on("fetch", async (fid) => {
+        console.log("fetching", fid);
         const file = await db.file.findUnique({
           where: { id: fid },
           select: { id: true, dataProblemId: true },
@@ -185,8 +186,8 @@ class JudgeServer {
     this.#taskQueue.push(task);
     this.#broadcast();
 
-    // TODO: 加入队伍，开始等待评测机认领
     console.log(`Task ${task.rid} pushed`);
+    // 更新数据库
     await updateDatabase({
       rid: task.rid,
       status: "Pending",
@@ -205,7 +206,7 @@ class JudgeServer {
         language: true,
         problem: {
           select: {
-            files: {
+            data: {
               select: {
                 id: true,
                 filename: true,
@@ -226,7 +227,7 @@ class JudgeServer {
       rid: recordId,
       code,
       language: record.language,
-      files: record.problem.files.map(({ id, filename }) => ({
+      files: record.problem.data.map(({ id, filename }) => ({
         fid: id,
         filename,
       })),

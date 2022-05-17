@@ -51,7 +51,7 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
     throw new Response("File not found", { status: 404 });
   }
 
-  const filepath = `/files/${file.id}`;
+  const filepath = `/file/${file.id}`;
 
   const headers = new Headers();
   headers.set("Accept-Ranges", "bytes");

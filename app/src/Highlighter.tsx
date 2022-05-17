@@ -10,5 +10,11 @@ type Props = {
 /** 渲染代码块 */
 export default function Highlighter({ children, language }: Props) {
   const hast = lowlight.highlight(language, children);
-  return toH(createElement, hast);
+  return (
+    <pre>
+      <code className={`hljs language-${language}`}>
+        {toH(createElement, hast)}
+      </code>
+    </pre>
+  );
 }
