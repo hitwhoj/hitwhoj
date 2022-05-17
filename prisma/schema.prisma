@@ -235,7 +235,7 @@ model Record {
   /// 评测最大内存 (byte)
   memory   Int    @default(0)
   /// 具体每一个测试点的评测结果，由于结构过于复杂，这里直接用 JSON 保存
-  subtasks String @default("[]")
+  subtasks Json   @default("[]")
 
   /// 提交语言，一般就是源文件的后缀名
   language    String
@@ -288,9 +288,9 @@ model Reply {
 
   // ==== relations ====
 
-  commentId Int
   comment   Comment @relation(fields: [commentId], references: [id])
+  commentId Int
 
-  creatorId Int
   creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
 }

@@ -150,7 +150,9 @@ function TimeMemory({ time, memory }: { time: number; memory: number }) {
 
 export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
-  const subtasks: SubtaskResult[] = JSON.parse(record.subtasks);
+  const subtasks: SubtaskResult[] = Array.isArray(record.subtasks)
+    ? (record.subtasks as SubtaskResult[])
+    : [];
 
   return (
     <>

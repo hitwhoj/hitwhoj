@@ -253,7 +253,7 @@ async function updateDatabase(
       time: res.time ?? -1,
       memory: res.memory ?? -1,
       message: res.message,
-      subtasks: JSON.stringify(res.subtasks ?? []),
+      subtasks: res.subtasks ?? [],
     },
   });
 }
