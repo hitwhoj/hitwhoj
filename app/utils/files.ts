@@ -1,5 +1,5 @@
-import { db } from "./db.server";
-import { s3 } from "./s3.server";
+import { db } from "./server/db.server";
+import { s3 } from "./server/s3.server";
 
 /** 创建用户文件 */
 export async function createUserFile(file: File, userId: number) {

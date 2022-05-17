@@ -1,7 +1,7 @@
 import type { LoaderFunction } from "@remix-run/node";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { s3 } from "~/utils/s3.server";
+import { s3 } from "~/utils/server/s3.server";
 import { uuidScheme } from "~/utils/scheme";
 
 /**

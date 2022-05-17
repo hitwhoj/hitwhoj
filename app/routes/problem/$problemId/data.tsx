@@ -8,7 +8,7 @@ import type {
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import {
   createProblemData,
   createProblemFile,
@@ -16,7 +16,7 @@ import {
 } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
-import { handler } from "~/utils/handler.server";
+import { handler } from "~/utils/server/handler.server";
 import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";

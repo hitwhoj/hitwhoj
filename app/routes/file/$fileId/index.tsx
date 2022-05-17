@@ -2,7 +2,7 @@ import { Button, Image, Space } from "@arco-design/web-react";
 import type { File } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
 

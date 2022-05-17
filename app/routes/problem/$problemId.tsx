@@ -6,7 +6,7 @@ import {
   useMatches,
   useNavigate,
 } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Space, Tabs } from "@arco-design/web-react";

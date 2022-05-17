@@ -5,11 +5,11 @@ import type {
 } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { db } from "~/utils/db.server";
-import { s3 } from "~/utils/s3.server";
+import { db } from "~/utils/server/db.server";
+import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { judge } from "~/utils/judge.server";
+import { judge } from "~/utils/server/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";

@@ -6,7 +6,7 @@ import type {
   JudgeRequest,
   JudgeResult,
   ServerEvent,
-} from "./types";
+} from "../types";
 
 /**
  * 后端服务器
@@ -82,7 +82,8 @@ class JudgeServer {
             rid: task.rid,
             status: "System Error",
             message:
-              "[JudgeServer] Judge Timeout\n[JudgeServer] You can report this issue to Administrator.",
+              "[judge] Judge Timeout\n" +
+              "[judge] You can report this issue to Administrator.",
           });
         }, 60000);
         this.#timeout.set(task.rid, timeout);

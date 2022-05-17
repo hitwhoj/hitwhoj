@@ -1,5 +1,5 @@
 import { commitCookie, destroyCookie, getCookie } from "./cookies";
-import { db } from "./db.server";
+import { db } from "./server/db.server";
 
 const SESSION_COOKIE_NAME = "session";
 

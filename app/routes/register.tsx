@@ -7,7 +7,7 @@ import {
   useSearchParams,
   useTransition,
 } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";

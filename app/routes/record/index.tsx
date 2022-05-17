@@ -1,7 +1,7 @@
 import type { Problem, Record, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 
 type LoaderData = {
   records: (Pick<Record, "id" | "status" | "submittedAt"> & {

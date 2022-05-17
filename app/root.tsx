@@ -16,7 +16,7 @@ import {
 } from "@remix-run/react";
 
 import Layout from "./src/Layout";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";

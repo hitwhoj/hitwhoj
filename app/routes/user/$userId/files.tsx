@@ -12,11 +12,11 @@ import type {
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
-import { handler } from "~/utils/handler.server";
+import { handler } from "~/utils/server/handler.server";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {

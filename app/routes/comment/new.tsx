@@ -4,7 +4,7 @@ import { Form } from "@remix-run/react";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { commentScheme, tagScheme } from "~/utils/scheme";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 
 export const action: ActionFunction<Response> = async ({ request }) => {
   const self = await findSessionUid(request);

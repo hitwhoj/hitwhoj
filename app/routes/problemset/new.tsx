@@ -5,7 +5,7 @@ import type {
 } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form as RemixForm, useTransition } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { descriptionScheme, titleScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";

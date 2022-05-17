@@ -5,7 +5,7 @@ import type {
 } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { teamNameScheme } from "~/utils/scheme";
 import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";

@@ -1,7 +1,7 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";

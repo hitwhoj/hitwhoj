@@ -1,6 +1,6 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import type { Contest } from "@prisma/client";
 import { ContestSystem } from "@prisma/client";
 import { idScheme } from "~/utils/scheme";

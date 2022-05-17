@@ -11,7 +11,7 @@ import {
   useTransition,
 } from "@remix-run/react";
 import { z } from "zod";
-import { db } from "~/utils/db.server";
+import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
   bioScheme,
