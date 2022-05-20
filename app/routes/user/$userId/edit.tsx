@@ -116,6 +116,7 @@ export default function UserEdit() {
           defaultValue={user.username}
           disabled={loading}
           required
+          pattern="[a-zA-Z0-9_]+"
         />
       </Form.Item>
       <Form.Item label="用户昵称">
