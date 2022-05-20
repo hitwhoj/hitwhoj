@@ -2,15 +2,19 @@ import { z } from "zod";
 import { ContestSystem } from "@prisma/client";
 
 /**
- * Id scheme for any type of id.
+ * 数字 ID
+ *
+ * @example 114514
  */
 export const idScheme = z
   .string()
-  .regex(/^[1-9]\d*$/, "Id must be a positive integer")
+  .regex(/^\d+$/, "Id must be a positive integer")
   .transform((x) => parseInt(x, 10));
 
 /**
- * UUID scheme for any type of uuid.
+ * UUID
+ *
+ * @example "f0e4c2f3-e249-4fe5-ab22-fa49aafcc74e"
  */
 export const uuidScheme = z.string().regex(
   // this is a copilot generated regex and idk what the fuck it is
@@ -19,7 +23,9 @@ export const uuidScheme = z.string().regex(
 );
 
 /**
- * Username scheme for every user
+ * 用户名，必须是字母数字下划线组合
+ *
+ * @example "Foo_Bar_233"
  */
 export const usernameScheme = z
   .string()
@@ -27,50 +33,71 @@ export const usernameScheme = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
 
 /**
- * Password scheme for every user
+ * 用户密码
+ *
+ * @example "我就是用中文密码你能拿我怎么样"
  */
 export const passwordScheme = z.string().nonempty("Password must be nonempty");
 
 /**
- * Nickname scheme for every user
+ * 用户昵称
+ *
+ * @example "嘉然今天吃什么"
  */
 export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");
 
 /**
- * Bio scheme
+ * 用户个性签名
+ *
+ * @example "这里是嘉然！别看我小小的，我超能吃还超可爱的哦~"
  */
 export const bioScheme = z.string();
 
 /**
- * Tag scheme for any tags
+ * 各类标签
+ *
+ * @example "math"
+ * @example "算法"
  */
 export const tagScheme = z.string().nonempty("Tag must be nonempty");
 
 /**
- * Title scheme for any title
+ * 各类标题
+ *
+ * @example "新人求助，降雨量这题本机 AC 提交 RE"
  */
 export const titleScheme = z.string().nonempty("Title must be nonempty");
 
 /**
- * Description scheme for any description
+ * 各类简介
+ *
+ * @example "其实就是一个字符串"
  */
 export const descriptionScheme = z
   .string()
   .nonempty("Description must be nonempty");
 
 /**
- * Email scheme for HIT email only
+ * 个人邮箱，必须是哈工大的邮箱
+ *
+ * @example "alice@hit.edu.cn"
  */
 export const emailScheme = z
   .string()
   .email("Email must be a valid email")
-  // TODO: maybe requires modification
-  .regex(/@(?:stu\.)?hit\.edu\.cn$/, "Email must be a HIT email");
+  .regex(/@(?:stu\.)?hit(?:wh|sz)?\.edu\.cn$/, "Email must be a HIT email");
 
+/**
+ * 空白字符串
+ *
+ * @example ""
+ */
 export const emptyStringScheme = z.string().length(0);
 
 /**
- * Begin and end datetimeString, example: '2022-03-15T11:23'
+ * datetime 的时间格式
+ *
+ * @example "2022-03-15T11:23"
  */
 export const datetimeStringScheme = z
   .string()
@@ -79,7 +106,9 @@ export const datetimeStringScheme = z
   .transform((x) => new Date(x));
 
 /**
- * Time zone number, unit: hour, example: 8
+ * 时区格式
+ *
+ * @example "8"
  */
 export const timezoneScheme = z
   .string()
@@ -88,17 +117,24 @@ export const timezoneScheme = z
   .transform((x) => parseInt(x, 10));
 
 /**
- * Contest system
+ * 比赛的赛制
+ *
+ * @example "ACM"
  */
 export const systemScheme = z.nativeEnum(ContestSystem);
 
 /**
- * Code scheme for submitted code
+ * 提交的代码
+ *
+ * @example "print(\"Hello, world!\")"
  */
 export const codeScheme = z.string().nonempty("Code must be nonempty");
 
 /**
- * Submitted language
+ * 提交的语言
+ *
+ * @example "cpp"
+ * @example "py3"
  */
 export const languageScheme = z
   .string()
@@ -106,7 +142,9 @@ export const languageScheme = z
   .regex(/^\w+$/, "Language must be alphanumeric");
 
 /**
- * Comment scheme for submitted comment
+ * 讨论的标题，需要十个字符以上
+ *
+ * @example "新人求助，降雨量这题本机 AC 提交 RE"
  */
 export const commentScheme = z
   .string()
@@ -114,7 +152,7 @@ export const commentScheme = z
   .min(10, "Comment must be at least 10 characters");
 
 /**
- * Reply scheme for submitted reply
+ * 回复的内容，需要十个字符以上
  */
 export const replyScheme = z
   .string()
