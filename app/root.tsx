@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import { Button, Notification } from "@arco-design/web-react";
 import katexStyle from "katex/dist/katex.css";
 import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 
@@ -13,6 +14,7 @@ import {
   ScrollRestoration,
   useCatch,
   useLoaderData,
+  useNavigate,
 } from "@remix-run/react";
 
 import Layout from "./src/Layout";
@@ -26,7 +28,7 @@ import { ThemeContext } from "./utils/context/theme";
 import type { UserInfo } from "./utils/context/user";
 import { UserInfoContext } from "./utils/context/user";
 import { WsContext } from "./utils/context/ws";
-import { WsClient } from "./utils/wsclient";
+import { WsClient } from "./utils/ws.client";
 
 export const links: LinksFunction = () => [
   {
@@ -100,28 +102,47 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
-  const { user, theme: defaultTheme, session } = useLoaderData<LoaderData>();
+  const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [wsc, setWsc] = useState<WsClient | null>(null);
-  useEffect(() => {
-    if (session) {
-      if (!wsc) {
-        setWsc(new WsClient(session));
-      } else {
-        if (wsc.getSession() !== session) {
-          setWsc(new WsClient(session));
-        }
-      }
-    }
-    return () => {
-      if (wsc) {
-        wsc.close();
-      }
-    };
-  }, [session, wsc, setWsc]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT`;
+    const wsc = new WsClient(user?.id);
+    setWsc(wsc);
+
+    if (user?.id) {
+      // 新私聊消息
+      const subscription = wsc.message.subscribe((data) => {
+        const id = new Date().toUTCString() + Math.random();
+        Notification.info({
+          id,
+          title: `New Private Message`,
+          content: `User ${data.from}: ${data.content}`,
+          btn: (
+            <Button
+              type="primary"
+              onClick={() => {
+                navigate(`/chat/${data.from}`);
+                Notification.remove(id);
+              }}
+            >
+              View
+            </Button>
+          ),
+        });
+      });
+
+      return () => {
+        alert("sayonara");
+        subscription.unsubscribe();
+        wsc.close();
+      };
+    }
+  }, [user?.id, navigate]);
+
+  useEffect(() => {
+    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax`;
   }, [theme]);
 
   return (

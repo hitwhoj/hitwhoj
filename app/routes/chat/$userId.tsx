@@ -4,15 +4,8 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import {
-  Button,
-  Card,
-  Input,
-  List,
-  Notification,
-} from "@arco-design/web-react";
+import { Button, Card, Input, List } from "@arco-design/web-react";
 import type { Message, User } from "@prisma/client";
-import { MessageType } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
@@ -28,7 +21,7 @@ export const meta: MetaFunction = () => ({
 
 type LoaderData = {
   self: Pick<User, "id" | "username" | "avatar">;
-  toUser: Pick<User, "id" | "username" | "avatar">;
+  target: Pick<User, "id" | "username" | "avatar">;
   msgs: Message[];
 };
 
@@ -51,30 +44,27 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const toUserId = invariant(idScheme.safeParse(params.userId), {
     status: 404,
   });
-  const toUser = await db.user.findUnique({
+  const target = await db.user.findUnique({
     where: { id: toUserId },
     select: { id: true, avatar: true, username: true },
   });
-  if (!toUser) {
+  if (!target) {
     throw new Response("User not found", { status: 404 });
   }
 
   const msgs = await db.message.findMany({
     where: {
       OR: [
-        { from: self?.id, to: toUser.id },
-        { from: toUser.id, to: self?.id },
+        { from: self?.id, to: target.id },
+        { from: target.id, to: self?.id },
       ],
     },
   });
 
-  return { self, toUser, msgs };
+  return { self, target, msgs };
 };
 
-export const action: ActionFunction<Response> = async ({
-  request,
-  context,
-}) => {
+export const action: ActionFunction = async ({ request, context }) => {
   const self = await findSessionUid(request);
   if (!self) {
     throw redirect("/login");
@@ -93,32 +83,30 @@ export const action: ActionFunction<Response> = async ({
   });
 
   // 获取到服务器的 WebSocket 实例
-  const ws: WsServer = context.wsServer;
-  ws.sendMessage(message);
+  const ws = context.wsServer as WsServer;
+  ws.sendMessage(`/user/${to}`, message);
 
-  return new Response("ok", { status: 200 });
+  return null;
 };
 
 export default function ChatIndex() {
-  const { self, toUser, msgs } = useLoaderData<LoaderData>();
+  const { self, target, msgs } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<Message[]>(msgs);
   const wsc = useContext(WsContext);
+
   useEffect(() => {
     setMessages(msgs);
   }, [msgs]);
+
   useEffect(() => {
-    const handlePrivateMessage = (data: Message) => {
-      Notification.info({
-        title: `user ${data.from} send a private message to you`,
-        content: data.content,
-      });
-      setMessages([...messages, data]);
-    };
-    wsc?.handleMessage(MessageType.Private, handlePrivateMessage);
-    return () => {
-      wsc?.unhandleMessage(MessageType.Private, handlePrivateMessage);
-    };
-  });
+    const subscription = wsc?.message.subscribe((data) => {
+      if (data.from === target.id) {
+        setMessages((messages) => [...messages, data]);
+      }
+    });
+
+    return () => subscription?.unsubscribe();
+  }, [wsc, target.id]);
 
   return (
     <div
@@ -132,7 +120,7 @@ export default function ChatIndex() {
       }}
     >
       <Card
-        title={"chat: " + toUser.username}
+        title={"chat: " + target.username}
         style={{
           width: "80%",
           height: "90%",
@@ -166,7 +154,7 @@ export default function ChatIndex() {
                 }}
               >
                 <img
-                  src={item.from == self.id ? self.avatar : toUser.avatar}
+                  src={item.from == self.id ? self.avatar : target.avatar}
                   alt="avatar"
                   style={{
                     width: "40px",
@@ -181,7 +169,7 @@ export default function ChatIndex() {
                     fontWeight: "bold",
                   }}
                 >
-                  {item.from == self.id ? self.username : toUser.username}
+                  {item.from == self.id ? self.username : target.username}
                 </p>
 
                 <p
@@ -225,7 +213,7 @@ export default function ChatIndex() {
                 height: "110px",
               }}
             />
-            <input type="hidden" name="to" value={toUser.id} />
+            <input type="hidden" name="to" value={target.id} />
             <Button
               type="primary"
               htmlType="submit"
