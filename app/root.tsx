@@ -17,7 +17,7 @@ import {
 
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
+import { findSession, findSessionUid } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
@@ -25,6 +25,8 @@ import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
 import type { UserInfo } from "./utils/context/user";
 import { UserInfoContext } from "./utils/context/user";
+import { WsContext } from "./utils/context/ws";
+import { WsClient } from "./utils/wsclient";
 
 export const links: LinksFunction = () => [
   {
@@ -44,6 +46,7 @@ export const links: LinksFunction = () => [
 type LoaderData = {
   theme: Theme;
   user: UserInfo | null;
+  session?: string | null;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
@@ -53,7 +56,6 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   if (!self) {
     return { theme, user: null };
   }
-
   const user = await db.user.findUnique({
     where: { id: self },
     select: {
@@ -64,7 +66,9 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { theme, user };
+  let session = await findSession(request);
+
+  return { theme, user, session };
 };
 
 interface DocumentProps {
@@ -96,8 +100,25 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
-  const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
+  const { user, theme: defaultTheme, session } = useLoaderData<LoaderData>();
   const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [wsc, setWsc] = useState<WsClient | null>(null);
+  useEffect(() => {
+    if (session) {
+      if (!wsc) {
+        setWsc(new WsClient(session));
+      } else {
+        if (wsc.getSession() !== session) {
+          setWsc(new WsClient(session));
+        }
+      }
+    }
+    return () => {
+      if (wsc) {
+        wsc.close();
+      }
+    };
+  }, [session, wsc, setWsc]);
 
   useEffect(() => {
     document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT`;
@@ -106,11 +127,13 @@ export default function App() {
   return (
     <Document theme={theme}>
       <UserInfoContext.Provider value={user}>
-        <ThemeContext.Provider value={{ theme, setTheme }}>
-          <Layout>
-            <Outlet />
-          </Layout>
-        </ThemeContext.Provider>
+        <WsContext.Provider value={wsc}>
+          <ThemeContext.Provider value={{ theme, setTheme }}>
+            <Layout>
+              <Outlet />
+            </Layout>
+          </ThemeContext.Provider>
+        </WsContext.Provider>
       </UserInfoContext.Provider>
     </Document>
   );

@@ -6,9 +6,10 @@
     "build:sass": "sass --no-source-map styles:app/styles",
     "build:remix": "remix build",
     "build:fonts": "mkdirp public/build/_assets/fonts/ && copyfiles -f node_modules/katex/dist/fonts/* public/build/_assets/fonts/",
+    "build:ws": "yarn tsc ./server/ws.server.ts",
     "dev": "yarn build && run-p dev:*",
     "dev:sass": "sass --no-source-map --watch styles:app/styles",
-    "dev:node": "cross-env NODE_ENV=development nodemon ./server.js --watch ./server.js",
+    "dev:node": "cross-env NODE_ENV=development nodemon -r dotenv/config ./server/server.js --watch ./server/server.js ./server/ws.server.ts",
     "dev:remix": "remix watch",
     "clean": "rimraf public/build build app/styles .cache",
     "fmt": "prettier --write .",
@@ -49,6 +50,7 @@
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "socket.io": "^4.4.1",
+    "socket.io-client": "^4.5.1",
     "zod": "^3.13.4"
   },
   "devDependencies": {

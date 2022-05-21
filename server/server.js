@@ -1,12 +1,16 @@
 const path = require("path");
 const express = require("express");
+const http = require("http");
 const compression = require("compression");
 const morgan = require("morgan");
 const { createRequestHandler } = require("@remix-run/express");
+const ws = require("./ws.server");
 
 const BUILD_DIR = path.join(process.cwd(), "build");
 
 const app = express();
+const server = http.createServer(app);
+const wsServer = new ws.WsServer(server);
 
 app.use(compression());
 
@@ -34,16 +38,22 @@ app.all(
         return createRequestHandler({
           build: require(BUILD_DIR),
           mode: process.env.NODE_ENV,
+          getLoadContext(req, res) {
+            return { req, res, wsServer };
+          },
         })(req, res, next);
       }
     : createRequestHandler({
         build: require(BUILD_DIR),
         mode: process.env.NODE_ENV,
+        getLoadContext(req, res) {
+          return { req, res, wsServer };
+        },
       })
 );
 const port = process.env.PORT || 8080;
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Express server listening on port ${port}`);
 });
 
