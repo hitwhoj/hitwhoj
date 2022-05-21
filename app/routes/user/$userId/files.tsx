@@ -7,10 +7,9 @@ import { useEffect, useRef } from "react";
 import type {
   ActionFunction,
   LoaderFunction,
-  MetaFunction} from "@remix-run/node";
-import {
-  json
+  MetaFunction,
 } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";

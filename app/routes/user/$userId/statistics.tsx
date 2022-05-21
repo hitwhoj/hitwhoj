@@ -1,5 +1,5 @@
-import { Contest, ProblemSet } from "@prisma/client";
-import { LoaderFunction } from "@remix-run/node";
+import type { Contest, ProblemSet } from "@prisma/client";
+import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
