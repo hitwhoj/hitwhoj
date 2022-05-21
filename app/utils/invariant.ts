@@ -1,16 +1,37 @@
 import { json } from "@remix-run/node";
-import type { SafeParseReturnType } from "zod";
+import type { ThrownResponse } from "@remix-run/react";
+import type { ZodType, ZodTypeDef } from "zod";
 
-/**
- * Throw an error when the invariant condition fails.
- */
-export function invariant<Output, Input = Output>(
-  t: SafeParseReturnType<Input, Output>,
+export type AllThrownResponse =
+  // bad request
+  | ThrownResponse<400, string[]>
+  // unauthorized
+  | ThrownResponse<401, null>
+  // forbidden
+  | ThrownResponse<403, null>
+  // not found
+  | ThrownResponse<404, null>;
+
+export function invariant<
+  Output,
+  Def extends ZodTypeDef = ZodTypeDef,
+  Input = Output
+>(
+  scheme: ZodType<Output, Def, Input>,
+  data: unknown,
   init: ResponseInit = { status: 400 }
 ): Output {
+  const t = scheme.safeParse(data);
+
   if (t.success) {
     return t.data;
   }
 
-  throw json(t.error.issues, init);
+  if (init.status === 400) {
+    throw json(
+      t.error.issues.map((issue) => issue.message),
+      init
+    );
+  }
+  throw new Response(null, init);
 }

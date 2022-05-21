@@ -45,7 +45,7 @@ function parseRange(range: string, filesize: number): [number, number] | false {
 }
 
 export const loader: LoaderFunction<Response> = async ({ request, params }) => {
-  const fileId = invariant(uuidScheme.safeParse(params.fileId), {
+  const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
 

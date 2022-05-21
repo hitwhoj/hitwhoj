@@ -48,14 +48,24 @@ async function seed() {
     },
   });
 
-  const { id: charlie } = await prisma.user.create({
+  const { id: cherry } = await prisma.user.create({
     data: {
-      email: "charlie@hit.edu.cn",
-      username: "Charlie",
-      password: "charlie",
+      email: "cherry@hit.edu.cn",
+      username: "Cherry",
+      password: "cherry",
       nickname: "陈睿",
-      bio: "bilibili 董事长兼 CEO",
+      bio: "喜欢的话就坚持吧",
     },
+  });
+
+  const chenrui = await createUserFile(
+    new File([await readFile("prisma/image/cherry.png")], "avatar.png"),
+    cherry
+  );
+
+  await prisma.user.update({
+    where: { id: cherry },
+    data: { avatar: `/file/${chenrui}/raw` },
   });
 
   const { id: david } = await prisma.user.create({
@@ -144,7 +154,7 @@ async function seed() {
       endTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
 
-      creator: { connect: { id: charlie } },
+      creator: { connect: { id: cherry } },
       attendees: { connect: [{ id: david }, { id: alice }] },
       juries: { connect: { id: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
@@ -256,7 +266,7 @@ async function seed() {
         "猫猫还在害怕嘉然小姐。\n" +
         "我会去把她爱的猫猫引来的。\n" +
         "我知道稍有不慎，我就会葬身猫口。",
-      creator: { connect: { id: charlie } },
+      creator: { connect: { id: cherry } },
       comment: { connect: { id: comment1 } },
     },
   });
@@ -302,7 +312,7 @@ async function seed() {
       },
       {
         content: "私（わたし）は　ディーナちゃんの犬（いぬ）になりたい",
-        creatorId: charlie,
+        creatorId: cherry,
         commentId: comment1,
       },
       {

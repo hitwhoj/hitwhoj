@@ -1,8 +1,9 @@
 import { Button, Result, Space } from "@arco-design/web-react";
 import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
+import type { AllThrownResponse } from "~/utils/invariant";
 
 export function CatchBoundary() {
-  const caught = useCatch();
+  const caught = useCatch<AllThrownResponse>();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,8 +42,8 @@ export function CatchBoundary() {
                 textAlign: "left",
               }}
             >
-              {caught.data.map((data: any, index: number) => (
-                <li key={index}>{data.message}</li>
+              {caught.data.map((data, index) => (
+                <li key={index}>{data}</li>
               ))}
             </ol>
           }
@@ -84,15 +85,6 @@ export function CatchBoundary() {
               {diana}
             </Space>
           }
-        />
-      );
-    default:
-      return (
-        <Result
-          status="error"
-          title={`${caught.status} ${caught.statusText}`}
-          subTitle="请将此问题页面反馈给我们"
-          extra={goback}
         />
       );
   }

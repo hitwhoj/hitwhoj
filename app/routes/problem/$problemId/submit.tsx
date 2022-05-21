@@ -21,7 +21,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 
@@ -42,7 +42,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 
@@ -52,8 +52,8 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   }
 
   const form = await request.formData();
-  const code = invariant(codeScheme.safeParse(form.get("code")));
-  const language = invariant(languageScheme.safeParse(form.get("language")));
+  const code = invariant(codeScheme, form.get("code"));
+  const language = invariant(languageScheme, form.get("language"));
 
   const { id: recordId } = await db.record.create({
     data: {

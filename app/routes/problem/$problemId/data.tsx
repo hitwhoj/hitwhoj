@@ -30,7 +30,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 
@@ -70,7 +70,7 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
   const form = await unstable_parseMultipartFormData(request, handler);
@@ -102,7 +102,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     case ActionType.RemoveData:
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+      const fid = invariant(uuidScheme, form.get("fid"));
 
       // 删除文件
       await removeFile(fid);

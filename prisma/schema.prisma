@@ -24,10 +24,6 @@ model User {
 
   joinedAt DateTime @default(now())
 
-  role SystemUserRole @default(User)
-
-  // ==== relations ====
-
   sessions UserSession[]
 
   createdFiles       File[]
@@ -38,26 +34,30 @@ model User {
   createdReplies     Reply[]
   createdRecords     Record[]
 
-  // TODO: reference?
   attendedContests Contest[] @relation("attendee", references: [id])
   moddedContests   Contest[] @relation("mod", references: [id])
   juriedContests   Contest[] @relation("jury", references: [id])
 
   attendedTeams TeamMember[]
+
+  role SystemUserRole @default(User)
 }
 
 enum SystemUserRole {
+  /// 超级用户
   Su
+  /// 管理员
   Admin
+  /// 普通用户
   User
-  Guest
+  /// 封禁用户
+  Banned
 }
 
+/// 用户登录会话
 model UserSession {
   session    String   @id @default(uuid())
   lastActive DateTime @default(now())
-
-  // ==== relations ====
 
   user   User @relation(fields: [userId], references: [id])
   userId Int
@@ -72,24 +72,27 @@ model File {
   mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
 
-  // ==== relations ====
-
+  /// 文件所属的用户
   user   User? @relation(fields: [userId], references: [id])
   userId Int?
 
+  /// 文件作为数据所属的题目
   dataProblem   Problem? @relation("data", fields: [dataProblemId], references: [id])
   dataProblemId Int?
 
+  /// 文件作为附加文件所属的题目
   fileProblem   Problem? @relation("file", fields: [fileProblemId], references: [id])
   fileProblemId Int?
 }
 
+/// 题目
 model Problem {
   id Int @id @default(autoincrement())
 
   title       String
   description String
 
+  /// 是否公开
   private Boolean @default(true)
 
   createdAt DateTime @default(now())

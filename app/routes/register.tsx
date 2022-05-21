@@ -20,9 +20,9 @@ export const meta: MetaFunction = () => ({
 export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
 
-  const username = invariant(usernameScheme.safeParse(form.get("username")));
-  const password = invariant(passwordScheme.safeParse(form.get("password")));
-  const password2 = invariant(passwordScheme.safeParse(form.get("password2")));
+  const username = invariant(usernameScheme, form.get("username"));
+  const password = invariant(passwordScheme, form.get("password"));
+  const password2 = invariant(passwordScheme, form.get("password2"));
 
   if (password !== password2) {
     return new Response("Passwords do not match", { status: 400 });

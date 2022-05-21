@@ -20,8 +20,8 @@ export const meta: MetaFunction = () => ({
 export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
 
-  const username = invariant(usernameScheme.safeParse(form.get("username")));
-  const password = invariant(passwordScheme.safeParse(form.get("password")));
+  const username = invariant(usernameScheme, form.get("username"));
+  const password = invariant(passwordScheme, form.get("password"));
 
   const user = await db.user.findUnique({
     where: { username },

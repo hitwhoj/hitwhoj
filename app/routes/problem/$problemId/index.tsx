@@ -20,7 +20,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 

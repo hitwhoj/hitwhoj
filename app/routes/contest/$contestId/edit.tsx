@@ -43,7 +43,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const contestId = invariant(idScheme.safeParse(params.contestId), {
+  const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
 
@@ -78,7 +78,7 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const contestId = invariant(idScheme.safeParse(params.contestId), {
+  const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
   const form = await request.formData();
@@ -87,7 +87,7 @@ export const action: ActionFunction = async ({ params, request }) => {
 
   switch (_action) {
     case ActionType.CreateProblem: {
-      const problemId = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme, form.get("pid"));
 
       await db.contest.update({
         where: { id: contestId },
@@ -100,7 +100,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteProblem: {
-      const problemId = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme, form.get("pid"));
 
       await db.contest.update({
         where: { id: contestId },
@@ -111,7 +111,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.CreateTag: {
-      const tag = invariant(tagScheme.safeParse(form.get("tag")));
+      const tag = invariant(tagScheme, form.get("tag"));
 
       await db.contest.update({
         where: { id: contestId },
@@ -129,7 +129,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteTag: {
-      const tag = invariant(tagScheme.safeParse(form.get("tag")));
+      const tag = invariant(tagScheme, form.get("tag"));
 
       await db.contest.update({
         where: { id: contestId },
@@ -146,10 +146,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.UpdateInformation: {
-      const title = invariant(titleScheme.safeParse(form.get("title")));
-      const description = invariant(
-        descriptionScheme.safeParse(form.get("description"))
-      );
+      const title = invariant(titleScheme, form.get("title"));
+      const description = invariant(descriptionScheme, form.get("description"));
 
       await db.contest.update({
         where: { id: contestId },
@@ -164,16 +162,14 @@ export const action: ActionFunction = async ({ params, request }) => {
 
     case ActionType.UpdateTime: {
       // 客户端所在的时区
-      const timezone = invariant(
-        timezoneScheme.safeParse(form.get("timezone"))
-      );
+      const timezone = invariant(timezoneScheme, form.get("timezone"));
 
       const beginTime = adjustTimezone(
-        invariant(datetimeStringScheme.safeParse(form.get("beginTime"))),
+        invariant(datetimeStringScheme, form.get("beginTime")),
         timezone
       );
       const endTime = adjustTimezone(
-        invariant(datetimeStringScheme.safeParse(form.get("endTime"))),
+        invariant(datetimeStringScheme, form.get("endTime")),
         timezone
       );
 
@@ -189,7 +185,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.UpdateSystem: {
-      const system = invariant(systemScheme.safeParse(form.get("system")));
+      const system = invariant(systemScheme, form.get("system"));
 
       await db.contest.update({
         where: { id: contestId },

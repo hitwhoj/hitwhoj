@@ -14,8 +14,8 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   }
 
   const form = await request.formData();
-  const title = invariant(commentScheme.safeParse(form.get("title")));
-  const tag = invariant(tagScheme.safeParse(form.get("tag")));
+  const title = invariant(commentScheme, form.get("title"));
+  const tag = invariant(tagScheme, form.get("tag"));
 
   const { id } = await db.comment.create({
     data: {

@@ -21,13 +21,19 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
+import { checkUserWritePermission } from "../__permission";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserWritePermission(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -52,28 +58,24 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserWritePermission(request, userId);
 
   const form = await request.formData();
 
-  const username = invariant(usernameScheme.safeParse(form.get("username")));
+  const username = invariant(usernameScheme, form.get("username"));
   const nickname = invariant(
-    nicknameScheme.or(emptyStringScheme).safeParse(form.get("nickname"))
+    nicknameScheme.or(emptyStringScheme),
+    form.get("nickname")
   );
   // TODO: avatar should not be like this
   const avatar = invariant(
-    z
-      .string()
-      .url("Avatar must be a valid URL")
-      .or(emptyStringScheme)
-      .safeParse(form.get("avatar"))
+    z.string().url("Avatar must be a valid URL").or(emptyStringScheme),
+    form.get("avatar")
   );
-  const email = invariant(
-    emailScheme.or(emptyStringScheme).safeParse(form.get("email"))
-  );
-  const bio = invariant(
-    bioScheme.or(emptyStringScheme).safeParse(form.get("bio"))
-  );
+  const email = invariant(emailScheme.or(emptyStringScheme), form.get("email"));
+  const bio = invariant(bioScheme.or(emptyStringScheme), form.get("bio"));
 
   const user = await db.user.findUnique({
     where: { username },

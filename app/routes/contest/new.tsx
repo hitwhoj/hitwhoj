@@ -49,22 +49,20 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 
   const form = await request.formData();
 
-  const title = invariant(titleScheme.safeParse(form.get("title")));
-  const description = invariant(
-    descriptionScheme.safeParse(form.get("description"))
-  );
+  const title = invariant(titleScheme, form.get("title"));
+  const description = invariant(descriptionScheme, form.get("description"));
 
   // 客户端时区
-  const timezone = invariant(timezoneScheme.safeParse(form.get("timezone")));
+  const timezone = invariant(timezoneScheme, form.get("timezone"));
   const beginTime = adjustTimezone(
-    invariant(datetimeStringScheme.safeParse(form.get("beginTime"))),
+    invariant(datetimeStringScheme, form.get("beginTime")),
     timezone
   );
   const endTime = adjustTimezone(
-    invariant(datetimeStringScheme.safeParse(form.get("endTime"))),
+    invariant(datetimeStringScheme, form.get("endTime")),
     timezone
   );
-  const system = invariant(systemScheme.safeParse(form.get("system")));
+  const system = invariant(systemScheme, form.get("system"));
 
   const { id: contestId } = await db.contest.create({
     data: {

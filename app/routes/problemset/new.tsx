@@ -32,10 +32,8 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 
   const form = await request.formData();
 
-  const title = invariant(titleScheme.safeParse(form.get("title")));
-  const description = invariant(
-    descriptionScheme.safeParse(form.get("description"))
-  );
+  const title = invariant(titleScheme, form.get("title"));
+  const description = invariant(descriptionScheme, form.get("description"));
 
   const { id: problemSetId } = await db.problemSet.create({
     data: {

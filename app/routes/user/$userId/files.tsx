@@ -7,7 +7,9 @@ import { useEffect, useRef } from "react";
 import type {
   ActionFunction,
   LoaderFunction,
-  MetaFunction,
+  MetaFunction} from "@remix-run/node";
+import {
+  json
 } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 
@@ -17,6 +19,7 @@ import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
+import { checkUserWritePermission } from "../__permission";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {
@@ -24,8 +27,13 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserWritePermission(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -55,9 +63,11 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
-  const form = await unstable_parseMultipartFormData(request, handler);
+  const userId = invariant(idScheme, params.userId, { status: 404 });
 
+  await checkUserWritePermission(request, userId);
+
+  const form = await unstable_parseMultipartFormData(request, handler);
   const _action = form.get("_action");
 
   switch (_action) {
@@ -67,7 +77,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         .filter((file): file is File => file instanceof File);
 
       if (!files.length) {
-        throw new Response("No file found", { status: 400 });
+        throw json(["File missing"], { status: 400 });
       }
 
       await Promise.all(files.map((file) => createUserFile(file, userId)));
@@ -76,7 +86,17 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+      const fid = invariant(uuidScheme, form.get("fid"));
+
+      const file = await db.file.findUnique({
+        where: { id: fid },
+        select: { userId: true },
+      });
+
+      // 检查是否是用户的文件
+      if (!file || file.userId !== userId) {
+        throw new Response(null, { status: 404 });
+      }
 
       await removeFile(fid);
 
@@ -130,7 +150,7 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.id} />
       <Button
-        type="primary"
+        type="text"
         status="danger"
         htmlType="submit"
         name="_action"
@@ -142,49 +162,49 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
   );
 }
 
-const columns: ColumnProps<UserFile>[] = [
-  {
-    title: "文件名",
-    dataIndex: "filename",
-    sorter: (a: UserFile, b: UserFile) =>
-      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
-    render: (_, file) => (
-      <Link to={`/file/${file.id}`} target="_blank">
-        {file.filename}
-      </Link>
-    ),
-  },
-  {
-    title: "文件大小",
-    dataIndex: "filesize",
-    sorter: (a: UserFile, b: UserFile) => a.filesize - b.filesize,
-  },
-  {
-    title: "文件类型",
-    dataIndex: "mimetype",
-    filters: [
-      { text: "图片", value: "image" },
-      { text: "文档", value: "text" },
-      { text: "音频", value: "audio" },
-      { text: "视频", value: "video" },
-    ],
-    onFilter: (value: string, file: UserFile) =>
-      file.mimetype.startsWith(value),
-  },
-  {
-    title: "操作",
-    dataIndex: "action",
-    render: (_, file) => <UserFileRemoveButton file={file} />,
-  },
-];
-
 function UserFileList({ files }: { files: UserFile[] }) {
+  const columns: ColumnProps<UserFile>[] = [
+    {
+      title: "文件名",
+      dataIndex: "filename",
+      sorter: (a: UserFile, b: UserFile) =>
+        a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+      render: (_, file) => (
+        <Link to={`/file/${file.id}`} target="_blank">
+          {file.filename}
+        </Link>
+      ),
+    },
+    {
+      title: "文件大小",
+      dataIndex: "filesize",
+      sorter: (a: UserFile, b: UserFile) => a.filesize - b.filesize,
+    },
+    {
+      title: "文件类型",
+      dataIndex: "mimetype",
+      filters: [
+        { text: "图片", value: "image" },
+        { text: "文档", value: "text" },
+        { text: "音频", value: "audio" },
+        { text: "视频", value: "video" },
+      ],
+      onFilter: (value: string, file: UserFile) =>
+        file.mimetype.startsWith(value),
+    },
+    {
+      title: "操作",
+      dataIndex: "action",
+      render: (_, file) => <UserFileRemoveButton file={file} />,
+    },
+  ];
+
   return (
     <Table rowKey="fid" columns={columns} data={files} pagination={false} />
   );
 }
 
-export default function UserFiles() {
+export default function UserFilePage() {
   const {
     user: { createdFiles: files },
   } = useLoaderData<LoaderData>();

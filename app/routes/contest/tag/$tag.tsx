@@ -11,7 +11,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const tag = invariant(tagScheme.safeParse(params.tag), {
+  const tag = invariant(tagScheme, params.tag, {
     status: 404,
   });
 
