@@ -160,3 +160,11 @@ export const replyScheme = z
   .min(5, "Reply must be at least 5 characters");
 
 export const teamNameScheme = z.string().nonempty("TeamName must be nonempty");
+
+/**
+ *
+ */
+export const contentScheme = z
+  .string()
+  .nonempty("message content must be nonempty")
+  .max(255, "message content mast be less than 255 characters");
