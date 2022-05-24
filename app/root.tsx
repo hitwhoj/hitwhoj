@@ -113,12 +113,20 @@ export default function App() {
 
     if (user?.id) {
       // 新私聊消息
-      const subscription = wsc.message.subscribe((data) => {
-        const id = new Date().toUTCString() + Math.random();
+      const subscription = wsc.privateMessages.subscribe((data) => {
+        // 生成一个随机 id 给 Notification
+        const id = Date.now().toString(16) + Math.random().toString(16);
+
         Notification.info({
           id,
-          title: `New Private Message`,
-          content: `User ${data.from}: ${data.content}`,
+          title: `新私聊消息`,
+          content: (
+            <span>
+              <b>{data.from.nickname || data.from.username}</b>
+              {": "}
+              {data.content}
+            </span>
+          ),
           btn: (
             <Button
               type="primary"
@@ -134,12 +142,13 @@ export default function App() {
       });
 
       return () => {
-        alert("sayonara");
         subscription.unsubscribe();
         wsc.close();
       };
     }
-  }, [user?.id, navigate]);
+    // navigate 依赖不需要传给 useEffect 函数
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax`;

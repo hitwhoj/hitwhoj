@@ -5,7 +5,7 @@ import type {
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
 import { Button, Card, Input, List } from "@arco-design/web-react";
-import type { Message, User } from "@prisma/client";
+import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
@@ -20,9 +20,9 @@ export const meta: MetaFunction = () => ({
 });
 
 type LoaderData = {
-  self: Pick<User, "id" | "username" | "avatar">;
-  target: Pick<User, "id" | "username" | "avatar">;
-  msgs: Message[];
+  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
+  target: Pick<User, "id" | "nickname" | "username" | "avatar">;
+  msgs: PrivateMessage[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -35,7 +35,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   }
   const self = await db.user.findUnique({
     where: { id: selfId },
-    select: { id: true, username: true, avatar: true },
+    select: { id: true, nickname: true, username: true, avatar: true },
   });
   if (!self) {
     throw redirect("/register");
@@ -46,18 +46,22 @@ export const loader: LoaderFunction<LoaderData> = async ({
   });
   const target = await db.user.findUnique({
     where: { id: toUserId },
-    select: { id: true, avatar: true, username: true },
+    select: { id: true, nickname: true, avatar: true, username: true },
   });
+
   if (!target) {
     throw new Response("User not found", { status: 404 });
   }
 
-  const msgs = await db.message.findMany({
+  const msgs = await db.privateMessage.findMany({
     where: {
       OR: [
-        { from: self?.id, to: target.id },
-        { from: target.id, to: self?.id },
+        { fromId: self?.id, toId: target.id },
+        { fromId: target.id, toId: self?.id },
       ],
+    },
+    orderBy: {
+      sentAt: "asc",
     },
   });
 
@@ -74,24 +78,43 @@ export const action: ActionFunction = async ({ request, context }) => {
   const to = invariant(idScheme.safeParse(form.get("to")));
   const content = invariant(contentScheme.safeParse(form.get("content")));
 
-  const message = await db.message.create({
+  const message = await db.privateMessage.create({
     data: {
-      from: self,
-      to: to,
+      from: { connect: { id: self } },
+      to: { connect: { id: to } },
       content: content,
+    },
+    include: {
+      from: {
+        select: {
+          id: true,
+          username: true,
+          nickname: true,
+          avatar: true,
+        },
+      },
+      to: {
+        select: {
+          id: true,
+          username: true,
+          nickname: true,
+          avatar: true,
+        },
+      },
     },
   });
 
   // 获取到服务器的 WebSocket 实例
   const ws = context.wsServer as WsServer;
-  ws.sendMessage(`/user/${to}`, message);
+  // 推送私聊消息给对方
+  ws.sendPrivateMessage(message);
 
   return null;
 };
 
 export default function ChatIndex() {
   const { self, target, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<Message[]>(msgs);
+  const [messages, setMessages] = useState<PrivateMessage[]>(msgs);
   const wsc = useContext(WsContext);
 
   useEffect(() => {
@@ -99,8 +122,9 @@ export default function ChatIndex() {
   }, [msgs]);
 
   useEffect(() => {
-    const subscription = wsc?.message.subscribe((data) => {
-      if (data.from === target.id) {
+    const subscription = wsc?.privateMessages.subscribe((data) => {
+      // 如果消息是当前页面，则更新消息
+      if (data.from.id === target.id) {
         setMessages((messages) => [...messages, data]);
       }
     });
@@ -154,7 +178,7 @@ export default function ChatIndex() {
                 }}
               >
                 <img
-                  src={item.from == self.id ? self.avatar : target.avatar}
+                  src={item.fromId == self.id ? self.avatar : target.avatar}
                   alt="avatar"
                   style={{
                     width: "40px",
@@ -169,7 +193,7 @@ export default function ChatIndex() {
                     fontWeight: "bold",
                   }}
                 >
-                  {item.from == self.id ? self.username : target.username}
+                  {item.fromId == self.id ? self.username : target.username}
                 </p>
 
                 <p
@@ -180,7 +204,7 @@ export default function ChatIndex() {
                     color: "var(--color-text-2)",
                   }}
                 >
-                  {new Date(item.time).toLocaleString("zh")}
+                  {new Date(item.sentAt).toLocaleString("zh")}
                 </p>
               </div>
               <div

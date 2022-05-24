@@ -1,5 +1,6 @@
+import { PrivateMessageWithUser, WebSocketMessage } from "~/utils/ws.types";
 import { Server as HttpServer } from "http";
-import { Message, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Server as WebSocketServer, WebSocket } from "ws";
 
 const db = new PrismaClient();
@@ -53,13 +54,21 @@ class WsServer {
   }
 
   /** 推送消息到指定的房间 */
-  sendMessage(room: string, message: Message) {
+  #sendMessage(room: string, message: WebSocketMessage) {
     if (this.#rooms.has(room)) {
       const sockets = this.#rooms.get(room)!;
       for (const socket of sockets) {
         socket.send(JSON.stringify(message));
       }
     }
+  }
+
+  /** 推送私聊消息 */
+  sendPrivateMessage(message: PrivateMessageWithUser) {
+    this.#sendMessage(`/user/${message.to.id}`, {
+      type: "PrivateMessage",
+      message,
+    });
   }
 }
 
