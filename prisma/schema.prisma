@@ -44,7 +44,9 @@ model User {
   juriedContests   Contest[] @relation("jury", references: [id])
 
   attendedTeams TeamMember[]
-  send          Message[]    @relation("send")
+
+  sentMessages     PrivateMessage[] @relation("send")
+  receivedMessages PrivateMessage[] @relation("receive")
 }
 
 enum SystemUserRole {
@@ -296,32 +298,21 @@ model Reply {
   creatorId Int
 }
 
-enum MessageType {
-  /// 私聊消息
-  Private
-  /// 群聊消息
-  Team
-  /// 比赛消息
-  Contest
-  /// 系统消息
-  System
-}
-
-model Message {
+model PrivateMessage {
   id Int @id @default(autoincrement())
 
-  /// 消息类型
-  type    MessageType @default(Private)
   /// 消息内容
   content String
   /// 发送时间
-  time    DateTime    @default(now())
+  sentAt  DateTime @default(now())
 
   // ==== relations ====
 
-  fromUser User @relation(name: "send", fields: [from], references: [id])
-  from     Int
+  /// 发送方
+  from   User @relation("send", fields: [fromId], references: [id])
+  fromId Int
 
-  /// 可能为用户id, 可能为房间id
-  to Int
+  /// 接收方
+  to   User @relation("receive", fields: [toId], references: [id])
+  toId Int
 }
