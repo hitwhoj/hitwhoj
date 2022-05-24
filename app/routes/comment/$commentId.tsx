@@ -14,23 +14,97 @@ import {
 } from "@arco-design/web-react";
 import {
   IconExclamationCircle,
+  IconExclamationCircleFill,
   IconHeart,
+  IconHeartFill,
   IconMessage,
   IconTag,
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
+import { findSessionUid } from "~/utils/sessions";
+import { Like } from "~/routes/comment/index";
+import { redirect } from "@remix-run/node";
+import type { ActionFunction } from "@remix-run/node";
+
+enum ActionType {
+  None = "none",
+  Heart = "heart",
+  UnHeart = "unheart",
+}
+
+export const action: ActionFunction = async ({ request }) => {
+  const self = await findSessionUid(request);
+
+  if (!self) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
+  const form = await request.formData();
+  const _action = form.get("_action");
+
+  switch (_action) {
+    case ActionType.None: {
+      return null;
+    }
+    case ActionType.Heart: {
+      const id = invariant(idScheme.safeParse(form.get("id")), {
+        status: 404,
+      });
+      await db.reply.update({
+        where: { id },
+        data: {
+          heartees: {
+            connect: {
+              id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+    case ActionType.UnHeart: {
+      const id = invariant(idScheme.safeParse(form.get("id")), {
+        status: 404,
+      });
+      await db.reply.update({
+        where: { id },
+        data: {
+          heartees: {
+            disconnect: {
+              id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+  }
+  return null;
+};
 
 type LoaderData = {
   comment: Comment & {
-    creator: Pick<User, "id" | "username" | "avatar">;
+    creator: Pick<User, "id" | "nickname" | "avatar">;
     tags: Pick<CommentTag, "id" | "name">[];
+    heartees: Pick<User, "id">[];
+    reportees: Pick<User, "id">[];
     replies: (Reply & {
-      creator: Pick<User, "id" | "username" | "avatar">;
+      creator: Pick<User, "id" | "nickname" | "avatar">;
+      replyTo:
+        | (Pick<Reply, "content"> & { creator: Pick<User, "id" | "nickname"> })
+        | null;
+      heartees: Pick<User, "id">[];
+      reportees: Pick<User, "id">[];
+      replies: Pick<Reply, "id">[];
     })[];
   };
+  self: number;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
   const commentId = invariant(idScheme.safeParse(params.commentId), {
     status: 404,
   });
@@ -40,7 +114,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       creator: {
         select: {
           id: true,
-          username: true,
+          nickname: true,
           avatar: true,
         },
       },
@@ -50,13 +124,48 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
           name: true,
         },
       },
+      heartees: {
+        select: {
+          id: true,
+        },
+      },
+      reportees: {
+        select: {
+          id: true,
+        },
+      },
       replies: {
         include: {
           creator: {
             select: {
               id: true,
-              username: true,
+              nickname: true,
               avatar: true,
+            },
+          },
+          replyTo: {
+            include: {
+              creator: {
+                select: {
+                  id: true,
+                  nickname: true,
+                },
+              },
+            },
+          },
+          heartees: {
+            select: {
+              id: true,
+            },
+          },
+          reportees: {
+            select: {
+              id: true,
+            },
+          },
+          replies: {
+            select: {
+              id: true,
             },
           },
         },
@@ -70,27 +179,34 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   if (!comment) {
     throw "comment not found";
   }
-  return { comment };
+  const self = await findSessionUid(request);
+  if (!self) {
+    return {
+      comment,
+      self: -1,
+    };
+  }
+  return { comment, self };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,
 });
 
-function ReplyCard({
+function Title({
   reply,
+  self,
   index,
 }: {
-  reply: Reply & {
-    creator: Pick<User, "id" | "username" | "avatar">;
-  };
+  reply: LoaderData["comment"]["replies"][number];
+  self: number;
   index: number;
 }) {
-  const author = reply.creator;
-
   const color = ["orange", "green", "blue", "purple", "magenta", "gold"];
 
-  const Title = () => (
+  const author = reply.creator;
+
+  return (
     <div
       style={{
         display: "flex",
@@ -109,36 +225,112 @@ function ReplyCard({
           {author.avatar ? (
             <img src={author.avatar} alt="加载失败捏" />
           ) : (
-            author.username[0]
+            author.nickname[0]
           )}
         </Avatar>
-        <Typography.Text>{author.username}</Typography.Text>
+        <Typography.Text>{author.nickname}</Typography.Text>
         <Typography.Text>
           &emsp;@{reply.createdAt.toLocaleString().slice(0, 16)}
         </Typography.Text>
       </span>
       <Space size={24}>
-        <Space size={8}>
-          <IconTag />
-          {"#" + index}
-        </Space>
-        <Space size={8}>
-          <IconHeart />
-          <Typography.Text>收藏 : 42</Typography.Text>
-        </Space>
-        <Space size={8}>
-          <IconMessage />
-          <Typography.Text>回复 : 63</Typography.Text>
-        </Space>
-        <Space size={8}>
-          <IconExclamationCircle />
-          <Typography.Text>举报 : 0</Typography.Text>
-        </Space>
+        <Like
+          props={{
+            id: reply.id,
+            count: index,
+            likeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconTag style={{ fontSize: "1.1em" }} /> #{" "}
+              </>
+            ),
+            style: { fontSize: "1.18em" },
+          }}
+        />
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.heartees.map((u) => u.id).includes(self),
+            count: reply.heartees.length,
+            likeAction: ActionType.Heart,
+            dislikeAction: ActionType.UnHeart,
+            likeElement: (
+              <>
+                <IconHeartFill
+                  style={{ color: "#f53f3f", fontSize: "1.1em" }}
+                />{" "}
+                #{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconHeart style={{ fontSize: "1.1em" }} /> #{" "}
+              </>
+            ),
+            style: { fontSize: "1.18em" },
+          }}
+        />
+        <Like
+          props={{
+            id: reply.id,
+            count: reply.replies.length,
+            likeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconMessage style={{ fontSize: "1.1em" }} /> #{" "}
+              </>
+            ),
+            style: { fontSize: "1.18em" },
+          }}
+        />
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.reportees.map((u) => u.id).includes(self),
+            count: reply.reportees.length,
+            likeAction: ActionType.None,
+            dislikeAction: ActionType.None,
+            likeElement: (
+              <IconExclamationCircleFill
+                style={{ color: "#F53F3F", fontSize: "1.1em" }}
+              />
+            ),
+            dislikeElement: (
+              <>
+                {reply.reportees.length > 0 ? (
+                  <IconExclamationCircle
+                    style={{ color: "#F53F3F", fontSize: "1.1em" }}
+                  />
+                ) : (
+                  <IconExclamationCircle style={{ fontSize: "1.1em" }} />
+                )}{" "}
+                #
+              </>
+            ),
+            style: { fontSize: "1.18em" },
+          }}
+        />
       </Space>
     </div>
   );
+}
+
+function ReplyCard({
+  reply,
+  self,
+  index,
+}: {
+  reply: LoaderData["comment"]["replies"][number];
+  self: LoaderData["self"];
+  index: number;
+}) {
+  // const replyTo = reply.replyTo;
+
   return (
-    <Card title={<Title />} style={{ borderColor: "#4E5969" }}>
+    <Card
+      title={<Title reply={reply} self={self} index={index} />}
+      style={{ borderColor: "#4E5969" }}
+    >
       <Markdown>{reply.content}</Markdown>
     </Card>
   );
@@ -146,8 +338,10 @@ function ReplyCard({
 
 export function ReplyList({
   replies,
+  self,
 }: {
-  replies: (Reply & { creator: Pick<User, "id" | "username" | "avatar"> })[];
+  replies: LoaderData["comment"]["replies"];
+  self: LoaderData["self"];
 }) {
   if (!replies.length) {
     return <p>暂无回复</p>;
@@ -155,7 +349,7 @@ export function ReplyList({
     return (
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         {replies.map((reply, index) => (
-          <ReplyCard key={reply.id} reply={reply} index={index} />
+          <ReplyCard key={reply.id} reply={reply} self={self} index={index} />
         ))}
       </Space>
     );
@@ -163,7 +357,7 @@ export function ReplyList({
 }
 
 export default function CommentView() {
-  const { comment } = useLoaderData<LoaderData>();
+  const { comment, self } = useLoaderData<LoaderData>();
   return (
     <>
       <h1>Comment: {comment.title}</h1>
@@ -177,7 +371,7 @@ export default function CommentView() {
         </Link>
       </Space>
       <Divider />
-      <ReplyList replies={comment.replies} />
+      <ReplyList replies={comment.replies} self={self} />
     </>
   );
 }

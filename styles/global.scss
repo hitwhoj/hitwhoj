@@ -17,6 +17,14 @@ a:active {
   color: inherit;
 }
 
+button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+
 body[arco-theme="dark"] {
   color: var(--color-text-1);
   background-color: var(--color-bg-1);

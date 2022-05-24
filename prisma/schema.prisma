@@ -38,6 +38,14 @@ model User {
   createdReplies     Reply[]
   createdRecords     Record[]
 
+  heartedComments  Comment[] @relation(name: "heartedComments")
+  heartedReplies   Reply[]   @relation(name: "heartedReplies")
+  starredComments  Comment[] @relation(name: "starredComments")
+  starredReplies   Reply[]   @relation(name: "starredReplies")
+  reportedComments Comment[] @relation(name: "reportedComments")
+  reportedReplies  Reply[]   @relation(name: "reportedReplies")
+
+
   // TODO: reference?
   attendedContests Contest[] @relation("attendee", references: [id])
   moddedContests   Contest[] @relation("mod", references: [id])
@@ -270,6 +278,10 @@ model Comment {
 
   // === relations ===
 
+  heartees  User[] @relation("heartedComments", references: [id])
+  starrees  User[] @relation("starredComments", references: [id])
+  reportees User[] @relation("reportedComments", references: [id])
+
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
@@ -287,6 +299,14 @@ model Reply {
   updatedAt DateTime @updatedAt
 
   // ==== relations ====
+
+  replyTo   Reply?  @relation("replies", fields: [replyToId], references: [id])
+  replyToId Int?
+  replies   Reply[] @relation("replies")
+
+  heartees  User[] @relation("heartedReplies", references: [id])
+  starrees  User[] @relation("starredReplies", references: [id])
+  reportees User[] @relation("reportedReplies", references: [id])
 
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int
