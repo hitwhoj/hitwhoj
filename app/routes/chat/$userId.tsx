@@ -4,26 +4,26 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import { Button, Card, Input, List } from "@arco-design/web-react";
+import { Button, Input } from "@arco-design/web-react";
 import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { Form, useLoaderData } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { useContext, useEffect, useState, useRef } from "react";
 import { WsContext } from "~/utils/context/ws";
 import type { WsServer } from "server/ws.server";
-
-export const meta: MetaFunction = () => ({
-  title: "聊天 - HITwh OJ",
-});
 
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
   target: Pick<User, "id" | "nickname" | "username" | "avatar">;
   msgs: PrivateMessage[];
 };
+
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+  title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
+});
 
 export const loader: LoaderFunction<LoaderData> = async ({
   request,
@@ -132,125 +132,80 @@ export default function ChatIndex() {
     return () => subscription?.unsubscribe();
   }, [wsc, target.id]);
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100%",
-        width: "100%",
-        backgroundColor: "var(--color-fill-2)",
-      }}
-    >
-      <Card
-        title={"chat: " + target.username}
-        style={{
-          width: "80%",
-          height: "90%",
-        }}
-        bodyStyle={{
-          display: "flex",
-          flexFlow: "column",
-        }}
-      >
-        <List
-          size="small"
-          style={{
-            height: "350px",
-            marginBottom: "20px",
-          }}
-          dataSource={messages}
-          render={(item) => (
-            <List.Item
-              key={item.id}
-              style={{
-                display: "flex",
-                flexFlow: "row",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-block",
-                  margin: "0",
-                  height: "40px",
-                }}
-              >
-                <img
-                  src={item.fromId == self.id ? self.avatar : target.avatar}
-                  alt="avatar"
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    display: "inline-block",
-                  }}
-                />
-                <p
-                  style={{
-                    display: "inline-block",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {item.fromId == self.id ? self.username : target.username}
-                </p>
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const { state } = useTransition();
+  const isFetching = state !== "idle";
 
-                <p
-                  style={{
-                    display: "inline-block",
-                    marginLeft: "10px",
-                    fontSize: "0.8em",
-                    color: "var(--color-text-2)",
-                  }}
-                >
-                  {new Date(item.sentAt).toLocaleString("zh")}
-                </p>
-              </div>
-              <div
-                style={{
-                  fontSize: "1em",
-                }}
-              >
-                {item.content}
-              </div>
-            </List.Item>
-          )}
-        ></List>
-        <div
-          style={{
-            height: "140px",
-          }}
+  // 我想超市这个傻逼的 arco-design，ref 一定要自己套一层是吧
+  const textareaRef = useRef<{ dom: HTMLTextAreaElement }>(null);
+  // 发送之后清空输入框
+  useEffect(() => {
+    if (!isFetching) {
+      formRef.current?.reset();
+      if (textareaRef.current) {
+        textareaRef.current.dom.value = "";
+      }
+      // 傻逼 arco-design 我草我清除了他居然还会给我变回来
+      // 一定要我再清除一次😅😅😅
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.dom.value = "";
+        }
+      }, 0);
+    }
+  }, [isFetching]);
+
+  return (
+    <div className="chat-content-container">
+      <header style={{ fontSize: "1.5em" }}>
+        {target.nickname || target.username}
+      </header>
+      <div className="chat-content-main">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`chat-content-message ${
+              message.fromId === self.id ? "right" : "left"
+            }`}
+          >
+            <div className="chat-content-message-bubble">{message.content}</div>
+          </div>
+        ))}
+      </div>
+      <footer>
+        <Form
+          method="post"
+          ref={formRef}
+          style={{ display: "flex", gap: "10px", alignItems: "end" }}
         >
-          <Form method="post">
-            <Input.TextArea
-              placeholder="input your message"
-              name="content"
-              maxLength={255}
-              showWordLimit
-              allowClear
-              wrapperStyle={{
-                marginBottom: "5px",
-              }}
-              style={{
-                resize: "none",
-                height: "110px",
-              }}
-            />
-            <input type="hidden" name="to" value={target.id} />
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="small"
-              style={{
-                float: "right",
-              }}
-            >
-              send
-            </Button>
-          </Form>
-        </div>
-      </Card>
+          <input type="hidden" name="to" value={target.id} />
+          <Input.TextArea
+            placeholder="输入消息..."
+            name="content"
+            maxLength={255}
+            showWordLimit
+            autoSize={{ minRows: 1, maxRows: 5 }}
+            ref={textareaRef}
+            style={{ flex: 1, height: "32px" }}
+            onPressEnter={() => submitRef.current?.click()}
+            disabled={isFetching}
+          />
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="large"
+            ref={submitRef}
+            style={{ height: "32px" }}
+            loading={isFetching}
+          >
+            发送
+          </Button>
+        </Form>
+      </footer>
     </div>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";
