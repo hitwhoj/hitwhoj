@@ -21,7 +21,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   // 访客，只能访问到公开的题目
   if (!self) {
     problems = await findProblemMany({
-      private: true,
+      private: false,
     });
   }
   // 系统管理员，可以访问所有题目
