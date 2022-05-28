@@ -131,7 +131,7 @@ export default function App() {
             <Button
               type="primary"
               onClick={() => {
-                navigate(`/chat/${data.from.id}`);
+                navigate(`/chat/user/${data.from.id}`);
                 Notification.remove(id);
               }}
             >

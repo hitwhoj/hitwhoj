@@ -77,6 +77,35 @@ main.arco-layout-content {
           display: flex;
           margin: 5px 10px;
 
+          .chat-content-message-avatar {
+            height: 50px;
+            width: 50px;
+            margin-right: 10px;
+          }
+
+          .chat-content-message-content {
+            .chat-content-message-content-header {
+              .chat-content-message-content-header-nickname {
+                font-weight: bold;
+                color: rgb(25, 25, 25);
+              }
+
+              .chat-content-message-content-header-role {
+              }
+
+              .chat-content-message-content-header-sentat {
+                font-size: 0.5em;
+                font-weight: bold;
+                color: #999;
+              }
+            }
+
+            .chat-content-message-content-body {
+              .chat-content-message-bubble {
+              }
+            }
+          }
+
           .chat-content-message-bubble {
             padding: 5px 10px;
             border-radius: 10px;

@@ -1,4 +1,5 @@
 import type { Observable } from "rxjs";
+import { filter } from "rxjs";
 import { map } from "rxjs";
 import { of, share } from "rxjs";
 import type { WebSocketSubject } from "rxjs/webSocket";
@@ -23,6 +24,14 @@ export class WsClient {
             (message) => message.type === "PrivateMessage"
           )
           .pipe(
+            filter(
+              (
+                message
+              ): message is Extract<
+                WebSocketMessage,
+                { type: "PrivateMessage" }
+              > => message.type === "PrivateMessage"
+            ),
             map((message) => message.message),
             // RxJS 的 multiplex 会对每次的 subscribe 和 unsubscribe 都发送一遍订阅和取消订阅消息，
             // 这会导致某个订阅的 unsubscribe 消息会把其他订阅全都取消掉。
@@ -34,6 +43,26 @@ export class WsClient {
           )
       : // 如果当前用户没有登录，则不进行订阅
         of();
+  }
+
+  subscribeRoom(roomId: number) {
+    return this.#subject
+      .multiplex(
+        () => ({ subscribe: `/room/${roomId}` }),
+        () => ({ unsubscribe: `/room/${roomId}` }),
+        (message) =>
+          message.type === "ChatMessage" && message.message.roomId === roomId
+      )
+      .pipe(
+        filter(
+          (
+            message
+          ): message is Extract<WebSocketMessage, { type: "ChatMessage" }> =>
+            message.type === "ChatMessage"
+        ),
+        map((message) => message.message),
+        share()
+      );
   }
 
   close() {

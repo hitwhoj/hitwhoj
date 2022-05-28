@@ -339,6 +339,32 @@ async function seed() {
       teamId: team1,
     },
   });
+
+  const { id: room1 } = await prisma.chatRoom.create({
+    data: {
+      name: "TestChatRoom",
+      description: "Test ChatRoom",
+      isPrivate: true,
+      password: "123456",
+      creatorId: alice,
+    },
+  });
+
+  await prisma.userInChatRoom.create({
+    data: {
+      roomId: room1,
+      userId: alice,
+      role: "Owner",
+    },
+  });
+
+  await prisma.chatMessage.create({
+    data: {
+      content: "Hello World",
+      roomId: room1,
+      senderId: alice,
+    },
+  });
 }
 
 seed();

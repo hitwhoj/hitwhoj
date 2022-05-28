@@ -73,13 +73,19 @@ export default function Chat() {
         {users.map(({ user, message }) => (
           <NavLink
             key={user.id}
-            to={`/chat/${user.id}`}
+            to={`/chat/user/${user.id}`}
             className="chat-list-item"
             prefetch="intent"
           >
             <div className="chat-selection">
               <Avatar>
-                <img src={user.avatar} alt="avatar" />
+                {user.avatar ? (
+                  <img src={user.avatar} alt="avatar" />
+                ) : user.nickname ? (
+                  user.nickname
+                ) : (
+                  user.username
+                )}
               </Avatar>
               <div className="chat-selection-detail">
                 <div className="chat-selection-detail-name">
