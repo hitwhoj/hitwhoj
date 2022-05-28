@@ -13,7 +13,7 @@ import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkUserReadPermission } from "./__permission";
+import { checkUserReadPermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;

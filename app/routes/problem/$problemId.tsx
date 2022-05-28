@@ -10,16 +10,22 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Space, Tabs } from "@arco-design/web-react";
+import { checkProblemReadPermission } from "~/utils/permission/problem";
 const TabPane = Tabs.TabPane;
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemReadPermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -27,7 +33,6 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       id: true,
       title: true,
       description: true,
-      private: true,
     },
   });
 

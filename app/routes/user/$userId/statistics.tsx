@@ -4,7 +4,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { checkUserReadPermission } from "../__permission";
+import { checkUserReadPermission } from "~/utils/permission/user";
 
 type LoaderData = {
   createdProblemSets: Pick<ProblemSet, "id" | "title">[];

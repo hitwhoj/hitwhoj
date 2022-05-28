@@ -12,6 +12,7 @@ export type AllThrownResponse =
   // not found
   | ThrownResponse<404, null>;
 
+/** 判断数据是否符合 scheme */
 export function invariant<
   Output,
   Def extends ZodTypeDef = ZodTypeDef,

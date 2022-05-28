@@ -21,6 +21,7 @@ import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
+import { checkProblemUpdatePermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -29,10 +30,15 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -73,6 +79,9 @@ export const action: ActionFunction = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
+
   const form = await unstable_parseMultipartFormData(request, handler);
 
   const _action = form.get("_action");

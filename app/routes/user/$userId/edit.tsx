@@ -21,7 +21,7 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
-import { checkUserWritePermission } from "../__permission";
+import { checkUserWritePermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;

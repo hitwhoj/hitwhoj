@@ -5,7 +5,7 @@ import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkUserReadPermission } from "../__permission";
+import { checkUserReadPermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<

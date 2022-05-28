@@ -18,7 +18,7 @@ import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { checkUserWritePermission } from "../__permission";
+import { checkUserWritePermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {

@@ -14,16 +14,22 @@ import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
+import { checkProblemSubmitPermission } from "~/utils/permission/problem";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
   problem: Pick<Problem, "title">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemSubmitPermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -46,10 +52,9 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
     status: 404,
   });
 
+  await checkProblemSubmitPermission(request, problemId);
+
   const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect("/login");
-  }
 
   const form = await request.formData();
   const code = invariant(codeScheme, form.get("code"));

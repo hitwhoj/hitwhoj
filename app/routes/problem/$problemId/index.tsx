@@ -10,6 +10,7 @@ import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { checkProblemReadPermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -19,10 +20,15 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemReadPermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
