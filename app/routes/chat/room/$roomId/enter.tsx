@@ -59,7 +59,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
 export default function EnterRoom() {
   const { room } = useLoaderData<LoaderData>();
   return (
-    <>
+    <div>
       <h1>{room.name}</h1>
       <p>{room.description}</p>
       <Form method="post">
@@ -76,7 +76,7 @@ export default function EnterRoom() {
           </Button>
         </Space>
       </Form>
-    </>
+    </div>
   );
 }
 

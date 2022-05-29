@@ -58,7 +58,7 @@ export default function ExitRoom() {
     userInChatRoom: { room },
   } = useLoaderData<LoaderData>();
   return (
-    <>
+    <div>
       <h1>{room.name}</h1>
       <p>{room.description}</p>
       <Form method="post">
@@ -66,7 +66,7 @@ export default function ExitRoom() {
           退出房间
         </Button>
       </Form>
-    </>
+    </div>
   );
 }
 
