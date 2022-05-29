@@ -4,7 +4,7 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import { Avatar, Button, Input } from "@arco-design/web-react";
+import { Avatar, Button, Empty, Input } from "@arco-design/web-react";
 import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
@@ -148,44 +148,55 @@ export default function ChatIndex() {
   return (
     <div className="chat-content-container">
       <header style={{ fontSize: "1.5em" }}>
-        {target.nickname || target.username}
+        用户：{target.nickname || target.username}
       </header>
       <div className="chat-content-main">
-        {messages.map((message) => {
-          const user = message.fromId === self.id ? self : target;
-          const date = new Date(message.sentAt);
-          const time = [
-            date.getHours().toString().padStart(2, "0"),
-            date.getMinutes().toString().padStart(2, "0"),
-            date.getSeconds().toString().padStart(2, "0"),
-          ].join(":");
+        {messages.length > 0 ? (
+          messages.map((message, index, array) => {
+            const user = message.fromId === self.id ? self : target;
+            const date = new Date(message.sentAt);
+            const time = [
+              date.getHours().toString().padStart(2, "0"),
+              date.getMinutes().toString().padStart(2, "0"),
+              date.getSeconds().toString().padStart(2, "0"),
+            ].join(":");
 
-          return (
-            <div
-              key={message.id}
-              className={`chat-content-message ${
-                user === self ? "right" : "left"
-              }`}
-            >
-              <div className="chat-content-message-avatar">
-                <Avatar>
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.nickname || user.username}
-                    />
-                  ) : (
-                    <IconUser />
+            // 是否是连续同一个人发送的最后一条消息
+            const isLast =
+              index === array.length - 1 ||
+              array[index + 1].fromId !== message.fromId;
+
+            return (
+              <div
+                key={message.id}
+                className={`chat-content-message ${
+                  user === self ? "right" : "left"
+                }`}
+              >
+                <div className="chat-content-message-avatar">
+                  {isLast && (
+                    <Avatar>
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.nickname || user.username}
+                        />
+                      ) : (
+                        <IconUser />
+                      )}
+                    </Avatar>
                   )}
-                </Avatar>
+                </div>
+                <div className="chat-content-message-bubble">
+                  <span>{message.content}</span>
+                  <time title={date.toLocaleString()}>{time}</time>
+                </div>
               </div>
-              <div className="chat-content-message-bubble">
-                <span>{message.content}</span>
-                <time>{time}</time>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          <Empty description="快来跟 TA 打个招呼吧" />
+        )}
       </div>
       <footer>
         <Form
