@@ -270,6 +270,7 @@ function Title({
   const author = reply.creator;
 
   const likeStyle = { fontSize: "0.9rem" };
+  const likeButtonStyle = { width: "6.5rem", padding: "0.1rem" };
 
   const [visible, setVisible] = useState(false);
 
@@ -318,46 +319,52 @@ function Title({
           &emsp;@{reply.createdAt.toLocaleString().slice(0, 16)}
         </Typography.Text>
       </span>
-      <Space size={16}>
-        <Like
-          props={{
-            id: reply.id,
-            count: index,
-            likeAction: ActionType.None,
-            likeElement: (
-              <>
-                <IconTag /> #{" "}
-              </>
-            ),
-            style: likeStyle,
-          }}
-        />
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.heartees.map((u) => u.id).includes(self),
-            count: reply.heartees.length,
-            likeAction: ActionType.Heart,
-            dislikeAction: ActionType.UnHeart,
-            likeElement: (
-              <>
-                <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
-              </>
-            ),
-            dislikeElement: (
-              <>
-                <IconHeart /> Star{" "}
-              </>
-            ),
-            style: likeStyle,
-          }}
-        />
+      <Space size={8}>
+        {/* TODO : 套一层 Button 会导致多一次 None 的提交请求 */}
+        <Button type="text" size="small" style={likeButtonStyle}>
+          <Like
+            props={{
+              id: reply.id,
+              count: index,
+              likeAction: ActionType.None,
+              likeElement: (
+                <>
+                  <IconTag /> #{" "}
+                </>
+              ),
+              style: likeStyle,
+            }}
+          />
+        </Button>
+        <Button type="text" size="small" style={likeButtonStyle}>
+          <Like
+            props={{
+              id: reply.id,
+              like: reply.heartees.map((u) => u.id).includes(self),
+              count: reply.heartees.length,
+              likeAction: ActionType.Heart,
+              dislikeAction: ActionType.UnHeart,
+              likeElement: (
+                <>
+                  <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
+                </>
+              ),
+              dislikeElement: (
+                <>
+                  <IconHeart /> Star{" "}
+                </>
+              ),
+              style: likeStyle,
+            }}
+          />
+        </Button>
         <Button
           type="text"
+          size="small"
           onClick={() => {
             setVisible(true);
           }}
-          style={{}}
+          style={likeButtonStyle}
         >
           <Like
             props={{
@@ -373,32 +380,35 @@ function Title({
             }}
           />
         </Button>
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.reportees.map((u) => u.id).includes(self),
-            count: reply.reportees.length,
-            likeAction: ActionType.None,
-            dislikeAction: ActionType.None,
-            likeElement: (
-              <>
-                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
-                Report
-              </>
-            ),
-            dislikeElement: (
-              <>
-                {reply.reportees.length > 0 ? (
-                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
-                ) : (
-                  <IconExclamationCircle />
-                )}{" "}
-                Report
-              </>
-            ),
-            style: likeStyle,
-          }}
-        />
+        {/* TODO : 举办机制与页面没做 */}
+        <Button type="text" size="small" style={likeButtonStyle}>
+          <Like
+            props={{
+              id: reply.id,
+              like: reply.reportees.map((u) => u.id).includes(self),
+              count: reply.reportees.length,
+              likeAction: ActionType.None,
+              dislikeAction: ActionType.None,
+              likeElement: (
+                <>
+                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+                  Report
+                </>
+              ),
+              dislikeElement: (
+                <>
+                  {reply.reportees.length > 0 ? (
+                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                  ) : (
+                    <IconExclamationCircle />
+                  )}{" "}
+                  Report
+                </>
+              ),
+              style: likeStyle,
+            }}
+          />
+        </Button>
       </Space>
     </div>
   );

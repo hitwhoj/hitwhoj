@@ -215,7 +215,7 @@ async function seed() {
     },
   });
 
-  await prisma.reply.create({
+  const { id: reply0 } = await prisma.reply.create({
     data: {
       content:
         "我好想做嘉然小姐的狗啊。\n\r" +
@@ -237,7 +237,7 @@ async function seed() {
     },
   });
 
-  await prisma.reply.create({
+  const { id: replyMark1 } = await prisma.reply.create({
     data: {
       content:
         "可是她说喜欢的是猫。\n\r" +
@@ -261,7 +261,7 @@ async function seed() {
     },
   });
 
-  await prisma.reply.create({
+  const { id: replyMark2 } = await prisma.reply.create({
     data: {
       content:
         "那时候嘉然小姐大概会把我的身体好好地装起来扔到门外吧。\n\r" +
@@ -284,31 +284,37 @@ async function seed() {
         content: "注 1 : 指嘉然发表的上一篇，即12月23日的动态",
         creatorId: alice,
         commentId: comment1,
+        replyToId: replyMark1,
       },
       {
         content: "注 2: 此处neta了某位已毕业的vup转生后的账号名称",
         creatorId: alice,
         commentId: comment1,
+        replyToId: replyMark2,
       },
       {
         content: "Я хочу стать собакой Мисс Дианы",
         creatorId: alice,
         commentId: comment1,
+        replyToId: reply0,
       },
       {
         content: "I want to be Miss Diana's dog.",
         creatorId: bob,
         commentId: comment1,
+        replyToId: reply0,
       },
       {
         content: "私（わたし）は　ディーナちゃんの犬（いぬ）になりたい",
         creatorId: charlie,
         commentId: comment1,
+        replyToId: reply0,
       },
       {
         content: "So möchte ich ein Hund von Frau Diana werden.",
         creatorId: david,
         commentId: comment1,
+        replyToId: reply0,
       },
       {
         content:
