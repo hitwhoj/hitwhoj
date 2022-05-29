@@ -1,4 +1,4 @@
-import type { Comment, Reply, User, CommentTag } from "@prisma/client";
+import type { Comment, Reply, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, Link, Form } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -10,7 +10,6 @@ import {
   Divider,
   Typography,
   Space,
-  Tag,
   Form as arcoForm,
   Button,
   Input,
@@ -156,7 +155,6 @@ export const action: ActionFunction = async ({ request, params }) => {
 type LoaderData = {
   comment: Comment & {
     creator: Pick<User, "id" | "nickname" | "avatar">;
-    tags: Pick<CommentTag, "id" | "name">[];
     heartees: Pick<User, "id">[];
     reportees: Pick<User, "id">[];
     replies: (Reply & {
@@ -187,12 +185,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
           id: true,
           nickname: true,
           avatar: true,
-        },
-      },
-      tags: {
-        select: {
-          id: true,
-          name: true,
         },
       },
       heartees: {
@@ -573,16 +565,6 @@ export default function CommentView() {
 
   return (
     <>
-      <h1>Comment: {comment.title}</h1>
-      <h2>标签</h2>
-      <Space size="medium">
-        <Link to={`/comment/tag/example`} key="example">
-          <Tag>#example</Tag>
-        </Link>
-        <Link to={`/comment/tag/math`} key="math">
-          <Tag>#math</Tag>
-        </Link>
-      </Space>
       <Divider />
       <ReplyList replies={comment.replies} self={self} />
       <Divider />
