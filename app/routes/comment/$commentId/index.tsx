@@ -15,6 +15,7 @@ import {
   Button,
   Input,
   InputNumber,
+  Modal,
 } from "@arco-design/web-react";
 import {
   IconExclamationCircle,
@@ -39,6 +40,7 @@ enum ActionType {
   Heart = "heart",
   UnHeart = "unheart",
   Reply = "reply",
+  ReplyTo = "replyTo",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -109,6 +111,38 @@ export const action: ActionFunction = async ({ request, params }) => {
           comment: {
             connect: {
               id: commentId,
+            },
+          },
+        },
+      });
+      return null;
+    }
+    case ActionType.ReplyTo: {
+      const content = invariant(
+        replyContentScheme.safeParse(form.get("content")),
+        {
+          status: 400,
+        }
+      );
+      const replyToId = invariant(idScheme.safeParse(form.get("replyToId")), {
+        status: 404,
+      });
+      await db.reply.create({
+        data: {
+          content,
+          creator: {
+            connect: {
+              id: self,
+            },
+          },
+          comment: {
+            connect: {
+              id: commentId,
+            },
+          },
+          replyTo: {
+            connect: {
+              id: replyToId,
             },
           },
         },
@@ -245,6 +279,8 @@ function Title({
 
   const likeStyle = { fontSize: "0.9rem" };
 
+  const [visible, setVisible] = useState(false);
+
   return (
     <div
       style={{
@@ -253,6 +289,24 @@ function Title({
         justifyContent: "space-between",
       }}
     >
+      <Modal
+        title="New Reply"
+        visible={visible}
+        footer={null}
+        onCancel={() => {
+          setVisible(false);
+        }}
+      >
+        <NewReplyTo
+          replyToId={reply.id}
+          onCancel={() => {
+            setVisible(false);
+          }}
+          onReply={() => {
+            setVisible(false);
+          }}
+        />
+      </Modal>
       <span style={{ display: "flex", alignItems: "center" }}>
         <Avatar
           style={{
@@ -309,8 +363,9 @@ function Title({
         <Button
           type="text"
           onClick={() => {
-            // TODO: 可以弹窗表单吗
+            setVisible(true);
           }}
+          style={{}}
         >
           <Like
             props={{
@@ -367,10 +422,12 @@ function ReplyTo({
   }
   return (
     <Card>
-      <Link to={"/user/" + replyTo.creator.id}>
+      <Link to={"/user/" + replyTo.creator.id} style={{ color: "#165DFF" }}>
         @{replyTo.creator.nickname} :
       </Link>
-      {replyTo.content}
+      <Typography.Paragraph ellipsis={{ rows: 2, expandable: true }}>
+        <Markdown>{replyTo.content}</Markdown>
+      </Typography.Paragraph>
     </Card>
   );
 }
@@ -429,13 +486,10 @@ function NewReply() {
       }}
       onSubmit={() => setContent("")}
     >
-      <FormItem hidden>
-        <InputNumber name="replyToId" />
-      </FormItem>
       <FormItem wrapperCol={{ span: 24 }}>
         <TextArea
           name="content"
-          rows={4}
+          rows={6}
           placeholder={`please make your reply more than 8 characters`}
           minLength={8}
           maxLength={1000}
@@ -451,9 +505,65 @@ function NewReply() {
         htmlType="submit"
         name="_action"
         value={ActionType.Reply}
+        style={{ width: "220px" }}
       >
         Reply !
       </Button>
+    </Form>
+  );
+}
+
+function NewReplyTo({
+  replyToId,
+  onCancel,
+  onReply,
+}: {
+  replyToId: number;
+  onCancel: () => void;
+  onReply: () => void;
+}) {
+  const [content, setContent] = useState<string>("");
+
+  return (
+    <Form
+      method="post"
+      style={{
+        display: "flex",
+        alignItems: "end",
+        flexDirection: "column",
+        width: "100%",
+      }}
+      onSubmit={() => setContent("")}
+    >
+      <FormItem hidden>
+        <InputNumber name="replyToId" value={replyToId} />
+      </FormItem>
+      <FormItem wrapperCol={{ span: 24 }}>
+        <TextArea
+          name="content"
+          rows={4}
+          placeholder={`please make your reply more than 8 characters`}
+          minLength={8}
+          maxLength={1000}
+          value={content}
+          onChange={(e) => {
+            setContent(e);
+            console.log(e);
+          }}
+        />
+      </FormItem>
+      <Space size={16}>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button
+          type="primary"
+          htmlType="submit"
+          name="_action"
+          value={ActionType.ReplyTo}
+          onClick={onReply}
+        >
+          Reply !
+        </Button>
+      </Space>
     </Form>
   );
 }
