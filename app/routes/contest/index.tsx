@@ -85,6 +85,7 @@ export function ContestList({
       columns={tableColumns}
       data={contests}
       hover={false}
+      rowKey="id"
       pagination={{
         total: contests.length,
         defaultPageSize: 20,
