@@ -13,86 +13,72 @@ import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { WsContext } from "~/utils/context/ws";
 import type { WsServer } from "server/ws.server";
-import { Avatar, Button, Input, Tag } from "@arco-design/web-react";
+import { Avatar, Button, Input } from "@arco-design/web-react";
 import type { ChatMessageWithUser } from "~/utils/ws.types";
+import { IconUser } from "@arco-design/web-react/icon";
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `聊天室: ${data?.room.name} - HITwh OJ`,
 });
 
-const roleColor = {
-  Owner: "red",
-  Admin: "green",
-  Member: "blue",
-};
-
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  room: Pick<ChatRoom, "id" | "name">;
-  msgs: ChatMessageWithUser[];
+  room: Pick<ChatRoom, "id" | "name"> & {
+    chatMessage: ChatMessageWithUser[];
+  };
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
+  const roomId = invariant(idScheme.safeParse(params.roomId), {
+    status: 404,
+  });
+
   const selfId = await findSessionUid(request);
   if (!selfId) {
     throw redirect("/login");
   }
-  const self = await db.user.findUnique({
+
+  const self = (await db.user.findUnique({
     where: { id: selfId },
     select: { id: true, nickname: true, username: true, avatar: true },
+  }))!;
+
+  const userInChatRoom = await db.userInChatRoom.findUnique({
+    where: {
+      roomId_userId: {
+        roomId: roomId,
+        userId: selfId,
+      },
+    },
+    select: { role: true },
   });
-  if (!self) {
-    throw redirect("/register");
+
+  // 如果用户还没有加入聊天室，则跳转到加入聊天室页面
+  if (!userInChatRoom) {
+    throw redirect(`/chat/room/${roomId}/enter`);
   }
 
-  const roomId = invariant(idScheme.safeParse(params.roomId), {
-    status: 404,
-  });
   const room = await db.chatRoom.findUnique({
     where: { id: roomId },
     select: {
       id: true,
       name: true,
-    },
-  });
-  if (!room) {
-    throw new Response("Room not found", { status: 404 });
-  }
-
-  const userInChatRoom = await db.userInChatRoom.findFirst({
-    where: {
-      userId: self.id,
-      roomId: room.id,
-    },
-    select: {
-      role: true,
-    },
-  });
-  if (!userInChatRoom) {
-    throw redirect(`/chat/room/${room.id}/enter`);
-  }
-
-  const msgs = await db.chatMessage.findMany({
-    where: { roomId },
-    orderBy: {
-      sentAt: "asc",
-    },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          avatar: true,
-          nickname: true,
-          username: true,
-          enteredChatRoom: {
+      chatMessage: {
+        orderBy: { sentAt: "asc" },
+        include: {
+          sender: {
             select: {
-              role: true,
-            },
-            where: {
-              roomId,
+              id: true,
+              avatar: true,
+              nickname: true,
+              username: true,
+              enteredChatRoom: {
+                where: { roomId },
+                select: { role: true },
+              },
             },
           },
         },
@@ -100,31 +86,36 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
   });
 
-  return { self, room, msgs };
+  if (!room) {
+    throw new Response("Room not found", { status: 404 });
+  }
+
+  return { self, room };
 };
 
 export default function ChatRoomIndex() {
-  const { self, room, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<ChatMessageWithUser[]>(msgs);
+  const { self, room } = useLoaderData<LoaderData>();
+  const [messages, setMessages] = useState<ChatMessageWithUser[]>(
+    room.chatMessage
+  );
   const wsc = useContext(WsContext);
 
   useEffect(() => {
-    setMessages(msgs);
-  }, [msgs]);
+    setMessages(room.chatMessage);
+  }, [room.chatMessage]);
 
   useEffect(() => {
     const subscription = wsc?.subscribeRoom(room.id).subscribe((msg) => {
       setMessages((prev) => [...prev, msg]);
     });
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return () => subscription?.unsubscribe();
   }, [wsc, room.id]);
 
   const submitRef = useRef<HTMLButtonElement>(null);
   const [content, setContent] = useState<string>("");
   const { state } = useTransition();
   const isFetching = state !== "idle";
+
   useEffect(() => {
     if (!isFetching) {
       setContent("");
@@ -135,50 +126,67 @@ export default function ChatRoomIndex() {
     <div className="chat-content-container">
       <header style={{ fontSize: "1.5em" }}>{room.name}</header>
       <div className="chat-content-main">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`chat-content-message ${
-              message.senderId === self.id ? "right" : "left"
-            }`}
-          >
-            {/* TODO: finish css */}
-            <Avatar className={"chat-content-message-avatar"}>
-              {message.sender.avatar ? (
-                <img alt="avatar" src={message.sender.avatar}></img>
-              ) : (
-                message.sender.nickname
-              )}
-            </Avatar>
-            <div className="chat-content-message-content">
-              <div className="chat-content-message-content-header">
-                <Link
-                  to={`/user/${message.senderId}`}
-                  className="chat-content-message-content-header-nickname"
-                >
-                  {message.sender.nickname}
-                </Link>
-                {message.sender.enteredChatRoom.length > 0 && (
-                  <Tag
-                    className="chat-content-message-content-header-role"
-                    color={roleColor[message.sender.enteredChatRoom[0].role]}
-                    size="small"
-                  >
-                    {message.sender.enteredChatRoom[0].role}
-                  </Tag>
+        {messages.map((message, index, array) => {
+          const role = message.sender.enteredChatRoom.at(0)?.role;
+          const date = new Date(message.sentAt);
+          const time = [
+            date.getHours().toString().padStart(2, "0"),
+            date.getMinutes().toString().padStart(2, "0"),
+            date.getSeconds().toString().padStart(2, "0"),
+          ].join(":");
+          // 是同一个人的连续第一次发言
+          const isFirst =
+            index === 0 || message.sender.id !== array[index - 1].sender.id;
+          // 是同一个人的连续最后一次发言
+          const isLast =
+            index === array.length - 1 ||
+            message.sender.id !== array[index + 1].sender.id;
+
+          return (
+            <div
+              key={message.id}
+              className={`chat-content-message ${
+                message.sender.id === self.id ? "right" : "left"
+              }`}
+            >
+              <div className="chat-content-message-avatar">
+                {isLast && (
+                  <Link to={`/user/${message.sender.id}`}>
+                    <Avatar>
+                      {message.sender.avatar ? (
+                        <img
+                          src={message.sender.avatar}
+                          alt={
+                            message.sender.nickname || message.sender.username
+                          }
+                        />
+                      ) : (
+                        <IconUser />
+                      )}
+                    </Avatar>
+                  </Link>
                 )}
-                <span className="chat-content-message-content-header-sentat">
-                  {toDateString(message.sentAt)}
-                </span>
               </div>
-              <div className="chat-content-message-content-body">
-                <div className="chat-content-message-bubble">
-                  {message.content}
-                </div>
+              <div className="chat-content-message-bubble">
+                {isFirst && (
+                  <header>
+                    <Link
+                      to={`/user/${message.sender.id}`}
+                      className="member-name"
+                    >
+                      {message.sender.nickname || message.sender.username}
+                    </Link>
+                    {(role === "Owner" || role === "Admin") && (
+                      <span className="member-role">{role}</span>
+                    )}
+                  </header>
+                )}
+                <span>{message.content}</span>
+                <time title={date.toLocaleString()}>{time}</time>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <footer>
         <Form
@@ -195,8 +203,14 @@ export default function ChatRoomIndex() {
             style={{ flex: 1, height: "32px" }}
             value={content}
             onChange={(v) => setContent(v)}
-            onPressEnter={() => submitRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (!e.ctrlKey) submitRef.current?.click();
+                else setContent((content) => content + "\n");
+              }
+            }}
             disabled={isFetching}
+            required
           />
           <Button
             type="primary"
@@ -212,14 +226,6 @@ export default function ChatRoomIndex() {
       </footer>
     </div>
   );
-}
-
-// format: yyyy-MM-dd hh:mm:ss
-function toDateString(date: Date) {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${
-    d.getMonth() + 1
-  }-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
 }
 
 export const action: ActionFunction = async ({ request, context }) => {

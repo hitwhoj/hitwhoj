@@ -35,16 +35,20 @@ export function CatchBoundary() {
           status="error"
           title="请求参数错误"
           subTitle={
-            <ol
-              style={{
-                display: "inline-block",
-                textAlign: "left",
-              }}
-            >
-              {caught.data.map((data: any, index: number) => (
-                <li key={index}>{data.message}</li>
-              ))}
-            </ol>
+            Array.isArray(caught.data) ? (
+              <ol
+                style={{
+                  display: "inline-block",
+                  textAlign: "left",
+                }}
+              >
+                {caught.data.map((data: any, index: number) => (
+                  <li key={index}>{data.message}</li>
+                ))}
+              </ol>
+            ) : (
+              <span>{caught.data}</span>
+            )
           }
           extra={goback}
         />

@@ -4,7 +4,7 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import { Button, Input } from "@arco-design/web-react";
+import { Avatar, Button, Input } from "@arco-design/web-react";
 import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
@@ -14,6 +14,7 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState, useRef } from "react";
 import { WsContext } from "~/utils/context/ws";
 import type { WsServer } from "server/ws.server";
+import { IconUser } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
@@ -137,22 +138,10 @@ export default function ChatIndex() {
   const { state } = useTransition();
   const isFetching = state !== "idle";
 
-  // 我想超市这个傻逼的 arco-design，ref 一定要自己套一层是吧
-  const textareaRef = useRef<{ dom: HTMLTextAreaElement }>(null);
-  // 发送之后清空输入框
+  const [message, setMessage] = useState("");
   useEffect(() => {
     if (!isFetching) {
-      formRef.current?.reset();
-      if (textareaRef.current) {
-        textareaRef.current.dom.value = "";
-      }
-      // 傻逼 arco-design 我草我清除了他居然还会给我变回来
-      // 一定要我再清除一次😅😅😅
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.dom.value = "";
-        }
-      }, 0);
+      setMessage("");
     }
   }, [isFetching]);
 
@@ -162,16 +151,41 @@ export default function ChatIndex() {
         {target.nickname || target.username}
       </header>
       <div className="chat-content-main">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`chat-content-message ${
-              message.fromId === self.id ? "right" : "left"
-            }`}
-          >
-            <div className="chat-content-message-bubble">{message.content}</div>
-          </div>
-        ))}
+        {messages.map((message) => {
+          const user = message.fromId === self.id ? self : target;
+          const date = new Date(message.sentAt);
+          const time = [
+            date.getHours().toString().padStart(2, "0"),
+            date.getMinutes().toString().padStart(2, "0"),
+            date.getSeconds().toString().padStart(2, "0"),
+          ].join(":");
+
+          return (
+            <div
+              key={message.id}
+              className={`chat-content-message ${
+                user === self ? "right" : "left"
+              }`}
+            >
+              <div className="chat-content-message-avatar">
+                <Avatar>
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.nickname || user.username}
+                    />
+                  ) : (
+                    <IconUser />
+                  )}
+                </Avatar>
+              </div>
+              <div className="chat-content-message-bubble">
+                <span>{message.content}</span>
+                <time>{time}</time>
+              </div>
+            </div>
+          );
+        })}
       </div>
       <footer>
         <Form
@@ -186,10 +200,17 @@ export default function ChatIndex() {
             maxLength={255}
             showWordLimit
             autoSize={{ minRows: 1, maxRows: 5 }}
-            ref={textareaRef}
+            value={message}
+            onChange={(msg) => setMessage(msg)}
             style={{ flex: 1, height: "32px" }}
-            onPressEnter={() => submitRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (!e.ctrlKey) submitRef.current?.click();
+                else setMessage((message) => message + "\n");
+              }
+            }}
             disabled={isFetching}
+            required
           />
           <Button
             type="primary"

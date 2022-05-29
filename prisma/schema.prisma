@@ -344,15 +344,16 @@ enum ChatRoomRole {
 }
 
 model UserInChatRoom {
-  id      Int          @id @default(autoincrement())
-  enterAt DateTime     @default(now())
-  role    ChatRoomRole @default(Member)
+  role     ChatRoomRole @default(Member)
+  joinedAt DateTime     @default(now())
 
-  roomId Int
   room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId Int
 
-  userId Int
   user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@id([roomId, userId])
 }
 
 model ChatMessage {
