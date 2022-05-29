@@ -1,16 +1,11 @@
-import { Avatar } from "@arco-design/web-react";
+import { Avatar, Empty } from "@arco-design/web-react";
 import type { User } from "@prisma/client";
-import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import type { LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import type { PrivateMessageWithUser } from "~/utils/ws.types";
-import chatStyle from "~/styles/chat.css";
-
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: chatStyle },
-];
 
 type LoaderData = {
   self: Pick<User, "id" | "username" | "nickname" | "avatar">;
@@ -19,7 +14,6 @@ type LoaderData = {
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const selfId = await findSessionUid(request);
-
   if (!selfId) {
     throw redirect("/login");
   }
@@ -50,7 +44,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   return { self, messages };
 };
 
-export default function Chat() {
+export default function UserChatIndex() {
   const { self, messages } = useLoaderData<LoaderData>();
 
   const set = new Set<number>();
@@ -68,18 +62,24 @@ export default function Chat() {
     });
 
   return (
-    <div className="chat-container">
-      <div className="chat-list">
-        {users.map(({ user, message }) => (
-          <NavLink
+    <div className="chat-index">
+      {users.length ? (
+        users.map(({ user, message }) => (
+          <Link
             key={user.id}
-            to={`/chat/${user.id}`}
-            className="chat-list-item"
+            to={`/chat/user/${user.id}`}
+            className="chat-index-item"
             prefetch="intent"
           >
             <div className="chat-selection">
               <Avatar>
-                <img src={user.avatar} alt="avatar" />
+                {user.avatar ? (
+                  <img src={user.avatar} alt="avatar" />
+                ) : user.nickname ? (
+                  user.nickname
+                ) : (
+                  user.username
+                )}
               </Avatar>
               <div className="chat-selection-detail">
                 <div className="chat-selection-detail-name">
@@ -90,12 +90,11 @@ export default function Chat() {
                 </div>
               </div>
             </div>
-          </NavLink>
-        ))}
-      </div>
-      <div className="chat-content">
-        <Outlet />
-      </div>
+          </Link>
+        ))
+      ) : (
+        <Empty description="暂无消息" />
+      )}
     </div>
   );
 }

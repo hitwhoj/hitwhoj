@@ -1,4 +1,8 @@
-import { PrivateMessageWithUser, WebSocketMessage } from "~/utils/ws.types";
+import {
+  ChatMessageWithUser,
+  PrivateMessageWithUser,
+  WebSocketMessage,
+} from "~/utils/ws.types";
 import { Server as HttpServer } from "http";
 import { PrismaClient } from "@prisma/client";
 import { Server as WebSocketServer, WebSocket } from "ws";
@@ -67,6 +71,14 @@ class WsServer {
   sendPrivateMessage(message: PrivateMessageWithUser) {
     this.#sendMessage(`/user/${message.to.id}`, {
       type: "PrivateMessage",
+      message,
+    });
+  }
+
+  /** 推送群聊消息 */
+  sendChatMessage(message: ChatMessageWithUser) {
+    this.#sendMessage(`/room/${message.roomId}`, {
+      type: "ChatMessage",
       message,
     });
   }

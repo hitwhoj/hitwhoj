@@ -14,96 +14,130 @@ main.arco-layout-content {
   display: flex;
   height: 100%;
 
-  .chat-list {
-    width: 25%;
-    max-width: 250px;
+  .chat-index {
+    width: 100%;
 
-    .chat-list-item {
+    .chat-index-item {
       display: block;
+      width: 100%;
 
       .chat-selection {
         display: flex;
         padding: 10px 20px;
         overflow: hidden;
         gap: 10px;
+        width: 100%;
+        box-sizing: border-box;
 
         .chat-selection-detail {
           flex: 1;
-          text-overflow: ellipsis;
           white-space: nowrap;
           overflow: hidden;
 
           .chat-selection-detail-name {
-            width: 100%;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
             font-weight: bold;
           }
 
+          .chat-selection-detail-name,
           .chat-selection-detail-content {
-            width: 100%;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
           }
         }
       }
-
-      &.active .chat-selection {
-        background-color: var(--color-fill-2);
-      }
     }
   }
 
-  .chat-content {
-    flex: 1;
-    padding: 10px;
-    background-color: var(--color-fill-2);
+  .chat-content-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 10px;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1000px;
 
-    .chat-content-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      max-height: 100%;
-      gap: 10px;
+    .chat-content-main {
+      flex: 1;
+      background-color: var(--color-bg-3);
+      overflow: scroll;
 
-      .chat-content-main {
-        flex: 1;
-        background-color: var(--color-bg-3);
-        overflow: scroll;
+      .chat-content-message {
+        display: flex;
+        margin: 5px;
+        align-items: flex-end;
+        gap: 10px;
+        font-size: 1rem;
 
-        .chat-content-message {
-          display: flex;
-          margin: 5px 10px;
+        .chat-content-message-avatar {
+          height: 40px;
+          width: 40px;
+          user-select: none;
+        }
+
+        .chat-content-message-bubble {
+          padding: 10px;
+          border-radius: 5px;
+          max-width: calc(100% - 100px);
+          word-break: break-word;
+          white-space: pre-wrap;
+          text-align: justify;
+          box-sizing: border-box;
+
+          header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+            user-select: none;
+
+            .member-name {
+              font-weight: bold;
+            }
+
+            .member-role {
+              margin-left: 15px;
+              font-size: 0.8rem;
+              color: var(--color-text-2);
+            }
+          }
+
+          time {
+            user-select: none;
+            float: right;
+            margin-left: 15px;
+            font-size: 0.8rem;
+            transform: translateY(5px);
+            color: var(--color-text-2);
+          }
+        }
+
+        &.right {
+          justify-content: end;
+          flex-direction: row-reverse;
+
+          @media only screen and (min-width: 1300px) {
+            justify-content: start;
+            flex-direction: row;
+          }
 
           .chat-content-message-bubble {
-            padding: 5px 10px;
-            border-radius: 10px;
-            max-width: 80%;
-            word-break: break-word;
-            white-space: pre-wrap;
-          }
+            background-color: rgb(var(--primary-6));
+            color: white;
 
-          &.right {
-            justify-content: end;
-
-            @media only screen and (min-width: 1300px) {
-              justify-content: start;
-            }
-
-            .chat-content-message-bubble {
-              background-color: rgb(var(--primary-6));
-              color: white;
+            time,
+            .member-role {
+              color: rgba(255, 255, 255, 0.7);
             }
           }
+        }
 
-          &.left {
-            justify-content: start;
+        &.left {
+          justify-content: start;
 
-            .chat-content-message-bubble {
-              background-color: var(--color-fill-2);
-            }
+          .chat-content-message-bubble {
+            background-color: var(--color-fill-2);
           }
         }
       }
