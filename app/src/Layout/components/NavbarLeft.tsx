@@ -1,6 +1,7 @@
-import { NavLink } from "@remix-run/react";
+import { NavLink, useMatches } from "@remix-run/react";
 import { Menu } from "@arco-design/web-react";
 import { IconAlignLeft } from "@arco-design/web-react/icon";
+import { useEffect, useState } from "react";
 
 // 左侧导航栏列表
 type Route = {
@@ -48,6 +49,16 @@ const navBarRoutes: Route[] = [
 ];
 
 export default function NavbarLeft() {
+  const matches = useMatches();
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  useEffect(() => {
+    const pathName = matches[1].pathname.split("/")[1];
+    const selectedKey = navBarRoutes.find(
+      (route) => route.href === `/${pathName}`
+    );
+    selectedKey?.href && setSelectedKeys([selectedKey.href]);
+  }, [matches]);
+
   return (
     <div>
       <NavLink to="/">
@@ -66,6 +77,7 @@ export default function NavbarLeft() {
         style={{
           width: "100%",
         }}
+        selectedKeys={selectedKeys}
       >
         {navBarRoutes.map((route) => (
           <NavLink prefetch="intent" to={route.href} key={route.href}>
