@@ -80,8 +80,35 @@ async function seed() {
   const { id: p1 } = await prisma.problem.create({
     data: {
       title: "A + B Problem",
-      description:
-        "## Description\n\ngive number `a` and number `b`, please output the sum of them.\n\n## Sample Input\n\n    114 514\n\n## Sample Output\n\n    628\n\n## Limits\n\n$a, b \\lt 2 \\times 10^9$\n\n## Hint\n\n```cpp\n#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n}\n```",
+      description: `
+## Description
+
+give number \`a\` and number \`b\`, please output the sum of them.
+
+## Sample Input
+
+    114 514
+
+## Sample Output
+
+    628
+
+## Limits
+
+$a, b \\lt 2 \\times 10^9$
+
+## Hint
+
+\`\`\`cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+  int a, b;
+  cin >> a >> b;
+  cout << a + b << endl;
+}
+\`\`\`
+`,
       creator: { connect: { id: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
@@ -136,8 +163,43 @@ async function seed() {
   const { id: p2 } = await prisma.problem.create({
     data: {
       title: "A + B + C Problem",
-      description:
-        "## Description \n\ngive three number, output the sum of them.\n\n## Sample Input \n\n    114 514 1919\n\n## Sample Output \n\n    2547\n\n## Limits \n\n$a, b, c \\lt 10^6$\n\n## Hint\n\n$$\nE=mc^2\n$$\n\n```\nthis is text/plain\n```\n\n```\nthis is unrecognized language\n```",
+      description: `
+## Description
+
+give number \`a\`, \`b\` and \`c\`, please output the sum of them.
+
+## Sample Input
+
+    114 514 1919
+
+## Sample Output
+
+    2547
+
+## Limits
+
+$a, b, c \\lt 2 \\times 10^9$
+
+## Hint
+
+\`\`\`cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+  int a, b, c;
+  cin >> a >> b >> c;
+  cout << a + b + c << endl;
+}
+\`\`\`
+
+\`\`\`whatthefuck
+this is language whatthefuck
+\`\`\`
+
+~~~我是嘉然
+这是我是嘉然语言
+~~~
+`,
       creator: { connect: { id: bob } },
       private: false,
       tags: {
@@ -347,6 +409,32 @@ async function seed() {
     data: {
       userId: alice,
       teamId: team1,
+    },
+  });
+
+  const { id: room1 } = await prisma.chatRoom.create({
+    data: {
+      name: "TestChatRoom",
+      description: "Test ChatRoom",
+      isPrivate: true,
+      password: "123456",
+      creatorId: alice,
+    },
+  });
+
+  await prisma.userInChatRoom.create({
+    data: {
+      roomId: room1,
+      userId: alice,
+      role: "Owner",
+    },
+  });
+
+  await prisma.chatMessage.create({
+    data: {
+      content: "Hello World",
+      roomId: room1,
+      senderId: alice,
     },
   });
 }

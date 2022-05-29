@@ -1,0 +1,27 @@
+diff --git a/node_modules/rehype-highlight/lib/index.js b/node_modules/rehype-highlight/lib/index.js
+index f9acbc9..2466fee 100644
+--- a/node_modules/rehype-highlight/lib/index.js
++++ b/node_modules/rehype-highlight/lib/index.js
+@@ -107,11 +107,18 @@ export default function rehypeHighlight(options = {}) {
+             lowlight.highlightAuto(toText(parent), {prefix, subset})
+       } catch (error) {
+         const exception = /** @type {Error} */ (error)
+-        if (!ignoreMissing || !/Unknown language/.test(exception.message)) {
+-          throw error
+-        }
+ 
+-        return
++        if (/Unknown language/.test(exception.message)) {
++          // if is unknown language, then we highlight it with auto-detection
++          result = lowlight.highlightAuto(toText(parent), {prefix, subset})
++        } else {
++          // otherwise we swallow the error
++          if (!ignoreMissing) {
++            throw error
++          }
++
++          return
++        }
+       }
+ 
+       if (!lang && result.data.language) {

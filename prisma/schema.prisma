@@ -22,7 +22,8 @@ model User {
 
   password String
 
-  joinedAt DateTime @default(now())
+  joinedAt DateTime       @default(now())
+  role     SystemUserRole @default(User)
 
   sessions UserSession[]
 
@@ -40,7 +41,11 @@ model User {
 
   attendedTeams TeamMember[]
 
-  role SystemUserRole @default(User)
+  sentMessages     PrivateMessage[] @relation("send")
+  receivedMessages PrivateMessage[] @relation("receive")
+  chatRoom         ChatRoom[]
+  chatMessage      ChatMessage[]
+  enteredChatRoom  UserInChatRoom[]
 }
 
 enum SystemUserRole {
@@ -296,4 +301,74 @@ model Reply {
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
+}
+
+model PrivateMessage {
+  id Int @id @default(autoincrement())
+
+  /// 消息内容
+  content String
+  /// 发送时间
+  sentAt  DateTime @default(now())
+
+  // ==== relations ====
+
+  /// 发送方
+  from   User @relation("send", fields: [fromId], references: [id])
+  fromId Int
+
+  /// 接收方
+  to   User @relation("receive", fields: [toId], references: [id])
+  toId Int
+}
+
+model ChatRoom {
+  id Int @id @default(autoincrement())
+
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+
+  isPrivate Boolean @default(false)
+  password  String?
+
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
+
+  chatMessage    ChatMessage[]
+  userInChatRoom UserInChatRoom[]
+}
+
+enum ChatRoomRole {
+  Owner
+  Admin
+  Member
+}
+
+model UserInChatRoom {
+  role     ChatRoomRole @default(Member)
+  joinedAt DateTime     @default(now())
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@id([roomId, userId])
+}
+
+model ChatMessage {
+  id Int @id @default(autoincrement())
+
+  content String
+  sentAt  DateTime @default(now())
+
+  // ==== relations ====
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId Int
+
+  sender   User @relation(fields: [senderId], references: [id])
+  senderId Int
 }
