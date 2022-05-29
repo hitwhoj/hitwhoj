@@ -31,6 +31,7 @@ export type likeProps = {
   likeElement: JSX.Element;
   dislikeElement?: JSX.Element;
   style?: CSSProperties | undefined;
+  action?: ActionFunction | undefined;
 };
 
 export function Like({ props }: { props: likeProps }) {
@@ -230,7 +231,7 @@ export function CommentList({
               dislikeAction: ActionType.UnHeart,
               likeElement: <IconHeartFill style={{ color: "#f53f3f" }} />,
               dislikeElement: <IconHeart />,
-              style: { fontSize: "1.2em" },
+              style: { fontSize: "1rem" },
             }}
           />
           <Link to={`/comment/${comment.id}`}>
@@ -243,7 +244,7 @@ export function CommentList({
                 dislikeAction: ActionType.None,
                 likeElement: <IconMessage style={{ color: "#00B42A" }} />,
                 dislikeElement: <IconMessage />,
-                style: { fontSize: "1.2em" },
+                style: { fontSize: "1rem" },
               }}
             />
           </Link>
@@ -264,7 +265,7 @@ export function CommentList({
                   ) : (
                     <IconExclamationCircle />
                   ),
-                style: { fontSize: "1.2em" },
+                style: { fontSize: "1rem" },
               }}
             />
           </Link>

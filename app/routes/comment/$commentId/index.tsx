@@ -1,8 +1,8 @@
 import type { Comment, Reply, User, CommentTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Link } from "@remix-run/react";
+import { useLoaderData, Link, Form } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
-import { idScheme } from "~/utils/scheme";
+import { idScheme, replyContentScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import {
   Card,
@@ -11,6 +11,10 @@ import {
   Typography,
   Space,
   Tag,
+  Form as arcoForm,
+  Button,
+  Input,
+  InputNumber,
 } from "@arco-design/web-react";
 import {
   IconExclamationCircle,
@@ -22,18 +26,26 @@ import {
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { findSessionUid } from "~/utils/sessions";
-import { Like } from "~/routes/comment/index";
+import { Like } from "~/routes/comment";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
+import { useState } from "react";
+
+const FormItem = arcoForm.Item;
+const TextArea = Input.TextArea;
 
 enum ActionType {
   None = "none",
   Heart = "heart",
   UnHeart = "unheart",
+  Reply = "reply",
 }
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, params }) => {
   const self = await findSessionUid(request);
+  const commentId = invariant(idScheme.safeParse(params.commentId), {
+    status: 404,
+  });
 
   if (!self) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
@@ -44,14 +56,15 @@ export const action: ActionFunction = async ({ request }) => {
 
   switch (_action) {
     case ActionType.None: {
+      console.log("none");
       return null;
     }
     case ActionType.Heart: {
-      const id = invariant(idScheme.safeParse(form.get("id")), {
+      const replyId = invariant(idScheme.safeParse(form.get("id")), {
         status: 404,
       });
       await db.reply.update({
-        where: { id },
+        where: { id: replyId },
         data: {
           heartees: {
             connect: {
@@ -63,15 +76,39 @@ export const action: ActionFunction = async ({ request }) => {
       return null;
     }
     case ActionType.UnHeart: {
-      const id = invariant(idScheme.safeParse(form.get("id")), {
+      const replyId = invariant(idScheme.safeParse(form.get("id")), {
         status: 404,
       });
       await db.reply.update({
-        where: { id },
+        where: { id: replyId },
         data: {
           heartees: {
             disconnect: {
               id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+    case ActionType.Reply: {
+      const content = invariant(
+        replyContentScheme.safeParse(form.get("content")),
+        {
+          status: 400,
+        }
+      );
+      await db.reply.create({
+        data: {
+          content,
+          creator: {
+            connect: {
+              id: self,
+            },
+          },
+          comment: {
+            connect: {
+              id: commentId,
             },
           },
         },
@@ -206,6 +243,8 @@ function Title({
 
   const author = reply.creator;
 
+  const likeStyle = { fontSize: "0.9rem" };
+
   return (
     <div
       style={{
@@ -233,7 +272,7 @@ function Title({
           &emsp;@{reply.createdAt.toLocaleString().slice(0, 16)}
         </Typography.Text>
       </span>
-      <Space size={24}>
+      <Space size={16}>
         <Like
           props={{
             id: reply.id,
@@ -241,10 +280,10 @@ function Title({
             likeAction: ActionType.None,
             likeElement: (
               <>
-                <IconTag style={{ fontSize: "1.1em" }} /> #{" "}
+                <IconTag /> #{" "}
               </>
             ),
-            style: { fontSize: "1.18em" },
+            style: likeStyle,
           }}
         />
         <Like
@@ -256,33 +295,37 @@ function Title({
             dislikeAction: ActionType.UnHeart,
             likeElement: (
               <>
-                <IconHeartFill
-                  style={{ color: "#f53f3f", fontSize: "1.1em" }}
-                />{" "}
-                #{" "}
+                <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
               </>
             ),
             dislikeElement: (
               <>
-                <IconHeart style={{ fontSize: "1.1em" }} /> #{" "}
+                <IconHeart /> Star{" "}
               </>
             ),
-            style: { fontSize: "1.18em" },
+            style: likeStyle,
           }}
         />
-        <Like
-          props={{
-            id: reply.id,
-            count: reply.replies.length,
-            likeAction: ActionType.None,
-            likeElement: (
-              <>
-                <IconMessage style={{ fontSize: "1.1em" }} /> #{" "}
-              </>
-            ),
-            style: { fontSize: "1.18em" },
+        <Button
+          type="text"
+          onClick={() => {
+            // TODO: 可以弹窗表单吗
           }}
-        />
+        >
+          <Like
+            props={{
+              id: reply.id,
+              count: reply.replies.length,
+              likeAction: ActionType.None,
+              likeElement: (
+                <>
+                  <IconMessage /> Reply{" "}
+                </>
+              ),
+              style: likeStyle,
+            }}
+          />
+        </Button>
         <Like
           props={{
             id: reply.id,
@@ -291,27 +334,44 @@ function Title({
             likeAction: ActionType.None,
             dislikeAction: ActionType.None,
             likeElement: (
-              <IconExclamationCircleFill
-                style={{ color: "#F53F3F", fontSize: "1.1em" }}
-              />
+              <>
+                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+                Report
+              </>
             ),
             dislikeElement: (
               <>
                 {reply.reportees.length > 0 ? (
-                  <IconExclamationCircle
-                    style={{ color: "#F53F3F", fontSize: "1.1em" }}
-                  />
+                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
                 ) : (
-                  <IconExclamationCircle style={{ fontSize: "1.1em" }} />
+                  <IconExclamationCircle />
                 )}{" "}
-                #
+                Report
               </>
             ),
-            style: { fontSize: "1.18em" },
+            style: likeStyle,
           }}
         />
       </Space>
     </div>
+  );
+}
+
+function ReplyTo({
+  replyTo,
+}: {
+  replyTo: LoaderData["comment"]["replies"][number]["replyTo"];
+}) {
+  if (!replyTo) {
+    return null;
+  }
+  return (
+    <Card>
+      <Link to={"/user/" + replyTo.creator.id}>
+        @{replyTo.creator.nickname} :
+      </Link>
+      {replyTo.content}
+    </Card>
   );
 }
 
@@ -324,19 +384,18 @@ function ReplyCard({
   self: LoaderData["self"];
   index: number;
 }) {
-  // const replyTo = reply.replyTo;
-
   return (
     <Card
       title={<Title reply={reply} self={self} index={index} />}
       style={{ borderColor: "#4E5969" }}
     >
+      <ReplyTo replyTo={reply.replyTo} />
       <Markdown>{reply.content}</Markdown>
     </Card>
   );
 }
 
-export function ReplyList({
+function ReplyList({
   replies,
   self,
 }: {
@@ -356,8 +415,52 @@ export function ReplyList({
   }
 }
 
+function NewReply() {
+  const [content, setContent] = useState<string>("");
+
+  return (
+    <Form
+      method="post"
+      style={{
+        display: "flex",
+        alignItems: "end",
+        flexDirection: "column",
+        width: "100%",
+      }}
+      onSubmit={() => setContent("")}
+    >
+      <FormItem hidden>
+        <InputNumber name="replyToId" />
+      </FormItem>
+      <FormItem wrapperCol={{ span: 24 }}>
+        <TextArea
+          name="content"
+          rows={4}
+          placeholder={`please make your reply more than 8 characters`}
+          minLength={8}
+          maxLength={1000}
+          value={content}
+          onChange={(e) => {
+            setContent(e);
+            console.log(e);
+          }}
+        />
+      </FormItem>
+      <Button
+        type="primary"
+        htmlType="submit"
+        name="_action"
+        value={ActionType.Reply}
+      >
+        Reply !
+      </Button>
+    </Form>
+  );
+}
+
 export default function CommentView() {
   const { comment, self } = useLoaderData<LoaderData>();
+
   return (
     <>
       <h1>Comment: {comment.title}</h1>
@@ -372,6 +475,9 @@ export default function CommentView() {
       </Space>
       <Divider />
       <ReplyList replies={comment.replies} self={self} />
+      <Divider />
+      <NewReply />
+      <Divider />
     </>
   );
 }
