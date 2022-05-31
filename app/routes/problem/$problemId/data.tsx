@@ -1,12 +1,10 @@
 import type { File as ProblemFile, Problem } from "@prisma/client";
-
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
@@ -46,12 +44,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
       title: true,
       files: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
       data: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
     },
@@ -172,14 +170,14 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.id} />
       <Button
-        type="primary"
+        type="text"
         status="danger"
         htmlType="submit"
         name="_action"
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
-        size="small"
+        size="mini"
       />
     </fetcher.Form>
   );
@@ -189,8 +187,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件名",
     dataIndex: "filename",
-    sorter: (a, b) =>
-      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
     render: (_, file) => (
       <Link to={`/file/${file.id}`} target="_blank">
         {file.filename}
@@ -200,7 +196,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件大小",
     dataIndex: "filesize",
-    sorter: (a, b) => a.filesize - b.filesize,
   },
   {
     title: "文件类型",
@@ -222,7 +217,15 @@ const columns: ColumnProps<ProblemFile>[] = [
 ];
 
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
-  return <Table rowKey="fid" columns={columns} data={files} />;
+  return (
+    <Table
+      rowKey="id"
+      columns={columns}
+      data={files}
+      pagination={false}
+      size="small"
+    />
+  );
 }
 
 export default function ProblemData() {

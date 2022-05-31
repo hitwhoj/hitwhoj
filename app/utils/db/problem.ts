@@ -29,4 +29,4 @@ export async function findProblemMany(where: ProblemWhereInput) {
 }
 
 /** 首页题单的数据格式 */
-export type ProblemList = Awaited<ReturnType<typeof findProblemMany>>;
+export type ProblemListData = Awaited<ReturnType<typeof findProblemMany>>;

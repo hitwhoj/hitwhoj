@@ -37,7 +37,21 @@ export default function MainLayout({ children }: LayoutProps) {
           }}
         >
           <Content style={{ marginTop: "1rem" }}>{children}</Content>
-          <Footer>Footer</Footer>
+          <Footer
+            style={{
+              padding: "10px 0",
+              height: "200px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "end",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ color: "var(--color-text-3)" }}>
+              Copyright (c) 2022 HITwh OJ Dev Team{" "}
+              <span style={{ color: "transparent" }}>v0.0.1</span>
+            </div>
+          </Footer>
         </Layout>
       </Layout>
     </Layout>
