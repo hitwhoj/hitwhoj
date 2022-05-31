@@ -2,6 +2,7 @@ import React from "react";
 import { Layout } from "@arco-design/web-react";
 import NavbarLeft from "./components/NavbarLeft";
 import NavbarTop from "./components/NavbarTop";
+import { IconCopyright } from "@arco-design/web-react/icon";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -36,11 +37,12 @@ export default function MainLayout({ children }: LayoutProps) {
             overflow: "auto",
           }}
         >
-          <Content style={{ marginTop: "1rem" }}>{children}</Content>
+          <Content style={{ marginTop: "1rem", fontSize: "1rem" }}>
+            {children}
+          </Content>
           <Footer
             style={{
               padding: "10px 0",
-              height: "200px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "end",
@@ -48,7 +50,7 @@ export default function MainLayout({ children }: LayoutProps) {
             }}
           >
             <div style={{ color: "var(--color-text-3)" }}>
-              Copyright (c) 2022 HITwh OJ Dev Team{" "}
+              Copyright <IconCopyright /> 2022 HITwh OJ Dev Team{" "}
               <span style={{ color: "transparent" }}>v0.0.1</span>
             </div>
           </Footer>

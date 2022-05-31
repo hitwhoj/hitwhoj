@@ -9,13 +9,13 @@ import { isAdmin, isUser } from "~/utils/permission";
 
 // TODO: 分页
 type LoaderData = {
-  problems: ProblemListData;
+  problems: ProblemListData[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const self = await findSessionUserOptional(request);
 
-  let problems: ProblemListData;
+  let problems: ProblemListData[];
 
   // 访客，只能访问到非团队所有的公开的题目
   if (!self) {

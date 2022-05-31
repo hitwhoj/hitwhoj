@@ -3,6 +3,7 @@ import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { Table, Grid, Button } from "@arco-design/web-react";
+import { IconPlus } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   problemSets: ProblemSet[];
@@ -54,7 +55,9 @@ export default function ProblemsetList() {
         }}
       >
         <Link to="new">
-          <Button type="primary">Create ProblemSet</Button>
+          <Button type="primary" icon={<IconPlus />}>
+            创建题单
+          </Button>
         </Link>
       </Grid.Row>
       <Table

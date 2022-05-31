@@ -1,0 +1,36 @@
+import { db } from "../server/db.server";
+import type { Unpack } from "../tools";
+
+// 这真是太优美了
+type ContestWhereInput = NonNullable<
+  NonNullable<Parameters<typeof db.contest.findMany>["0"]>["where"]
+>;
+
+export function findContestList(where: ContestWhereInput) {
+  return db.contest.findMany({
+    where,
+    orderBy: [{ beginTime: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      beginTime: true,
+      endTime: true,
+      system: true,
+      tags: {
+        orderBy: { name: "asc" },
+        select: {
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          attendees: true,
+        },
+      },
+    },
+  });
+}
+
+export type ContestListData = Unpack<
+  Awaited<ReturnType<typeof findContestList>>
+>;

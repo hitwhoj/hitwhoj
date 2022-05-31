@@ -1,16 +1,18 @@
-import { Space, Table, Tag } from "@arco-design/web-react";
-import type { Contest, ContestTag, Problem, Team } from "@prisma/client";
+import { Descriptions, Typography } from "@arco-design/web-react";
+import type { Contest, ContestTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { Markdown } from "~/src/Markdown";
 
 type LoaderData = {
-  contest: Contest & {
-    tags: ContestTag[];
-    problems: Pick<Problem, "id" | "title">[];
-    team: Pick<Team, "id" | "name"> | null;
+  contest: Pick<
+    Contest,
+    "id" | "title" | "description" | "beginTime" | "endTime"
+  > & {
+    tags: Pick<ContestTag, "name">[];
   };
 };
 
@@ -21,18 +23,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
-    include: {
-      tags: true,
-      team: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      beginTime: true,
+      endTime: true,
+      tags: {
         select: {
-          id: true,
           name: true,
-        },
-      },
-      problems: {
-        select: {
-          id: true,
-          title: true,
         },
       },
     },
@@ -52,73 +51,22 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   description: data?.contest.description,
 });
 
-function Time({ contest }: { contest: Contest }) {
-  const begin = new Date(contest.beginTime);
-  const end = new Date(contest.endTime);
-  return (
-    <p>
-      起止时间：{" "}
-      <time dateTime={begin.toISOString()}>{begin.toLocaleString()}</time>
-      {" ~ "}
-      <time dateTime={end.toISOString()}>{end.toLocaleString()}</time>
-    </p>
-  );
-}
-
-function ContestTags({ tags }: { tags: ContestTag[] }) {
-  return tags.length ? (
-    <Space size="medium">
-      {tags.map((tag) => (
-        <Link to={`/contest/tag/${tag.name}`} key={tag.name}>
-          <Tag>#{tag.name}</Tag>
-        </Link>
-      ))}
-    </Space>
-  ) : (
-    <div>没有标签捏</div>
-  );
-}
-
-function ContestProblemList({
-  problems,
-}: {
-  problems: Pick<Problem, "id" | "title">[];
-}) {
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (id: string) => <Link to={`/problem/${id}`}>{id}</Link>,
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      render: (title: string, problem: Pick<Problem, "id" | "title">) => (
-        <Link to={`/problem/${problem.id}`}>{title}</Link>
-      ),
-    },
-  ];
-  return <Table columns={tableColumns} data={problems} pagination={false} />;
-}
-
 export default function ContestIndex() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <Time contest={contest} />
-      <p>{contest.description}</p>
-      <p>
-        Belong To Team:{" "}
-        {contest.team && (
-          <Link to={`/team/${contest.team.id}`}>{contest.team.name}</Link>
-        )}
-      </p>
-      <h2>标签</h2>
-      <ContestTags tags={contest.tags} />
-      <h2>题目</h2>
-      <ContestProblemList problems={contest.problems} />
-    </>
+    <Typography>
+      <Descriptions
+        column={1}
+        title="比赛信息"
+        data={[
+          { label: "开始时间", value: contest.beginTime },
+          { label: "结束时间", value: contest.endTime },
+        ]}
+        labelStyle={{ paddingRight: 36 }}
+      />
+      <Markdown>{contest.description}</Markdown>
+    </Typography>
   );
 }
 

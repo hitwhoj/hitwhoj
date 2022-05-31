@@ -1,13 +1,14 @@
-import type { Contest } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
-import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import { ContestList } from "~/routes/contest";
+import { ContestList } from "~/src/contest/ContestList";
+import type { ContestListData } from "~/utils/db/contest";
+import { findContestList } from "~/utils/db/contest";
+import { Typography } from "@arco-design/web-react";
 
 type LoaderData = {
-  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
+  contests: ContestListData[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
@@ -15,22 +16,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     status: 404,
   });
 
-  const contests = await db.contest.findMany({
-    orderBy: [{ id: "asc" }],
-    take: 20,
-    select: {
-      id: true,
-      title: true,
-      beginTime: true,
-      endTime: true,
-    },
-    where: {
-      tags: {
-        some: {
-          name: tag,
-        },
-      },
-    },
+  const contests = await findContestList({
+    tags: { some: { name: tag } },
   });
 
   return { contests };
@@ -45,10 +32,12 @@ export default function ContestTag() {
   const { contests } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h1>Tag: {tag}</h1>
-      <ContestList contests={contests} />
-    </>
+    <Typography>
+      <Typography.Title heading={2}>比赛列表：{tag}</Typography.Title>
+      <Typography.Paragraph>
+        <ContestList contests={contests} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

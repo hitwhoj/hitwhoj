@@ -78,7 +78,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");
   return (
-    <Form method="post">
+    <Form method="post" style={{ marginTop: "25px" }}>
       <Space
         direction="vertical"
         size="medium"

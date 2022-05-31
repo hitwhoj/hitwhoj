@@ -1,5 +1,6 @@
 import type { Problem, ProblemTag } from "@prisma/client";
-import { LoaderFunction, MetaFunction, redirect } from "@remix-run/node";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";

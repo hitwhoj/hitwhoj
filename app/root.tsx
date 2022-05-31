@@ -147,8 +147,6 @@ export default function App() {
         wsc.close();
       };
     }
-    // navigate 依赖不需要传给 useEffect 函数
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   useEffect(() => {

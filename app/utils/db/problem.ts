@@ -1,4 +1,5 @@
 import { db } from "~/utils/server/db.server";
+import type { Unpack } from "../tools";
 
 // 这真是太优美了
 type ProblemWhereInput = NonNullable<
@@ -29,4 +30,6 @@ export async function findProblemMany(where: ProblemWhereInput) {
 }
 
 /** 首页题单的数据格式 */
-export type ProblemListData = Awaited<ReturnType<typeof findProblemMany>>;
+export type ProblemListData = Unpack<
+  Awaited<ReturnType<typeof findProblemMany>>
+>;

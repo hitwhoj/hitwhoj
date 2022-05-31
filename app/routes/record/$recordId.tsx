@@ -13,7 +13,7 @@ import type {
   SubtaskResult,
   SubtaskStatus,
   TaskStatus,
-} from "~/utils/types";
+} from "~/utils/server/judge.types";
 
 type LoaderData = {
   record: Pick<

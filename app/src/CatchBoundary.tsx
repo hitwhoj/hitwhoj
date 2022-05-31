@@ -1,4 +1,4 @@
-import { Button, Result, Space } from "@arco-design/web-react";
+import { Button, Result } from "@arco-design/web-react";
 import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
 import type { AllThrownResponse } from "~/utils/invariant";
 
@@ -47,7 +47,7 @@ export function CatchBoundary() {
               ))}
             </ol>
           }
-          extra={goback}
+          extra={[goback]}
         />
       );
     case 401:
@@ -56,12 +56,7 @@ export function CatchBoundary() {
           status="error"
           title="请先登录"
           subTitle="该页面不对访客开放"
-          extra={
-            <Space>
-              {goback}
-              {login}
-            </Space>
-          }
+          extra={[goback, login]}
         />
       );
     case 403:
@@ -70,7 +65,7 @@ export function CatchBoundary() {
           status="403"
           title="权限不足"
           subTitle="您没有访问该页面的权限"
-          extra={goback}
+          extra={[goback]}
         />
       );
     case 404:
@@ -79,12 +74,7 @@ export function CatchBoundary() {
           status="404"
           title="未找到"
           subTitle="您访问的页面不存在"
-          extra={
-            <Space>
-              {goback}
-              {diana}
-            </Space>
-          }
+          extra={[goback, diana]}
         />
       );
   }

@@ -60,7 +60,7 @@ export default function UserProfile() {
   return (
     <Space direction="vertical" size="medium" style={{ display: "flex" }}>
       <header>
-        <Space size="large" align="start">
+        <Space size="large" align="center">
           <Avatar size={60}>
             {user.avatar ? (
               <img src={user.avatar} alt={user.nickname || user.username} />
