@@ -1,5 +1,4 @@
-import { Divider, Empty } from "@arco-design/web-react";
-import { Fragment } from "react";
+import { Empty, List } from "@arco-design/web-react";
 import type { ContestListData } from "~/utils/db/contest";
 import { ContestListItem } from "./ContestListItem";
 
@@ -13,13 +12,10 @@ export function ContestList({ contests }: Props) {
   }
 
   return (
-    <div>
-      {contests.map((contest) => (
-        <Fragment key={contest.id}>
-          <ContestListItem contest={contest} />
-          <Divider />
-        </Fragment>
-      ))}
-    </div>
+    <List
+      dataSource={contests}
+      bordered={false}
+      render={(contest) => <ContestListItem contest={contest} />}
+    />
   );
 }

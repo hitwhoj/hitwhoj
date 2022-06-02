@@ -6,6 +6,9 @@ type ContestWhereInput = NonNullable<
   NonNullable<Parameters<typeof db.contest.findMany>["0"]>["where"]
 >;
 
+/**
+ * 筛选比赛
+ */
 export function findContestList(where: ContestWhereInput) {
   return db.contest.findMany({
     where,

@@ -103,15 +103,18 @@ model Problem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  timeLimit   Int @default(1000)
+  memoryLimit Int @default(128)
+
   tags ProblemTag[] @relation(references: [id])
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  data                File[]       @relation("data")
-  files               File[]       @relation("file")
-  includedContests    Contest[]    @relation(references: [id])
-  includedProblemSets ProblemSet[] @relation(references: [id])
+  data                File[]           @relation("data")
+  files               File[]           @relation("file")
+  includedContests    ContestProblem[]
+  includedProblemSets ProblemSet[]     @relation(references: [id])
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -169,7 +172,7 @@ model Contest {
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  problems Problem[] @relation(references: [id])
+  problems ContestProblem[]
 
   mods      User[] @relation("mod", references: [id])
   juries    User[] @relation("jury", references: [id])
@@ -197,6 +200,19 @@ enum ContestSystem {
   IOI
   /// 作业赛制，我不知道具体是什么操作，反正就是比赛
   Homework
+}
+
+model ContestProblem {
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id])
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  rank Int
+
+  @@id([contestId, problemId])
+  @@unique([contestId, rank])
 }
 
 model Team {

@@ -220,7 +220,12 @@ this is language whatthefuck
       attendees: { connect: [{ id: david }, { id: alice }] },
       juries: { connect: { id: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
-      problems: { connect: [{ id: p1 }, { id: p2 }] },
+      problems: {
+        create: [
+          { rank: 1, problemId: p1 },
+          { rank: 2, problemId: p2 },
+        ],
+      },
     },
   });
 
@@ -234,7 +239,12 @@ this is language whatthefuck
 
       creator: { connect: { id: alice } },
       tags: { create: [{ name: "a-soul" }] },
-      problems: { connect: [{ id: p1 }, { id: p2 }] },
+      problems: {
+        create: [
+          { rank: 1, problemId: p2 },
+          { rank: 2, problemId: p1 },
+        ],
+      },
     },
   });
 

@@ -62,6 +62,14 @@ export default function ContestIndex() {
         data={[
           { label: "开始时间", value: contest.beginTime },
           { label: "结束时间", value: contest.endTime },
+          {
+            label: "比赛时长",
+            value: `${
+              (new Date(contest.endTime).getTime() -
+                new Date(contest.beginTime).getTime()) /
+              3600_000
+            } 小时`,
+          },
         ]}
         labelStyle={{ paddingRight: 36 }}
       />

@@ -54,3 +54,8 @@ body[arco-theme="dark"] {
 .arco-tabs-header-title {
   font-size: 1rem;
 }
+
+.arco-btn-size-default > svg + a,
+.arco-btn-size-default > a + svg {
+  margin-left: 8px;
+}

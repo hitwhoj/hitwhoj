@@ -65,6 +65,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
       id: true,
       username: true,
       nickname: true,
+      role: true,
       avatar: true,
     },
   });

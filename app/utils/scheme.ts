@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ContestSystem } from "@prisma/client";
 
 /**
- * 数字 ID
+ * 数字 ID，非负整数
  *
  * @example 114514
  */

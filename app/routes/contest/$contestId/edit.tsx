@@ -1,11 +1,16 @@
-import type { Contest, ContestTag, Problem } from "@prisma/client";
+import type {
+  Contest,
+  ContestProblem,
+  ContestTag,
+  Problem,
+} from "@prisma/client";
 import { ContestSystem } from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -27,10 +32,19 @@ import {
   Tag,
   Typography,
   Message,
+  List,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useRef, useState } from "react";
-import { IconLoading, IconPlus, IconTag } from "@arco-design/web-react/icon";
+import {
+  IconDelete,
+  IconDown,
+  IconLoading,
+  IconPlus,
+  IconTag,
+  IconUp,
+} from "@arco-design/web-react/icon";
+
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
@@ -39,7 +53,9 @@ const Option = Select.Option;
 type LoaderData = {
   contest: Contest & {
     tags: ContestTag[];
-    problems: Pick<Problem, "id" | "title">[];
+    problems: (Pick<ContestProblem, "rank"> & {
+      problem: Pick<Problem, "id" | "title">;
+    })[];
   };
 };
 
@@ -53,9 +69,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     include: {
       tags: true,
       problems: {
+        orderBy: { rank: "asc" },
         select: {
-          id: true,
-          title: true,
+          rank: true,
+          problem: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
         },
       },
     },
@@ -74,6 +96,8 @@ enum ActionType {
   CreateProblem = "CreateProblem",
   DeleteProblem = "DeleteProblem",
   UpdateInformation = "UpdateInformation",
+  MoveProblemUp = "MoveProblemUp",
+  MoveProblemDown = "MoveProblemDown",
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
@@ -85,30 +109,128 @@ export const action: ActionFunction = async ({ params, request }) => {
   const _action = form.get("_action");
 
   switch (_action) {
+    // 创建题目
     case ActionType.CreateProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
+
+      const {
+        _max: { rank },
+      } = await db.contestProblem.aggregate({
+        where: { contestId },
+        _max: { rank: true },
+      });
 
       await db.contest.update({
         where: { id: contestId },
         data: {
-          problems: { connect: { id: problemId } },
+          problems: {
+            create: {
+              problemId,
+              rank: (rank ?? 0) + 1,
+            },
+          },
         },
       });
 
       return null;
     }
 
+    // 删除题目
     case ActionType.DeleteProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      await db.contest.update({
-        where: { id: contestId },
-        data: { problems: { disconnect: { id: problemId } } },
+      const record = await db.contestProblem.findUnique({
+        where: {
+          contestId_problemId: {
+            contestId,
+            problemId,
+          },
+        },
+      });
+
+      if (!record) {
+        throw new Response("Problem not found", { status: 400 });
+      }
+
+      const { rank } = await db.contestProblem.delete({
+        where: {
+          contestId_problemId: {
+            contestId,
+            problemId,
+          },
+        },
+        select: {
+          rank: true,
+        },
+      });
+
+      await db.contestProblem.updateMany({
+        where: {
+          contestId,
+          rank: { gte: rank },
+        },
+        data: {
+          rank: { decrement: 1 },
+        },
       });
 
       return null;
     }
 
+    case ActionType.MoveProblemUp:
+    case ActionType.MoveProblemDown: {
+      const problemId = invariant(idScheme, form.get("pid"));
+
+      const record = await db.contestProblem.findUnique({
+        where: {
+          contestId_problemId: {
+            contestId,
+            problemId,
+          },
+        },
+      });
+
+      if (!record) {
+        throw new Response("Problem not found", { status: 400 });
+      }
+
+      // 获取交换的题目
+      const target = await db.contestProblem.findUnique({
+        where: {
+          contestId_rank: {
+            contestId,
+            rank:
+              _action === ActionType.MoveProblemUp
+                ? record.rank - 1
+                : record.rank + 1,
+          },
+        },
+      });
+
+      if (!target) {
+        throw new Response("Cannot move problem", { status: 400 });
+      }
+
+      // 删除原来的排名
+      await db.contestProblem.delete({
+        where: { contestId_rank: { contestId, rank: record.rank } },
+      });
+      await db.contestProblem.delete({
+        where: { contestId_rank: { contestId, rank: target.rank } },
+      });
+
+      // 添加新的排名
+      await db.contestProblem.create({
+        data: { contestId, problemId: record.problemId, rank: target.rank },
+      });
+      await db.contestProblem.create({
+        data: { contestId, problemId: target.problemId, rank: record.rank },
+      });
+
+      return null;
+    }
+
+    // 创建标签
     case ActionType.CreateTag: {
       const tag = invariant(tagScheme, form.get("tag"));
 
@@ -127,6 +249,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       return null;
     }
 
+    // 删除标签
     case ActionType.DeleteTag: {
       const tag = invariant(tagScheme, form.get("tag"));
 
@@ -144,6 +267,7 @@ export const action: ActionFunction = async ({ params, request }) => {
       return null;
     }
 
+    // 更新比赛信息
     case ActionType.UpdateInformation: {
       const title = invariant(titleScheme, form.get("title"));
       const description = invariant(descriptionScheme, form.get("description"));
@@ -252,6 +376,7 @@ function ContestInformationEditor({
             setBeginTime(new Date(dates[0]).getTime());
             setEndTime(new Date(dates[1]).getTime());
           }}
+          disabled={isUpdating}
         />
       </FormItem>
 
@@ -365,16 +490,125 @@ function ContestTagEditor({ tags }: { tags: Pick<ContestTag, "name">[] }) {
   );
 }
 
+function ContestProblemEditItem({
+  id,
+  isFirst,
+  isLast,
+}: {
+  id: number;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input type="hidden" name="pid" value={id} />
+      <Space>
+        <Button
+          type="primary"
+          icon={<IconDelete />}
+          size="mini"
+          status="danger"
+          disabled={isUpdating}
+          htmlType="submit"
+          name="_action"
+          value={ActionType.DeleteProblem}
+        />
+        <Button
+          type="default"
+          icon={<IconUp />}
+          size="mini"
+          disabled={isFirst || isUpdating}
+          htmlType="submit"
+          name="_action"
+          value={ActionType.MoveProblemUp}
+        />
+        <Button
+          type="default"
+          icon={<IconDown />}
+          size="mini"
+          disabled={isLast || isUpdating}
+          htmlType="submit"
+          name="_action"
+          value={ActionType.MoveProblemDown}
+        />
+      </Space>
+    </fetcher.Form>
+  );
+}
+
+function ContestProblemEditor({
+  problems,
+}: {
+  problems: (Pick<ContestProblem, "rank"> & {
+    problem: Pick<Problem, "id" | "title">;
+  })[];
+}) {
+  const fetcher = useFetcher();
+
+  return (
+    <>
+      <Typography.Paragraph>
+        <fetcher.Form method="post">
+          <Space>
+            <Input
+              name="pid"
+              placeholder="请输入题目 ID"
+              pattern="\d+"
+              required
+            />
+            <Button
+              type="primary"
+              icon={<IconPlus />}
+              htmlType="submit"
+              name="_action"
+              value={ActionType.CreateProblem}
+            >
+              添加题目
+            </Button>
+          </Space>
+        </fetcher.Form>
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        <List
+          dataSource={problems}
+          bordered={false}
+          render={({ rank, problem: { id, title } }, index) => (
+            <List.Item key={id}>
+              <Space size="large">
+                <Tag>{String.fromCharCode(64 + rank)}</Tag>
+                <Link to={`/problem/${id}`}>{title}</Link>
+                <ContestProblemEditItem
+                  id={id}
+                  isFirst={index === 0}
+                  isLast={index === problems.length - 1}
+                />
+              </Space>
+            </List.Item>
+          )}
+        />
+      </Typography.Paragraph>
+    </>
+  );
+}
+
 export default function ContestEdit() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
       <Typography.Title heading={4}>修改比赛信息</Typography.Title>
-      <ContestInformationEditor contest={contest} />
       <FormItem label="标签" style={{ maxWidth: 600 }}>
         <ContestTagEditor tags={contest.tags} />
       </FormItem>
+      <ContestInformationEditor contest={contest} />
+      <Typography.Title heading={4}>修改比赛题目</Typography.Title>
+      <Typography.Paragraph>
+        如果您在赛后修改题目，系统可能会出现一些奇妙的特性
+      </Typography.Paragraph>
+      <ContestProblemEditor problems={contest.problems} />
     </Typography>
   );
 }

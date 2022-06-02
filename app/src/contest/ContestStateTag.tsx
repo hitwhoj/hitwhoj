@@ -6,7 +6,7 @@ type Props = {
 };
 
 export function ContestStateTag({ beginTime, endTime }: Props) {
-  // because type sucks
+  // in fact they are only strings
   const begin = new Date(beginTime);
   const end = new Date(endTime);
 

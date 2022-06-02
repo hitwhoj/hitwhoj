@@ -19,6 +19,11 @@ export async function findProblemMany(where: ProblemWhereInput) {
       id: true,
       title: true,
       private: true,
+      tags: {
+        select: {
+          name: true,
+        },
+      },
       team: {
         select: {
           id: true,
