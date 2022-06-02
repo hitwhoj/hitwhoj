@@ -1,16 +1,4 @@
-import { json } from "@remix-run/node";
-import type { ThrownResponse } from "@remix-run/react";
 import type { ZodType, ZodTypeDef } from "zod";
-
-export type AllThrownResponse =
-  // bad request
-  | ThrownResponse<400, string[]>
-  // unauthorized
-  | ThrownResponse<401, null>
-  // forbidden
-  | ThrownResponse<403, null>
-  // not found
-  | ThrownResponse<404, null>;
 
 /** 判断数据是否符合 scheme */
 export function invariant<
@@ -28,11 +16,8 @@ export function invariant<
     return t.data;
   }
 
-  if (init.status === 400) {
-    throw json(
-      t.error.issues.map((issue) => issue.message),
-      init
-    );
-  }
-  throw new Response(null, init);
+  throw new Response(
+    t.error.issues.map((issue) => issue.message).join("\n"),
+    init
+  );
 }

@@ -24,6 +24,7 @@ import {
   DatePicker,
   Select,
   Button,
+  Typography,
 } from "@arco-design/web-react";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
@@ -90,8 +91,8 @@ export default function ContestNew() {
   const isCreating = fetcher.state === "submitting";
 
   return (
-    <>
-      <h1>创建比赛</h1>
+    <Typography>
+      <Typography.Title heading={4}>创建比赛</Typography.Title>
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
         <FormItem label="标题" required labelCol={{ span: 3 }}>
           <Input name="title" id="title" required />
@@ -157,7 +158,7 @@ export default function ContestNew() {
           </Button>
         </FormItem>
       </fetcher.Form>
-    </>
+    </Typography>
   );
 }
 

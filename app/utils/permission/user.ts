@@ -17,7 +17,7 @@ export async function checkUserWritePermission(
 
   if (isAdmin(role) || self === target) return;
 
-  throw new Response(null, { status: 403 });
+  throw new Response("权限不足", { status: 403 });
 }
 
 /**
@@ -33,5 +33,5 @@ export async function checkUserReadPermission(request: Request) {
 
   if (!self || isUser(self.role)) return;
 
-  throw new Response(null, { status: 403 });
+  throw new Response("权限不足", { status: 403 });
 }

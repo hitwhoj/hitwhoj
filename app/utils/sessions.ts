@@ -59,7 +59,7 @@ export async function findSessionUid(request: Request) {
   const user = await findSessionUserOptional(request);
 
   if (!user) {
-    throw new Response(null, { status: 401 });
+    throw new Response("You should login first", { status: 401 });
   }
 
   return user.id;
@@ -76,7 +76,7 @@ export async function findSessionUser(request: Request) {
   const user = await findSessionUserOptional(request);
 
   if (!user) {
-    throw new Response(null, { status: 401 });
+    throw new Response("You should login first", { status: 401 });
   }
 
   return user;

@@ -1,9 +1,9 @@
 import { Button, Result } from "@arco-design/web-react";
+import type { ThrownResponse } from "@remix-run/react";
 import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
-import type { AllThrownResponse } from "~/utils/invariant";
 
 export function CatchBoundary() {
-  const caught = useCatch<AllThrownResponse>();
+  const caught = useCatch<ThrownResponse<number, string>>();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,18 +35,7 @@ export function CatchBoundary() {
         <Result
           status="error"
           title="请求参数错误"
-          subTitle={
-            <ol
-              style={{
-                display: "inline-block",
-                textAlign: "left",
-              }}
-            >
-              {caught.data.map((data, index) => (
-                <li key={index}>{data}</li>
-              ))}
-            </ol>
-          }
+          subTitle={caught.data}
           extra={[goback]}
         />
       );
@@ -75,6 +64,15 @@ export function CatchBoundary() {
           title="未找到"
           subTitle="您访问的页面不存在"
           extra={[goback, diana]}
+        />
+      );
+    default:
+      return (
+        <Result
+          status="error"
+          title="你打开了新世界的大门"
+          subTitle={caught.data}
+          extra={[goback]}
         />
       );
   }

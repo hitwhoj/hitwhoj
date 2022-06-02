@@ -9,7 +9,6 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
@@ -76,7 +75,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         .filter((file): file is File => file instanceof File);
 
       if (!files.length) {
-        throw json(["File missing"], { status: 400 });
+        throw new Response("File missing", { status: 400 });
       }
 
       await Promise.all(files.map((file) => createUserFile(file, userId)));
@@ -94,7 +93,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
       // 检查是否是用户的文件
       if (!file || file.userId !== userId) {
-        throw new Response(null, { status: 404 });
+        throw new Response("File not found", { status: 404 });
       }
 
       await removeFile(fid);
