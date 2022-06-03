@@ -1,20 +1,16 @@
 import { List, Space, Tag } from "@arco-design/web-react";
+import { IconCheck, IconClose } from "@arco-design/web-react/icon";
 import type { Problem, Record } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
+import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
-  problems: {
-    rank: number;
-    problem: Pick<Problem, "title"> & {
-      relatedRecords: Pick<Record, "status">[];
-    };
-  }[];
+  problems: { rank: number; problem: Pick<Problem, "title"> }[];
+  records: { rank: number; records: Pick<Record, "status">[] }[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -22,31 +18,48 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const self = await findSessionUid(request);
+  const self = await findSessionUserOptional(request);
 
   const problems = await db.contestProblem.findMany({
-    where: {
-      contestId,
-    },
+    where: { contestId },
     select: {
       rank: true,
       problem: {
         select: {
           title: true,
-          relatedRecords: {
-            where: { contestId, submitterId: self },
-            select: { status: true },
-          },
         },
       },
     },
   });
 
-  return { problems };
+  const records = self
+    ? await db.contestProblem.findMany({
+        where: { contestId },
+        select: {
+          rank: true,
+          problem: {
+            select: {
+              relatedRecords: {
+                where: { submitterId: self.id },
+                select: { status: true },
+              },
+            },
+          },
+        },
+      })
+    : [];
+
+  return {
+    problems,
+    records: records.map(({ rank, problem: { relatedRecords: records } }) => ({
+      rank,
+      records,
+    })),
+  };
 };
 
 export default function ContestProblemIndex() {
-  const { problems } = useLoaderData<LoaderData>();
+  const { problems, records } = useLoaderData<LoaderData>();
 
   return (
     <List
@@ -55,16 +68,28 @@ export default function ContestProblemIndex() {
       render={({ rank, problem }) => {
         const problemId = String.fromCharCode(0x40 + rank);
         const accepted =
-          problem.relatedRecords.findIndex(
-            (record) => record.status === "Accepted"
+          records.findIndex(
+            (rec) =>
+              rec.rank === rank &&
+              rec.records.findIndex(({ status }) => status === "Accepted") !==
+                -1
           ) > -1;
-        const failed = problem.relatedRecords.length > 0 && !accepted;
-        const color = accepted ? "green" : failed ? "red" : undefined;
+        const failed =
+          records.findIndex(
+            (rec) => rec.rank === rank && rec.records.length > 0
+          ) !== -1 && !accepted;
 
         return (
           <List.Item>
             <Space size="large">
-              <Tag color={color}>{problemId}</Tag>
+              <Tag>{problemId}</Tag>
+              {accepted ? (
+                <IconCheck style={{ color: "rgb(var(--green-6))" }} />
+              ) : failed ? (
+                <IconClose style={{ color: "rgb(var(--red-6))" }} />
+              ) : (
+                <IconClose style={{ color: "rgb(var(--transparent-6))" }} />
+              )}
               <Link to={problemId}>{problem.title}</Link>
             </Space>
           </List.Item>

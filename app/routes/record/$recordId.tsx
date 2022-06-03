@@ -116,20 +116,19 @@ export default function RecordView() {
                   {item.tasks.map((task, index) => (
                     <List.Item
                       key={index}
-                      children={
-                        <Space>
-                          <span>Task #{index + 1}</span>
-                          <RecordStatus status={task.status} />
-                          <ResultMessage message={task.message} />
-                        </Space>
-                      }
                       extra={
                         <RecordTimeMemory
                           time={task.time}
                           memory={task.memory}
                         />
                       }
-                    />
+                    >
+                      <Space>
+                        <span>Task #{index + 1}</span>
+                        <RecordStatus status={task.status} />
+                        <ResultMessage message={task.message} />
+                      </Space>
+                    </List.Item>
                   ))}
                 </List>
               </Collapse.Item>

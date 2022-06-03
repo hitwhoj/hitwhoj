@@ -12,7 +12,8 @@ type Props = {
 
 export function RecordStatus({ status }: Props) {
   let color: string;
-  let icon = <IconClose />;
+  let icon: JSX.Element;
+
   switch (status) {
     case "Accepted": {
       color = "green";
@@ -29,6 +30,7 @@ export function RecordStatus({ status }: Props) {
     case "Unknown Error":
     case "Wrong Answer": {
       color = "red";
+      icon = <IconClose />;
       break;
     }
 
@@ -40,14 +42,21 @@ export function RecordStatus({ status }: Props) {
       break;
     }
 
-    case "Pending":
+    case "Pending": {
+      color = "grey";
+      icon = <IconLoading />;
+      break;
+    }
+
     case "Skipped": {
       color = "grey";
+      icon = <IconClose />;
       break;
     }
 
     default: {
       color = "";
+      icon = <IconClose />;
       break;
     }
   }
