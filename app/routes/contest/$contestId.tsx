@@ -62,9 +62,11 @@ export default function ContestView() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>{contest.title}</Typography.Title>
-      <Typography.Paragraph>
+    <Typography className="contest-problem-container">
+      <Typography.Title heading={3} className="contest-problem-hide">
+        {contest.title}
+      </Typography.Title>
+      <Typography.Paragraph className="contest-problem-hide">
         <Space>
           <ContestStateTag
             beginTime={contest.beginTime}
@@ -78,11 +80,11 @@ export default function ContestView() {
           ))}
         </Space>
       </Typography.Paragraph>
-      <Typography.Paragraph>
+      <Typography.Paragraph className="contest-problem-hide">
         <Navigator
           routes={[
             { key: ".", title: "详情" },
-            { key: "problems", title: "题目" },
+            { key: "problem", title: "题目" },
             { key: "edit", title: "编辑" },
           ]}
         />

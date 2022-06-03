@@ -60,8 +60,20 @@ export default function ContestIndex() {
         column={1}
         title="比赛信息"
         data={[
-          { label: "开始时间", value: contest.beginTime },
-          { label: "结束时间", value: contest.endTime },
+          {
+            label: "开始时间",
+            value: new Intl.DateTimeFormat("zh-CN", {
+              dateStyle: "short",
+              timeStyle: "short",
+            }).format(new Date(contest.beginTime)),
+          },
+          {
+            label: "结束时间",
+            value: new Intl.DateTimeFormat("zh-CN", {
+              dateStyle: "short",
+              timeStyle: "short",
+            }).format(new Date(contest.endTime)),
+          },
           {
             label: "比赛时长",
             value: `${

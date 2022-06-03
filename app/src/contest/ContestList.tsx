@@ -15,7 +15,9 @@ export function ContestList({ contests }: Props) {
     <List
       dataSource={contests}
       bordered={false}
-      render={(contest) => <ContestListItem contest={contest} />}
+      render={(contest) => (
+        <ContestListItem key={contest.id} contest={contest} />
+      )}
     />
   );
 }

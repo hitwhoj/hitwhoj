@@ -547,6 +547,7 @@ function ContestProblemEditor({
   })[];
 }) {
   const fetcher = useFetcher();
+  const isUpdating = fetcher.state !== "idle";
 
   return (
     <>
@@ -557,6 +558,7 @@ function ContestProblemEditor({
               name="pid"
               placeholder="请输入题目 ID"
               pattern="\d+"
+              disabled={isUpdating}
               required
             />
             <Button
@@ -565,6 +567,7 @@ function ContestProblemEditor({
               htmlType="submit"
               name="_action"
               value={ActionType.CreateProblem}
+              loading={isUpdating}
             >
               添加题目
             </Button>

@@ -1,0 +1,52 @@
+.contest-problem {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto;
+  height: 100%;
+
+  @media only screen and (max-width: 1024px) {
+    height: unset;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .left {
+    height: 100%;
+    overflow: auto;
+  }
+
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+}
+
+.contest-problem-container {
+  height: 100%;
+
+  @media only screen and (max-width: 1024px) {
+    height: unset;
+  }
+}
+
+.contest-problem-hide {
+  display: none;
+}
+
+.arco-layout-footer {
+  display: none !important;
+}
+
+main.arco-layout-content {
+  margin-top: 0 !important;
+  margin-bottom: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media only screen and (max-width: 1024px) {
+    overflow: unset;
+  }
+}

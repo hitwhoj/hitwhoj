@@ -13,7 +13,9 @@ type Props = {
 export function Navigator({ routes }: Props) {
   const navigate = useNavigate();
   const { pathname } = useMatches().at(-1)!;
-  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
+  const currentTab =
+    routes.filter((route) => pathname.indexOf(route.key) > -1).at(0)?.key ??
+    ".";
 
   return (
     <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>

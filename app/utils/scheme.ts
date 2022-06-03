@@ -168,3 +168,12 @@ export const contentScheme = z
   .string()
   .nonempty("message content must be nonempty")
   .max(255, "message content mast be less than 255 characters");
+
+/**
+ * 比赛题目编号，必须是单个大写字母
+ *
+ * @example "A", "Z"
+ */
+export const problemRankScheme = z
+  .string()
+  .regex(/^[A-Z]$/, "contest problem id must be a single uppercase letter");
