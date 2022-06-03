@@ -1,13 +1,14 @@
 import {
   Button,
   Drawer,
-  Input,
   List,
   Message,
   Select,
   Space,
+  Spin,
   Typography,
 } from "@arco-design/web-react";
+import Editor, { loader as monacoLoader } from "@monaco-editor/react";
 import type { Problem, Record } from "@prisma/client";
 import type {
   ActionFunction,
@@ -19,6 +20,7 @@ import {
   Link,
   useActionData,
   useLoaderData,
+  useParams,
   useTransition,
 } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
@@ -37,16 +39,16 @@ import { IconHistory, IconSend } from "@arco-design/web-react/icon";
 import { findSessionUid, findSessionUserOptional } from "~/utils/sessions";
 import { s3 } from "~/utils/server/s3.server";
 import { judge } from "~/utils/server/judge.server";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
+import { ThemeContext } from "~/utils/context/theme";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
 ];
 
 type LoaderData = {
-  rank: number;
   problem: Pick<Problem, "title" | "description" | "timeLimit" | "memoryLimit">;
   records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
 };
@@ -106,7 +108,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
     : [];
 
   return {
-    rank,
     problem: problem.problem,
     records,
   };
@@ -157,8 +158,10 @@ export const action: ActionFunction<ActionData> = async ({
 };
 
 export default function ContestProblemView() {
-  const { rank, problem, records } = useLoaderData<LoaderData>();
+  const { problem, records } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
+  const { theme } = useContext(ThemeContext);
+  const { contestId, rank } = useParams();
 
   const { state } = useTransition();
   const isSubmitting = state === "submitting";
@@ -170,13 +173,41 @@ export default function ContestProblemView() {
   }, [actionData?.recordId]);
 
   const [language, setLanguage] = useState("cpp");
+  const [code, setCode] = useState(
+    "#include <bits/stdc++.h>\n" +
+      "using namespace std;\n" +
+      "\n" +
+      "int main() {\n" +
+      "  int a, b;\n" +
+      "  cin >> a >> b;\n" +
+      "  cout << a + b << endl;\n" +
+      "  return 0;\n" +
+      "}\n"
+  );
   const [visible, setVisible] = useState(false);
+
+  // override monaco loader
+  monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
+
+  // load code from local storage
+  useEffect(() => {
+    const storedLang = localStorage.getItem(`C${contestId}${rank}.language`);
+    if (storedLang) setLanguage(storedLang);
+    const storedCode = localStorage.getItem(`C${contestId}${rank}.code`);
+    if (storedCode) setCode(storedCode);
+  }, []);
+
+  // save code to local storage
+  useEffect(() => {
+    localStorage.setItem(`C${contestId}${rank}.language`, language);
+    localStorage.setItem(`C${contestId}${rank}.code`, code);
+  }, [language, code]);
 
   return (
     <div className="contest-problem">
       <Typography className="left">
         <Typography.Title heading={3}>
-          {`${String.fromCharCode(0x40 + rank)}. ${problem.title}`}
+          {`${rank}. ${problem.title}`}
         </Typography.Title>
 
         <Typography.Paragraph>
@@ -192,14 +223,27 @@ export default function ContestProblemView() {
       </Typography>
 
       <Form method="post" className="right">
-        <Input.TextArea
-          name="code"
-          required
-          style={{ display: "block", flex: 1 }}
-          disabled={isSubmitting}
+        <textarea hidden name="code" value={code} readOnly />
+        <Editor
+          loading={<Spin />}
+          onChange={(code) => setCode(code ?? "")}
+          value={code}
+          language={language}
+          theme={theme === "light" ? "light" : "vs-dark"}
+          options={{
+            cursorSmoothCaretAnimation: true,
+            smoothScrolling: true,
+            fontSize: 16,
+          }}
         />
         <input type="hidden" name="language" value={language} />
-        <Space style={{ display: "flex", justifyContent: "space-between" }}>
+        <Space
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: 10,
+          }}
+        >
           <Select
             value={language}
             onChange={(language) => setLanguage(language)}

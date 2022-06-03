@@ -13,13 +13,12 @@
   .left {
     height: 100%;
     overflow: auto;
+    padding: 0 5%;
   }
 
   .right {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px;
   }
 }
 
@@ -49,4 +48,9 @@ main.arco-layout-content {
   @media only screen and (max-width: 1024px) {
     overflow: unset;
   }
+}
+
+section.arco-layout {
+  padding: 0 !important;
+  margin: 0;
 }

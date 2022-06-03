@@ -582,7 +582,9 @@ function ContestProblemEditor({
             <List.Item key={id}>
               <Space size="large">
                 <Tag>{String.fromCharCode(64 + rank)}</Tag>
-                <Link to={`/problem/${id}`}>{title}</Link>
+                <Link to={`/problem/${id}`} target="_blank">
+                  {title}
+                </Link>
                 <ContestProblemEditItem
                   id={id}
                   isFirst={index === 0}

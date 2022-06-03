@@ -90,7 +90,9 @@ export default function ContestProblemIndex() {
               ) : (
                 <IconClose style={{ color: "rgb(var(--transparent-6))" }} />
               )}
-              <Link to={problemId}>{problem.title}</Link>
+              <Link to={problemId} target="_blank">
+                {problem.title}
+              </Link>
             </Space>
           </List.Item>
         );
