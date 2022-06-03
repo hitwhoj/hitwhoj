@@ -3,6 +3,7 @@ import {
   Drawer,
   List,
   Message,
+  ResizeBox,
   Select,
   Space,
   Spin,
@@ -204,72 +205,81 @@ export default function ContestProblemView() {
   }, [language, code]);
 
   return (
-    <div className="contest-problem">
-      <Typography className="left">
-        <Typography.Title heading={3}>
-          {`${rank}. ${problem.title}`}
-        </Typography.Title>
+    <>
+      <ResizeBox.Split
+        style={{ height: "100%" }}
+        // className="contest-problem"
+        panes={[
+          <Typography key={1} style={{ padding: "0 5%" }}>
+            <Typography.Title heading={3}>
+              {`${rank}. ${problem.title}`}
+            </Typography.Title>
 
-        <Typography.Paragraph>
-          <Space>
-            <ProblemTimeLimitTag time={problem.timeLimit} />
-            <ProblemMemoryLimitTag memory={problem.memoryLimit} />
-          </Space>
-        </Typography.Paragraph>
+            <Typography.Paragraph>
+              <Space>
+                <ProblemTimeLimitTag time={problem.timeLimit} />
+                <ProblemMemoryLimitTag memory={problem.memoryLimit} />
+              </Space>
+            </Typography.Paragraph>
 
-        <Typography.Paragraph>
-          <Markdown>{problem.description}</Markdown>
-        </Typography.Paragraph>
-      </Typography>
+            <Typography.Paragraph>
+              <Markdown>{problem.description}</Markdown>
+            </Typography.Paragraph>
+          </Typography>,
 
-      <Form method="post" className="right">
-        <textarea hidden name="code" value={code} readOnly />
-        <Editor
-          loading={<Spin />}
-          onChange={(code) => setCode(code ?? "")}
-          value={code}
-          language={language}
-          theme={theme === "light" ? "light" : "vs-dark"}
-          options={{
-            cursorSmoothCaretAnimation: true,
-            smoothScrolling: true,
-            fontSize: 16,
-          }}
-        />
-        <input type="hidden" name="language" value={language} />
-        <Space
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: 10,
-          }}
-        >
-          <Select
-            value={language}
-            onChange={(language) => setLanguage(language)}
-            style={{ width: 150 }}
-            disabled={isSubmitting}
+          <Form
+            key={2}
+            method="post"
+            style={{ display: "flex", flexDirection: "column", height: "100%" }}
           >
-            <Select.Option value="c">C</Select.Option>
-            <Select.Option value="cpp">C++</Select.Option>
-            <Select.Option value="java">Java</Select.Option>
-          </Select>
-          <Space>
-            <Button icon={<IconHistory />} onClick={() => setVisible(true)}>
-              查看记录
-            </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<IconSend />}
-              loading={isSubmitting}
+            <textarea hidden name="code" value={code} readOnly />
+            <Editor
+              loading={<Spin />}
+              onChange={(code) => setCode(code ?? "")}
+              value={code}
+              language={language}
+              theme={theme === "light" ? "light" : "vs-dark"}
+              options={{
+                cursorSmoothCaretAnimation: true,
+                smoothScrolling: true,
+                fontSize: 16,
+              }}
+            />
+            <input type="hidden" name="language" value={language} />
+            <Space
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: 10,
+              }}
             >
-              提交
-            </Button>
-          </Space>
-        </Space>
-      </Form>
-
+              <Select
+                value={language}
+                onChange={(language) => setLanguage(language)}
+                style={{ width: 150 }}
+                disabled={isSubmitting}
+              >
+                <Select.Option value="c">C</Select.Option>
+                <Select.Option value="cpp">C++</Select.Option>
+                <Select.Option value="java">Java</Select.Option>
+              </Select>
+              <Space>
+                <Button icon={<IconHistory />} onClick={() => setVisible(true)}>
+                  查看记录
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<IconSend />}
+                  loading={isSubmitting}
+                >
+                  提交
+                </Button>
+              </Space>
+            </Space>
+          </Form>,
+        ]}
+      />
       <Drawer
         visible={visible}
         width={400}
@@ -295,6 +305,6 @@ export default function ContestProblemView() {
           )}
         />
       </Drawer>
-    </div>
+    </>
   );
 }

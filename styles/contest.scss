@@ -1,33 +1,5 @@
-.contest-problem {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto;
-  height: 100%;
-
-  @media only screen and (max-width: 1024px) {
-    height: unset;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-  }
-
-  .left {
-    height: 100%;
-    overflow: auto;
-    padding: 0 5%;
-  }
-
-  .right {
-    display: flex;
-    flex-direction: column;
-  }
-}
-
 .contest-problem-container {
   height: 100%;
-
-  @media only screen and (max-width: 1024px) {
-    height: unset;
-  }
 }
 
 .contest-problem-hide {
@@ -44,10 +16,6 @@ main.arco-layout-content {
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
-
-  @media only screen and (max-width: 1024px) {
-    overflow: unset;
-  }
 }
 
 section.arco-layout {
