@@ -44,6 +44,7 @@ import {
   IconTag,
   IconUp,
 } from "@arco-design/web-react/icon";
+import { checkContestWritePermission } from "~/utils/permission/contest";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
@@ -59,10 +60,15 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
+
+  await checkContestWritePermission(request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -104,8 +110,9 @@ export const action: ActionFunction = async ({ params, request }) => {
   const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
-  const form = await request.formData();
+  await checkContestWritePermission(request, contestId);
 
+  const form = await request.formData();
   const _action = form.get("_action");
 
   switch (_action) {

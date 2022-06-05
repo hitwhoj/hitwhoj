@@ -1,4 +1,4 @@
-import { Button, Result } from "@arco-design/web-react";
+import { Button, Result, Space } from "@arco-design/web-react";
 import type { ThrownResponse } from "@remix-run/react";
 import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
 
@@ -36,7 +36,7 @@ export function CatchBoundary() {
           status="error"
           title="请求参数错误"
           subTitle={caught.data}
-          extra={[goback]}
+          extra={<Space children={[goback]} />}
         />
       );
     case 401:
@@ -44,8 +44,8 @@ export function CatchBoundary() {
         <Result
           status="error"
           title="请先登录"
-          subTitle="该页面不对访客开放"
-          extra={[goback, login]}
+          subTitle={caught.data || "该页面不对访客开放"}
+          extra={<Space children={[goback, login]} />}
         />
       );
     case 403:
@@ -53,8 +53,8 @@ export function CatchBoundary() {
         <Result
           status="403"
           title="权限不足"
-          subTitle="您没有访问该页面的权限"
-          extra={[goback]}
+          subTitle={caught.data || "您没有访问该页面的权限"}
+          extra={<Space children={[goback]} />}
         />
       );
     case 404:
@@ -62,8 +62,8 @@ export function CatchBoundary() {
         <Result
           status="404"
           title="未找到"
-          subTitle="您访问的页面不存在"
-          extra={[goback, diana]}
+          subTitle={caught.data || "您访问的页面不存在"}
+          extra={<Space children={[goback, diana]} />}
         />
       );
     default:
@@ -71,8 +71,8 @@ export function CatchBoundary() {
         <Result
           status="error"
           title="你打开了新世界的大门"
-          subTitle={caught.data}
-          extra={[goback]}
+          subTitle={caught.data || "我们甚至不知道发生了什么"}
+          extra={<Space children={[goback]} />}
         />
       );
   }

@@ -7,11 +7,11 @@ type ContestWhereInput = NonNullable<
 >;
 
 /**
- * 筛选比赛
+ * 筛选比赛，自动过滤掉团队的比赛
  */
 export function findContestList(where: ContestWhereInput) {
   return db.contest.findMany({
-    where,
+    where: { teamId: null, ...where },
     orderBy: [{ beginTime: "desc" }],
     select: {
       id: true,
@@ -19,6 +19,7 @@ export function findContestList(where: ContestWhereInput) {
       beginTime: true,
       endTime: true,
       system: true,
+      private: true,
       tags: {
         orderBy: { name: "asc" },
         select: {

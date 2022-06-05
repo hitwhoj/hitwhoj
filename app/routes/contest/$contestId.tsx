@@ -1,30 +1,28 @@
-import { Space, Tag, Typography } from "@arco-design/web-react";
-import type { Contest, ContestTag, Team } from "@prisma/client";
+import { Typography } from "@arco-design/web-react";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
-import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
-import { ContestStateTag } from "~/src/contest/ContestStateTag";
-import { IconTag } from "@arco-design/web-react/icon";
+import { checkContestReadPermission } from "~/utils/permission/contest";
+import { ContestTags } from "~/src/contest/ContestTags";
+import type { ContestListData } from "~/utils/db/contest";
 
 type LoaderData = {
-  contest: Pick<
-    Contest,
-    "id" | "title" | "system" | "beginTime" | "endTime"
-  > & {
-    team: Pick<Team, "id"> | null;
-    tags: Pick<ContestTag, "name">[];
-  };
+  contest: ContestListData;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
+
+  await checkContestReadPermission(request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -34,10 +32,16 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       system: true,
       beginTime: true,
       endTime: true,
-      team: { select: { id: true } },
+      private: true,
+      teamId: true,
       tags: {
         select: {
           name: true,
+        },
+      },
+      _count: {
+        select: {
+          attendees: true,
         },
       },
     },
@@ -47,8 +51,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  if (contest.team?.id) {
-    throw redirect(`/team/${contest.team.id}/contest/${contest.id}`);
+  if (contest.teamId) {
+    throw redirect(`/team/${contest.teamId}/contest/${contest.id}`);
   }
 
   return { contest };
@@ -67,18 +71,7 @@ export default function ContestView() {
         {contest.title}
       </Typography.Title>
       <Typography.Paragraph className="contest-problem-hide">
-        <Space>
-          <ContestStateTag
-            beginTime={contest.beginTime}
-            endTime={contest.endTime}
-          />
-          <ContestSystemTag system={contest.system} />
-          {contest.tags.map((tag) => (
-            <Tag key={tag.name} icon={<IconTag />}>
-              <Link to={`/contest/tag/${tag.name}`}>{tag.name}</Link>
-            </Tag>
-          ))}
-        </Space>
+        <ContestTags contest={contest} />
       </Typography.Paragraph>
       <Typography.Paragraph className="contest-problem-hide">
         <Navigator

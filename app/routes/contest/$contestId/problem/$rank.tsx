@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Drawer,
   List,
@@ -10,7 +11,7 @@ import {
   Typography,
 } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { Problem, Record } from "@prisma/client";
+import type { Contest, Problem, Record } from "@prisma/client";
 import type {
   ActionFunction,
   LinksFunction,
@@ -44,14 +45,22 @@ import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
+import {
+  checkContestProblemReadPermission,
+  checkContestProblemSubmitPermission,
+} from "~/utils/permission/contest";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
 ];
 
 type LoaderData = {
-  problem: Pick<Problem, "title" | "description" | "timeLimit" | "memoryLimit">;
+  problem: Pick<
+    Problem,
+    "id" | "title" | "description" | "timeLimit" | "memoryLimit"
+  >;
   records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
+  contest: Pick<Contest, "beginTime" | "endTime">;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -64,6 +73,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     0x40;
   const self = await findSessionUserOptional(request);
 
+  await checkContestProblemReadPermission(request, contestId);
+
   const problem = await db.contestProblem.findUnique({
     where: {
       contestId_rank: {
@@ -72,13 +83,19 @@ export const loader: LoaderFunction<LoaderData> = async ({
       },
     },
     select: {
-      problemId: true,
       problem: {
         select: {
+          id: true,
           title: true,
           description: true,
           timeLimit: true,
           memoryLimit: true,
+        },
+      },
+      contest: {
+        select: {
+          beginTime: true,
+          endTime: true,
         },
       },
     },
@@ -92,7 +109,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     ? await db.record.findMany({
         where: {
           contestId,
-          problemId: problem.problemId,
+          problemId: problem.problem.id,
           submitterId: self.id,
         },
         orderBy: {
@@ -109,8 +126,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
     : [];
 
   return {
-    problem: problem.problem,
     records,
+    problem: problem.problem,
+    contest: problem.contest,
   };
 };
 
@@ -126,6 +144,7 @@ export const action: ActionFunction<ActionData> = async ({
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
+  await checkContestProblemSubmitPermission(request, contestId);
 
   const problem = await db.contestProblem.findUnique({
     where: { contestId_rank: { contestId, rank } },
@@ -159,7 +178,7 @@ export const action: ActionFunction<ActionData> = async ({
 };
 
 export default function ContestProblemView() {
-  const { problem, records } = useLoaderData<LoaderData>();
+  const { problem, records, contest } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
@@ -204,11 +223,14 @@ export default function ContestProblemView() {
     localStorage.setItem(`C${contestId}${rank}.code`, code);
   }, [language, code]);
 
+  const now = new Date();
+  const isNotStarted = now < new Date(contest.beginTime);
+  const isEnded = now > new Date(contest.endTime);
+
   return (
     <>
       <ResizeBox.Split
         style={{ height: "100%" }}
-        // className="contest-problem"
         panes={[
           <Typography key={1} style={{ padding: "0 5%" }}>
             <Typography.Title heading={3}>
@@ -221,6 +243,24 @@ export default function ContestProblemView() {
                 <ProblemMemoryLimitTag memory={problem.memoryLimit} />
               </Space>
             </Typography.Paragraph>
+
+            {isNotStarted && (
+              <Typography.Paragraph>
+                <Alert
+                  type="warning"
+                  content="比赛还没有开始，请注意不要泄题"
+                />
+              </Typography.Paragraph>
+            )}
+
+            {isEnded && (
+              <Typography.Paragraph>
+                <Alert
+                  type="warning"
+                  content="比赛已经结束，当前页面仅供查看，若要提交代码可以跳转到题目页面"
+                />
+              </Typography.Paragraph>
+            )}
 
             <Typography.Paragraph>
               <Markdown>{problem.description}</Markdown>
@@ -267,14 +307,22 @@ export default function ContestProblemView() {
                 <Button icon={<IconHistory />} onClick={() => setVisible(true)}>
                   查看记录
                 </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<IconSend />}
-                  loading={isSubmitting}
-                >
-                  提交
-                </Button>
+                {isNotStarted || isEnded ? (
+                  <Link to={`/problem/${problem.id}`}>
+                    <Button type="primary" icon={<IconSend />}>
+                      跳转到题目页面
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<IconSend />}
+                    loading={isSubmitting}
+                  >
+                    提交
+                  </Button>
+                )}
               </Space>
             </Space>
           </Form>,

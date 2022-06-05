@@ -1,6 +1,7 @@
 import { Space, Tag } from "@arco-design/web-react";
 import {
   IconClockCircle,
+  IconEyeInvisible,
   IconTag,
   IconUser,
 } from "@arco-design/web-react/icon";
@@ -21,6 +22,11 @@ export function ContestTags({ contest }: Props) {
         endTime={contest.endTime}
       />
       <ContestSystemTag system={contest.system} />
+      {contest.private && (
+        <Tag icon={<IconEyeInvisible />} color="gold">
+          非公开
+        </Tag>
+      )}
       <Tag icon={<IconClockCircle />} title="比赛时间">
         {`${(
           (new Date(contest.endTime).getTime() -

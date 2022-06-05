@@ -6,6 +6,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
+import { checkContestReadPermission } from "~/utils/permission/contest";
 
 type LoaderData = {
   contest: Pick<
@@ -16,10 +17,14 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
+  await checkContestReadPermission(request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
