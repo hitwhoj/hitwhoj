@@ -17,7 +17,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
-  const roomId = invariant(idScheme.safeParse(params.roomId), {
+  const roomId = invariant(idScheme, params.roomId, {
     status: 404,
   });
 
@@ -81,7 +81,7 @@ export default function EnterRoom() {
 }
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
-  const roomId = invariant(idScheme.safeParse(params.roomId), { status: 404 });
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
   const selfId = await findSessionUid(request);
   if (!selfId) {
@@ -118,7 +118,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 
   if (room.isPrivate) {
     const form = await request.formData();
-    const password = invariant(passwordScheme.safeParse(form.get("password")));
+    const password = invariant(passwordScheme, form.get("password"));
 
     if (password !== room.password) {
       throw new Response("Wrong password", { status: 400 });

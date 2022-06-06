@@ -31,7 +31,7 @@ enum ActionType {
 }
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme, params.teamId);
   const result = await db.teamMember.findMany({
     where: { teamId },
     select: {
@@ -50,10 +50,10 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme, params.teamId);
   const form = await request.formData();
 
-  const member = invariant(idScheme.safeParse(form.get("member")));
+  const member = invariant(idScheme, form.get("member"));
   const _action = form.get("_action");
 
   try {

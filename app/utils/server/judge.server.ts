@@ -6,7 +6,7 @@ import type {
   JudgeRequest,
   JudgeResult,
   ServerEvent,
-} from "../types";
+} from "./judge.types";
 
 /**
  * 后端服务器

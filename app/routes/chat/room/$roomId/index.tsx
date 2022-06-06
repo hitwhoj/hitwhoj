@@ -32,7 +32,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
-  const roomId = invariant(idScheme.safeParse(params.roomId), {
+  const roomId = invariant(idScheme, params.roomId, {
     status: 404,
   });
 
@@ -235,8 +235,8 @@ export const action: ActionFunction = async ({ request, context }) => {
   }
 
   const form = await request.formData();
-  const roomId = invariant(idScheme.safeParse(form.get("roomId")));
-  const content = invariant(contentScheme.safeParse(form.get("content")));
+  const roomId = invariant(idScheme, form.get("roomId"));
+  const content = invariant(contentScheme, form.get("content"));
 
   const userInChatRoom = await db.userInChatRoom.findFirst({
     where: {

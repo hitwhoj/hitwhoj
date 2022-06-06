@@ -19,7 +19,8 @@ import {
 
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { findSession, findSessionUid } from "~/utils/sessions";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { findSession } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
@@ -53,17 +54,18 @@ type LoaderData = {
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
-  const self = await findSessionUid(request);
+  const self = await findSessionUserOptional(request);
 
   if (!self) {
     return { theme, user: null };
   }
   const user = await db.user.findUnique({
-    where: { id: self },
+    where: { id: self.id },
     select: {
       id: true,
       username: true,
       nickname: true,
+      role: true,
       avatar: true,
     },
   });
@@ -146,8 +148,6 @@ export default function App() {
         wsc.close();
       };
     }
-    // navigate 依赖不需要传给 useEffect 函数
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   useEffect(() => {

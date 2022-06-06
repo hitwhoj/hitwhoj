@@ -16,7 +16,7 @@ export const meta: MetaFunction<LoaderData> = () => ({
 });
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme, params.teamId);
 
   const homeworks = await db.team.findUnique({
     where: { id: teamId },

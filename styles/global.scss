@@ -39,7 +39,7 @@ body[arco-theme="dark"] {
   column-gap: 16px;
 }
 
-@media screen and (max-width: 768px) {
+@media only screen and (max-width: 768px) {
   .problem-data-grid {
     grid-template-columns: repeat(1, 1fr);
     grid-template-rows: repeat(4, auto);
@@ -49,4 +49,22 @@ body[arco-theme="dark"] {
 // used in /record/$recordId.tsx
 .arco-collapse-item-header-title {
   overflow: hidden;
+}
+
+.arco-tabs-header-title {
+  font-size: 1rem;
+}
+
+.arco-btn-size-default > svg + a,
+.arco-btn-size-default > a + svg {
+  margin-left: 8px;
+}
+
+.arco-typography code {
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 1rem;
 }

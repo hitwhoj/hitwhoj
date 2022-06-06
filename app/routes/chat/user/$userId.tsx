@@ -42,7 +42,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw redirect("/register");
   }
 
-  const toUserId = invariant(idScheme.safeParse(params.userId), {
+  const toUserId = invariant(idScheme, params.userId, {
     status: 404,
   });
   const target = await db.user.findUnique({
@@ -76,8 +76,8 @@ export const action: ActionFunction = async ({ request, context }) => {
   }
 
   const form = await request.formData();
-  const to = invariant(idScheme.safeParse(form.get("to")));
-  const content = invariant(contentScheme.safeParse(form.get("content")));
+  const to = invariant(idScheme, form.get("to"));
+  const content = invariant(contentScheme, form.get("content"));
 
   const message = await db.privateMessage.create({
     data: {
