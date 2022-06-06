@@ -14,16 +14,22 @@ import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
+import { checkProblemSubmitPermission } from "~/utils/permission/problem";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
   problem: Pick<Problem, "title">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemSubmitPermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -42,18 +48,17 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 
+  await checkProblemSubmitPermission(request, problemId);
+
   const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect("/login");
-  }
 
   const form = await request.formData();
-  const code = invariant(codeScheme.safeParse(form.get("code")));
-  const language = invariant(languageScheme.safeParse(form.get("language")));
+  const code = invariant(codeScheme, form.get("code"));
+  const language = invariant(languageScheme, form.get("language"));
 
   const { id: recordId } = await db.record.create({
     data: {
@@ -73,7 +78,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");
   return (
-    <Form method="post">
+    <Form method="post" style={{ marginTop: "25px" }}>
       <Space
         direction="vertical"
         size="medium"

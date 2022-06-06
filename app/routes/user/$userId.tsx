@@ -13,13 +13,19 @@ import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
+import { checkUserReadPermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserReadPermission(request);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -54,7 +60,7 @@ export default function UserProfile() {
   return (
     <Space direction="vertical" size="medium" style={{ display: "flex" }}>
       <header>
-        <Space size="large" align="start">
+        <Space size="large" align="center">
           <Avatar size={60}>
             {user.avatar ? (
               <img src={user.avatar} alt={user.nickname || user.username} />
@@ -75,7 +81,8 @@ export default function UserProfile() {
       <nav>
         <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
           <Tabs.TabPane key="." title="资料" />
-          <Tabs.TabPane key="files" title="文件" />
+          <Tabs.TabPane key="statistics" title="统计" />
+          {self?.id === user.id && <Tabs.TabPane key="files" title="文件" />}
           {self?.id === user.id && <Tabs.TabPane key="edit" title="编辑" />}
         </Tabs>
       </nav>

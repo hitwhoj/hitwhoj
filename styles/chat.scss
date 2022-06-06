@@ -1,7 +1,7 @@
 // 这是聊天页面要用的样式，因为默认带有 footer，而我们不需要这个 footer
 
 .arco-layout-footer {
-  display: none;
+  display: none !important;
 }
 
 main.arco-layout-content {

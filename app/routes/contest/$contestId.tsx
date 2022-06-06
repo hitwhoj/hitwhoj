@@ -1,32 +1,58 @@
-import { Tabs } from "@arco-design/web-react";
-import type { Contest } from "@prisma/client";
+import { Typography } from "@arco-design/web-react";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import {
-  Outlet,
-  useLoaderData,
-  useMatches,
-  useNavigate,
-} from "@remix-run/react";
+import { redirect } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-const TabPane = Tabs.TabPane;
+import { Navigator } from "~/src/Navigator";
+import { checkContestReadPermission } from "~/utils/permission/contest";
+import { ContestTags } from "~/src/contest/ContestTags";
+import type { ContestListData } from "~/utils/db/contest";
 
 type LoaderData = {
-  contest: Contest;
+  contest: ContestListData;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const contestId = invariant(idScheme.safeParse(params.contestId), {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
 
+  await checkContestReadPermission(request, contestId);
+
   const contest = await db.contest.findUnique({
     where: { id: contestId },
+    select: {
+      id: true,
+      title: true,
+      system: true,
+      beginTime: true,
+      endTime: true,
+      private: true,
+      teamId: true,
+      tags: {
+        select: {
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          attendees: true,
+        },
+      },
+    },
   });
 
   if (!contest) {
     throw new Response("Contest not found", { status: 404 });
+  }
+
+  if (contest.teamId) {
+    throw redirect(`/team/${contest.teamId}/contest/${contest.id}`);
   }
 
   return { contest };
@@ -34,24 +60,30 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `比赛: ${data?.contest.title} - HITwh OJ`,
-  description: data?.contest.description,
 });
 
 export default function ContestView() {
   const { contest } = useLoaderData<LoaderData>();
-  const navigate = useNavigate();
-  const { pathname } = useMatches().at(-1)!;
-  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
-    <>
-      <h1>{contest.title}</h1>
-      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
-        <TabPane key="." title="详情" />
-        <TabPane key="edit" title="编辑" />
-      </Tabs>
+    <Typography className="contest-problem-container">
+      <Typography.Title heading={3} className="contest-problem-hide">
+        {contest.title}
+      </Typography.Title>
+      <Typography.Paragraph className="contest-problem-hide">
+        <ContestTags contest={contest} />
+      </Typography.Paragraph>
+      <Typography.Paragraph className="contest-problem-hide">
+        <Navigator
+          routes={[
+            { key: ".", title: "详情" },
+            { key: "problem", title: "题目" },
+            { key: "edit", title: "编辑" },
+          ]}
+        />
+      </Typography.Paragraph>
       <Outlet />
-    </>
+    </Typography>
   );
 }
 

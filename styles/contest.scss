@@ -1,0 +1,24 @@
+.contest-problem-container {
+  height: 100%;
+}
+
+.contest-problem-hide {
+  display: none;
+}
+
+.arco-layout-footer {
+  display: none !important;
+}
+
+main.arco-layout-content {
+  margin-top: 0 !important;
+  margin-bottom: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+section.arco-layout {
+  padding: 0 !important;
+  margin: 0;
+}

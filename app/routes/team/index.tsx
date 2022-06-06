@@ -16,7 +16,7 @@ export const meta: MetaFunction = () => ({
 
 export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
-  const teamName = invariant(teamNameScheme.safeParse(form.get("teamName")));
+  const teamName = invariant(teamNameScheme, form.get("teamName"));
 
   if (!teamName)
     throw new Response("teamName is not registered", { status: 400 });

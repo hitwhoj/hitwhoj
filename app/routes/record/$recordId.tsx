@@ -6,14 +6,10 @@ import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
-import { Collapse, List, Space, Tag } from "@arco-design/web-react";
-import { IconClockCircle, IconStorage } from "@arco-design/web-react/icon";
-import type {
-  JudgeStatus,
-  SubtaskResult,
-  SubtaskStatus,
-  TaskStatus,
-} from "~/utils/types";
+import { Collapse, List, Space } from "@arco-design/web-react";
+import type { SubtaskResult } from "~/utils/server/judge.types";
+import { RecordStatus } from "~/src/record/RecordStatus";
+import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 
 type LoaderData = {
   record: Pick<
@@ -31,7 +27,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const recordId = invariant(idScheme.safeParse(params.recordId), {
+  const recordId = invariant(idScheme, params.recordId, {
     status: 404,
   });
 
@@ -73,81 +69,6 @@ function ResultMessage({ message }: { message: string }) {
   );
 }
 
-function Status({
-  status,
-}: {
-  status: JudgeStatus | SubtaskStatus | TaskStatus;
-}) {
-  let color: string;
-  switch (status) {
-    case "Accepted": {
-      color = "green";
-      break;
-    }
-
-    case "Compile Error":
-    case "Memory Limit Exceeded":
-    case "Output Limit Exceeded":
-    case "Runtime Error":
-    case "System Error":
-    case "Time Limit Exceeded":
-    case "Unknown Error":
-    case "Wrong Answer": {
-      color = "red";
-      break;
-    }
-
-    case "Compiling":
-    case "Judging":
-    case "Running": {
-      color = "yellow";
-      break;
-    }
-
-    case "Pending":
-    case "Skipped": {
-      color = "gray";
-      break;
-    }
-
-    default: {
-      color = "blue";
-      break;
-    }
-  }
-
-  return <b style={{ color: `rgb(var(--${color}-6))` }}>{status}</b>;
-}
-
-function TimeTag({ time }: { time: number }) {
-  return <Tag icon={<IconClockCircle />}>{time < 0 ? "N/A" : `${time}ms`}</Tag>;
-}
-
-function MemoryTag({ memory }: { memory: number }) {
-  return (
-    <Tag icon={<IconStorage />}>
-      {memory < 0
-        ? "N/A"
-        : memory < 1024
-        ? `${memory}B`
-        : memory < 1024 * 1024
-        ? `${(memory / 1024).toFixed(2)}KB`
-        : memory < 1024 * 1024 * 1024
-        ? `${(memory / 1024 / 1024).toFixed(2)}MB`
-        : `${(memory / 1024 / 1024 / 1024).toFixed(2)}GB`}
-    </Tag>
-  );
-}
-
-function TimeMemory({ time, memory }: { time: number; memory: number }) {
-  return (
-    <Space>
-      <TimeTag time={time} />
-      <MemoryTag memory={memory} />
-    </Space>
-  );
-}
-
 export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
   const subtasks: SubtaskResult[] = Array.isArray(record.subtasks)
@@ -157,7 +78,7 @@ export default function RecordView() {
   return (
     <>
       <h1>{record.status}</h1>
-      <TimeMemory time={record.time} memory={record.memory} />
+      <RecordTimeMemory time={record.time} memory={record.memory} />
       {record.message && (
         <>
           <h2>Message</h2>
@@ -183,27 +104,31 @@ export default function RecordView() {
                 header={
                   <Space>
                     <span>Subtask #{index + 1}</span>
-                    <Status status={item.status} />
+                    <RecordStatus status={item.status} />
                     <ResultMessage message={item.message} />
                   </Space>
                 }
-                extra={<TimeMemory time={item.time} memory={item.memory} />}
+                extra={
+                  <RecordTimeMemory time={item.time} memory={item.memory} />
+                }
               >
                 <List size="small">
                   {item.tasks.map((task, index) => (
                     <List.Item
                       key={index}
-                      children={
-                        <Space>
-                          <span>Task #{index + 1}</span>
-                          <Status status={task.status} />
-                          <ResultMessage message={task.message} />
-                        </Space>
-                      }
                       extra={
-                        <TimeMemory time={task.time} memory={task.memory} />
+                        <RecordTimeMemory
+                          time={task.time}
+                          memory={task.memory}
+                        />
                       }
-                    />
+                    >
+                      <Space>
+                        <span>Task #{index + 1}</span>
+                        <RecordStatus status={task.status} />
+                        <ResultMessage message={task.message} />
+                      </Space>
+                    </List.Item>
                   ))}
                 </List>
               </Collapse.Item>

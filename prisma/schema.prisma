@@ -22,11 +22,8 @@ model User {
 
   password String
 
-  joinedAt DateTime @default(now())
-
-  role SystemUserRole @default(User)
-
-  // ==== relations ====
+  joinedAt DateTime       @default(now())
+  role     SystemUserRole @default(User)
 
   sessions UserSession[]
 
@@ -38,7 +35,6 @@ model User {
   createdReplies     Reply[]
   createdRecords     Record[]
 
-  // TODO: reference?
   attendedContests Contest[] @relation("attendee", references: [id])
   moddedContests   Contest[] @relation("mod", references: [id])
   juriedContests   Contest[] @relation("jury", references: [id])
@@ -53,17 +49,20 @@ model User {
 }
 
 enum SystemUserRole {
+  /// 超级用户
   Su
+  /// 管理员
   Admin
+  /// 普通用户
   User
-  Guest
+  /// 封禁用户
+  Banned
 }
 
+/// 用户登录会话
 model UserSession {
   session    String   @id @default(uuid())
   lastActive DateTime @default(now())
-
-  // ==== relations ====
 
   user   User @relation(fields: [userId], references: [id])
   userId Int
@@ -78,38 +77,44 @@ model File {
   mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
 
-  // ==== relations ====
-
+  /// 文件所属的用户
   user   User? @relation(fields: [userId], references: [id])
   userId Int?
 
+  /// 文件作为数据所属的题目
   dataProblem   Problem? @relation("data", fields: [dataProblemId], references: [id])
   dataProblemId Int?
 
+  /// 文件作为附加文件所属的题目
   fileProblem   Problem? @relation("file", fields: [fileProblemId], references: [id])
   fileProblemId Int?
 }
 
+/// 题目
 model Problem {
   id Int @id @default(autoincrement())
 
   title       String
   description String
 
+  /// 是否公开
   private Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  timeLimit   Int @default(1000)
+  memoryLimit Int @default(128)
 
   tags ProblemTag[] @relation(references: [id])
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  data                File[]       @relation("data")
-  files               File[]       @relation("file")
-  includedContests    Contest[]    @relation(references: [id])
-  includedProblemSets ProblemSet[] @relation(references: [id])
+  data                File[]           @relation("data")
+  files               File[]           @relation("file")
+  includedContests    ContestProblem[]
+  includedProblemSets ProblemSet[]     @relation(references: [id])
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -154,7 +159,8 @@ model Contest {
   title       String
   description String
 
-  system ContestSystem
+  system  ContestSystem
+  private Boolean       @default(true)
 
   beginTime DateTime
   endTime   DateTime
@@ -167,7 +173,7 @@ model Contest {
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  problems Problem[] @relation(references: [id])
+  problems ContestProblem[]
 
   mods      User[] @relation("mod", references: [id])
   juries    User[] @relation("jury", references: [id])
@@ -195,6 +201,19 @@ enum ContestSystem {
   IOI
   /// 作业赛制，我不知道具体是什么操作，反正就是比赛
   Homework
+}
+
+model ContestProblem {
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id])
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  rank Int
+
+  @@id([contestId, problemId])
+  @@unique([contestId, rank])
 }
 
 model Team {

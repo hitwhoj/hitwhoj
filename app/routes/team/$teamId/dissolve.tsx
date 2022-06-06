@@ -8,7 +8,7 @@ import { idScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 
 export const action: ActionFunction<Response> = async ({ params, request }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme, params.teamId);
   const self = await findSessionUid(request);
   if (!self) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);

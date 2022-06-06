@@ -9,7 +9,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const fileId = invariant(uuidScheme.safeParse(params.fileId), {
+  const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
 

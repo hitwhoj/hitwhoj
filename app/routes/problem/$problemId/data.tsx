@@ -1,12 +1,10 @@
 import type { File as ProblemFile, Problem } from "@prisma/client";
-
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
@@ -21,6 +19,7 @@ import { Table, Button, Space } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
+import { checkProblemUpdatePermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -29,10 +28,15 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -40,12 +44,12 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       title: true,
       files: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
       data: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
     },
@@ -70,9 +74,12 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
+
   const form = await unstable_parseMultipartFormData(request, handler);
 
   const _action = form.get("_action");
@@ -102,7 +109,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     case ActionType.RemoveData:
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+      const fid = invariant(uuidScheme, form.get("fid"));
 
       // 删除文件
       await removeFile(fid);
@@ -163,14 +170,14 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.id} />
       <Button
-        type="primary"
+        type="text"
         status="danger"
         htmlType="submit"
         name="_action"
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
-        size="small"
+        size="mini"
       />
     </fetcher.Form>
   );
@@ -180,8 +187,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件名",
     dataIndex: "filename",
-    sorter: (a, b) =>
-      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
     render: (_, file) => (
       <Link to={`/file/${file.id}`} target="_blank">
         {file.filename}
@@ -191,7 +196,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件大小",
     dataIndex: "filesize",
-    sorter: (a, b) => a.filesize - b.filesize,
   },
   {
     title: "文件类型",
@@ -213,7 +217,15 @@ const columns: ColumnProps<ProblemFile>[] = [
 ];
 
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
-  return <Table rowKey="fid" columns={columns} data={files} />;
+  return (
+    <Table
+      rowKey="id"
+      columns={columns}
+      data={files}
+      pagination={false}
+      size="small"
+    />
+  );
 }
 
 export default function ProblemData() {

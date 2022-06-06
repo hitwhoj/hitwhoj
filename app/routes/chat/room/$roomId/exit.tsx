@@ -1,7 +1,6 @@
 import { Button } from "@arco-design/web-react";
 import type { ChatRoom, UserInChatRoom } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -19,7 +18,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
-  const roomId = invariant(idScheme.safeParse(params.roomId), { status: 404 });
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
   const selfId = await findSessionUid(request);
   if (!selfId) {
@@ -47,7 +46,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   });
 
   if (!userInChatRoom) {
-    throw json(["You are not in the certain room"], { status: 400 });
+    throw new Response("You are not in the certain room", { status: 400 });
   }
 
   return { userInChatRoom };
@@ -71,7 +70,7 @@ export default function ExitRoom() {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const roomId = invariant(idScheme.safeParse(params.roomId), { status: 404 });
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
   const selfId = await findSessionUid(request);
   if (!selfId) {
