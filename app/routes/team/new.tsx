@@ -1,11 +1,14 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
+import { Button, Input, Form } from "@arco-design/web-react";
+const TextArea = Input.TextArea;
+const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await findSessionUid(request);
@@ -44,21 +47,33 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 };
 
 export default function NewTeam() {
+  const fetcher = useFetcher();
+  const isCreating = fetcher.state === "submitting";
+
   return (
     <>
-      <h3>New Team</h3>
-
-      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
-        <input type="text" name="name" placeholder="Team name" required />
-        <textarea
-          name="description"
-          id="description"
-          cols={30}
-          rows={10}
-          placeholder="description(optional)"
-        ></textarea>
-        <button type="submit">Create</button>
-      </Form>
+      <h1>创建团队</h1>
+      <fetcher.Form method="post" style={{ maxWidth: 600 }}>
+        <FormItem label="名称" required labelCol={{ span: 3 }}>
+          <Input type="text" name="name" placeholder="Team name" required />
+        </FormItem>
+        <FormItem label="描述" required labelCol={{ span: 3 }}>
+          <TextArea
+            name="description"
+            required
+            autoSize={{
+              minRows: 3,
+              maxRows: 10,
+            }}
+            placeholder="description(optional)"
+          />
+        </FormItem>
+        <FormItem label=" " labelCol={{ span: 3 }}>
+          <Button type="primary" htmlType="submit" loading={isCreating}>
+            创建团队
+          </Button>
+        </FormItem>
+      </fetcher.Form>
     </>
   );
 }
