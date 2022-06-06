@@ -218,7 +218,7 @@ model TeamMember {
 
   role TeamMemberRole @default(Member)
 
-  @@unique([userId, teamId])
+  @@id([userId, teamId])
 }
 
 enum TeamMemberRole {
