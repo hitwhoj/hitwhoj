@@ -2,7 +2,6 @@ import { Tag } from "@arco-design/web-react";
 import { IconClockCircle } from "@arco-design/web-react/icon";
 
 type Props = {
-  /** million seconds */
   time: number;
 };
 

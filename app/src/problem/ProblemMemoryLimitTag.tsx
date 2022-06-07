@@ -2,7 +2,6 @@ import { Tag } from "@arco-design/web-react";
 import { IconStorage } from "@arco-design/web-react/icon";
 
 type Props = {
-  /** mega bytes */
   memory: number;
 };
 

@@ -22,7 +22,7 @@ export default function MainLayout({ children }: LayoutProps) {
         overflow: "hidden",
       }}
     >
-      <Sider breakpoint="lg" width="12rem" collapsible>
+      <Sider width="12rem">
         <NavbarLeft />
       </Sider>
       <Layout style={{ height: "100%" }}>

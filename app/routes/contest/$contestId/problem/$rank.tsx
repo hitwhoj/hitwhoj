@@ -246,10 +246,7 @@ export default function ContestProblemView() {
 
             {isNotStarted && (
               <Typography.Paragraph>
-                <Alert
-                  type="warning"
-                  content="比赛还没有开始，请注意不要泄题"
-                />
+                <Alert type="warning" content="比赛还没有开始" />
               </Typography.Paragraph>
             )}
 
@@ -257,7 +254,7 @@ export default function ContestProblemView() {
               <Typography.Paragraph>
                 <Alert
                   type="warning"
-                  content="比赛已经结束，当前页面仅供查看，若要提交代码可以跳转到题目页面"
+                  content="比赛已经结束，当前页面仅供查看"
                 />
               </Typography.Paragraph>
             )}
