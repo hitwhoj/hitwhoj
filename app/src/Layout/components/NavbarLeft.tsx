@@ -57,22 +57,15 @@ const navBarRoutes: Route[] = [
 
 export default function NavbarLeft() {
   return (
-    <div>
-      <div
-        style={{ textAlign: "center", fontSize: "1.5rem", margin: "10px 0" }}
-      >
-        <NavLink to="/">HITwh OJ</NavLink>
-      </div>
-      <Menu>
-        {navBarRoutes.map((route) => (
-          <NavLink prefetch="intent" to={route.href} key={route.href}>
-            <Menu.Item key={route.href}>
-              {route.icon}
-              {route.name}
-            </Menu.Item>
-          </NavLink>
-        ))}
-      </Menu>
-    </div>
+    <Menu>
+      {navBarRoutes.map((route) => (
+        <NavLink prefetch="intent" to={route.href} key={route.href}>
+          <Menu.Item key={route.href}>
+            {route.icon}
+            {route.name}
+          </Menu.Item>
+        </NavLink>
+      ))}
+    </Menu>
   );
 }
