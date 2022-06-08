@@ -1,10 +1,15 @@
 import { Space } from "@arco-design/web-react";
-import { IconCheck, IconClose, IconLoading } from "@arco-design/web-react/icon";
+import {
+  IconCheck,
+  IconClose,
+  IconLoading,
+  IconMinus,
+} from "@arco-design/web-react/icon";
 import type {
   JudgeStatus,
   SubtaskStatus,
   TaskStatus,
-} from "~/utils/server/judge.types";
+} from "../../../server/judge.types";
 
 type Props = {
   status: JudgeStatus | SubtaskStatus | TaskStatus | string;
@@ -43,14 +48,14 @@ export function RecordStatus({ status }: Props) {
     }
 
     case "Pending": {
-      color = "grey";
+      color = "gray";
       icon = <IconLoading />;
       break;
     }
 
     case "Skipped": {
-      color = "grey";
-      icon = <IconClose />;
+      color = "gray";
+      icon = <IconMinus />;
       break;
     }
 

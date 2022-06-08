@@ -115,13 +115,13 @@ export default function App() {
 
     if (user?.id) {
       // 新私聊消息
-      const subscription = wsc.privateMessages.subscribe((data) => {
+      const subscription = wsc.subscribePrivateMessage().subscribe((data) => {
         // 生成一个随机 id 给 Notification
         const id = Date.now().toString(16) + Math.random().toString(16);
 
         Notification.info({
           id,
-          title: `新私聊消息`,
+          title: "新私聊消息",
           content: (
             <span>
               <b>{data.from.nickname || data.from.username}</b>

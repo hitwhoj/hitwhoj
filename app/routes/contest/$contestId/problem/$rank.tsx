@@ -40,7 +40,6 @@ import contestStyle from "~/styles/contest.css";
 import { IconHistory, IconSend } from "@arco-design/web-react/icon";
 import { findSessionUid, findSessionUserOptional } from "~/utils/sessions";
 import { s3 } from "~/utils/server/s3.server";
-import { judge } from "~/utils/server/judge.server";
 import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
@@ -49,6 +48,9 @@ import {
   checkContestProblemReadPermission,
   checkContestProblemSubmitPermission,
 } from "~/utils/permission/contest";
+import type { JudgeServer } from "server/judge.server";
+import { WsContext } from "~/utils/context/ws";
+import { UserInfoContext } from "~/utils/context/user";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
@@ -60,7 +62,7 @@ type LoaderData = {
     "id" | "title" | "description" | "timeLimit" | "memoryLimit"
   >;
   records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
-  contest: Pick<Contest, "beginTime" | "endTime">;
+  contest: Pick<Contest, "id" | "beginTime" | "endTime">;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -94,6 +96,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       },
       contest: {
         select: {
+          id: true,
           beginTime: true,
           endTime: true,
         },
@@ -139,6 +142,7 @@ type ActionData = {
 export const action: ActionFunction<ActionData> = async ({
   request,
   params,
+  context,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
@@ -172,13 +176,13 @@ export const action: ActionFunction<ActionData> = async ({
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  await judge.push(recordId);
+  await (context.judge as JudgeServer).push(recordId);
 
   return { recordId };
 };
 
 export default function ContestProblemView() {
-  const { problem, records, contest } = useLoaderData<LoaderData>();
+  const { problem, records: _records, contest } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
@@ -189,6 +193,7 @@ export default function ContestProblemView() {
   useEffect(() => {
     if (actionData?.recordId) {
       Message.success("提交成功");
+      setVisible(true);
     }
   }, [actionData?.recordId]);
 
@@ -226,6 +231,42 @@ export default function ContestProblemView() {
   const now = new Date();
   const isNotStarted = now < new Date(contest.beginTime);
   const isEnded = now > new Date(contest.endTime);
+
+  const [records, setRecords] = useState(_records);
+
+  const wsc = useContext(WsContext);
+  const user = useContext(UserInfoContext);
+
+  useEffect(() => {
+    if (user?.id) {
+      const subscription = wsc
+        ?.subscribeContestRecordUpdate(contest.id, problem.id, user.id)
+        .subscribe(({ message }) => {
+          console.log(message);
+
+          setRecords((records) => {
+            const found = records.find((record) => record.id === message.id);
+            if (found) {
+              found.time = message.time;
+              found.score = message.score;
+              found.memory = message.memory;
+              found.status = message.status;
+            } else {
+              records.unshift({
+                id: message.id,
+                time: message.time,
+                score: message.score,
+                memory: message.memory,
+                status: message.status,
+              });
+            }
+            return [...records];
+          });
+        });
+
+      return () => subscription?.unsubscribe();
+    }
+  }, [wsc, user?.id]);
 
   return (
     <>
