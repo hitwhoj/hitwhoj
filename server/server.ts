@@ -5,12 +5,15 @@ import compression from "compression";
 import morgan from "morgan";
 import { createRequestHandler } from "@remix-run/express";
 import { WsServer } from "./ws.server";
+import { JudgeServer } from "./judge.server";
 
 const BUILD_DIR = path.join(process.cwd(), "build");
 
 const app = express();
 const server = createServer(app);
-const wsServer = new WsServer(server);
+
+const wss = new WsServer(server);
+const judge = new JudgeServer(wss);
 
 app.use(compression());
 
@@ -39,7 +42,7 @@ app.all(
           build: require(BUILD_DIR),
           mode: process.env.NODE_ENV,
           getLoadContext(_req, _res) {
-            return { wsServer };
+            return { wss, judge };
           },
         })(req, res, next);
       }
@@ -47,7 +50,7 @@ app.all(
         build: require(BUILD_DIR),
         mode: process.env.NODE_ENV,
         getLoadContext(_req, _res) {
-          return { wsServer };
+          return { wss, judge };
         },
       })
 );

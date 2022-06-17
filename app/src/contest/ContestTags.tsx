@@ -3,7 +3,7 @@ import {
   IconClockCircle,
   IconEyeInvisible,
   IconTag,
-  IconUser,
+  IconUserGroup,
 } from "@arco-design/web-react/icon";
 import { Link } from "@remix-run/react";
 import type { ContestListData } from "~/utils/db/contest";
@@ -34,7 +34,7 @@ export function ContestTags({ contest }: Props) {
           3600000
         ).toFixed(1)} 小时`}
       </Tag>
-      <Tag icon={<IconUser />} title="参加人数">
+      <Tag icon={<IconUserGroup />} title="参加人数">
         {contest._count.attendees}
       </Tag>
       {contest.tags.map((tag) => (

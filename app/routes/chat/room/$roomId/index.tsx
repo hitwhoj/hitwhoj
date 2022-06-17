@@ -271,7 +271,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     },
   });
 
-  const ws = context.wsServer as WsServer;
+  const ws = context.wss as WsServer;
   ws.sendChatMessage(message);
 
   return null;

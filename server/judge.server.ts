@@ -1,12 +1,13 @@
 import * as io from "socket.io";
-import { db } from "./db.server";
-import { s3 } from "./s3.server";
+import { db } from "../app/utils/server/db.server";
+import { s3 } from "../app/utils/server/s3.server";
 import type {
   ClientEvent,
   JudgeRequest,
   JudgeResult,
   ServerEvent,
 } from "./judge.types";
+import { WsServer } from "server/ws.server";
 
 /**
  * 后端服务器
@@ -32,15 +33,19 @@ import type {
  *
  * 考虑评测机超时的情况，后端服务器当分配任务之后启动一个计时器，如果评测机在规定时间内没有发送任何数据包回来，则将评测结果设置为 UnknownError，并且丢弃任何之后收到的关于该任务的数据包。
  */
-class JudgeServer {
+export class JudgeServer {
   // Socket IO 服务器，用于接收来自评测机的链接
   #server = new io.Server<ServerEvent, ClientEvent>();
   // 评测超时定时器
   #timeout = new Map<number, NodeJS.Timeout>();
   // 当前评测任务队列
   #taskQueue: JudgeRequest[] = [];
+  // WebSocket 客户端
+  #wss: WsServer;
 
-  constructor() {
+  constructor(wss: WsServer) {
+    this.#wss = wss;
+
     const privateKey = process.env.JUDGE_PRIVATE_KEY;
     const port = parseInt(process.env.JUDGE_PORT || "3000");
 
@@ -78,7 +83,7 @@ class JudgeServer {
           this.#timeout.delete(task.rid);
 
           // 更新数据库，记录超时错误
-          await updateDatabase({
+          await this.#updateDatabase({
             rid: task.rid,
             status: "System Error",
             message:
@@ -90,7 +95,7 @@ class JudgeServer {
 
         console.log(`Task ${task.rid} dispatched`);
         // 任务分配成功，更新数据库
-        await updateDatabase({
+        await this.#updateDatabase({
           rid: task.rid,
           status: "Judging",
           message: "",
@@ -107,7 +112,7 @@ class JudgeServer {
         // 评测结果有更新
         // console.log(`Task ${res.rid} update: ${JSON.stringify(res)}`);
         // 更新数据库
-        await updateDatabase(res);
+        await this.#updateDatabase(res);
       });
 
       // 评测机评测完成
@@ -124,7 +129,7 @@ class JudgeServer {
         // 评测完成
         console.log(`Task ${res.rid} finished`);
         // 更新数据库
-        await updateDatabase(res);
+        await this.#updateDatabase(res);
       });
 
       // 评测机拒绝评测任务
@@ -171,6 +176,10 @@ class JudgeServer {
     console.log(`Judge server listening on port ${port}`);
   }
 
+  setWss(wss: WsServer) {
+    this.#wss = wss;
+  }
+
   /**
    * 向所有评测机广播目前有待领取的任务
    */
@@ -189,7 +198,7 @@ class JudgeServer {
 
     console.log(`Task ${task.rid} pushed`);
     // 更新数据库
-    await updateDatabase({
+    await this.#updateDatabase({
       rid: task.rid,
       status: "Pending",
       message: "",
@@ -234,45 +243,62 @@ class JudgeServer {
       })),
     });
   }
-}
 
-/**
- * 更新数据库
- */
-async function updateDatabase(
-  res:
-    | JudgeResult
-    | (Pick<JudgeResult, "status" | "rid" | "message"> &
-        Partial<Omit<JudgeResult, "status" | "rid" | "message">>)
-) {
-  await db.record.update({
-    where: { id: res.rid },
-    data: {
-      status: res.status,
-      score: res.score ?? 0,
-      time: res.time ?? -1,
-      memory: res.memory ?? -1,
-      message: res.message,
-      subtasks: res.subtasks ?? [],
-    },
-  });
-}
+  /**
+   * 更新数据库
+   */
+  async #updateDatabase(
+    res:
+      | JudgeResult
+      | (Pick<JudgeResult, "status" | "rid" | "message"> &
+          Partial<Omit<JudgeResult, "status" | "rid" | "message">>)
+  ) {
+    const record = await db.record.update({
+      where: { id: res.rid },
+      data: {
+        status: res.status,
+        score: res.score ?? 0,
+        time: res.time ?? -1,
+        memory: res.memory ?? -1,
+        message: res.message,
+        subtasks: res.subtasks ?? [],
+      },
+      select: {
+        id: true,
+        time: true,
+        score: true,
+        memory: true,
+        status: true,
+        message: true,
+        subtasks: true,
+        submitterId: true,
+        contestId: true,
+        problemId: true,
+      },
+    });
 
-// 下面用于防止开发环境的时候启动多个 JudgeServer
+    // 发送更新通知
+    this.#wss.sendRecordUpdate({
+      id: record.id,
+      time: record.time,
+      memory: record.memory,
+      status: record.status,
+      message: record.message,
+      subtasks: record.subtasks,
+    });
 
-declare global {
-  var __judge: JudgeServer | undefined;
-}
-
-let judge: JudgeServer;
-
-if (process.env.NODE_ENV === "production") {
-  judge = new JudgeServer();
-} else {
-  if (!global.__judge) {
-    global.__judge = new JudgeServer();
+    // 推送比赛更新通知
+    if (record.contestId) {
+      this.#wss.sendContestRecordUpdate({
+        id: record.id,
+        time: record.time,
+        score: record.score,
+        memory: record.memory,
+        status: record.status,
+        contestId: record.contestId,
+        problemId: record.problemId,
+        submitterId: record.submitterId,
+      });
+    }
   }
-  judge = global.__judge;
 }
-
-export { judge };

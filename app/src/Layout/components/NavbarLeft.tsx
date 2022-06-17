@@ -1,7 +1,14 @@
 import { NavLink, useMatches } from "@remix-run/react";
 import { Menu } from "@arco-design/web-react";
-import { IconAlignLeft } from "@arco-design/web-react/icon";
-import { useEffect, useState } from "react";
+import {
+  IconArchive,
+  IconBook,
+  IconHistory,
+  IconMessage,
+  IconQuestionCircle,
+  IconTrophy,
+  IconUserGroup,
+} from "@arco-design/web-react/icon";
 
 // 左侧导航栏列表
 type Route = {
@@ -12,39 +19,39 @@ type Route = {
 
 const navBarRoutes: Route[] = [
   {
-    name: "Problems",
+    name: "题目",
     href: "/problem",
-    icon: <IconAlignLeft />,
+    icon: <IconBook />,
   },
   {
-    name: "ProblemSet",
+    name: "题单",
     href: "/problemset",
-    icon: <IconAlignLeft />,
+    icon: <IconArchive />,
   },
   {
-    name: "Contest",
+    name: "比赛",
     href: "/contest",
-    icon: <IconAlignLeft />,
+    icon: <IconTrophy />,
   },
   {
-    name: "Team",
+    name: "团队",
     href: "/team",
-    icon: <IconAlignLeft />,
+    icon: <IconUserGroup />,
   },
   {
-    name: "Record",
+    name: "评测",
     href: "/record",
-    icon: <IconAlignLeft />,
+    icon: <IconHistory />,
   },
   {
-    name: "Comments",
+    name: "讨论",
     href: "/comment",
-    icon: <IconAlignLeft />,
+    icon: <IconMessage />,
   },
   {
-    name: "Docs",
+    name: "文档",
     href: "/docs",
-    icon: <IconAlignLeft />,
+    icon: <IconQuestionCircle />,
   },
 ];
 
@@ -60,34 +67,15 @@ export default function NavbarLeft() {
   }, [matches]);
 
   return (
-    <div>
-      <NavLink to="/">
-        <div
-          style={{
-            height: "4rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <h1 style={{ color: "var(--color-text-1)" }}>HITwhOJ</h1>
-        </div>
-      </NavLink>
-      <Menu
-        style={{
-          width: "100%",
-        }}
-        selectedKeys={selectedKeys}
-      >
-        {navBarRoutes.map((route) => (
-          <NavLink prefetch="intent" to={route.href} key={route.href}>
-            <Menu.Item key={route.href}>
-              {route.icon}
-              {route.name}
-            </Menu.Item>
-          </NavLink>
-        ))}
-      </Menu>
-    </div>
+    <Menu>
+      {navBarRoutes.map((route) => (
+        <NavLink prefetch="intent" to={route.href} key={route.href}>
+          <Menu.Item key={route.href}>
+            {route.icon}
+            {route.name}
+          </Menu.Item>
+        </NavLink>
+      ))}
+    </Menu>
   );
 }

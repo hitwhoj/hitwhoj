@@ -10,7 +10,7 @@ const systemColor: Record<ContestSystem, string> = {
   ACM: "blue",
   OI: "green",
   IOI: "orange",
-  Homework: "grey",
+  Homework: "gray",
 };
 
 export function ContestSystemTag({ system }: Props) {

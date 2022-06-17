@@ -10,12 +10,12 @@ export class WsClient {
   #subject: WebSocketSubject<WebSocketMessage>;
 
   /** 用户私信的推送 */
-  privateMessages: Observable<PrivateMessageWithUser>;
+  #pms: Observable<PrivateMessageWithUser>;
 
   constructor(userId?: number | undefined) {
     this.#subject = webSocket<WebSocketMessage>(`ws://${location.host}`);
 
-    this.privateMessages = userId
+    this.#pms = userId
       ? // 使用 RxJS 的多路复用技术来订阅用户私聊消息的推送
         this.#subject
           .multiplex(
@@ -45,6 +45,10 @@ export class WsClient {
         of();
   }
 
+  subscribePrivateMessage() {
+    return this.#pms;
+  }
+
   subscribeRoom(roomId: number) {
     return this.#subject
       .multiplex(
@@ -61,6 +65,55 @@ export class WsClient {
             message.type === "ChatMessage"
         ),
         map((message) => message.message),
+        share()
+      );
+  }
+
+  subscribeRecordUpdate(recordId: number) {
+    return this.#subject
+      .multiplex(
+        () => ({ subscribe: `/record/${recordId}` }),
+        () => ({ unsubscribe: `/record/${recordId}` }),
+        (message) =>
+          message.type === "RecordUpdate" && message.message.id === recordId
+      )
+      .pipe(
+        filter(
+          (
+            message
+          ): message is Extract<WebSocketMessage, { type: "RecordUpdate" }> =>
+            message.type === "RecordUpdate"
+        ),
+        share()
+      );
+  }
+
+  subscribeContestRecordUpdate(
+    contestId: number,
+    problemId: number,
+    userId: number
+  ) {
+    return this.#subject
+      .multiplex(
+        () => ({ subscribe: `/contest/${contestId}/${problemId}/${userId}` }),
+        () => ({ unsubscribe: `/contest/${contestId}/${problemId}/${userId}` }),
+        (message) =>
+          message.type === "ContestRecordUpdate" &&
+          message.message.contestId === contestId &&
+          message.message.problemId === problemId
+      )
+      .pipe(
+        filter(
+          (
+            message
+          ): message is Extract<
+            WebSocketMessage,
+            { type: "ContestRecordUpdate" }
+          > =>
+            message.type === "ContestRecordUpdate" &&
+            message.message.contestId === contestId &&
+            message.message.problemId === problemId
+        ),
         share()
       );
   }

@@ -24,6 +24,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   const problems = await db.contestProblem.findMany({
     where: { contestId },
+    orderBy: {
+      rank: "asc",
+    },
     select: {
       rank: true,
       problem: {
@@ -43,7 +46,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
           problem: {
             select: {
               relatedRecords: {
-                where: { submitterId: self.id },
+                where: { submitterId: self.id, contestId },
                 select: { status: true },
               },
             },

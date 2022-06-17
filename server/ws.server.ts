@@ -1,14 +1,12 @@
 import {
   ChatMessageWithUser,
+  ContestRecordUpdateMessage,
   PrivateMessageWithUser,
+  RecordUpdateMessage,
   WebSocketMessage,
 } from "~/utils/ws.types";
 import { Server as HttpServer } from "http";
-import { PrismaClient } from "@prisma/client";
 import { Server as WebSocketServer, WebSocket } from "ws";
-
-const db = new PrismaClient();
-db.$connect();
 
 class WsServer {
   #server: WebSocketServer;
@@ -48,8 +46,6 @@ class WsServer {
       });
 
       socket.on("close", () => {
-        console.log("[ws] socket closed");
-
         for (const room of rooms) {
           this.#rooms.get(room)!.delete(socket);
         }
@@ -81,6 +77,24 @@ class WsServer {
       type: "ChatMessage",
       message,
     });
+  }
+
+  /** 推送评测结果更新消息 */
+  sendRecordUpdate(message: RecordUpdateMessage) {
+    this.#sendMessage(`/record/${message.id}`, {
+      type: "RecordUpdate",
+      message,
+    });
+  }
+
+  sendContestRecordUpdate(message: ContestRecordUpdateMessage) {
+    this.#sendMessage(
+      `/contest/${message.contestId}/${message.problemId}/${message.submitterId}`,
+      {
+        type: "ContestRecordUpdate",
+        message,
+      }
+    );
   }
 }
 

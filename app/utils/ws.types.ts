@@ -1,6 +1,7 @@
 import type {
   ChatMessage,
   PrivateMessage,
+  Record,
   User,
   UserInChatRoom,
 } from "@prisma/client";
@@ -16,6 +17,23 @@ export type ChatMessageWithUser = ChatMessage & {
   };
 };
 
+export type RecordUpdateMessage = Pick<
+  Record,
+  "id" | "time" | "memory" | "status" | "message" | "subtasks"
+>;
+
+export type ContestRecordUpdateMessage = Pick<
+  Record,
+  | "id"
+  | "time"
+  | "score"
+  | "memory"
+  | "status"
+  | "contestId"
+  | "problemId"
+  | "submitterId"
+>;
+
 export type WebSocketMessage =
   | {
       type: "PrivateMessage";
@@ -24,4 +42,12 @@ export type WebSocketMessage =
   | {
       type: "ChatMessage";
       message: ChatMessageWithUser;
+    }
+  | {
+      type: "RecordUpdate";
+      message: RecordUpdateMessage;
+    }
+  | {
+      type: "ContestRecordUpdate";
+      message: ContestRecordUpdateMessage;
     };

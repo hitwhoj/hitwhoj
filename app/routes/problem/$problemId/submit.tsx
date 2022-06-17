@@ -9,12 +9,12 @@ import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { judge } from "~/utils/server/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { checkProblemSubmitPermission } from "~/utils/permission/problem";
+import type { JudgeServer } from "server/judge.server";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
@@ -47,7 +47,11 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交题目: ${data?.problem.title} - HITwh OJ`,
 });
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export const action: ActionFunction<Response> = async ({
+  request,
+  params,
+  context,
+}) => {
   const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
@@ -70,7 +74,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  await judge.push(recordId);
+  await (context.judge as JudgeServer).push(recordId);
 
   return redirect(`/record/${recordId}`);
 };

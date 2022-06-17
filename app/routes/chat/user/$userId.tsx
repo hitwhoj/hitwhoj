@@ -106,7 +106,7 @@ export const action: ActionFunction = async ({ request, context }) => {
   });
 
   // 获取到服务器的 WebSocket 实例
-  const ws = context.wsServer as WsServer;
+  const ws = context.wss as WsServer;
   // 推送私聊消息给对方
   ws.sendPrivateMessage(message);
 
@@ -123,7 +123,7 @@ export default function ChatIndex() {
   }, [msgs]);
 
   useEffect(() => {
-    const subscription = wsc?.privateMessages.subscribe((data) => {
+    const subscription = wsc?.subscribePrivateMessage().subscribe((data) => {
       // 如果消息是当前页面，则更新消息
       if (data.from.id === target.id) {
         setMessages((messages) => [...messages, data]);

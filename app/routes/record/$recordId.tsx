@@ -7,9 +7,11 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { Collapse, List, Space } from "@arco-design/web-react";
-import type { SubtaskResult } from "~/utils/server/judge.types";
+import type { SubtaskResult } from "../../../server/judge.types";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
+import { useContext, useEffect, useState } from "react";
+import { WsContext } from "~/utils/context/ws";
 
 type LoaderData = {
   record: Pick<
@@ -71,18 +73,36 @@ function ResultMessage({ message }: { message: string }) {
 
 export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
-  const subtasks: SubtaskResult[] = Array.isArray(record.subtasks)
-    ? (record.subtasks as SubtaskResult[])
-    : [];
+  const wsc = useContext(WsContext);
+
+  const [time, setTime] = useState(record.time);
+  const [memory, setMemory] = useState(record.memory);
+  const [status, setStatus] = useState(record.status);
+  const [subtasks, setSubtasks] = useState(record.subtasks as SubtaskResult[]);
+  const [message, setMessage] = useState(record.message);
+
+  useEffect(() => {
+    const subscription = wsc
+      ?.subscribeRecordUpdate(record.id)
+      .subscribe(({ message }) => {
+        setTime(message.time);
+        setMemory(message.memory);
+        setStatus(message.status);
+        setSubtasks(message.subtasks as SubtaskResult[]);
+        setMessage(message.message);
+      });
+
+    return () => subscription?.unsubscribe();
+  }, [wsc]);
 
   return (
     <>
-      <h1>{record.status}</h1>
-      <RecordTimeMemory time={record.time} memory={record.memory} />
-      {record.message && (
+      <h1>{status}</h1>
+      <RecordTimeMemory time={time} memory={memory} />
+      {message && (
         <>
           <h2>Message</h2>
-          <Highlighter language="text" children={record.message} />
+          <Highlighter language="text" children={message} />
         </>
       )}
       {subtasks.length > 0 && (
@@ -90,7 +110,7 @@ export default function RecordView() {
           <h2>Result</h2>
           <Collapse
             style={{ whiteSpace: "nowrap" }}
-            defaultActiveKey={subtasks
+            activeKey={subtasks
               .map((subtask, i) => [subtask.status, i.toString()])
               .filter(
                 ([status, _]) => status !== "Accepted" && status !== "Pending"
