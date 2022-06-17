@@ -1,6 +1,6 @@
 ---
 meta:
-  title: 部署：评测机 - HITwh OJ
+  title: 帮助：部署评测机 - HITwh OJ
 ---
 
 # 部署评测机

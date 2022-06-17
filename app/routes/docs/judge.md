@@ -1,6 +1,6 @@
 ---
 meta:
-  title: 评测相关 - HITwh OJ
+  title: 帮助：评测相关 - HITwh OJ
 ---
 
 # 评测相关
