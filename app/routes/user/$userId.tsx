@@ -1,4 +1,4 @@
-import { Avatar, Space, Tabs } from "@arco-design/web-react";
+import { Avatar, Space, Tabs, Typography } from "@arco-design/web-react";
 import { IconUser } from "@arco-design/web-react/icon";
 import type { User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
@@ -58,8 +58,8 @@ export default function UserProfile() {
   const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
-    <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-      <header>
+    <Typography>
+      <Typography.Paragraph>
         <Space size="large" align="center">
           <Avatar size={60}>
             {user.avatar ? (
@@ -77,19 +77,21 @@ export default function UserProfile() {
             {user.bio && <span>{user.bio}</span>}
           </div>
         </Space>
-      </header>
-      <nav>
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
         <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
           <Tabs.TabPane key="." title="资料" />
           <Tabs.TabPane key="statistics" title="统计" />
           {self?.id === user.id && <Tabs.TabPane key="files" title="文件" />}
           {self?.id === user.id && <Tabs.TabPane key="edit" title="编辑" />}
         </Tabs>
-      </nav>
-      <main>
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
         <Outlet />
-      </main>
-    </Space>
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

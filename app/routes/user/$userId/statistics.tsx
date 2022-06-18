@@ -5,6 +5,7 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { checkUserReadPermission } from "~/utils/permission/user";
+import { Typography } from "@arco-design/web-react";
 
 type LoaderData = {
   createdProblemSets: Pick<ProblemSet, "id" | "title">[];
@@ -58,47 +59,53 @@ export default function UserStatistics() {
     useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h2>创建的题单</h2>
-      {createdProblemSets.length ? (
-        <ul>
-          {createdProblemSets.map((problemset) => (
-            <li key={problemset.id}>
-              <Link to={`/problemset/${problemset.id}`}>
-                {problemset.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div>没有喵</div>
-      )}
+    <Typography>
+      <Typography.Title heading={4}>创建的题单</Typography.Title>
+      <Typography.Paragraph>
+        {createdProblemSets.length ? (
+          <ul>
+            {createdProblemSets.map((problemset) => (
+              <li key={problemset.id}>
+                <Link to={`/problemset/${problemset.id}`}>
+                  {problemset.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>没有喵</div>
+        )}
+      </Typography.Paragraph>
 
-      <h2>创建的比赛</h2>
-      {createdContests.length ? (
-        <ul>
-          {createdContests.map((contest) => (
-            <li key={contest.id}>
-              <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div>没有喵</div>
-      )}
+      <Typography.Title heading={4}>创建的比赛</Typography.Title>
+      <Typography.Paragraph>
+        {createdContests.length ? (
+          <ul>
+            {createdContests.map((contest) => (
+              <li key={contest.id}>
+                <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>没有喵</div>
+        )}
+      </Typography.Paragraph>
 
-      <h2>参与的比赛</h2>
-      {attendedContests.length ? (
-        <ul>
-          {attendedContests.map((contest) => (
-            <li key={contest.id}>
-              <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div>没有喵</div>
-      )}
-    </>
+      <Typography.Title heading={4}>参与的比赛</Typography.Title>
+      <Typography.Paragraph>
+        {attendedContests.length ? (
+          <ul>
+            {attendedContests.map((contest) => (
+              <li key={contest.id}>
+                <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>没有喵</div>
+        )}
+      </Typography.Paragraph>
+    </Typography>
   );
 }

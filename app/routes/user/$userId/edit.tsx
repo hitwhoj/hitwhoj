@@ -106,12 +106,8 @@ export default function UserEdit() {
   const loading = state === "submitting";
 
   return (
-    <RemixForm
-      method="post"
-      className="arco-form arco-form-horizontal arco-form-size-default"
-      style={{ maxWidth: 600 }}
-    >
-      <Form.Item label="用户名" required>
+    <RemixForm method="post">
+      <Form.Item label="用户名" required layout="vertical">
         <Input
           name="username"
           style={{ width: 270 }}
@@ -121,7 +117,7 @@ export default function UserEdit() {
           pattern="[a-zA-Z0-9_]+"
         />
       </Form.Item>
-      <Form.Item label="用户昵称">
+      <Form.Item label="用户昵称" layout="vertical">
         <Input
           name="nickname"
           defaultValue={user.nickname}
@@ -129,7 +125,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="电子邮箱">
+      <Form.Item label="电子邮箱" layout="vertical">
         <Input
           name="email"
           type="email"
@@ -138,7 +134,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="头像地址">
+      <Form.Item label="头像地址" layout="vertical">
         <Input
           name="avatar"
           defaultValue={user.avatar}
@@ -147,7 +143,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="个人介绍">
+      <Form.Item label="个人介绍" layout="vertical">
         <Input
           name="bio"
           defaultValue={user.bio}
@@ -155,7 +151,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item wrapperCol={{ offset: 5 }}>
+      <Form.Item layout="vertical">
         <Button type="primary" htmlType="submit" loading={loading}>
           确认修改
         </Button>

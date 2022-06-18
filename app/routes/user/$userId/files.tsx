@@ -1,4 +1,4 @@
-import { Button, Space, Table } from "@arco-design/web-react";
+import { Button, Space, Table, Typography } from "@arco-design/web-react";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { File as UserFile, User } from "@prisma/client";
@@ -208,16 +208,16 @@ export default function UserFilePage() {
   } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <div>
-        <h2>用户文件</h2>
-        <p>上传即代表同意我们的用户手册（虽然没有这个东西）</p>
-      </div>
+    <Typography>
+      <Typography.Title heading={4}>用户文件</Typography.Title>
+      <Typography.Paragraph>
+        上传即代表同意我们的用户手册（虽然没有这个东西）
+      </Typography.Paragraph>
       <Space direction="vertical" size="medium" style={{ display: "flex" }}>
         <UserFileUploader />
         <UserFileList files={files} />
       </Space>
-    </>
+    </Typography>
   );
 }
 

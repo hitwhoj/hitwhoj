@@ -33,10 +33,13 @@ import {
   Typography,
   Message,
   List,
+  Grid,
+  Alert,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useRef, useState } from "react";
 import {
+  IconCheck,
   IconDelete,
   IconDown,
   IconLoading,
@@ -336,8 +339,8 @@ function ContestInformationEditor({
   }, [isUpdating]);
 
   return (
-    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-      <FormItem label="标题" required>
+    <fetcher.Form method="post">
+      <FormItem label="标题" required layout="vertical">
         <Input
           name="title"
           defaultValue={contest.title}
@@ -346,7 +349,7 @@ function ContestInformationEditor({
         />
       </FormItem>
 
-      <FormItem label="描述" required>
+      <FormItem label="描述" required layout="vertical">
         <TextArea
           name="description"
           defaultValue={contest.description}
@@ -355,7 +358,7 @@ function ContestInformationEditor({
         />
       </FormItem>
 
-      <FormItem label="时间" required>
+      <FormItem label="时间" required layout="vertical">
         <input
           type="hidden"
           name="beginTime"
@@ -387,7 +390,7 @@ function ContestInformationEditor({
         />
       </FormItem>
 
-      <FormItem label="赛制" required>
+      <FormItem label="赛制" required layout="vertical">
         <input type="hidden" name="system" value={system} required />
         <Select
           value={system}
@@ -401,15 +404,16 @@ function ContestInformationEditor({
         </Select>
       </FormItem>
 
-      <FormItem wrapperCol={{ offset: 5 }}>
+      <FormItem>
         <Button
           type="primary"
           htmlType="submit"
+          icon={<IconCheck />}
           loading={isUpdating}
           name="_action"
           value={ActionType.UpdateInformation}
         >
-          提交更新
+          确认更新
         </Button>
       </FormItem>
     </fetcher.Form>
@@ -559,6 +563,30 @@ function ContestProblemEditor({
   return (
     <>
       <Typography.Paragraph>
+        <List
+          dataSource={problems}
+          bordered={false}
+          render={({ rank, problem: { id, title } }, index) => (
+            <List.Item key={id}>
+              <Grid.Row justify="space-between" align="center">
+                <Space size="large">
+                  <Tag>{String.fromCharCode(64 + rank)}</Tag>
+                  <Link to={`/problem/${id}`} target="_blank">
+                    {title}
+                  </Link>
+                </Space>
+                <ContestProblemEditItem
+                  id={id}
+                  isFirst={index === 0}
+                  isLast={index === problems.length - 1}
+                />
+              </Grid.Row>
+            </List.Item>
+          )}
+        />
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
         <fetcher.Form method="post">
           <Space>
             <Input
@@ -581,27 +609,6 @@ function ContestProblemEditor({
           </Space>
         </fetcher.Form>
       </Typography.Paragraph>
-      <Typography.Paragraph>
-        <List
-          dataSource={problems}
-          bordered={false}
-          render={({ rank, problem: { id, title } }, index) => (
-            <List.Item key={id}>
-              <Space size="large">
-                <Tag>{String.fromCharCode(64 + rank)}</Tag>
-                <Link to={`/problem/${id}`} target="_blank">
-                  {title}
-                </Link>
-                <ContestProblemEditItem
-                  id={id}
-                  isFirst={index === 0}
-                  isLast={index === problems.length - 1}
-                />
-              </Space>
-            </List.Item>
-          )}
-        />
-      </Typography.Paragraph>
     </>
   );
 }
@@ -610,18 +617,26 @@ export default function ContestEdit() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>修改比赛信息</Typography.Title>
-      <FormItem label="标签" style={{ maxWidth: 600 }}>
-        <ContestTagEditor tags={contest.tags} />
-      </FormItem>
-      <ContestInformationEditor contest={contest} />
-      <Typography.Title heading={4}>修改比赛题目</Typography.Title>
-      <Typography.Paragraph>
-        如果您在赛后修改题目，系统可能会出现一些奇妙的特性
-      </Typography.Paragraph>
-      <ContestProblemEditor problems={contest.problems} />
-    </Typography>
+    <div style={{ display: "flex", gap: 20 }}>
+      <Typography style={{ flex: 1 }}>
+        <Typography.Title heading={4}>修改比赛信息</Typography.Title>
+        <FormItem label="标签" layout="vertical">
+          <ContestTagEditor tags={contest.tags} />
+        </FormItem>
+        <ContestInformationEditor contest={contest} />
+      </Typography>
+
+      <Typography style={{ flex: 1 }}>
+        <Typography.Title heading={4}>修改比赛题目</Typography.Title>
+        <Typography.Paragraph>
+          <Alert
+            type="warning"
+            content="如果您在赛后修改题目，系统可能会出现一些奇妙的特性"
+          />
+        </Typography.Paragraph>
+        <ContestProblemEditor problems={contest.problems} />
+      </Typography>
+    </div>
   );
 }
 
