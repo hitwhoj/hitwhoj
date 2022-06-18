@@ -11,10 +11,10 @@ function createUploadHandler() {
     console.warn("MAX_FILE_SIZE is not set, defaulting to 20MB");
   }
 
-  const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || "20000000");
+  const maxPartSize = parseInt(process.env.MAX_FILE_SIZE || "20000000");
 
   return unstable_createMemoryUploadHandler({
-    maxFileSize,
+    maxPartSize,
   });
 }
 

@@ -1,7 +1,7 @@
 import { ContestSystem, PrismaClient, SystemUserRole } from "@prisma/client";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
-import { File } from "@web-std/file";
+import { File } from "@remix-run/node/fetch";
 
 const prisma = new PrismaClient();
 
