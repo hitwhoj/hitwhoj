@@ -6,7 +6,7 @@ import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
-import { Button, Input, Form } from "@arco-design/web-react";
+import { Button, Input, Form, Typography } from "@arco-design/web-react";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
@@ -50,16 +50,17 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 
 export default function NewTeam() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state === "submitting";
+  const isCreating = fetcher.state !== "idle";
 
   return (
-    <>
-      <h1>创建团队</h1>
+    <Typography>
+      <Typography.Title heading={3}>创建团队</Typography.Title>
+      <Typography.Paragraph>创建一个新的团队！</Typography.Paragraph>
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-        <FormItem label="名称" required labelCol={{ span: 3 }}>
-          <Input type="text" name="name" placeholder="Team name" required />
+        <FormItem label="名称" required layout="vertical" disabled={isCreating}>
+          <Input type="text" name="name" placeholder="团队名称" required />
         </FormItem>
-        <FormItem label="描述" required labelCol={{ span: 3 }}>
+        <FormItem label="描述" required layout="vertical" disabled={isCreating}>
           <TextArea
             name="description"
             required
@@ -67,15 +68,15 @@ export default function NewTeam() {
               minRows: 3,
               maxRows: 10,
             }}
-            placeholder="description(optional)"
+            placeholder="介绍信息"
           />
         </FormItem>
-        <FormItem label=" " labelCol={{ span: 3 }}>
+        <FormItem>
           <Button type="primary" htmlType="submit" loading={isCreating}>
             创建团队
           </Button>
         </FormItem>
       </fetcher.Form>
-    </>
+    </Typography>
   );
 }

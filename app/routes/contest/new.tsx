@@ -88,10 +88,10 @@ export default function ContestNew() {
     <Typography>
       <Typography.Title heading={4}>创建比赛</Typography.Title>
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-        <FormItem label="标题" required labelCol={{ span: 3 }}>
+        <FormItem label="标题" required layout="vertical">
           <Input name="title" id="title" required />
         </FormItem>
-        <FormItem label="描述" required labelCol={{ span: 3 }}>
+        <FormItem label="描述" required layout="vertical">
           <TextArea
             name="description"
             id="description"
@@ -102,7 +102,7 @@ export default function ContestNew() {
             }}
           />
         </FormItem>
-        <FormItem label="时间" required labelCol={{ span: 3 }}>
+        <FormItem label="时间" required layout="vertical">
           <input
             type="hidden"
             name="beginTime"
@@ -131,7 +131,7 @@ export default function ContestNew() {
             }}
           />
         </FormItem>
-        <FormItem label="赛制" required labelCol={{ span: 3 }}>
+        <FormItem label="赛制" required layout="vertical">
           <input type="hidden" name="system" value={system} required />
           <Select
             value={system}
@@ -145,10 +145,9 @@ export default function ContestNew() {
             ))}
           </Select>
         </FormItem>
-        <FormItem label=" " labelCol={{ span: 3 }}>
+        <FormItem>
           <Button type="primary" htmlType="submit" loading={isCreating}>
-            {" "}
-            创建比赛{" "}
+            创建比赛
           </Button>
         </FormItem>
       </fetcher.Form>

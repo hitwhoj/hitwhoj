@@ -89,13 +89,7 @@ const MemberCard = ({ id, username, avatar }: Member) => {
   const fetcher = useFetcher();
   return (
     <Card hoverable>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <Row justify="space-between" align="center">
         <Link to={`/user/${id}`}>
           <span style={{ display: "flex", alignItems: "center" }}>
             <Avatar
@@ -125,7 +119,7 @@ const MemberCard = ({ id, username, avatar }: Member) => {
             }
           />
         </fetcher.Form>
-      </div>
+      </Row>
     </Card>
   );
 };
@@ -158,60 +152,61 @@ export default function MemberList() {
     }
   }, [fetcher]);
   return (
-    <>
-      <Row
-        justify="end"
-        align="center"
-        style={{
-          height: "3rem",
-        }}
+    <Typography>
+      <Typography.Title heading={4}>
+        <Row justify="space-between" align="center">
+          <span>团队成员</span>
+          <Button
+            onClick={() => setModalVisible(true)}
+            type="primary"
+            icon={<IconPlus />}
+            loading={fetcher.state === "submitting"}
+          >
+            添加成员
+          </Button>
+        </Row>
+      </Typography.Title>
+
+      <Typography.Paragraph>
+        <Members members={members} />
+      </Typography.Paragraph>
+
+      <Modal
+        title="添加成员"
+        visible={modalVisible}
+        footer={null}
+        autoFocus
+        onCancel={() => setModalVisible(false)}
+        style={{ width: "350px" }}
       >
-        <Button
-          onClick={() => setModalVisible(true)}
-          type="primary"
-          icon={<IconPlus />}
-          loading={fetcher.state === "submitting"}
-        >
-          add member
-        </Button>
-        <Modal
-          title="Add member"
-          visible={modalVisible}
-          footer={null}
-          autoFocus
-          onCancel={() => setModalVisible(false)}
-          style={{ width: "350px" }}
-        >
-          <fetcher.Form method="post">
-            <Space
-              style={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "space-around",
-              }}
+        <fetcher.Form method="post">
+          <Space
+            style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-around",
+            }}
+          >
+            <Input
+              type="text"
+              name="member"
+              placeholder="User ID"
+              required
+              value={userIdInput}
+              onInput={(e: any) => setUserIdInput(e.target.value)}
+            />
+            <Button
+              type="primary"
+              htmlType="submit"
+              name="_action"
+              value={ActionType.AddMember}
+              loading={fetcher.state != "idle"}
             >
-              <Input
-                type="text"
-                name="member"
-                placeholder="User ID"
-                required
-                value={userIdInput}
-                onInput={(e: any) => setUserIdInput(e.target.value)}
-              />
-              <Button
-                type="primary"
-                htmlType="submit"
-                name="_action"
-                value={ActionType.AddMember}
-                loading={fetcher.state != "idle"}
-              >
-                submit
-              </Button>
-            </Space>
-          </fetcher.Form>
-        </Modal>
-      </Row>
-      <Card style={{ width: "100%" }}>{<Members members={members} />}</Card>
-    </>
+              提交
+            </Button>
+          </Space>
+        </fetcher.Form>
+      </Modal>
+    </Typography>
   );
 }

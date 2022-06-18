@@ -9,6 +9,7 @@ import {
   IconTrophy,
   IconUserGroup,
 } from "@arco-design/web-react/icon";
+import { useEffect, useState } from "react";
 
 // 左侧导航栏列表
 type Route = {
@@ -67,7 +68,7 @@ export default function NavbarLeft() {
   }, [matches]);
 
   return (
-    <Menu>
+    <Menu selectedKeys={selectedKeys}>
       {navBarRoutes.map((route) => (
         <NavLink prefetch="intent" to={route.href} key={route.href}>
           <Menu.Item key={route.href}>
