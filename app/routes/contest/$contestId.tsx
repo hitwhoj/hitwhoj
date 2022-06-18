@@ -1,6 +1,5 @@
 import { Typography } from "@arco-design/web-react";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -49,10 +48,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   if (!contest) {
     throw new Response("Contest not found", { status: 404 });
-  }
-
-  if (contest.teamId) {
-    throw redirect(`/team/${contest.teamId}/contest/${contest.id}`);
   }
 
   return { contest };

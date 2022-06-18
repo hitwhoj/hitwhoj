@@ -1,12 +1,13 @@
-import { Descriptions, Typography } from "@arco-design/web-react";
-import type { Contest, ContestTag } from "@prisma/client";
+import { Descriptions, Space, Typography } from "@arco-design/web-react";
+import type { Contest, ContestTag, Team } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { checkContestReadPermission } from "~/utils/permission/contest";
+import { IconUserGroup } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   contest: Pick<
@@ -14,6 +15,7 @@ type LoaderData = {
     "id" | "title" | "description" | "beginTime" | "endTime"
   > & {
     tags: Pick<ContestTag, "name">[];
+    team: Pick<Team, "id" | "name"> | null;
   };
 };
 
@@ -36,6 +38,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
       endTime: true,
       tags: {
         select: {
+          name: true,
+        },
+      },
+      team: {
+        select: {
+          id: true,
           name: true,
         },
       },
@@ -87,6 +95,21 @@ export default function ContestIndex() {
               3600_000
             } 小时`,
           },
+          ...(contest.team
+            ? [
+                {
+                  label: "所属团队",
+                  value: (
+                    <Link to={`/team/${contest.team.id}`}>
+                      <Space>
+                        <IconUserGroup />
+                        {contest.team.name}
+                      </Space>
+                    </Link>
+                  ),
+                },
+              ]
+            : []),
         ]}
         labelStyle={{ paddingRight: 36 }}
       />

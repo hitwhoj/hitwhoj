@@ -64,6 +64,7 @@ export default function ProblemsetList() {
         columns={tableColumns}
         data={problemSets}
         hover={false}
+        rowKey="id"
         pagination={{
           total: problemSets.length,
           defaultPageSize: 20,

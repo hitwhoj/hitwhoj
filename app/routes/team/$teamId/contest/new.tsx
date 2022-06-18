@@ -17,7 +17,7 @@ import {
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { findSessionUid } from "~/utils/sessions";
-import React from "react";
+import { idScheme } from "~/utils/scheme";
 import {
   Form,
   Input,
@@ -26,22 +26,30 @@ import {
   Button,
   Typography,
 } from "@arco-design/web-react";
-import { checkContestCreatePermission } from "~/utils/permission/contest";
+import { useState } from "react";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await checkContestCreatePermission(request);
+  const self = await findSessionUid(request);
+
+  if (!self) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
 
   return null;
 };
 
-export const action: ActionFunction<Response> = async ({ request }) => {
-  await checkContestCreatePermission(request);
-
+export const action: ActionFunction<Response> = async ({ params, request }) => {
+  const teamId = invariant(idScheme, params.teamId);
   const self = await findSessionUid(request);
+
+  if (!self) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
   const form = await request.formData();
 
   const title = invariant(titleScheme, form.get("title"));
@@ -57,7 +65,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
     invariant(datetimeStringScheme, form.get("endTime")),
     timezone
   );
-  const system = invariant(systemScheme, form.get("system"));
+  const system = invariant(systemScheme, ContestSystem.Homework);
 
   const { id: contestId } = await db.contest.create({
     data: {
@@ -66,6 +74,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
       beginTime,
       endTime,
       system,
+      team: { connect: { id: teamId } },
       creator: { connect: { id: self } },
     },
   });
@@ -74,13 +83,13 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "创建比赛 - HITwh OJ",
+  title: "Create: Contest - HITwh OJ",
 });
 
 export default function ContestNew() {
-  const [beginTime, setBeginTime] = React.useState(Date.now());
-  const [endTime, setEndTime] = React.useState(Date.now() + 5 * 60 * 60 * 1000);
-  const [system, setSystem] = React.useState<ContestSystem>(ContestSystem.ACM);
+  const [beginTime, setBeginTime] = useState(Date.now());
+  const [endTime, setEndTime] = useState(Date.now() + 5 * 60 * 60 * 1000);
+  const [system, setSystem] = useState<ContestSystem>(ContestSystem.Homework);
   const fetcher = useFetcher();
   const isCreating = fetcher.state === "submitting";
 
@@ -145,7 +154,7 @@ export default function ContestNew() {
             ))}
           </Select>
         </FormItem>
-        <FormItem>
+        <FormItem layout="vertical">
           <Button type="primary" htmlType="submit" loading={isCreating}>
             创建比赛
           </Button>
@@ -154,6 +163,3 @@ export default function ContestNew() {
     </Typography>
   );
 }
-
-export { ErrorBoundary } from "~/src/ErrorBoundary";
-export { CatchBoundary } from "~/src/CatchBoundary";

@@ -98,6 +98,7 @@ export default function ProblemIndex() {
       columns={tableColumns}
       data={problems}
       hover={false}
+      rowKey="id"
       // TODO: 毕竟这是个假的分页qwq
       pagination={{
         total: problems.length,

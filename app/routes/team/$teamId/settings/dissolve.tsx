@@ -6,17 +6,12 @@ import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
+import { Alert, Button, Checkbox, Typography } from "@arco-design/web-react";
+import { useState } from "react";
 
 export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme, params.teamId);
   const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
-  if (!teamId) {
-    throw new Response("team Id is missing", { status: 400 });
-  }
 
   const teamMember = await db.teamMember.findUnique({
     where: { userId_teamId: { teamId, userId: self } },
@@ -33,26 +28,42 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
     });
   }
 
-  await db.teamMember.deleteMany({
-    where: { teamId },
-  });
-  await db.team.delete({
-    where: { id: teamId },
-  });
+  await db.teamMember.deleteMany({ where: { teamId } });
+  await db.team.delete({ where: { id: teamId } });
 
   return redirect(`/team`);
 };
 
 export default function DissolveTeam() {
+  const [confirm, setConfirm] = useState(false);
+
   return (
-    <>
-      <h2>Dissolve Team</h2>
-      <div>你最好知道你在做什么</div>
-      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
-        <button type="submit" name="submit" value="dissolve">
-          开弓没有回头箭
-        </button>
+    <Typography>
+      <Typography.Title heading={4}>解散团队</Typography.Title>
+      <Typography.Paragraph>
+        <Alert
+          type="warning"
+          content="团队相关的所有比赛、题目和评测都会被删除"
+        />
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        <Checkbox
+          onChange={() => setConfirm((confirm) => !confirm)}
+          checked={confirm}
+        >
+          我知道我在干什么
+        </Checkbox>
+      </Typography.Paragraph>
+      <Form method="post">
+        <Button
+          htmlType="submit"
+          type="primary"
+          status="danger"
+          disabled={!confirm}
+        >
+          解散团队
+        </Button>
       </Form>
-    </>
+    </Typography>
   );
 }

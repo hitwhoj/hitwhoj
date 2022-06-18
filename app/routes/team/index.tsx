@@ -9,6 +9,7 @@ import { db } from "~/utils/server/db.server";
 import { teamNameScheme } from "~/utils/scheme";
 import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
+import { Button, Grid, Input, Space, Table } from "@arco-design/web-react";
 
 export const meta: MetaFunction = () => ({
   title: "Team List",
@@ -49,11 +50,30 @@ export const loader: LoaderFunction<LoaderData> = async () => {
 
 export default function TeamList() {
   const { teams } = useLoaderData<LoaderData>();
+  const tableColumns = [
+    {
+      title: "#",
+      dataIndex: "id",
+      render: (col: string) => <Link to={`/problemset/${col}`}>{col}</Link>,
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      render: (col: string, team: Team) => (
+        <Link to={`/team/${team.id}`}>{col}</Link>
+      ),
+    },
+  ];
 
   return (
     <>
-      <h1>Team</h1>
-      <div>
+      <Grid.Row
+        justify="space-between"
+        align="center"
+        style={{
+          height: "3rem",
+        }}
+      >
         <Form
           method="post"
           style={{
@@ -61,28 +81,34 @@ export default function TeamList() {
             flexDirection: "column",
           }}
         >
-          <input type="text" name="teamName" placeholder="teamName" required />
-          <button type="submit">search</button>
+          <Space>
+            <Input
+              type="text"
+              name="teamName"
+              placeholder="teamName"
+              required
+            />
+            <Button htmlType="submit" type="primary">
+              go
+            </Button>
+          </Space>
         </Form>
-      </div>
-      <h3> Operation </h3>
-      <ul>
-        <li>
-          <Link to="new">创建队伍</Link>
-        </li>
-      </ul>
-      <h3> Public teamList </h3>
-      {teams.length ? (
-        <ul>
-          {teams.map((team) => (
-            <li key={team.id}>
-              <Link to={`/team/${team.id}`}>{team.name}</Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div>什么都没有捏</div>
-      )}
+        <Link to="new">
+          <Button type="primary">Create Team</Button>
+        </Link>
+      </Grid.Row>
+      <Table
+        columns={tableColumns}
+        data={teams}
+        hover={false}
+        rowKey="id"
+        pagination={{
+          total: teams.length,
+          defaultPageSize: 20,
+          showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
+          showJumper: true,
+        }}
+      />
     </>
   );
 }
