@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Affix,
   Alert,
   Button,
   Form,
@@ -13,6 +14,7 @@ import { IconCopyright } from "@arco-design/web-react/icon";
 import { useFetcher } from "@remix-run/react";
 import { LoginModalContext } from "~/utils/context/modal";
 import type { LoginActionData } from "~/routes/login";
+import { version } from "../../../package.json";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -52,24 +54,18 @@ export default function MainLayout({ children }: LayoutProps) {
           className="py-20% sider-context-layout"
         >
           <Sider style={{ boxShadow: "none", width: undefined }}>
-            <NavbarTabs />
+            <Affix offsetTop={40}>
+              <NavbarTabs />
+            </Affix>
           </Sider>
 
           <Content>{children}</Content>
         </Layout>
 
-        <Footer
-          style={{
-            padding: "10px 0",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "end",
-            alignItems: "center",
-          }}
-        >
+        <Footer style={{ padding: "10px 0", textAlign: "center" }}>
           <div style={{ color: "var(--color-text-3)" }}>
             Copyright <IconCopyright /> 2022 HITwh OJ Dev Team{" "}
-            <span style={{ color: "transparent" }}>v0.0.1</span>
+            <span style={{ color: "transparent" }}>{version}</span>
           </div>
         </Footer>
       </Layout>

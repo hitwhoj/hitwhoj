@@ -1,11 +1,12 @@
 {
   "private": true,
   "name": "hitwhoj",
+  "version": "v0.0.1-alpha",
   "scripts": {
     "build": "run-s build:*",
     "build:sass": "sass --no-source-map styles:app/styles",
     "build:remix": "remix build",
-    "build:fonts": "shx mkdir -p public/build/_assets && shx cp -r node_modules/katex/dist/fonts public/build/_assets && shx cp -r node_modules/monaco-editor/min/vs public/build/_assets",
+    "build:fonts": "shx mkdir -p public/build/_assets && shx cp -r node_modules/katex/dist/fonts node_modules/monaco-editor/min/vs public/build/_assets",
     "dev": "yarn build && run-p dev:*",
     "dev:sass": "sass --no-source-map --watch styles:app/styles",
     "dev:node": "cross-env NODE_ENV=development node -r esbuild-register ./server/server.ts",
