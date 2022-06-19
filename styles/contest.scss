@@ -1,8 +1,11 @@
+// 比赛题目页面的特殊样式
+
 .contest-problem-container {
   height: 100%;
 }
 
-.contest-problem-hide {
+.contest-problem-hide,
+.navbar-left {
   display: none;
 }
 
@@ -10,15 +13,17 @@
   display: none !important;
 }
 
-main.arco-layout-content {
-  margin-top: 0 !important;
-  margin-bottom: 0;
-  height: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
+.header-context-footer-layout {
+  height: 100vh;
+  gap: 0 !important;
 }
 
-section.arco-layout {
-  padding: 0 !important;
-  margin: 0;
+.py-20\% {
+  padding: 0 2.5%;
+}
+
+.sider-context-layout {
+  padding: 0;
+  gap: 0 !important;
+  height: calc(100vh - 4rem);
 }

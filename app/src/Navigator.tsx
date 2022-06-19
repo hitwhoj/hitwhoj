@@ -18,7 +18,7 @@ export function Navigator({ routes }: Props) {
     ".";
 
   return (
-    <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
+    <Tabs onChange={(key) => navigate(key)} activeTab={currentTab} type="text">
       {routes.map(({ key, title }) => (
         <TabPane key={key} title={title} />
       ))}

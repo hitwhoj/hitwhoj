@@ -60,7 +60,6 @@ main.arco-layout-content {
 
     .chat-content-main {
       flex: 1;
-      background-color: var(--color-bg-3);
       overflow: scroll;
 
       .chat-content-message {
@@ -116,11 +115,6 @@ main.arco-layout-content {
         &.right {
           justify-content: end;
           flex-direction: row-reverse;
-
-          @media only screen and (min-width: 1300px) {
-            justify-content: start;
-            flex-direction: row;
-          }
 
           .chat-content-message-bubble {
             background-color: rgb(var(--primary-6));

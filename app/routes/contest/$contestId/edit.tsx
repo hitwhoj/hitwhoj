@@ -339,7 +339,7 @@ function ContestInformationEditor({
   }, [isUpdating]);
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
       <FormItem label="标题" required layout="vertical">
         <Input
           name="title"
@@ -617,26 +617,21 @@ export default function ContestEdit() {
   const { contest } = useLoaderData<LoaderData>();
 
   return (
-    <div style={{ display: "flex", gap: 20 }}>
-      <Typography style={{ flex: 1 }}>
-        <Typography.Title heading={4}>修改比赛信息</Typography.Title>
-        <FormItem label="标签" layout="vertical">
-          <ContestTagEditor tags={contest.tags} />
-        </FormItem>
-        <ContestInformationEditor contest={contest} />
-      </Typography>
-
-      <Typography style={{ flex: 1 }}>
-        <Typography.Title heading={4}>修改比赛题目</Typography.Title>
-        <Typography.Paragraph>
-          <Alert
-            type="warning"
-            content="如果您在赛后修改题目，系统可能会出现一些奇妙的特性"
-          />
-        </Typography.Paragraph>
-        <ContestProblemEditor problems={contest.problems} />
-      </Typography>
-    </div>
+    <Typography>
+      <Typography.Title heading={4}>修改比赛信息</Typography.Title>
+      <FormItem label="标签" layout="vertical">
+        <ContestTagEditor tags={contest.tags} />
+      </FormItem>
+      <ContestInformationEditor contest={contest} />
+      <Typography.Title heading={4}>修改比赛题目</Typography.Title>
+      <Typography.Paragraph>
+        <Alert
+          type="warning"
+          content="如果您在赛后修改题目，系统可能会出现一些奇妙的特性"
+        />
+      </Typography.Paragraph>
+      <ContestProblemEditor problems={contest.problems} />
+    </Typography>
   );
 }
 

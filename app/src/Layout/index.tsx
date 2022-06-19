@@ -7,7 +7,7 @@ import {
   Layout,
   Modal,
 } from "@arco-design/web-react";
-import NavbarLeft from "./components/NavbarLeft";
+import { NavbarTabs } from "./components/NavbarMenu";
 import NavbarTop from "./components/NavbarTop";
 import { IconCopyright } from "@arco-design/web-react/icon";
 import { useFetcher } from "@remix-run/react";
@@ -39,88 +39,74 @@ export default function MainLayout({ children }: LayoutProps) {
 
   return (
     <LoginModalContext.Provider value={setVisible}>
-      <Layout style={{ height: "100vh" }}>
+      <Layout
+        style={{ minHeight: "100vh", gap: 20 }}
+        className="header-context-footer-layout"
+      >
         <Header>
           <NavbarTop />
         </Header>
+
         <Layout
-          style={{
-            height: "100vh",
-            flexDirection: "row",
-            overflow: "hidden",
-            boxShadow: "0 0 10px #0000001b inset",
-          }}
+          style={{ flexDirection: "row" }}
+          className="py-20% sider-context-layout"
         >
-          <Sider width="12rem">
-            <NavbarLeft />
+          <Sider style={{ boxShadow: "none", width: undefined }}>
+            <NavbarTabs />
           </Sider>
-          <Layout
-            style={{
-              backgroundColor: "var(--color-bg-3)",
-              padding: "0 5%",
-              boxShadow: "0 0 10px #0000001b inset",
-              overflow: "auto",
-            }}
-          >
-            <Content style={{ marginTop: "1rem", fontSize: "1rem" }}>
-              {children}
-            </Content>
-            <Footer
-              style={{
-                padding: "10px 0",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "end",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ color: "var(--color-text-3)" }}>
-                Copyright <IconCopyright /> 2022 HITwh OJ Dev Team{" "}
-                <span style={{ color: "transparent" }}>v0.0.1</span>
-              </div>
-            </Footer>
-          </Layout>
+
+          <Content>{children}</Content>
         </Layout>
 
-        <Modal
-          title="登录"
-          visible={visible}
-          style={{ width: 400 }}
-          footer={
-            <>
-              <Button type="default" onClick={() => setVisible(false)}>
-                注册
-              </Button>
-              <Button
-                type="primary"
-                onClick={() => submitRef.current?.click()}
-                loading={isFetching}
-              >
-                登录
-              </Button>
-            </>
-          }
-          onCancel={() => setVisible(false)}
+        <Footer
+          style={{
+            padding: "10px 0",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "end",
+            alignItems: "center",
+          }}
         >
-          <fetcher.Form method="post" action="/login">
-            <Form.Item label="用户名" required>
-              <Input
-                type="text"
-                name="username"
-                required
-                disabled={isFetching}
-              />
-            </Form.Item>
-            <Form.Item label="密码" required>
-              <Input.Password name="password" required disabled={isFetching} />
-            </Form.Item>
-            {fetcher.data?.success === false && (
-              <Alert type="error" content={fetcher.data.reason} />
-            )}
-            <button type="submit" style={{ display: "none" }} ref={submitRef} />
-          </fetcher.Form>
-        </Modal>
+          <div style={{ color: "var(--color-text-3)" }}>
+            Copyright <IconCopyright /> 2022 HITwh OJ Dev Team{" "}
+            <span style={{ color: "transparent" }}>v0.0.1</span>
+          </div>
+        </Footer>
       </Layout>
+
+      <Modal
+        title="登录"
+        visible={visible}
+        style={{ width: 400 }}
+        footer={
+          <>
+            <Button type="default" onClick={() => setVisible(false)}>
+              注册
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => submitRef.current?.click()}
+              loading={isFetching}
+            >
+              登录
+            </Button>
+          </>
+        }
+        onCancel={() => setVisible(false)}
+      >
+        <fetcher.Form method="post" action="/login">
+          <Form.Item label="用户名" required>
+            <Input type="text" name="username" required disabled={isFetching} />
+          </Form.Item>
+          <Form.Item label="密码" required>
+            <Input.Password name="password" required disabled={isFetching} />
+          </Form.Item>
+          {fetcher.data?.success === false && (
+            <Alert type="error" content={fetcher.data.reason} />
+          )}
+          <button type="submit" style={{ display: "none" }} ref={submitRef} />
+        </fetcher.Form>
+      </Modal>
     </LoginModalContext.Provider>
   );
 }

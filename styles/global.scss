@@ -5,7 +5,6 @@ body,
 html {
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 a,
@@ -17,9 +16,14 @@ a:active {
   color: inherit;
 }
 
+body {
+  color: var(--color-text-1);
+  background-color: var(--color-bg-2);
+}
+
 body[arco-theme="dark"] {
   color: var(--color-text-1);
-  background-color: var(--color-bg-1);
+  background-color: var(--color-bg-2);
   color-scheme: dark;
 }
 
@@ -51,10 +55,6 @@ body[arco-theme="dark"] {
   overflow: hidden;
 }
 
-.arco-tabs-header-title {
-  font-size: 1rem;
-}
-
 .arco-btn-size-default > svg + a,
 .arco-btn-size-default > a + svg {
   margin-left: 8px;
@@ -67,4 +67,50 @@ body[arco-theme="dark"] {
   outline: none;
   background: none;
   font-size: 1rem;
+}
+
+// sm
+.py-20\% {
+  padding: 0 24px;
+}
+
+.navbar-left {
+  display: none;
+}
+
+.navbar-menu-opener {
+  cursor: pointer;
+}
+
+// md
+@media (min-width: 768px) {
+  .py-20\% {
+    padding: 0 5%;
+  }
+
+  .navbar-left {
+    display: block;
+  }
+
+  .navbar-menu-opener {
+    display: none;
+  }
+
+  .sider-context-layout {
+    gap: 5%;
+  }
+}
+
+// lg
+@media (min-width: 1024px) {
+  .py-20\% {
+    padding: 0 10%;
+  }
+}
+
+// xl
+@media (min-width: 1280px) {
+  .py-20\% {
+    padding: 0 20%;
+  }
 }
