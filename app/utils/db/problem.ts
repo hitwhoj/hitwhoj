@@ -30,6 +30,11 @@ export async function findProblemMany(where: ProblemWhereInput) {
           name: true,
         },
       },
+      _count: {
+        select: {
+          relatedRecords: true,
+        },
+      },
     },
   });
 }

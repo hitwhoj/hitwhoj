@@ -129,7 +129,7 @@ function ProblemFileUploader({
   uploadText: string;
 }) {
   const fetcher = useFetcher();
-  const isUploading = fetcher.state === "submitting";
+  const isUploading = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -164,10 +164,10 @@ function ProblemFileUploader({
 
 function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
+  const isDeleting = fetcher.state !== "idle";
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <Button
         type="text"

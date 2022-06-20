@@ -53,7 +53,7 @@ export default function ContestListIndex() {
 
   return (
     <Typography>
-      <Typography.Title heading={2}>
+      <Typography.Title heading={3}>
         <div
           style={{
             display: "flex",

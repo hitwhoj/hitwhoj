@@ -1,8 +1,8 @@
-import type { Problem, ProblemSet, File as ProblemFile } from "@prisma/client";
+import type { Problem, File as ProblemFile } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
-import { Link as ArcoLink } from "@arco-design/web-react";
+import { Link as ArcoLink, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -10,7 +10,6 @@ import { checkProblemReadPermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
-    includedProblemSets: Pick<ProblemSet, "id" | "title">[];
     files: ProblemFile[];
   };
 };
@@ -32,12 +31,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
       title: true,
       description: true,
       private: true,
-      includedProblemSets: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
       files: {
         orderBy: {
           filename: "asc",
@@ -63,31 +56,21 @@ export default function ProblemIndex() {
 
   return (
     <>
-      <article>
-        <Markdown>{problem.description}</Markdown>
-      </article>
+      <Markdown>{problem.description}</Markdown>
+
       {problem.files.length > 0 && (
         <>
-          <h2>相关文件</h2>
-          {problem.files.map((file) => (
-            <div key={file.id}>
-              <ArcoLink>
-                <Link to={`/file/${file.id}`}>{file.filename}</Link>
-              </ArcoLink>
-            </div>
-          ))}
-        </>
-      )}
-      {problem.includedProblemSets.length > 0 && (
-        <>
-          <h2>相关题单捏</h2>
-          {problem.includedProblemSets.map(({ id, title }) => (
-            <div key={id}>
-              <ArcoLink>
-                <Link to={`/problemset/${id}`}>{title}</Link>
-              </ArcoLink>
-            </div>
-          ))}
+          <Typography.Title heading={4}>相关文件</Typography.Title>
+
+          <ul>
+            {problem.files.map((file) => (
+              <li key={file.id}>
+                <ArcoLink>
+                  <Link to={`/file/${file.id}`}>{file.filename}</Link>
+                </ArcoLink>
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </>

@@ -5,9 +5,10 @@ import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Space, Link as ArcoLink } from "@arco-design/web-react";
+import { Space, Typography, Tag } from "@arco-design/web-react";
 import { checkProblemReadPermission } from "~/utils/permission/problem";
 import { Navigator } from "~/src/Navigator";
+import { IconTag } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -60,17 +61,18 @@ export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
 
   return (
-    <Space direction="vertical" style={{ display: "block" }}>
-      <header>
-        <h1 style={{ margin: 0 }}>{problem.title}</h1>
+    <Typography>
+      <Typography.Title heading={3}>{problem.title}</Typography.Title>
+
+      <Typography.Paragraph>
         <Space>
           {problem.tags.map((tag) => (
-            <ArcoLink key={tag.name}>
-              <Link to={`/problem/tag/${tag.name}`}>#{tag.name}</Link>
-            </ArcoLink>
+            <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
+              <Tag icon={<IconTag />}>{tag.name}</Tag>
+            </Link>
           ))}
         </Space>
-      </header>
+      </Typography.Paragraph>
       <Navigator
         routes={[
           { key: ".", title: "题面" },
@@ -81,7 +83,7 @@ export default function ProblemView() {
       <main>
         <Outlet />
       </main>
-    </Space>
+    </Typography>
   );
 }
 

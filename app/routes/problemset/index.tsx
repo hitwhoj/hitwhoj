@@ -34,13 +34,7 @@ export default function ProblemsetList() {
       title: "Title",
       dataIndex: "title",
       render: (col: string, problemSet: ProblemSet) => (
-        <Link
-          to={`/problemset/${problemSet.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
-        </Link>
+        <Link to={`/problemset/${problemSet.id}`}>{col}</Link>
       ),
     },
   ];
@@ -64,6 +58,7 @@ export default function ProblemsetList() {
         columns={tableColumns}
         data={problemSets}
         hover={false}
+        border={false}
         rowKey="id"
         pagination={{
           total: problemSets.length,

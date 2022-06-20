@@ -1,11 +1,12 @@
 import type { Problem } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { Table } from "@arco-design/web-react";
+import { Space, Table, Typography } from "@arco-design/web-react";
 import { findSessionUserOptional } from "~/utils/sessions";
 import type { ProblemListData } from "~/utils/db/problem";
 import { findProblemMany } from "~/utils/db/problem";
 import { isAdmin, isUser } from "~/utils/permission";
+import { IconEyeInvisible } from "@arco-design/web-react/icon";
 
 // TODO: 分页
 type LoaderData = {
@@ -55,20 +56,6 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemIndex() {
   const { problems } = useLoaderData<LoaderData>();
-  // 一个备选方案
-  /**
-   * <List
-      header="Problem List"
-      dataSource={ problems }
-      render={(problem, index) => (
-        <List.Item key={index}>
-          <Space>
-            <span> { problem.title } </span>
-          </Space>
-        </List.Item>
-      )}
-    />
-   *  */
   const tableColumns = [
     {
       title: "#",
@@ -76,37 +63,41 @@ export default function ProblemIndex() {
       render: (col: string) => <Link to={`/problem/${col}`}>{col}</Link>,
     },
     {
-      title: "Title",
+      title: "题目",
       dataIndex: "title",
       render: (
         col: string,
         problem: Pick<Problem, "id" | "title" | "private">
       ) => (
-        <Link
-          to={`/problem/${problem.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
+        <Link to={`/problem/${problem.id}`}>
+          <Space>
+            <span>{col}</span>
+            {problem.private && <IconEyeInvisible />}
+          </Space>
         </Link>
       ),
+    },
+    {
+      title: "提交",
+      dataIndex: "_count.relatedRecords",
     },
   ];
 
   return (
-    <Table
-      columns={tableColumns}
-      data={problems}
-      hover={false}
-      rowKey="id"
-      // TODO: 毕竟这是个假的分页qwq
-      pagination={{
-        total: problems.length,
-        defaultPageSize: 20,
-        showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
-        showJumper: true,
-      }}
-    />
+    <Typography>
+      <Typography.Title heading={3}>题目列表</Typography.Title>
+
+      <Typography.Paragraph>
+        <Table
+          columns={tableColumns}
+          data={problems}
+          hover={false}
+          border={false}
+          rowKey="id"
+          pagination={false}
+        />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

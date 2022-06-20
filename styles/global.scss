@@ -114,3 +114,16 @@ body[arco-theme="dark"] {
     padding: 0 20%;
   }
 }
+
+::selection {
+  background: var(--color-primary-light-2);
+}
+
+.navbar-left .arco-tabs-header-title-text:hover {
+  background-color: transparent;
+}
+
+.arco-table .arco-table-th {
+  background-color: transparent;
+  font-weight: bold;
+}
