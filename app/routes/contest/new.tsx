@@ -86,7 +86,7 @@ export default function ContestNew() {
 
   return (
     <Typography>
-      <Typography.Title heading={4}>创建比赛</Typography.Title>
+      <Typography.Title heading={3}>创建比赛</Typography.Title>
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
         <FormItem label="标题" required layout="vertical">
           <Input name="title" id="title" required />

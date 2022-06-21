@@ -1,4 +1,4 @@
-import { NavLink, useMatches, useNavigate } from "@remix-run/react";
+import { NavLink, useMatches } from "@remix-run/react";
 import { Menu, Space, Tabs } from "@arco-design/web-react";
 import {
   IconArchive,
@@ -62,8 +62,6 @@ export function NavbarTabs() {
     setSelectedKey(selectedKey ? selectedKey.href : "");
   }, [matches]);
 
-  const navigate = useNavigate();
-
   return (
     <Tabs
       activeTab={selectedKey}
@@ -71,19 +69,17 @@ export function NavbarTabs() {
       size="large"
       type="text"
       className="navbar-left"
-      onClickTab={(key) => {
-        navigate(key);
-        setSelectedKey(key);
-      }}
     >
       {navBarRoutes.map((route) => (
         <Tabs.TabPane
           key={route.href}
           title={
-            <Space>
-              {route.icon}
-              {route.name}
-            </Space>
+            <NavLink to={route.href}>
+              <Space>
+                {route.icon}
+                {route.name}
+              </Space>
+            </NavLink>
           }
         />
       ))}

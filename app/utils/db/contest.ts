@@ -26,11 +26,6 @@ export function findContestList(where: ContestWhereInput) {
           name: true,
         },
       },
-      _count: {
-        select: {
-          attendees: true,
-        },
-      },
     },
   });
 }

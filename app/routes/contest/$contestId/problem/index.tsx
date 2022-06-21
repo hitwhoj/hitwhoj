@@ -108,3 +108,6 @@ export default function ContestProblemIndex() {
     />
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

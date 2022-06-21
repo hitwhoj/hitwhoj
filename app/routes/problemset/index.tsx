@@ -2,8 +2,9 @@ import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Table, Grid, Button, Typography } from "@arco-design/web-react";
+import { Table, Grid, Button, Typography, Empty } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
+import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -37,30 +38,6 @@ export const meta: MetaFunction<LoaderData> = () => ({
 
 export default function ProblemsetList() {
   const { problemSets } = useLoaderData<LoaderData>();
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      width: 32,
-    },
-    {
-      title: "题单",
-      dataIndex: "title",
-      render: (
-        col: string,
-        problemSet: Pick<ProblemSet, "id" | "title" | "private"> & {
-          _count: {
-            problems: number;
-          };
-        }
-      ) => <Link to={`/problemset/${problemSet.id}`}>{col}</Link>,
-    },
-    {
-      title: "题目数",
-      dataIndex: "_count.problems",
-      width: 96,
-    },
-  ];
 
   return (
     <Typography>
@@ -77,11 +54,30 @@ export default function ProblemsetList() {
 
       <Typography.Paragraph>
         <Table
-          columns={tableColumns}
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "题单",
+              render: (_, problemset) => (
+                <ProblemSetLink problemset={problemset} />
+              ),
+            },
+            {
+              title: "题目数",
+              dataIndex: "_count.problems",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
           data={problemSets}
+          rowKey="id"
+          noDataElement={<Empty description="没有题单" />}
           hover={false}
           border={false}
-          rowKey="id"
           pagination={false}
         />
       </Typography.Paragraph>

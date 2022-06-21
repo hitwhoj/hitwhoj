@@ -6,7 +6,6 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
 import { checkContestReadPermission } from "~/utils/permission/contest";
-import { ContestTags } from "~/src/contest/ContestTags";
 import type { ContestListData } from "~/utils/db/contest";
 
 type LoaderData = {
@@ -66,14 +65,11 @@ export default function ContestView() {
         {contest.title}
       </Typography.Title>
       <Typography.Paragraph className="contest-problem-hide">
-        <ContestTags contest={contest} />
-      </Typography.Paragraph>
-      <Typography.Paragraph className="contest-problem-hide">
         <Navigator
           routes={[
-            { key: ".", title: "详情" },
-            { key: "problem", title: "题目" },
-            { key: "edit", title: "编辑" },
+            { title: "详情", key: "." },
+            { title: "题目", key: "problem" },
+            { title: "编辑", key: "edit" },
           ]}
         />
       </Typography.Paragraph>

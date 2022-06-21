@@ -1,12 +1,11 @@
-import type { Problem } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
-import { Space, Table, Typography } from "@arco-design/web-react";
+import { useLoaderData } from "@remix-run/react";
+import { Table, Typography } from "@arco-design/web-react";
 import { findSessionUserOptional } from "~/utils/sessions";
 import type { ProblemListData } from "~/utils/db/problem";
 import { findProblemMany } from "~/utils/db/problem";
 import { isAdmin, isUser } from "~/utils/permission";
-import { IconEyeInvisible } from "@arco-design/web-react/icon";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 // TODO: 分页
 type LoaderData = {
@@ -56,33 +55,6 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemIndex() {
   const { problems } = useLoaderData<LoaderData>();
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      width: 32,
-    },
-    {
-      title: "题目",
-      dataIndex: "title",
-      render: (
-        col: string,
-        problem: Pick<Problem, "id" | "title" | "private">
-      ) => (
-        <Link to={`/problem/${problem.id}`}>
-          <Space>
-            <span>{col}</span>
-            {problem.private && <IconEyeInvisible />}
-          </Space>
-        </Link>
-      ),
-    },
-    {
-      title: "提交",
-      dataIndex: "_count.relatedRecords",
-      width: 64,
-    },
-  ];
 
   return (
     <Typography>
@@ -90,7 +62,24 @@ export default function ProblemIndex() {
 
       <Typography.Paragraph>
         <Table
-          columns={tableColumns}
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "题目",
+              dataIndex: "title",
+              render: (_, problem) => <ProblemLink problem={problem} />,
+            },
+            {
+              title: "提交",
+              dataIndex: "_count.relatedRecords",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
           data={problems}
           rowKey="id"
           hover={false}

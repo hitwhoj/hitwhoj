@@ -2,6 +2,7 @@ import {
   Alert,
   Button,
   Drawer,
+  Grid,
   List,
   Message,
   ResizeBox,
@@ -9,9 +10,10 @@ import {
   Space,
   Spin,
   Typography,
+  Link as ArcoLink,
 } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { Contest, Problem, Record } from "@prisma/client";
+import type { Contest, File, Problem, Record } from "@prisma/client";
 import type {
   ActionFunction,
   LinksFunction,
@@ -26,8 +28,6 @@ import {
   useTransition,
 } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
-import { ProblemMemoryLimitTag } from "~/src/problem/ProblemMemoryLimitTag";
-import { ProblemTimeLimitTag } from "~/src/problem/ProblemTimeLimitTag";
 import { invariant } from "~/utils/invariant";
 import {
   codeScheme,
@@ -52,6 +52,7 @@ import type { JudgeServer } from "server/judge.server";
 import { WsContext } from "~/utils/context/ws";
 import { UserInfoContext } from "~/utils/context/user";
 
+// 加载特殊页面样式
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
 ];
@@ -60,7 +61,9 @@ type LoaderData = {
   problem: Pick<
     Problem,
     "id" | "title" | "description" | "timeLimit" | "memoryLimit"
-  >;
+  > & {
+    files: Pick<File, "id" | "filename">[];
+  };
   records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
   contest: Pick<Contest, "id" | "beginTime" | "endTime">;
 };
@@ -92,6 +95,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
           description: true,
           timeLimit: true,
           memoryLimit: true,
+          files: {
+            select: {
+              id: true,
+              filename: true,
+            },
+          },
         },
       },
       contest: {
@@ -181,6 +190,9 @@ export const action: ActionFunction<ActionData> = async ({
   return { recordId };
 };
 
+// override monaco loader
+monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
+
 export default function ContestProblemView() {
   const { problem, records: _records, contest } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
@@ -210,9 +222,6 @@ export default function ContestProblemView() {
       "}\n"
   );
   const [visible, setVisible] = useState(false);
-
-  // override monaco loader
-  monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
 
   // load code from local storage
   useEffect(() => {
@@ -275,14 +284,14 @@ export default function ContestProblemView() {
         panes={[
           <Typography key={1} style={{ padding: "0 5%" }}>
             <Typography.Title heading={3}>
-              {`${rank}. ${problem.title}`}
+              {rank}. {problem.title}
             </Typography.Title>
 
             <Typography.Paragraph>
-              <Space>
-                <ProblemTimeLimitTag time={problem.timeLimit} />
-                <ProblemMemoryLimitTag memory={problem.memoryLimit} />
-              </Space>
+              <RecordTimeMemory
+                time={problem.timeLimit}
+                memory={problem.memoryLimit}
+              />
             </Typography.Paragraph>
 
             {isNotStarted && (
@@ -300,9 +309,26 @@ export default function ContestProblemView() {
               </Typography.Paragraph>
             )}
 
-            <Typography.Paragraph>
-              <Markdown>{problem.description}</Markdown>
-            </Typography.Paragraph>
+            <Markdown>{problem.description}</Markdown>
+
+            {problem.files.length > 0 && (
+              <>
+                <Typography.Title heading={4}>附件</Typography.Title>
+                <Typography.Paragraph>
+                  <ul>
+                    {problem.files.map((file) => (
+                      <li key={file.id}>
+                        <ArcoLink>
+                          <Link to={`/file/${file.id}`} target="_blank">
+                            {file.filename}
+                          </Link>
+                        </ArcoLink>
+                      </li>
+                    ))}
+                  </ul>
+                </Typography.Paragraph>
+              </>
+            )}
           </Typography>,
 
           <Form
@@ -324,13 +350,7 @@ export default function ContestProblemView() {
               }}
             />
             <input type="hidden" name="language" value={language} />
-            <Space
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: 10,
-              }}
-            >
+            <Grid.Row justify="space-between" style={{ padding: 10 }}>
               <Select
                 value={language}
                 onChange={(language) => setLanguage(language)}
@@ -362,10 +382,11 @@ export default function ContestProblemView() {
                   </Button>
                 )}
               </Space>
-            </Space>
+            </Grid.Row>
           </Form>,
         ]}
       />
+
       <Drawer
         visible={visible}
         width={400}
@@ -379,14 +400,12 @@ export default function ContestProblemView() {
           bordered={false}
           render={(record) => (
             <List.Item key={record.id}>
-              <Space
-                style={{ display: "flex", justifyContent: "space-between" }}
-              >
+              <Grid.Row justify="space-between">
                 <Link to={`/record/${record.id}`} target="_blank">
                   <RecordStatus status={record.status} />
                 </Link>
                 <RecordTimeMemory time={record.time} memory={record.memory} />
-              </Space>
+              </Grid.Row>
             </List.Item>
           )}
         />
@@ -394,3 +413,6 @@ export default function ContestProblemView() {
     </>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

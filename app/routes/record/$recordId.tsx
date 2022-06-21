@@ -21,6 +21,8 @@ import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { useContext, useEffect, useState } from "react";
 import { WsContext } from "~/utils/context/ws";
 import { IconCopy, IconEyeInvisible } from "@arco-design/web-react/icon";
+import { UserLink } from "~/src/user/UserLink";
+import { ContestLink } from "~/src/contest/ContestLink";
 
 type LoaderData = {
   record: Pick<
@@ -36,7 +38,10 @@ type LoaderData = {
   > & {
     submitter: Pick<User, "id" | "nickname" | "username">;
     problem: Pick<Problem, "id" | "title" | "private">;
-    contest: Pick<Contest, "id" | "title" | "private"> | null;
+    contest: Pick<
+      Contest,
+      "id" | "title" | "private" | "beginTime" | "endTime"
+    > | null;
   };
   code: string;
 };
@@ -76,6 +81,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
           id: true,
           title: true,
           private: true,
+          beginTime: true,
+          endTime: true,
         },
       },
     },
@@ -154,20 +161,7 @@ export default function RecordView() {
         data={[
           {
             label: "提交用户",
-            value: (
-              <Link to={`/user/${record.submitter.id}`}>
-                {record.submitter.nickname ? (
-                  <span>
-                    {record.submitter.nickname}{" "}
-                    <span style={{ color: "rgb(var(--gray-6))" }}>
-                      ({record.submitter.username})
-                    </span>
-                  </span>
-                ) : (
-                  record.submitter.username
-                )}
-              </Link>
-            ),
+            value: <UserLink user={record.submitter} />,
           },
           {
             label: "题目",
@@ -184,14 +178,7 @@ export default function RecordView() {
             ? [
                 {
                   label: "比赛",
-                  value: (
-                    <Link to={`/contest/${record.contest.id}`}>
-                      <Space>
-                        {record.contest.title}
-                        {record.contest.private && <IconEyeInvisible />}
-                      </Space>
-                    </Link>
-                  ),
+                  value: <ContestLink contest={record.contest} />,
                 },
               ]
             : []),

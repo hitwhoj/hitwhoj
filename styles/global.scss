@@ -76,6 +76,14 @@ body[arco-theme="dark"] {
 
 .navbar-left {
   display: none;
+
+  .arco-tabs-header-title-text {
+    padding: 0;
+
+    & > a {
+      padding: 0 8px;
+    }
+  }
 }
 
 .navbar-menu-opener {
@@ -134,4 +142,8 @@ body[arco-theme="dark"] {
 
 a > .arco-btn {
   display: block;
+}
+
+.arco-select-popup {
+  border: none;
 }
