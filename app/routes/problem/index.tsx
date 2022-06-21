@@ -60,7 +60,7 @@ export default function ProblemIndex() {
     {
       title: "#",
       dataIndex: "id",
-      render: (col: string) => <Link to={`/problem/${col}`}>{col}</Link>,
+      width: 32,
     },
     {
       title: "题目",
@@ -80,6 +80,7 @@ export default function ProblemIndex() {
     {
       title: "提交",
       dataIndex: "_count.relatedRecords",
+      width: 64,
     },
   ];
 
