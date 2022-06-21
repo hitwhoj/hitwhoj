@@ -13,7 +13,7 @@ import NavbarTop from "./components/NavbarTop";
 import { IconCopyright } from "@arco-design/web-react/icon";
 import { useFetcher } from "@remix-run/react";
 import { LoginModalContext } from "~/utils/context/modal";
-import type { LoginActionData } from "~/routes/login";
+import type { ActionData as LoginActionData } from "~/routes/login";
 import { version } from "../../../package.json";
 
 const Sider = Layout.Sider;
@@ -38,6 +38,16 @@ export default function MainLayout({ children }: LayoutProps) {
       }
     }
   }, [isFetching]);
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (!visible) {
+      setUsername("");
+      setPassword("");
+    }
+  }, [visible]);
 
   return (
     <LoginModalContext.Provider value={setVisible}>
@@ -92,15 +102,28 @@ export default function MainLayout({ children }: LayoutProps) {
       >
         <fetcher.Form method="post" action="/login">
           <Form.Item label="用户名" required>
-            <Input type="text" name="username" required disabled={isFetching} />
+            <Input
+              type="text"
+              name="username"
+              required
+              disabled={isFetching}
+              value={username}
+              onChange={(value) => setUsername(value)}
+            />
           </Form.Item>
           <Form.Item label="密码" required>
-            <Input.Password name="password" required disabled={isFetching} />
+            <Input.Password
+              name="password"
+              required
+              disabled={isFetching}
+              value={password}
+              onChange={(value) => setPassword(value)}
+            />
           </Form.Item>
           {fetcher.data?.success === false && (
             <Alert type="error" content={fetcher.data.reason} />
           )}
-          <button type="submit" style={{ display: "none" }} ref={submitRef} />
+          <button type="submit" hidden ref={submitRef} />
         </fetcher.Form>
       </Modal>
     </LoginModalContext.Provider>

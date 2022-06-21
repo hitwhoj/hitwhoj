@@ -1,16 +1,29 @@
-import type { LoaderFunction } from "@remix-run/node";
+import type { ActionFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { destroySession, findSession } from "~/utils/sessions";
 
-export const loader: LoaderFunction<Response> = async ({ request }) => {
+export type ActionData =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      reason: string;
+    };
+
+export const action: ActionFunction<Response> = async ({ request }) => {
   const session = await findSession(request);
 
   if (!session) {
-    return new Response(null, { status: 401 });
+    return json({ success: false, reason: "用户未登录" }, { status: 401 });
   }
 
-  return new Response(null, {
-    headers: {
-      "Set-Cookie": await destroySession(session),
-    },
-  });
+  return json(
+    { success: true },
+    {
+      headers: {
+        "Set-Cookie": await destroySession(session),
+      },
+    }
+  );
 };

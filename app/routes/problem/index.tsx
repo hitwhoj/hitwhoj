@@ -92,9 +92,9 @@ export default function ProblemIndex() {
         <Table
           columns={tableColumns}
           data={problems}
+          rowKey="id"
           hover={false}
           border={false}
-          rowKey="id"
           pagination={false}
         />
       </Typography.Paragraph>

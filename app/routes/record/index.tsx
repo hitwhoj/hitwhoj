@@ -134,10 +134,12 @@ export default function RecordList() {
   return (
     <Typography>
       <Typography.Title heading={3}>评测记录</Typography.Title>
+
       <Typography.Paragraph>
         <Table
           columns={columns}
           data={records}
+          rowKey="id"
           hover={false}
           border={false}
           pagination={false}

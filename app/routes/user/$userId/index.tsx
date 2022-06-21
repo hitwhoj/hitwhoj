@@ -72,8 +72,8 @@ export default function Profile() {
     <Descriptions
       column={1}
       title="用户资料"
-      data={data}
       labelStyle={{ paddingRight: 36 }}
+      data={data}
     />
   );
 }

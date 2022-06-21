@@ -1,17 +1,26 @@
-import type { Record } from "@prisma/client";
+import type { Contest, Problem, Record, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
-import { Collapse, List, Space } from "@arco-design/web-react";
+import {
+  Button,
+  Collapse,
+  Descriptions,
+  List,
+  Message,
+  Space,
+  Typography,
+} from "@arco-design/web-react";
 import type { SubtaskResult } from "../../../server/judge.types";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { useContext, useEffect, useState } from "react";
 import { WsContext } from "~/utils/context/ws";
+import { IconCopy, IconEyeInvisible } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   record: Pick<
@@ -24,7 +33,11 @@ type LoaderData = {
     | "time"
     | "memory"
     | "subtasks"
-  >;
+  > & {
+    submitter: Pick<User, "id" | "nickname" | "username">;
+    problem: Pick<Problem, "id" | "title" | "private">;
+    contest: Pick<Contest, "id" | "title" | "private"> | null;
+  };
   code: string;
 };
 
@@ -44,6 +57,27 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       time: true,
       memory: true,
       subtasks: true,
+      submitter: {
+        select: {
+          id: true,
+          nickname: true,
+          username: true,
+        },
+      },
+      problem: {
+        select: {
+          id: true,
+          title: true,
+          private: true,
+        },
+      },
+      contest: {
+        select: {
+          id: true,
+          title: true,
+          private: true,
+        },
+      },
     },
   });
 
@@ -71,6 +105,13 @@ function ResultMessage({ message }: { message: string }) {
   );
 }
 
+function getExpandedKeys(subtasks: SubtaskResult[]) {
+  return subtasks
+    .map((subtask, i) => [subtask.status, i.toString()])
+    .filter(([status, _]) => status !== "Accepted" && status !== "Pending")
+    .map(([_, name]) => name);
+}
+
 export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
   const wsc = useContext(WsContext);
@@ -80,6 +121,7 @@ export default function RecordView() {
   const [status, setStatus] = useState(record.status);
   const [subtasks, setSubtasks] = useState(record.subtasks as SubtaskResult[]);
   const [message, setMessage] = useState(record.message);
+  const [keys, setKeys] = useState<string[]>(getExpandedKeys(subtasks));
 
   useEffect(() => {
     const subscription = wsc
@@ -90,75 +132,152 @@ export default function RecordView() {
         setStatus(message.status);
         setSubtasks(message.subtasks as SubtaskResult[]);
         setMessage(message.message);
+        setKeys(getExpandedKeys(message.subtasks as SubtaskResult[]));
       });
 
     return () => subscription?.unsubscribe();
   }, [wsc]);
 
   return (
-    <>
-      <h1>{status}</h1>
-      <RecordTimeMemory time={time} memory={memory} />
+    <Typography>
+      <Typography.Title heading={3}>
+        <RecordStatus status={status} />
+      </Typography.Title>
+
+      <Typography.Paragraph>
+        <RecordTimeMemory time={time} memory={memory} />
+      </Typography.Paragraph>
+
+      <Descriptions
+        column={1}
+        labelStyle={{ paddingRight: 36 }}
+        data={[
+          {
+            label: "提交用户",
+            value: (
+              <Link to={`/user/${record.submitter.id}`}>
+                {record.submitter.nickname ? (
+                  <span>
+                    {record.submitter.nickname}{" "}
+                    <span style={{ color: "rgb(var(--gray-6))" }}>
+                      ({record.submitter.username})
+                    </span>
+                  </span>
+                ) : (
+                  record.submitter.username
+                )}
+              </Link>
+            ),
+          },
+          {
+            label: "题目",
+            value: (
+              <Link to={`/problem/${record.problem.id}`}>
+                <Space>
+                  {record.problem.title}
+                  {record.problem.private && <IconEyeInvisible />}
+                </Space>
+              </Link>
+            ),
+          },
+          ...(record.contest
+            ? [
+                {
+                  label: "比赛",
+                  value: (
+                    <Link to={`/contest/${record.contest.id}`}>
+                      <Space>
+                        {record.contest.title}
+                        {record.contest.private && <IconEyeInvisible />}
+                      </Space>
+                    </Link>
+                  ),
+                },
+              ]
+            : []),
+        ]}
+      />
+
       {message && (
         <>
-          <h2>Message</h2>
-          <Highlighter language="text" children={message} />
+          <Typography.Title heading={4}>输出信息</Typography.Title>
+          <Typography.Paragraph>
+            <Highlighter language="text" children={message} />
+          </Typography.Paragraph>
         </>
       )}
+
       {subtasks.length > 0 && (
         <>
-          <h2>Result</h2>
-          <Collapse
-            style={{ whiteSpace: "nowrap" }}
-            activeKey={subtasks
-              .map((subtask, i) => [subtask.status, i.toString()])
-              .filter(
-                ([status, _]) => status !== "Accepted" && status !== "Pending"
-              )
-              .map(([_, name]) => name)}
-          >
-            {subtasks.map((item, index) => (
-              <Collapse.Item
-                key={index}
-                name={index.toString()}
-                header={
-                  <Space>
-                    <span>Subtask #{index + 1}</span>
-                    <RecordStatus status={item.status} />
-                    <ResultMessage message={item.message} />
-                  </Space>
-                }
-                extra={
-                  <RecordTimeMemory time={item.time} memory={item.memory} />
-                }
-              >
-                <List size="small">
-                  {item.tasks.map((task, index) => (
-                    <List.Item
-                      key={index}
-                      extra={
-                        <RecordTimeMemory
-                          time={task.time}
-                          memory={task.memory}
-                        />
-                      }
-                    >
-                      <Space>
-                        <span>Task #{index + 1}</span>
-                        <RecordStatus status={task.status} />
-                        <ResultMessage message={task.message} />
-                      </Space>
-                    </List.Item>
-                  ))}
-                </List>
-              </Collapse.Item>
-            ))}
-          </Collapse>
+          <Typography.Title heading={4}>测试点结果</Typography.Title>
+          <Typography.Paragraph>
+            <Collapse
+              style={{ whiteSpace: "nowrap" }}
+              bordered={false}
+              activeKey={keys}
+              onChange={(_, keys) => setKeys(keys)}
+            >
+              {subtasks.map((item, index) => (
+                <Collapse.Item
+                  key={index}
+                  name={index.toString()}
+                  header={
+                    <Space>
+                      <span>Subtask #{index + 1}</span>
+                      <RecordStatus status={item.status} />
+                      <ResultMessage message={item.message} />
+                    </Space>
+                  }
+                  extra={
+                    <RecordTimeMemory time={item.time} memory={item.memory} />
+                  }
+                >
+                  <List size="small" bordered={false}>
+                    {item.tasks.map((task, index) => (
+                      <List.Item
+                        key={index}
+                        extra={
+                          <RecordTimeMemory
+                            time={task.time}
+                            memory={task.memory}
+                          />
+                        }
+                      >
+                        <Space>
+                          <span>Task #{index + 1}</span>
+                          <RecordStatus status={task.status} />
+                          <ResultMessage message={task.message} />
+                        </Space>
+                      </List.Item>
+                    ))}
+                  </List>
+                </Collapse.Item>
+              ))}
+            </Collapse>
+          </Typography.Paragraph>
         </>
       )}
-      <h2>Source Code</h2>
-      <Highlighter language={record.language} children={code} />
-    </>
+
+      <Typography.Title heading={4}>
+        <Space>
+          源代码
+          <Button
+            icon={<IconCopy />}
+            iconOnly
+            type="text"
+            onClick={() =>
+              navigator.clipboard.writeText(code).then(
+                () => Message.success("复制成功"),
+                () => Message.error("权限不足")
+              )
+            }
+          />
+        </Space>
+      </Typography.Title>
+      <Typography.Paragraph>
+        <Highlighter language={record.language} children={code} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

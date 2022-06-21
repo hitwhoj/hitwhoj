@@ -9,7 +9,7 @@ type Props = {
 
 export function RecordTimeMemory({ time, memory }: Props) {
   return (
-    <Space>
+    <Space size="large">
       <RecordTime time={time} />
       <RecordMemory memory={memory} />
     </Space>

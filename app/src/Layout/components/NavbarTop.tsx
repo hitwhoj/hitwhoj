@@ -1,5 +1,5 @@
-import { NavLink } from "@remix-run/react";
-import { useContext, useState } from "react";
+import { NavLink, useFetcher } from "@remix-run/react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   Grid,
   Avatar,
@@ -10,6 +10,7 @@ import {
   Button,
   Divider,
   Drawer,
+  Message,
 } from "@arco-design/web-react";
 import {
   IconUser,
@@ -21,6 +22,7 @@ import { ThemeContext } from "~/utils/context/theme";
 import { UserInfoContext } from "~/utils/context/user";
 import { LoginModalContext } from "~/utils/context/modal";
 import { NavbarMenu } from "./NavbarMenu";
+import type { ActionData as LogoutActionData } from "~/routes/logout";
 
 const Row = Grid.Row;
 const MenuItem = Menu.Item;
@@ -30,8 +32,21 @@ export default function NavbarTop() {
   const user = useContext(UserInfoContext);
 
   const setLoginVisible = useContext(LoginModalContext);
-
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const fetcher = useFetcher<LogoutActionData>();
+  const logoutButton = useRef<HTMLButtonElement | null>(null);
+  const isLoggingout = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (!isLoggingout && fetcher.data) {
+      if (fetcher.data.success) {
+        Message.success("退出成功");
+      } else {
+        Message.error("退出失败：" + fetcher.data.reason);
+      }
+    }
+  }, [isLoggingout]);
 
   return (
     <Row
@@ -67,7 +82,7 @@ export default function NavbarTop() {
           <Dropdown
             position="bottom"
             droplist={
-              <Menu>
+              <Menu style={{ border: "none" }}>
                 <NavLink to={`/user/${user.id}`}>
                   <MenuItem key="user">
                     {user.nickname && <b>{user.nickname} </b>}
@@ -81,18 +96,22 @@ export default function NavbarTop() {
                 <NavLink to={`/user/${user.id}/edit`}>
                   <MenuItem key="settings">设置</MenuItem>
                 </NavLink>
-                <NavLink to="/logout">
-                  <MenuItem
-                    key="logout"
-                    style={{ color: "rgb(var(--danger-6))" }}
-                  >
-                    登出
-                  </MenuItem>
-                </NavLink>
+                <MenuItem
+                  key="logout"
+                  style={{ color: "rgb(var(--danger-6))" }}
+                  onClick={() => logoutButton.current?.click()}
+                >
+                  登出
+                </MenuItem>
               </Menu>
             }
           >
-            <Avatar style={{ backgroundColor: "#00d0b6", cursor: "pointer" }}>
+            <Avatar
+              style={{
+                cursor: "pointer",
+                backgroundColor: "rgb(var(--primary-6))",
+              }}
+            >
               {user.avatar ? (
                 <img alt="avatar" src={user.avatar} />
               ) : (
@@ -101,7 +120,7 @@ export default function NavbarTop() {
             </Avatar>
           </Dropdown>
         ) : (
-          <Space size="medium">
+          <Space>
             <Button onClick={() => setLoginVisible(true)}>登录</Button>
             <Button type="primary">注册</Button>
           </Space>
@@ -120,6 +139,10 @@ export default function NavbarTop() {
       >
         <NavbarMenu close={() => setMenuVisible(false)} />
       </Drawer>
+
+      <fetcher.Form method="post" action="/logout" hidden>
+        <button type="submit" hidden ref={logoutButton} />
+      </fetcher.Form>
     </Row>
   );
 }

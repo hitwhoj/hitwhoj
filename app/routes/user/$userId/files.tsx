@@ -123,7 +123,7 @@ function UserFileUploader() {
         type="file"
         name="file"
         multiple
-        style={{ display: "none" }}
+        hidden
         ref={inputRef}
         onInput={() => fetcher.submit(formRef.current)}
       />

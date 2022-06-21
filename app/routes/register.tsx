@@ -5,7 +5,7 @@ import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 
-export type RegisterActionData =
+export type ActionData =
   | {
       success: true;
     }
