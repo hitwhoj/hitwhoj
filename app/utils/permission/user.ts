@@ -1,5 +1,6 @@
 import { isAdmin, isUser } from "~/utils/permission";
 import { findSessionUser, findSessionUserOptional } from "~/utils/sessions";
+import { db } from "~/utils/server/db.server";
 
 /**
  * 检查是否对用户具有写权限
@@ -15,7 +16,7 @@ export async function checkUserWritePermission(
 ) {
   const { id: self, role } = await findSessionUser(request);
 
-  if (isAdmin(role) || self === target) return;
+  if (isAdmin(role) || (isUser(role) && self === target)) return;
 
   throw new Response("权限不足", { status: 403 });
 }
@@ -34,4 +35,13 @@ export async function checkUserReadPermission(request: Request) {
   if (!self || isUser(self.role)) return;
 
   throw new Response("权限不足", { status: 403 });
+}
+
+/**
+ * 检查用户名是否被占用
+ */
+export async function checkUsernameTaken(username: string) {
+  const user = await db.user.findUnique({ where: { username } });
+
+  return !!user;
 }

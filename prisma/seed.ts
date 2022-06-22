@@ -34,7 +34,7 @@ async function seed() {
 
   await prisma.user.update({
     where: { id: alice },
-    data: { avatar: `/file/${jiaran}/raw` },
+    data: { avatar: `/file/${jiaran}/avatar.jpg` },
   });
 
   const { id: bob } = await prisma.user.create({
@@ -65,7 +65,7 @@ async function seed() {
 
   await prisma.user.update({
     where: { id: cherry },
-    data: { avatar: `/file/${chenrui}/raw` },
+    data: { avatar: `/file/${chenrui}/avatar.png` },
   });
 
   const { id: david } = await prisma.user.create({
@@ -74,7 +74,17 @@ async function seed() {
       username: "David",
       password: "david",
       nickname: "蒙古上单",
+      role: SystemUserRole.Banned,
     },
+  });
+
+  await prisma.user.createMany({
+    data: [
+      { username: "Alice2", password: "alice2", role: SystemUserRole.Su },
+      { username: "Bob2", password: "bob2", role: SystemUserRole.Admin },
+      { username: "Cherry2", password: "cherry2", role: SystemUserRole.User },
+      { username: "David2", password: "david2", role: SystemUserRole.Banned },
+    ],
   });
 
   const { id: p1 } = await prisma.problem.create({
