@@ -64,7 +64,7 @@ export default function ContestTag() {
 
   return (
     <Typography>
-      <Typography.Title heading={2}>比赛标签：{tag}</Typography.Title>
+      <Typography.Title heading={3}>比赛标签：{tag}</Typography.Title>
       <Typography.Paragraph>
         <ContestList contests={contests} />
       </Typography.Paragraph>

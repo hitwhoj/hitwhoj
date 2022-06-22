@@ -1,13 +1,14 @@
-import { Descriptions, Space, Typography } from "@arco-design/web-react";
+import { Descriptions, Typography } from "@arco-design/web-react";
 import type { Contest, ContestTag, Team } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { checkContestReadPermission } from "~/utils/permission/contest";
-import { IconUserGroup } from "@arco-design/web-react/icon";
+import { formatDateTime } from "~/utils/tools";
+import { TeamLink } from "~/src/team/TeamLink";
 
 type LoaderData = {
   contest: Pick<
@@ -75,38 +76,25 @@ export default function ContestIndex() {
         data={[
           {
             label: "开始时间",
-            value: new Intl.DateTimeFormat("zh-CN", {
-              dateStyle: "short",
-              timeStyle: "short",
-            }).format(new Date(contest.beginTime)),
+            value: formatDateTime(contest.beginTime),
           },
           {
             label: "结束时间",
-            value: new Intl.DateTimeFormat("zh-CN", {
-              dateStyle: "short",
-              timeStyle: "short",
-            }).format(new Date(contest.endTime)),
+            value: formatDateTime(contest.endTime),
           },
           {
             label: "比赛时长",
-            value: `${
+            value: `${(
               (new Date(contest.endTime).getTime() -
                 new Date(contest.beginTime).getTime()) /
-              3600_000
-            } 小时`,
+              3_600_000
+            ).toFixed(1)} 小时`,
           },
           ...(contest.team
             ? [
                 {
                   label: "所属团队",
-                  value: (
-                    <Link to={`/team/${contest.team.id}`}>
-                      <Space>
-                        <IconUserGroup />
-                        {contest.team.name}
-                      </Space>
-                    </Link>
-                  ),
+                  value: <TeamLink team={contest.team} />,
                 },
               ]
             : []),

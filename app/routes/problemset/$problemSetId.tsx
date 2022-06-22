@@ -1,16 +1,11 @@
 import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import {
-  Outlet,
-  useLoaderData,
-  useMatches,
-  useNavigate,
-} from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Tabs } from "@arco-design/web-react";
-const TabPane = Tabs.TabPane;
+import { Typography } from "@arco-design/web-react";
+import { Navigator } from "~/src/Navigator";
 
 type LoaderData = {
   problemSet: ProblemSet;
@@ -41,19 +36,24 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export default function Problemset() {
   const { problemSet } = useLoaderData<LoaderData>();
-  const navigate = useNavigate();
-  const { pathname } = useMatches().at(-1)!;
-  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
-    <>
-      <h1>{problemSet.title}</h1>
-      <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
-        <TabPane key="." title="详情" />
-        <TabPane key="edit" title="编辑" />
-      </Tabs>
-      <Outlet />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>{problemSet.title}</Typography.Title>
+
+      <Typography.Paragraph>
+        <Navigator
+          routes={[
+            { title: "详情", key: "." },
+            { title: "编辑", key: "edit" },
+          ]}
+        />
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
+        <Outlet />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

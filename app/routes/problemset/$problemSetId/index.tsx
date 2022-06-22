@@ -1,15 +1,17 @@
 import type { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Space, Tag, Table } from "@arco-design/web-react";
+import { Table, Typography, Empty } from "@arco-design/web-react";
+import { Markdown } from "~/src/Markdown";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 type LoaderData = {
   problemSet: ProblemSet & {
     tags: ProblemSetTag[];
-    problems: Pick<Problem, "id" | "title">[];
+    problems: Pick<Problem, "id" | "title" | "private">[];
   };
 };
 
@@ -26,6 +28,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
         select: {
           id: true,
           title: true,
+          private: true,
         },
       },
     },
@@ -42,55 +45,32 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
 
 export default function ProblemSetIndex() {
   const { problemSet } = useLoaderData<LoaderData>();
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (col: string) => <Link to={`/problem/${col}`}>{col}</Link>,
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      render: (col: string, problem: Pick<Problem, "id" | "title">) => (
-        <Link to={`/problem/${problem.id}`}>{col}</Link>
-      ),
-    },
-  ];
 
   return (
-    <>
-      <p>{problemSet.description}</p>
-      <h2>标签</h2>
-      {problemSet.tags.length ? (
-        <Space size="medium">
-          {problemSet.tags.map((tag) => (
-            <Link to={`/problemset/tag/${tag.name}`} key={tag.name}>
-              <Tag>#{tag.name}</Tag>
-            </Link>
-          ))}
-        </Space>
-      ) : (
-        <div>没有标签捏</div>
-      )}
-      <h2>题目</h2>
-      {problemSet.problems.length ? (
-        <Table
-          columns={tableColumns}
-          data={problemSet.problems}
-          hover={false}
-          // TODO: 毕竟这是个假的分页qwq
-          pagination={{
-            total: problemSet.problems.length,
-            defaultPageSize: 20,
-            showTotal: (total: number) =>
-              `Total ${Math.ceil(total / 20)} pages`,
-            showJumper: true,
-          }}
-        />
-      ) : (
-        <div>没有题目捏</div>
-      )}
-    </>
+    <Typography>
+      <Markdown>{problemSet.description}</Markdown>
+
+      <Typography.Title heading={4}>题目</Typography.Title>
+      <Table
+        columns={[
+          {
+            title: "#",
+            dataIndex: "id",
+            cellStyle: { width: "5%", whiteSpace: "nowrap" },
+          },
+          {
+            title: "题目",
+            render: (_, problem) => <ProblemLink problem={problem} />,
+          },
+        ]}
+        data={problemSet.problems}
+        rowKey="id"
+        hover={false}
+        border={false}
+        pagination={false}
+        noDataElement={<Empty description="没有题目" />}
+      />
+    </Typography>
   );
 }
 

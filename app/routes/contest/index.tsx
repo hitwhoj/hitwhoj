@@ -1,4 +1,4 @@
-import { Button, Typography } from "@arco-design/web-react";
+import { Button, Grid, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
@@ -54,22 +54,16 @@ export default function ContestListIndex() {
   return (
     <Typography>
       <Typography.Title heading={3}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span>比赛列表</span>
+        <Grid.Row justify="space-between" align="center">
+          比赛列表
           {user && isAdmin(user.role) && (
-            <Button type="primary" icon={<IconPlus />}>
-              <Link to="/contest/new" style={{ display: "inline-flex" }}>
+            <Link to="/contest/new">
+              <Button type="primary" icon={<IconPlus />}>
                 新建比赛
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           )}
-        </div>
+        </Grid.Row>
       </Typography.Title>
       <Typography.Paragraph>
         <ContestList contests={contests} />

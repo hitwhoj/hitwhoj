@@ -15,7 +15,7 @@ import {
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { Table, Button, Space } from "@arco-design/web-react";
+import { Table, Button, Space, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
@@ -170,7 +170,7 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <Button
-        type="text"
+        type="primary"
         status="danger"
         htmlType="submit"
         name="_action"
@@ -213,17 +213,20 @@ const columns: ColumnProps<ProblemFile>[] = [
     title: "操作",
     dataIndex: "action",
     render: (_, file) => <ProblemFileRemoveButton file={file} />,
+    align: "center",
+    cellStyle: { width: "5%", whiteSpace: "nowrap" },
   },
 ];
 
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
   return (
     <Table
-      rowKey="id"
       columns={columns}
       data={files}
+      rowKey="id"
+      hover={false}
+      border={false}
       pagination={false}
-      size="small"
     />
   );
 }
@@ -234,37 +237,29 @@ export default function ProblemData() {
   } = useLoaderData<LoaderData>();
 
   return (
-    <div className="problem-data-grid">
-      <div>
-        <h2>测试数据</h2>
-        <p>用于评测的数据文件</p>
-      </div>
+    <Typography>
+      <Typography.Title heading={4}>测试数据</Typography.Title>
+      <Typography.Paragraph>用于评测的数据文件</Typography.Paragraph>
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader
+          action={ActionType.UploadData}
+          uploadText="上传数据"
+        />
+        <ProblemFileList files={data} />
+      </Space>
 
-      <div>
-        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-          <ProblemFileUploader
-            action={ActionType.UploadData}
-            uploadText="上传数据捏"
-          />
-          <ProblemFileList files={data} />
-        </Space>
-      </div>
-
-      <div>
-        <h2>附加文件</h2>
-        <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      </div>
-
-      <div>
-        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-          <ProblemFileUploader
-            action={ActionType.UploadFile}
-            uploadText="上传文件捏"
-          />
-          <ProblemFileList files={files} />
-        </Space>
-      </div>
-    </div>
+      <Typography.Title heading={4}>附加文件</Typography.Title>
+      <Typography.Paragraph>
+        题目的附加资料，例如样例数据、PDF 题面等
+      </Typography.Paragraph>
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader
+          action={ActionType.UploadFile}
+          uploadText="上传文件"
+        />
+        <ProblemFileList files={files} />
+      </Space>
+    </Typography>
   );
 }
 

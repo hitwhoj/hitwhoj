@@ -32,9 +32,8 @@ import {
   Tag,
   Typography,
   Message,
-  List,
-  Grid,
   Alert,
+  Table,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useRef, useState } from "react";
@@ -109,7 +108,19 @@ enum ActionType {
   MoveProblemDown = "MoveProblemDown",
 }
 
-export const action: ActionFunction = async ({ params, request }) => {
+type ActionData =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      reason: string;
+    };
+
+export const action: ActionFunction<ActionData> = async ({
+  params,
+  request,
+}) => {
   const contestId = invariant(idScheme, params.contestId, {
     status: 404,
   });
@@ -142,7 +153,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return { success: true };
     }
 
     // 删除题目
@@ -184,7 +195,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return { success: true };
     }
 
     case ActionType.MoveProblemUp:
@@ -237,7 +248,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         data: { contestId, problemId: target.problemId, rank: record.rank },
       });
 
-      return null;
+      return { success: true };
     }
 
     // 创建标签
@@ -256,7 +267,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return { success: true };
     }
 
     // 删除标签
@@ -274,7 +285,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return { success: true };
     }
 
     // 更新比赛信息
@@ -307,7 +318,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return { success: true };
     }
   }
 
@@ -421,13 +432,13 @@ function ContestInformationEditor({
 }
 
 function ContestTagItem({ name }: { name: string }) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<ActionData>();
   const isUpdating = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (fetcher.submission && !isUpdating) {
+    if (fetcher.data && !isUpdating) {
       setVisible(false);
     }
   }, [isUpdating]);
@@ -440,7 +451,7 @@ function ContestTagItem({ name }: { name: string }) {
       onClose={() => fetcher.submit(formRef.current)}
     >
       {name}
-      <fetcher.Form method="post" ref={formRef}>
+      <fetcher.Form method="post" ref={formRef} hidden>
         <input type="hidden" name="tag" value={name} />
         <input type="hidden" name="_action" value={ActionType.DeleteTag} />
       </fetcher.Form>
@@ -449,19 +460,19 @@ function ContestTagItem({ name }: { name: string }) {
 }
 
 function ContestTagEditor({ tags }: { tags: Pick<ContestTag, "name">[] }) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<ActionData>();
   const isUpdating = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
   const [showInput, setShowInput] = useState(false);
 
   useEffect(() => {
-    if (fetcher.submission && !isUpdating) {
+    if (fetcher.data && !isUpdating) {
       setShowInput(false);
     }
   }, [isUpdating]);
 
   return (
-    <Space>
+    <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
       {tags.map(({ name }) => (
         <ContestTagItem key={name} name={name} />
       ))}
@@ -497,7 +508,7 @@ function ContestTagEditor({ tags }: { tags: Pick<ContestTag, "name">[] }) {
           </Tag>
         )}
       </fetcher.Form>
-    </Space>
+    </div>
   );
 }
 
@@ -563,26 +574,44 @@ function ContestProblemEditor({
   return (
     <>
       <Typography.Paragraph>
-        <List
-          dataSource={problems}
-          bordered={false}
-          render={({ rank, problem: { id, title } }, index) => (
-            <List.Item key={id}>
-              <Grid.Row justify="space-between" align="center">
-                <Space size="large">
-                  <Tag>{String.fromCharCode(64 + rank)}</Tag>
-                  <Link to={`/problem/${id}`} target="_blank">
-                    {title}
-                  </Link>
-                </Space>
-                <ContestProblemEditItem
-                  id={id}
-                  isFirst={index === 0}
-                  isLast={index === problems.length - 1}
-                />
-              </Grid.Row>
-            </List.Item>
-          )}
+        <Table
+          columns={[
+            {
+              title: "#",
+              dataIndex: "rank",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              render(rank) {
+                return String.fromCharCode(0x40 + rank);
+              },
+            },
+            {
+              title: "题目",
+              render(_, { problem }) {
+                return (
+                  <Link to={`/problem/${problem.id}`}>{problem.title}</Link>
+                );
+              },
+            },
+            {
+              title: "操作",
+              render(_, { rank, problem }) {
+                return (
+                  <ContestProblemEditItem
+                    id={problem.id}
+                    isFirst={rank === 1}
+                    isLast={rank === problems.length}
+                  />
+                );
+              },
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+          data={problems}
+          hover={false}
+          border={false}
+          pagination={false}
         />
       </Typography.Paragraph>
 
