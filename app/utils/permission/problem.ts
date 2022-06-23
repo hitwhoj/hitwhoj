@@ -1,4 +1,4 @@
-import { isAdmin, isTeamAdmin } from "~/utils/permission";
+import { isAdmin, isTeamAdmin, isUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
 import { findSessionUser, findSessionUserOptional } from "~/utils/sessions";
 
@@ -113,7 +113,10 @@ export async function checkProblemSubmitPermission(
       },
       team: {
         select: {
-          id: true,
+          members: {
+            where: { userId: self.id },
+            select: { role: true },
+          },
         },
       },
     },
@@ -128,32 +131,23 @@ export async function checkProblemSubmitPermission(
     return;
   }
 
-  // 创建者可以提交自己的题目
-  if (problem.creator.id === self.id) {
-    return;
-  }
-
-  // 公开的题目可以提交
-  if (!problem.private) {
-    return;
-  }
-
-  // 团队创建的题目，如果当前用户是团队的管理员，则可以提交
-  if (problem.team) {
-    const member = await db.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: self.id,
-          teamId: problem.team.id,
-        },
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    if (member && isTeamAdmin(member.role)) {
+  if (isUser(self.role)) {
+    // 创建者可以提交自己的题目
+    if (problem.creator.id === self.id) {
       return;
+    }
+
+    // 公开的题目可以提交
+    if (!problem.private) {
+      return;
+    }
+
+    // 团队创建的题目，如果当前用户是团队的管理员，则可以提交
+    if (problem.team) {
+      const role = problem.team.members.at(0)?.role;
+      if (role && isTeamAdmin(role)) {
+        return;
+      }
     }
   }
 
@@ -167,10 +161,11 @@ export async function checkProblemSubmitPermission(
  *
  * - 是系统管理员
  * - 是题目的创建者
+ * - 是题目所属团队的管理员
  *
- * 注意：团队的管理员也没有更新题目的权限，如果题目创建者退出了团队，则需要提前将题目的所有权转移
+ * 注意被封禁用户无法更新自己的题目
  */
-export async function checkProblemUpdatePermission(
+export async function checkProblemWritePermission(
   request: Request,
   problemId: number
 ) {
@@ -186,6 +181,14 @@ export async function checkProblemUpdatePermission(
           id: true,
         },
       },
+      team: {
+        select: {
+          members: {
+            where: { userId: self.id },
+            select: { role: true },
+          },
+        },
+      },
     },
   });
 
@@ -198,9 +201,21 @@ export async function checkProblemUpdatePermission(
     return;
   }
 
-  // 创建者可以更新自己的题目
-  if (problem.creator.id === self.id) {
-    return;
+  // 封禁用户除外
+  if (isUser(self.role)) {
+    // 创建者可以更新自己的题目
+    if (problem.creator.id === self.id) {
+      return;
+    }
+
+    // 团队管理员也可以直接修改题目
+    if (problem.team) {
+      const role = problem.team.members.at(0)?.role;
+
+      if (role && isTeamAdmin(role)) {
+        return;
+      }
+    }
   }
 
   throw new Response("您没有权限更新该题目", { status: 403 });

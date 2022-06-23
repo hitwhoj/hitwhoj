@@ -30,7 +30,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-
   await checkUserWritePermission(request, userId);
 
   const user = await db.user.findUnique({
@@ -62,7 +61,6 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-
   await checkUserWritePermission(request, userId);
 
   const form = await unstable_parseMultipartFormData(request, handler);

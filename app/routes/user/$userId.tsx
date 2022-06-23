@@ -25,7 +25,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
 
-  await checkUserReadPermission(request);
+  await checkUserReadPermission(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

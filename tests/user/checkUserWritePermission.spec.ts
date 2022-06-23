@@ -1,40 +1,35 @@
 import { Request } from "@remix-run/node";
-import { commitSession } from "~/utils/sessions";
 import { checkUserWritePermission } from "~/utils/permission/user";
-import { rejects, resolves } from "../tools";
-
-async function createRequest(userId: number) {
-  return new Request("http://localhost:8080/", {
-    headers: { Cookie: `${(await commitSession(userId)).split(";")[0]}` },
-  });
-}
-
-let root: Request;
-let admin: Request;
-let user: Request;
-let banned: Request;
-const guest = new Request("http://localhost:8080/");
-
-// 预设
-const rootUid = 1;
-const adminUid = 2;
-const userUid = 3;
-const bannedUid = 4;
-const rootUid2 = 5;
-const adminUid2 = 6;
-const userUid2 = 7;
-const bannedUid2 = 8;
-
-// 登录用户
-beforeAll(async () => {
-  root = await createRequest(1);
-  admin = await createRequest(2);
-  user = await createRequest(3);
-  banned = await createRequest(4);
-});
+import {
+  adminUid,
+  adminUid2,
+  bannedUid,
+  bannedUid2,
+  createRequest,
+  rejects,
+  resolves,
+  rootUid,
+  rootUid2,
+  userUid,
+  userUid2,
+} from "../tools";
 
 // 测试修改权限
 describe("checkUserWritePermission", () => {
+  let root: Request;
+  let admin: Request;
+  let user: Request;
+  let banned: Request;
+  let guest: Request;
+
+  before(async () => {
+    root = await createRequest(1);
+    admin = await createRequest(2);
+    user = await createRequest(3);
+    banned = await createRequest(4);
+    guest = new Request("http://localhost:8080/");
+  });
+
   // Root
   it("Root 可以修改自己", () =>
     resolves(checkUserWritePermission(root, rootUid)));
@@ -78,7 +73,7 @@ describe("checkUserWritePermission", () => {
     rejects(checkUserWritePermission(banned, adminUid)));
   it("Banned 不可以修改 User", () =>
     rejects(checkUserWritePermission(banned, userUid)));
-  it("Banned 可以修改自己", () =>
+  it("Banned 不可以修改自己", () =>
     rejects(checkUserWritePermission(banned, bannedUid)));
   it("Banned 不可以修改其他 Banned", () =>
     rejects(checkUserWritePermission(banned, bannedUid2)));

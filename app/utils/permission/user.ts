@@ -1,5 +1,5 @@
 import { isAdmin, isUser } from "~/utils/permission";
-import { findSessionUser, findSessionUserOptional } from "~/utils/sessions";
+import { findSessionUser } from "~/utils/sessions";
 import { db } from "~/utils/server/db.server";
 
 /**
@@ -24,17 +24,13 @@ export async function checkUserWritePermission(
 /**
  * 检查是否对用户具有读权限
  *
- * 必须满足以下条件之一：
- *
- * - 当前是访客
- * - 当前用户没有被封禁
+ * 全都满足
  */
-export async function checkUserReadPermission(request: Request) {
-  const self = await findSessionUserOptional(request);
-
-  if (!self || isUser(self.role)) return;
-
-  throw new Response("权限不足", { status: 403 });
+export async function checkUserReadPermission(
+  _request: Request,
+  _target: number
+) {
+  return true;
 }
 
 /**
