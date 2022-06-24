@@ -75,7 +75,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       endTime,
       system,
       team: { connect: { id: teamId } },
-      creator: { connect: { id: self } },
+      mods: { connect: [{ id: self }] },
     },
   });
 

@@ -226,7 +226,7 @@ this is language whatthefuck
       endTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
 
-      creator: { connect: { id: cherry } },
+      mods: { connect: [{ id: cherry }] },
       attendees: { connect: [{ id: david }, { id: alice }] },
       juries: { connect: { id: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
@@ -247,7 +247,7 @@ this is language whatthefuck
       endTime: new Date(Date.now() + 3600000),
       system: ContestSystem.IOI,
 
-      creator: { connect: { id: alice } },
+      mods: { connect: [{ id: alice }] },
       tags: { create: [{ name: "a-soul" }] },
       problems: {
         create: [

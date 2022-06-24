@@ -9,7 +9,6 @@ import { Typography } from "@arco-design/web-react";
 
 type LoaderData = {
   createdProblemSets: Pick<ProblemSet, "id" | "title">[];
-  createdContests: Pick<Contest, "id" | "title">[];
   attendedContests: Pick<Contest, "id" | "title">[];
 };
 
@@ -32,12 +31,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
           title: true,
         },
       },
-      createdContests: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
       attendedContests: {
         select: {
           id: true,
@@ -55,8 +48,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
 };
 
 export default function UserStatistics() {
-  const { createdProblemSets, createdContests, attendedContests } =
-    useLoaderData<LoaderData>();
+  const { createdProblemSets, attendedContests } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
@@ -69,21 +61,6 @@ export default function UserStatistics() {
                 <Link to={`/problemset/${problemset.id}`}>
                   {problemset.title}
                 </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>没有喵</div>
-        )}
-      </Typography.Paragraph>
-
-      <Typography.Title heading={4}>创建的比赛</Typography.Title>
-      <Typography.Paragraph>
-        {createdContests.length ? (
-          <ul>
-            {createdContests.map((contest) => (
-              <li key={contest.id}>
-                <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
               </li>
             ))}
           </ul>

@@ -66,7 +66,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
       beginTime,
       endTime,
       system,
-      creator: { connect: { id: self } },
+      mods: { connect: [{ id: self }] },
     },
   });
 

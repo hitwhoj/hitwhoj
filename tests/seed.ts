@@ -1,10 +1,16 @@
-import { PrismaClient, SystemUserRole, TeamMemberRole } from "@prisma/client";
+import {
+  ContestSystem,
+  PrismaClient,
+  SystemUserRole,
+  TeamMemberRole,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function seed() {
   await prisma.user.createMany({
     data: [
+      // common roles
       { username: "Alice", password: "alice", role: SystemUserRole.Su },
       { username: "Bob", password: "bob", role: SystemUserRole.Admin },
       { username: "Cherry", password: "cherry", role: SystemUserRole.User },
@@ -80,6 +86,288 @@ async function seed() {
       { title: "Team D Prv", creatorId: 1, teamId: 4, private: true },
       { title: "Team D Pub", creatorId: 1, teamId: 4, private: false },
     ],
+  });
+
+  const year = 356 * 24 * 60 * 60 * 1000;
+  const twoYearsAgo = new Date(Date.now() - year * 2);
+  const oneYearAgo = new Date(Date.now() - year);
+  const oneYearLater = new Date(Date.now() + year);
+  const twoYearsLater = new Date(Date.now() + year * 2);
+
+  // Running ACM Contest
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Mods Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: false,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Mods Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: true,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Juries Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: false,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Juries Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: true,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Attendees Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: false,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Attendees Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: true,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Guest Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: false,
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Running ACM Contest Guest Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearAgo,
+      endTime: oneYearLater,
+      private: true,
+    },
+  });
+
+  // Not Started ACM Contest
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Mods Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: false,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Mods Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: true,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Juries Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: false,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Juries Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: true,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Attendees Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: false,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Attendees Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: true,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Guest Public",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: false,
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Not Started ACM Contest Guest Private",
+      system: ContestSystem.ACM,
+      beginTime: oneYearLater,
+      endTime: twoYearsLater,
+      private: true,
+    },
+  });
+
+  // Ended ACM Contest
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Mods Public",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: false,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Mods Private",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: true,
+      mods: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Juries Public",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: false,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Juries Private",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: true,
+      juries: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Attendees Public",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: false,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Attendees Private",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: true,
+      attendees: {
+        connect: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+      },
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Guest Public",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: false,
+    },
+  });
+  await prisma.contest.create({
+    data: {
+      title: "Ended ACM Contest Guest Private",
+      system: ContestSystem.ACM,
+      beginTime: twoYearsAgo,
+      endTime: oneYearAgo,
+      private: true,
+    },
   });
 }
 

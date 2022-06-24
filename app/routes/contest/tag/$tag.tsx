@@ -43,7 +43,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
       tags: { some: { name: tag } },
       OR: [
         { private: false },
-        { creator: { id: self.id } },
         { mods: { some: { id: self.id } } },
         { juries: { some: { id: self.id } } },
         { attendees: { some: { id: self.id } } },

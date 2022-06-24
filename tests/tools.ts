@@ -65,3 +65,30 @@ export const problemTeamCPrivate = 21;
 export const problemTeamCPublic = 22;
 export const problemTeamDPrivate = 23;
 export const problemTeamDPublic = 24;
+
+export const contestRunningACMModsPub = 1;
+export const contestRunningACMModsPrv = 2;
+export const contestRunningACMJuriesPub = 3;
+export const contestRunningACMJuriesPrv = 4;
+export const contestRunningACMAttendeesPub = 5;
+export const contestRunningACMAttendeesPrv = 6;
+export const contestRunningACMGuestsPub = 7;
+export const contestRunningACMGuestsPrv = 8;
+
+export const contestNotStartedACMModsPub = 9;
+export const contestNotStartedACMModsPrv = 10;
+export const contestNotStartedACMJuriesPub = 11;
+export const contestNotStartedACMJuriesPrv = 12;
+export const contestNotStartedACMAttendeesPub = 13;
+export const contestNotStartedACMAttendeesPrv = 14;
+export const contestNotStartedACMGuestsPub = 15;
+export const contestNotStartedACMGuestsPrv = 16;
+
+export const contestEndedACMModsPub = 17;
+export const contestEndedACMModsPrv = 18;
+export const contestEndedACMJuriesPub = 19;
+export const contestEndedACMJuriesPrv = 20;
+export const contestEndedACMAttendeesPub = 21;
+export const contestEndedACMAttendeesPrv = 22;
+export const contestEndedACMGuestsPub = 23;
+export const contestEndedACMGuestsPrv = 24;

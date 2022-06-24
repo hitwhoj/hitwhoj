@@ -30,7 +30,6 @@ model User {
   createdFiles       File[]
   createdProblems    Problem[]
   createdProblemSets ProblemSet[]
-  createdContests    Contest[]
   createdComments    Comment[]
   createdReplies     Reply[]
   createdRecords     Record[]
@@ -157,7 +156,7 @@ model Contest {
   id Int @id @default(autoincrement())
 
   title       String
-  description String
+  description String @default("")
 
   system  ContestSystem
   private Boolean       @default(true)
@@ -169,9 +168,6 @@ model Contest {
   updatedAt DateTime @updatedAt
 
   tags ContestTag[] @relation(references: [id])
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
 
   problems ContestProblem[]
 
