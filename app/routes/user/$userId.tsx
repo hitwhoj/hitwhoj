@@ -1,19 +1,16 @@
-import { Avatar, Space, Tabs, Typography } from "@arco-design/web-react";
+import { Avatar, Space, Typography } from "@arco-design/web-react";
 import { IconUser } from "@arco-design/web-react/icon";
 import type { User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import {
-  Outlet,
-  useLoaderData,
-  useMatches,
-  useNavigate,
-} from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { checkUserReadPermission } from "~/utils/permission/user";
+import { Navigator } from "~/src/Navigator";
+import { isAdmin, isUser } from "~/utils/permission";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;
@@ -52,10 +49,6 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 export default function UserProfile() {
   const { user } = useLoaderData<LoaderData>();
   const self = useContext(UserInfoContext);
-  const navigate = useNavigate();
-  const { pathname } = useMatches().at(-1)!;
-
-  const currentTab = pathname.slice(pathname.lastIndexOf("/") + 1) || ".";
 
   return (
     <Typography>
@@ -80,12 +73,19 @@ export default function UserProfile() {
       </Typography.Paragraph>
 
       <Typography.Paragraph>
-        <Tabs onChange={(key) => navigate(key)} activeTab={currentTab}>
-          <Tabs.TabPane key="." title="资料" />
-          <Tabs.TabPane key="statistics" title="统计" />
-          {self?.id === user.id && <Tabs.TabPane key="files" title="文件" />}
-          {self?.id === user.id && <Tabs.TabPane key="edit" title="编辑" />}
-        </Tabs>
+        <Navigator
+          routes={[
+            { title: "资料", key: "." },
+            { title: "统计", key: "statistics" },
+            ...(self &&
+            (isAdmin(self.role) || (isUser(self.role) && self.id === user.id))
+              ? [
+                  { title: "文件", key: "files" },
+                  { title: "编辑", key: "edit" },
+                ]
+              : []),
+          ]}
+        />
       </Typography.Paragraph>
 
       <Typography.Paragraph>
