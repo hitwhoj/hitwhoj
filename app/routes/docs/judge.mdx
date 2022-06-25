@@ -17,13 +17,22 @@ meta:
 
 评测结果有以下几种：
 
-- **Accepted**：代码通过所有测试用例，并且程序运行正常。
-- **Wrong Answer**：代码对于一部分测试数据输出了错误的结果。
-- **Time Limit Exceeded**：代码运行时间超过了题目规定的时间限制。
-- **Memory Limit Exceeded**：代码使用了超过了题目规定的内存限制。
-- **Runtime Error**：代码运行时出现了非预期的错误。
-- **Compile Error**：代码编译时出现了非预期的错误。
-- **System Error**：网站评测系统出现了非预期的错误，如果出现此类错误，请联系网站管理员。
+import { RecordStatus } from "~/src/record/RecordStatus";
+
+- <RecordStatus status="Accepted" />
+  代码通过所有测试用例，并且程序运行正常。
+- <RecordStatus status="Wrong Answer" />
+  代码对于一部分测试数据输出了错误的结果。
+- <RecordStatus status="Time Limit Exceeded" />
+  代码运行时间超过了题目规定的时间限制。
+- <RecordStatus status="Memory Limit Exceeded" />
+  代码使用了超过了题目规定的内存限制。
+- <RecordStatus status="Runtime Error" />
+  代码运行时出现了非预期的错误。
+- <RecordStatus status="Compile Error" />
+  代码编译时出现了非预期的错误。
+- <RecordStatus status="System Error" />
+  网站评测系统出现了非预期的错误，如果出现此类错误，请联系网站管理员。
 
 ## 测试数据
 
