@@ -92,3 +92,14 @@ export const contestEndedACMAttendeesPub = 21;
 export const contestEndedACMAttendeesPrv = 22;
 export const contestEndedACMGuestsPub = 23;
 export const contestEndedACMGuestsPrv = 24;
+
+export const problemSetPub = 1;
+export const problemSetPrv = 2;
+export const problemSetTeamAPub = 3;
+export const problemSetTeamAPrv = 4;
+export const problemSetTeamBPub = 5;
+export const problemSetTeamBPrv = 6;
+export const problemSetTeamCPub = 7;
+export const problemSetTeamCPrv = 8;
+export const problemSetTeamDPub = 9;
+export const problemSetTeamDPrv = 10;

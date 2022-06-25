@@ -263,7 +263,6 @@ this is language whatthefuck
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
 
-      creator: { connect: { id: david } },
       tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: { connect: [{ id: p1 }, { id: p2 }] },
     },
@@ -274,7 +273,6 @@ this is language whatthefuck
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
 
-      creator: { connect: { id: alice } },
       tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ id: p2 }, { id: p1 }] },
     },
@@ -285,7 +283,6 @@ this is language whatthefuck
       title: "嘉然可爱捏",
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
-      creator: { connect: { id: alice } },
       tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ id: p2 }, { id: p1 }] },
     },

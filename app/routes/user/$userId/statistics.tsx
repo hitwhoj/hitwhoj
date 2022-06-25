@@ -1,4 +1,4 @@
-import type { Contest, ProblemSet } from "@prisma/client";
+import type { Contest } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -8,7 +8,6 @@ import { checkUserReadPermission } from "~/utils/permission/user";
 import { Typography } from "@arco-design/web-react";
 
 type LoaderData = {
-  createdProblemSets: Pick<ProblemSet, "id" | "title">[];
   attendedContests: Pick<Contest, "id" | "title">[];
 };
 
@@ -22,15 +21,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
-      createdProblemSets: {
-        where: {
-          private: false,
-        },
-        select: {
-          id: true,
-          title: true,
-        },
-      },
       attendedContests: {
         select: {
           id: true,
@@ -48,26 +38,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
 };
 
 export default function UserStatistics() {
-  const { createdProblemSets, attendedContests } = useLoaderData<LoaderData>();
+  const { attendedContests } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
       <Typography.Title heading={4}>创建的题单</Typography.Title>
-      <Typography.Paragraph>
-        {createdProblemSets.length ? (
-          <ul>
-            {createdProblemSets.map((problemset) => (
-              <li key={problemset.id}>
-                <Link to={`/problemset/${problemset.id}`}>
-                  {problemset.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>没有喵</div>
-        )}
-      </Typography.Paragraph>
 
       <Typography.Title heading={4}>参与的比赛</Typography.Title>
       <Typography.Paragraph>

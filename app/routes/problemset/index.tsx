@@ -15,6 +15,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async () => {
+  // TODO: Add filters
   const problemSets = await db.problemSet.findMany({
     orderBy: [{ id: "asc" }],
     select: {

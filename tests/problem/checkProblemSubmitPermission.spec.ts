@@ -1,5 +1,4 @@
 import { Request } from "@remix-run/node";
-import { checkProblemSubmitPermission } from "~/utils/permission/problem";
 import {
   createRequest,
   problemAdmin2Private,
@@ -29,9 +28,9 @@ import {
   rejects,
   resolves,
 } from "../tools";
+import { checkProblemSubmitPermission as check } from "~/utils/permission/problem";
 
-// 测试提交权限
-describe("checkUserReadPermission", () => {
+describe("checkProblemSubmitPermission", () => {
   let root: Request;
   let admin: Request;
   let user: Request;
@@ -48,175 +47,175 @@ describe("checkUserReadPermission", () => {
 
   // Root
   it("Root 可以提交自己创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemRootPublic)));
+    resolves(check(root, problemRootPublic)));
   it("Root 可以提交自己创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemRootPrivate)));
+    resolves(check(root, problemRootPrivate)));
   it("Root 可以提交其他 Root 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemRoot2Public)));
+    resolves(check(root, problemRoot2Public)));
   it("Root 可以提交其他 Root 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemRoot2Private)));
+    resolves(check(root, problemRoot2Private)));
   it("Root 可以提交其他 Admin 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemAdminPublic)));
+    resolves(check(root, problemAdminPublic)));
   it("Root 可以提交其他 Admin 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemAdminPrivate)));
+    resolves(check(root, problemAdminPrivate)));
   it("Root 可以提交其他 User 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemUserPublic)));
+    resolves(check(root, problemUserPublic)));
   it("Root 可以提交其他 User 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemUserPrivate)));
+    resolves(check(root, problemUserPrivate)));
   it("Root 可以提交其他 Banned 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemBannedPublic)));
+    resolves(check(root, problemBannedPublic)));
   it("Root 可以提交其他 Banned 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemBannedPrivate)));
+    resolves(check(root, problemBannedPrivate)));
   it("Root 可以提交所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamAPublic)));
+    resolves(check(root, problemTeamAPublic)));
   it("Root 可以提交所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamAPrivate)));
+    resolves(check(root, problemTeamAPrivate)));
   it("Root 可以提交所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamBPublic)));
+    resolves(check(root, problemTeamBPublic)));
   it("Root 可以提交所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamBPrivate)));
+    resolves(check(root, problemTeamBPrivate)));
   it("Root 可以提交所属团队（Member 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamCPublic)));
+    resolves(check(root, problemTeamCPublic)));
   it("Root 可以提交所属团队（Member 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamCPrivate)));
+    resolves(check(root, problemTeamCPrivate)));
   it("Root 可以提交其他团队的公开题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamDPublic)));
+    resolves(check(root, problemTeamDPublic)));
   it("Root 可以提交其他团队的私有题目", () =>
-    resolves(checkProblemSubmitPermission(root, problemTeamDPrivate)));
+    resolves(check(root, problemTeamDPrivate)));
 
   // Admin
   it("Admin 可以提交自己创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemAdminPublic)));
+    resolves(check(admin, problemAdminPublic)));
   it("Admin 可以提交自己创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemAdminPrivate)));
+    resolves(check(admin, problemAdminPrivate)));
   it("Admin 可以提交其他 Root 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemRootPublic)));
+    resolves(check(admin, problemRootPublic)));
   it("Admin 可以提交其他 Root 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemRootPrivate)));
+    resolves(check(admin, problemRootPrivate)));
   it("Admin 可以提交其他 Admin 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemAdmin2Public)));
+    resolves(check(admin, problemAdmin2Public)));
   it("Admin 可以提交其他 Admin 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemAdmin2Private)));
+    resolves(check(admin, problemAdmin2Private)));
   it("Admin 可以提交其他 User 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemUserPublic)));
+    resolves(check(admin, problemUserPublic)));
   it("Admin 可以提交其他 User 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemUserPrivate)));
+    resolves(check(admin, problemUserPrivate)));
   it("Admin 可以提交其他 Banned 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemBannedPublic)));
+    resolves(check(admin, problemBannedPublic)));
   it("Admin 可以提交其他 Banned 创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemBannedPrivate)));
+    resolves(check(admin, problemBannedPrivate)));
   it("Admin 可以提交所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamAPublic)));
+    resolves(check(admin, problemTeamAPublic)));
   it("Admin 可以提交所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamAPrivate)));
+    resolves(check(admin, problemTeamAPrivate)));
   it("Admin 可以提交所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamBPublic)));
+    resolves(check(admin, problemTeamBPublic)));
   it("Admin 可以提交所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamBPrivate)));
+    resolves(check(admin, problemTeamBPrivate)));
   it("Admin 可以提交所属团队（Member 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamCPublic)));
+    resolves(check(admin, problemTeamCPublic)));
   it("Admin 可以提交所属团队（Member 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamCPrivate)));
+    resolves(check(admin, problemTeamCPrivate)));
   it("Admin 可以提交其他团队的公开题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamDPublic)));
+    resolves(check(admin, problemTeamDPublic)));
   it("Admin 可以提交其他团队的私有题目", () =>
-    resolves(checkProblemSubmitPermission(admin, problemTeamDPrivate)));
+    resolves(check(admin, problemTeamDPrivate)));
 
   // User
   it("User 可以提交自己创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemUserPublic)));
+    resolves(check(user, problemUserPublic)));
   it("User 可以提交自己创建的私有题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemUserPrivate)));
+    resolves(check(user, problemUserPrivate)));
   it("User 可以提交其他 Root 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemRootPublic)));
+    resolves(check(user, problemRootPublic)));
   it("User 不可以提交其他 Root 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemRootPrivate)));
+    rejects(check(user, problemRootPrivate)));
   it("User 可以提交其他 Admin 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemAdminPublic)));
+    resolves(check(user, problemAdminPublic)));
   it("User 不可以提交其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemAdminPrivate)));
+    rejects(check(user, problemAdminPrivate)));
   it("User 可以提交其他 User 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemUser2Public)));
+    resolves(check(user, problemUser2Public)));
   it("User 不可以提交其他 User 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemUser2Private)));
+    rejects(check(user, problemUser2Private)));
   it("User 可以提交其他 Banned 创建的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemBannedPublic)));
+    resolves(check(user, problemBannedPublic)));
   it("User 不可以提交其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemBannedPrivate)));
+    rejects(check(user, problemBannedPrivate)));
   it("User 可以提交所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamAPublic)));
+    resolves(check(user, problemTeamAPublic)));
   it("User 可以提交所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamAPrivate)));
+    resolves(check(user, problemTeamAPrivate)));
   it("User 可以提交所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamBPublic)));
+    resolves(check(user, problemTeamBPublic)));
   it("User 可以提交所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamBPrivate)));
+    resolves(check(user, problemTeamBPrivate)));
   it("User 可以提交所属团队（Member 身份）的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamCPublic)));
+    resolves(check(user, problemTeamCPublic)));
   it("User 不可以提交所属团队（Member 身份）的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemTeamCPrivate)));
+    rejects(check(user, problemTeamCPrivate)));
   it("User 可以提交其他团队的公开题目", () =>
-    resolves(checkProblemSubmitPermission(user, problemTeamDPublic)));
+    resolves(check(user, problemTeamDPublic)));
   it("User 不可以提交其他团队的私有题目", () =>
-    rejects(checkProblemSubmitPermission(user, problemTeamDPrivate)));
+    rejects(check(user, problemTeamDPrivate)));
 
   // Banned
   it("Banned 不可以提交自己创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemBannedPublic)));
+    rejects(check(banned, problemBannedPublic)));
   it("Banned 不可以提交自己创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemBannedPrivate)));
+    rejects(check(banned, problemBannedPrivate)));
   it("Banned 不可以提交其他 Root 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemRootPublic)));
+    rejects(check(banned, problemRootPublic)));
   it("Banned 不可以提交其他 Root 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemRootPrivate)));
+    rejects(check(banned, problemRootPrivate)));
   it("Banned 不可以提交其他 Admin 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemAdminPublic)));
+    rejects(check(banned, problemAdminPublic)));
   it("Banned 不可以提交其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemAdminPrivate)));
+    rejects(check(banned, problemAdminPrivate)));
   it("Banned 不可以提交其他 User 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemUserPublic)));
+    rejects(check(banned, problemUserPublic)));
   it("Banned 不可以提交其他 User 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemUserPrivate)));
+    rejects(check(banned, problemUserPrivate)));
   it("Banned 不可以提交其他 Banned 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemBanned2Public)));
+    rejects(check(banned, problemBanned2Public)));
   it("Banned 不可以提交其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemBanned2Private)));
+    rejects(check(banned, problemBanned2Private)));
   it("Banned 不可以提交所属团队（Owner 身份）的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamAPublic)));
+    rejects(check(banned, problemTeamAPublic)));
   it("Banned 不可以提交所属团队（Owner 身份）的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamAPrivate)));
+    rejects(check(banned, problemTeamAPrivate)));
   it("Banned 不可以提交所属团队（Admin 身份）的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamBPublic)));
+    rejects(check(banned, problemTeamBPublic)));
   it("Banned 不可以提交所属团队（Admin 身份）的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamBPrivate)));
+    rejects(check(banned, problemTeamBPrivate)));
   it("Banned 不可以提交所属团队（Member 身份）的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamCPublic)));
+    rejects(check(banned, problemTeamCPublic)));
   it("Banned 不可以提交所属团队（Member 身份）的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamCPrivate)));
+    rejects(check(banned, problemTeamCPrivate)));
   it("Banned 不可以提交其他团队的公开题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamDPublic)));
+    rejects(check(banned, problemTeamDPublic)));
   it("Banned 不可以提交其他团队的私有题目", () =>
-    rejects(checkProblemSubmitPermission(banned, problemTeamDPrivate)));
+    rejects(check(banned, problemTeamDPrivate)));
 
   // Guest
   it("Guest 不可以提交其他 Root 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemRootPublic)));
+    rejects(check(guest, problemRootPublic)));
   it("Guest 不可以提交其他 Root 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemRootPrivate)));
+    rejects(check(guest, problemRootPrivate)));
   it("Guest 不可以提交其他 Admin 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemAdminPublic)));
+    rejects(check(guest, problemAdminPublic)));
   it("Guest 不可以提交其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemAdminPrivate)));
+    rejects(check(guest, problemAdminPrivate)));
   it("Guest 不可以提交其他 User 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemUserPublic)));
+    rejects(check(guest, problemUserPublic)));
   it("Guest 不可以提交其他 User 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemUserPrivate)));
+    rejects(check(guest, problemUserPrivate)));
   it("Guest 不可以提交其他 Banned 创建的公开题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemBannedPublic)));
+    rejects(check(guest, problemBannedPublic)));
   it("Guest 不可以提交其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemBannedPrivate)));
+    rejects(check(guest, problemBannedPrivate)));
   it("Guest 不可以提交其他团队的公开题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemTeamDPublic)));
+    rejects(check(guest, problemTeamDPublic)));
   it("Guest 不可以提交其他团队的私有题目", () =>
-    rejects(checkProblemSubmitPermission(guest, problemTeamDPrivate)));
+    rejects(check(guest, problemTeamDPrivate)));
 });

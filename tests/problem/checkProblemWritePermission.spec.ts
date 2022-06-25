@@ -1,5 +1,4 @@
 import { Request } from "@remix-run/node";
-import { checkProblemWritePermission } from "~/utils/permission/problem";
 import {
   createRequest,
   problemAdmin2Private,
@@ -29,9 +28,9 @@ import {
   rejects,
   resolves,
 } from "../tools";
+import { checkProblemWritePermission as check } from "~/utils/permission/problem";
 
-// 测试修改权限
-describe("checkUserReadPermission", () => {
+describe("checkProblemWritePermission", () => {
   let root: Request;
   let admin: Request;
   let user: Request;
@@ -48,175 +47,175 @@ describe("checkUserReadPermission", () => {
 
   // Root
   it("Root 可以修改自己创建的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemRootPublic)));
+    resolves(check(root, problemRootPublic)));
   it("Root 可以修改自己创建的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemRootPrivate)));
+    resolves(check(root, problemRootPrivate)));
   it("Root 可以修改其他 Root 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemRoot2Public)));
+    resolves(check(root, problemRoot2Public)));
   it("Root 可以修改其他 Root 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemRoot2Private)));
+    resolves(check(root, problemRoot2Private)));
   it("Root 可以修改其他 Admin 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemAdminPublic)));
+    resolves(check(root, problemAdminPublic)));
   it("Root 可以修改其他 Admin 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemAdminPrivate)));
+    resolves(check(root, problemAdminPrivate)));
   it("Root 可以修改其他 User 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemUserPublic)));
+    resolves(check(root, problemUserPublic)));
   it("Root 可以修改其他 User 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemUserPrivate)));
+    resolves(check(root, problemUserPrivate)));
   it("Root 可以修改其他 Banned 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemBannedPublic)));
+    resolves(check(root, problemBannedPublic)));
   it("Root 可以修改其他 Banned 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemBannedPrivate)));
+    resolves(check(root, problemBannedPrivate)));
   it("Root 可以修改所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamAPublic)));
+    resolves(check(root, problemTeamAPublic)));
   it("Root 可以修改所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamAPrivate)));
+    resolves(check(root, problemTeamAPrivate)));
   it("Root 可以修改所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamBPublic)));
+    resolves(check(root, problemTeamBPublic)));
   it("Root 可以修改所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamBPrivate)));
+    resolves(check(root, problemTeamBPrivate)));
   it("Root 可以修改所属团队（Member 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamCPublic)));
+    resolves(check(root, problemTeamCPublic)));
   it("Root 可以修改所属团队（Member 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamCPrivate)));
+    resolves(check(root, problemTeamCPrivate)));
   it("Root 可以修改其他团队的公开题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamDPublic)));
+    resolves(check(root, problemTeamDPublic)));
   it("Root 可以修改其他团队的私有题目", () =>
-    resolves(checkProblemWritePermission(root, problemTeamDPrivate)));
+    resolves(check(root, problemTeamDPrivate)));
 
   // Admin
   it("Admin 可以修改自己创建的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemAdminPublic)));
+    resolves(check(admin, problemAdminPublic)));
   it("Admin 可以修改自己创建的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemAdminPrivate)));
+    resolves(check(admin, problemAdminPrivate)));
   it("Admin 可以修改其他 Root 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemRootPublic)));
+    resolves(check(admin, problemRootPublic)));
   it("Admin 可以修改其他 Root 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemRootPrivate)));
+    resolves(check(admin, problemRootPrivate)));
   it("Admin 可以修改其他 Admin 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemAdmin2Public)));
+    resolves(check(admin, problemAdmin2Public)));
   it("Admin 可以修改其他 Admin 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemAdmin2Private)));
+    resolves(check(admin, problemAdmin2Private)));
   it("Admin 可以修改其他 User 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemUserPublic)));
+    resolves(check(admin, problemUserPublic)));
   it("Admin 可以修改其他 User 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemUserPrivate)));
+    resolves(check(admin, problemUserPrivate)));
   it("Admin 可以修改其他 Banned 创建的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemBannedPublic)));
+    resolves(check(admin, problemBannedPublic)));
   it("Admin 可以修改其他 Banned 创建的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemBannedPrivate)));
+    resolves(check(admin, problemBannedPrivate)));
   it("Admin 可以修改所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamAPublic)));
+    resolves(check(admin, problemTeamAPublic)));
   it("Admin 可以修改所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamAPrivate)));
+    resolves(check(admin, problemTeamAPrivate)));
   it("Admin 可以修改所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamBPublic)));
+    resolves(check(admin, problemTeamBPublic)));
   it("Admin 可以修改所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamBPrivate)));
+    resolves(check(admin, problemTeamBPrivate)));
   it("Admin 可以修改所属团队（Member 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamCPublic)));
+    resolves(check(admin, problemTeamCPublic)));
   it("Admin 可以修改所属团队（Member 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamCPrivate)));
+    resolves(check(admin, problemTeamCPrivate)));
   it("Admin 可以修改其他团队的公开题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamDPublic)));
+    resolves(check(admin, problemTeamDPublic)));
   it("Admin 可以修改其他团队的私有题目", () =>
-    resolves(checkProblemWritePermission(admin, problemTeamDPrivate)));
+    resolves(check(admin, problemTeamDPrivate)));
 
   // User
   it("User 可以修改自己创建的公开题目", () =>
-    resolves(checkProblemWritePermission(user, problemUserPublic)));
+    resolves(check(user, problemUserPublic)));
   it("User 可以修改自己创建的私有题目", () =>
-    resolves(checkProblemWritePermission(user, problemUserPrivate)));
+    resolves(check(user, problemUserPrivate)));
   it("User 不可以修改其他 Root 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemRootPublic)));
+    rejects(check(user, problemRootPublic)));
   it("User 不可以修改其他 Root 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemRootPrivate)));
+    rejects(check(user, problemRootPrivate)));
   it("User 不可以修改其他 Admin 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemAdminPublic)));
+    rejects(check(user, problemAdminPublic)));
   it("User 不可以修改其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemAdminPrivate)));
+    rejects(check(user, problemAdminPrivate)));
   it("User 不可以修改其他 User 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemUser2Public)));
+    rejects(check(user, problemUser2Public)));
   it("User 不可以修改其他 User 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemUser2Private)));
+    rejects(check(user, problemUser2Private)));
   it("User 不可以修改其他 Banned 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemBannedPublic)));
+    rejects(check(user, problemBannedPublic)));
   it("User 不可以修改其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemBannedPrivate)));
+    rejects(check(user, problemBannedPrivate)));
   it("User 可以修改所属团队（Owner 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(user, problemTeamAPublic)));
+    resolves(check(user, problemTeamAPublic)));
   it("User 可以修改所属团队（Owner 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(user, problemTeamAPrivate)));
+    resolves(check(user, problemTeamAPrivate)));
   it("User 可以修改所属团队（Admin 身份）的公开题目", () =>
-    resolves(checkProblemWritePermission(user, problemTeamBPublic)));
+    resolves(check(user, problemTeamBPublic)));
   it("User 可以修改所属团队（Admin 身份）的私有题目", () =>
-    resolves(checkProblemWritePermission(user, problemTeamBPrivate)));
+    resolves(check(user, problemTeamBPrivate)));
   it("User 不可以修改所属团队（Member 身份）的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemTeamCPublic)));
+    rejects(check(user, problemTeamCPublic)));
   it("User 不可以修改所属团队（Member 身份）的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemTeamCPrivate)));
+    rejects(check(user, problemTeamCPrivate)));
   it("User 不可以修改其他团队的公开题目", () =>
-    rejects(checkProblemWritePermission(user, problemTeamDPublic)));
+    rejects(check(user, problemTeamDPublic)));
   it("User 不可以修改其他团队的私有题目", () =>
-    rejects(checkProblemWritePermission(user, problemTeamDPrivate)));
+    rejects(check(user, problemTeamDPrivate)));
 
   // Banned
   it("Banned 不可以修改自己创建的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemBannedPublic)));
+    rejects(check(banned, problemBannedPublic)));
   it("Banned 不可以修改自己创建的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemBannedPrivate)));
+    rejects(check(banned, problemBannedPrivate)));
   it("Banned 不可以修改其他 Root 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemRootPublic)));
+    rejects(check(banned, problemRootPublic)));
   it("Banned 不可以修改其他 Root 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemRootPrivate)));
+    rejects(check(banned, problemRootPrivate)));
   it("Banned 不可以修改其他 Admin 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemAdminPublic)));
+    rejects(check(banned, problemAdminPublic)));
   it("Banned 不可以修改其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemAdminPrivate)));
+    rejects(check(banned, problemAdminPrivate)));
   it("Banned 不可以修改其他 User 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemUserPublic)));
+    rejects(check(banned, problemUserPublic)));
   it("Banned 不可以修改其他 User 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemUserPrivate)));
+    rejects(check(banned, problemUserPrivate)));
   it("Banned 不可以修改其他 Banned 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemBanned2Public)));
+    rejects(check(banned, problemBanned2Public)));
   it("Banned 不可以修改其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemBanned2Private)));
+    rejects(check(banned, problemBanned2Private)));
   it("Banned 不可以修改所属团队（Owner 身份）的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamAPublic)));
+    rejects(check(banned, problemTeamAPublic)));
   it("Banned 不可以修改所属团队（Owner 身份）的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamAPrivate)));
+    rejects(check(banned, problemTeamAPrivate)));
   it("Banned 不可以修改所属团队（Admin 身份）的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamBPublic)));
+    rejects(check(banned, problemTeamBPublic)));
   it("Banned 不可以修改所属团队（Admin 身份）的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamBPrivate)));
+    rejects(check(banned, problemTeamBPrivate)));
   it("Banned 不可以修改所属团队（Member 身份）的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamCPublic)));
+    rejects(check(banned, problemTeamCPublic)));
   it("Banned 不可以修改所属团队（Member 身份）的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamCPrivate)));
+    rejects(check(banned, problemTeamCPrivate)));
   it("Banned 不可以修改其他团队的公开题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamDPublic)));
+    rejects(check(banned, problemTeamDPublic)));
   it("Banned 不可以修改其他团队的私有题目", () =>
-    rejects(checkProblemWritePermission(banned, problemTeamDPrivate)));
+    rejects(check(banned, problemTeamDPrivate)));
 
   // Guest
   it("Guest 不可以修改其他 Root 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(guest, problemRootPublic)));
+    rejects(check(guest, problemRootPublic)));
   it("Guest 不可以修改其他 Root 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(guest, problemRootPrivate)));
+    rejects(check(guest, problemRootPrivate)));
   it("Guest 不可以修改其他 Admin 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(guest, problemAdminPublic)));
+    rejects(check(guest, problemAdminPublic)));
   it("Guest 不可以修改其他 Admin 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(guest, problemAdminPrivate)));
+    rejects(check(guest, problemAdminPrivate)));
   it("Guest 不可以修改其他 User 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(guest, problemUserPublic)));
+    rejects(check(guest, problemUserPublic)));
   it("Guest 不可以修改其他 User 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(guest, problemUserPrivate)));
+    rejects(check(guest, problemUserPrivate)));
   it("Guest 不可以修改其他 Banned 创建的公开题目", () =>
-    rejects(checkProblemWritePermission(guest, problemBannedPublic)));
+    rejects(check(guest, problemBannedPublic)));
   it("Guest 不可以修改其他 Banned 创建的私有题目", () =>
-    rejects(checkProblemWritePermission(guest, problemBannedPrivate)));
+    rejects(check(guest, problemBannedPrivate)));
   it("Guest 不可以修改其他团队的公开题目", () =>
-    rejects(checkProblemWritePermission(guest, problemTeamDPublic)));
+    rejects(check(guest, problemTeamDPublic)));
   it("Guest 不可以修改其他团队的私有题目", () =>
-    rejects(checkProblemWritePermission(guest, problemTeamDPrivate)));
+    rejects(check(guest, problemTeamDPrivate)));
 });

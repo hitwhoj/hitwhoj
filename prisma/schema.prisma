@@ -27,12 +27,11 @@ model User {
 
   sessions UserSession[]
 
-  createdFiles       File[]
-  createdProblems    Problem[]
-  createdProblemSets ProblemSet[]
-  createdComments    Comment[]
-  createdReplies     Reply[]
-  createdRecords     Record[]
+  createdFiles    File[]
+  createdProblems Problem[]
+  createdComments Comment[]
+  createdReplies  Reply[]
+  createdRecords  Record[]
 
   attendedContests Contest[] @relation("attendee", references: [id])
   moddedContests   Contest[] @relation("mod", references: [id])
@@ -131,7 +130,7 @@ model ProblemSet {
   id Int @id @default(autoincrement())
 
   title       String
-  description String
+  description String @default("")
 
   private Boolean @default(true)
 
@@ -141,8 +140,8 @@ model ProblemSet {
   tags     ProblemSetTag[] @relation(references: [id])
   problems Problem[]       @relation(references: [id])
 
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
+  team   Team? @relation(fields: [teamId], references: [id])
+  teamId Int?
 }
 
 model ProblemSetTag {
@@ -219,9 +218,10 @@ model Team {
   createdAt   DateTime @default(now())
   description String?
 
-  members  TeamMember[]
-  contests Contest[]
-  problems Problem[]
+  members     TeamMember[]
+  contests    Contest[]
+  problems    Problem[]
+  problemSets ProblemSet[]
 }
 
 model TeamMember {

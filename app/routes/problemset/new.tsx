@@ -8,27 +8,19 @@ import { Form as RemixForm, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { descriptionScheme, titleScheme } from "~/utils/scheme";
-import { findSessionUid } from "~/utils/sessions";
 import { Button, Input, Form, Typography } from "@arco-design/web-react";
+import { checkProblemSetCreatePermission } from "~/utils/permission/problemset";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
+  await checkProblemSetCreatePermission(request);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  const self = await findSessionUid(request);
-
-  if (!self) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
+  await checkProblemSetCreatePermission(request);
 
   const form = await request.formData();
 
@@ -39,7 +31,6 @@ export const action: ActionFunction<Response> = async ({ request }) => {
     data: {
       title,
       description,
-      creator: { connect: { id: self } },
     },
   });
 

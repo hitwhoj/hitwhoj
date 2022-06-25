@@ -365,7 +365,6 @@ function ContestInformationEditor({
           name="description"
           defaultValue={contest.description}
           disabled={isUpdating}
-          required
         />
       </FormItem>
 

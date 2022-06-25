@@ -16,6 +16,7 @@ import {
 import { Form, Input, Button, Tag, Table, Space } from "@arco-design/web-react";
 import { IconDelete, IconLoading } from "@arco-design/web-react/icon";
 import { useRef } from "react";
+import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
@@ -26,10 +27,14 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  await checkProblemSetWritePermission(request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -59,10 +64,12 @@ enum ActionType {
   UpdateInformation = "updateInformation",
 }
 
-export const action: ActionFunction = async ({ params, request }) => {
+export const action: ActionFunction = async ({ request, params }) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  await checkProblemSetWritePermission(request, problemSetId);
+
   const form = await request.formData();
 
   const _action = form.get("_action");
