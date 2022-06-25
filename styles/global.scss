@@ -61,11 +61,16 @@ body[arco-theme="dark"] {
 .navbar-left {
   display: none;
 
-  .arco-tabs-header-title-text {
+  .arco-tabs-header-nav-text .arco-tabs-header-title {
     padding: 0;
+  }
+
+  .arco-tabs-header-title-text {
+    padding: 0 !important;
 
     & > a {
-      padding: 0 8px;
+      line-height: 1.972;
+      padding: 5px 8px;
     }
   }
 }
