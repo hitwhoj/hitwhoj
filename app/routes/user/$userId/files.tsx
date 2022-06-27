@@ -1,5 +1,5 @@
-import { Button, Space, Table, Typography } from "@arco-design/web-react";
-import type { ColumnProps } from "@arco-design/web-react/es/Table";
+import type { TableColumnProps } from "@arco-design/web-react";
+import { Button, Table, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { File as UserFile, User } from "@prisma/client";
 import { useEffect, useRef } from "react";
@@ -158,7 +158,7 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
 }
 
 function UserFileList({ files }: { files: UserFile[] }) {
-  const columns: ColumnProps<UserFile>[] = [
+  const columns: TableColumnProps<UserFile>[] = [
     {
       title: "文件名",
       dataIndex: "filename",
@@ -218,10 +218,12 @@ export default function UserFilePage() {
       <Typography.Paragraph>
         上传即代表同意我们的用户手册（虽然没有这个东西）
       </Typography.Paragraph>
-      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+      <Typography.Paragraph>
         <UserFileUploader />
+      </Typography.Paragraph>
+      <Typography.Paragraph>
         <UserFileList files={files} />
-      </Space>
+      </Typography.Paragraph>
     </Typography>
   );
 }

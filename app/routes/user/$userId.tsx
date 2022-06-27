@@ -1,5 +1,4 @@
-import { Avatar, Space, Typography } from "@arco-design/web-react";
-import { IconUser } from "@arco-design/web-react/icon";
+import { Space, Typography } from "@arco-design/web-react";
 import type { User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
@@ -11,6 +10,7 @@ import { idScheme } from "~/utils/scheme";
 import { checkUserReadPermission } from "~/utils/permission/user";
 import { Navigator } from "~/src/Navigator";
 import { isAdmin, isUser } from "~/utils/permission";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id">;
@@ -54,13 +54,7 @@ export default function UserProfile() {
     <Typography>
       <Typography.Paragraph>
         <Space size="large" align="center">
-          <Avatar size={60}>
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.nickname || user.username} />
-            ) : (
-              <IconUser />
-            )}
-          </Avatar>
+          <UserAvatar user={user} size={60} />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>
               {user.nickname

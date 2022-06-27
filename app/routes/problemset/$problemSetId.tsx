@@ -8,6 +8,7 @@ import { Tag, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
 import { IconTag } from "@arco-design/web-react/icon";
+import { TagSpace } from "~/src/TagSpace";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "title" | "description"> & {
@@ -54,15 +55,17 @@ export default function Problemset() {
     <Typography>
       <Typography.Title heading={3}>{problemSet.title}</Typography.Title>
 
-      <Typography.Paragraph>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {problemSet.tags.map(({ name }) => (
-            <Link to={`/problemset/tag/${name}`} key={name}>
-              <Tag icon={<IconTag />}>{name}</Tag>
-            </Link>
-          ))}
-        </div>
-      </Typography.Paragraph>
+      {problemSet.tags.length > 0 && (
+        <Typography.Paragraph>
+          <TagSpace>
+            {problemSet.tags.map(({ name }) => (
+              <Link to={`/problemset/tag/${name}`} key={name}>
+                <Tag icon={<IconTag />}>{name}</Tag>
+              </Link>
+            ))}
+          </TagSpace>
+        </Typography.Paragraph>
+      )}
 
       <Typography.Paragraph>
         <Navigator

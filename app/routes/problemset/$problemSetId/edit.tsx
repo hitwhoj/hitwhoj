@@ -32,6 +32,7 @@ import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
 import { ProblemList } from "~/src/problem/ProblemList";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
+import { TagSpace } from "~/src/TagSpace";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
@@ -309,12 +310,12 @@ function ProblemSetTagCreator() {
 
 function ProblemSetTagEditor({ tags }: { tags: string[] }) {
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <TagSpace>
       {tags.map((name) => (
         <ProblemSetTagItem name={name} key={name} />
       ))}
       <ProblemSetTagCreator />
-    </div>
+    </TagSpace>
   );
 }
 
