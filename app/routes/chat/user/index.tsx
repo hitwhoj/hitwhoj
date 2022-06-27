@@ -98,3 +98,6 @@ export default function UserChatIndex() {
     </div>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

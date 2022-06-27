@@ -112,3 +112,6 @@ export default function TeamList() {
     </>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

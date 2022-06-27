@@ -13,3 +13,6 @@ export default function Chat() {
     </div>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

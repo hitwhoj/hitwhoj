@@ -6,3 +6,6 @@ import { Outlet } from "@remix-run/react";
 export default function ContestProblemPage() {
   return <Outlet />;
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";
