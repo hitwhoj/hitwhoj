@@ -87,6 +87,7 @@ const Document = ({ children, title, theme }: DocumentProps) => {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="color-scheme" content={theme} />
         {title && <title>{title}</title>}
         <Meta />
         <Links />

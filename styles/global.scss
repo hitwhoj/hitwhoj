@@ -19,13 +19,11 @@ a:active {
 body {
   color: var(--color-text-1);
   background-color: var(--color-bg-2);
-  color-scheme: light;
 }
 
 body[arco-theme="dark"] {
   color: var(--color-text-1);
   background-color: var(--color-bg-2);
-  color-scheme: dark;
 }
 
 // code highlight
