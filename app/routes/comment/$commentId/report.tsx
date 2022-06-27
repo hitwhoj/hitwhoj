@@ -13,9 +13,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const commentId = invariant(idScheme.safeParse(params.commentId), {
-    status: 404,
-  });
+  const commentId = invariant(idScheme, params.commentId);
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {

@@ -1,6 +1,6 @@
 ---
 meta:
-  title: "Help: Deployment on Windows - HITwh OJ"
+  title: "帮助：在 Windows 上部署 - HITwh OJ"
 ---
 
 ## Deployment on Windows

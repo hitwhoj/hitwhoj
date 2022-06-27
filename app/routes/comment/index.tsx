@@ -90,9 +90,7 @@ export const action: ActionFunction = async ({ request }) => {
       return null;
     }
     case ActionType.Heart: {
-      const id = invariant(idScheme.safeParse(form.get("id")), {
-        status: 404,
-      });
+      const id = invariant(idScheme, form.get("id"));
       await db.comment.update({
         where: { id },
         data: {
@@ -106,9 +104,7 @@ export const action: ActionFunction = async ({ request }) => {
       return null;
     }
     case ActionType.UnHeart: {
-      const id = invariant(idScheme.safeParse(form.get("id")), {
-        status: 404,
-      });
+      const id = invariant(idScheme, form.get("id"));
       await db.comment.update({
         where: { id },
         data: {

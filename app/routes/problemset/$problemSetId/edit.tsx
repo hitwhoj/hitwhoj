@@ -27,7 +27,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+  const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
 
@@ -60,7 +60,7 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const problemSetId = invariant(idScheme.safeParse(params.problemSetId), {
+  const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
   const form = await request.formData();
@@ -69,7 +69,7 @@ export const action: ActionFunction = async ({ params, request }) => {
 
   switch (_action) {
     case ActionType.CreateProblem: {
-      const problemId = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme, form.get("pid"));
 
       await db.problemSet.update({
         where: { id: problemSetId },
@@ -86,7 +86,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteProblem: {
-      const problemId = invariant(idScheme.safeParse(form.get("pid")));
+      const problemId = invariant(idScheme, form.get("pid"));
 
       await db.problemSet.update({
         where: { id: problemSetId },
@@ -103,7 +103,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.CreateTag: {
-      const tag = invariant(tagScheme.safeParse(form.get("tag")));
+      const tag = invariant(tagScheme, form.get("tag"));
 
       await db.problemSet.update({
         where: { id: problemSetId },
@@ -121,7 +121,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.DeleteTag: {
-      const tag = invariant(tagScheme.safeParse(form.get("tag")));
+      const tag = invariant(tagScheme, form.get("tag"));
 
       await db.problemSet.update({
         where: { id: problemSetId },
@@ -138,10 +138,8 @@ export const action: ActionFunction = async ({ params, request }) => {
     }
 
     case ActionType.UpdateInformation: {
-      const title = invariant(titleScheme.safeParse(form.get("title")));
-      const description = invariant(
-        descriptionScheme.safeParse(form.get("description"))
-      );
+      const title = invariant(titleScheme, form.get("title"));
+      const description = invariant(descriptionScheme, form.get("description"));
 
       await db.problemSet.update({
         where: { id: problemSetId },

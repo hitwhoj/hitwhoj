@@ -1,5 +1,5 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
@@ -14,7 +14,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme.safeParse(params.teamId));
+  const teamId = invariant(idScheme, params.teamId);
   const team = await db.team.findUnique({
     where: { id: teamId },
   });
@@ -29,24 +29,8 @@ export default function TeamDetail() {
   const { team } = useLoaderData<LoaderData>();
   return (
     <>
-      <h3>Details</h3>
+      <h2>Description</h2>
       <div>{team.description ? team.description : "no description"}</div>
-
-      <h3>Operation</h3>
-      <ul>
-        <li>
-          <Link to="dissolve">Dissolve Team</Link>{" "}
-        </li>
-      </ul>
-      <h3>Modules</h3>
-      <ul>
-        <li>
-          <Link to="members">团队成员</Link>
-        </li>
-        <li>
-          <Link to="homework">作业</Link>
-        </li>
-      </ul>
     </>
   );
 }

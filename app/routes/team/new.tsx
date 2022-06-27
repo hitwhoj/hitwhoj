@@ -1,41 +1,46 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
+import { Button, Input, Form, Typography } from "@arco-design/web-react";
+const TextArea = Input.TextArea;
+const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const userId = await findSessionUid(request);
-  if (!userId) {
+  const self = await findSessionUid(request);
+  if (!self) {
     throw redirect("/login");
   }
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
+  const self = await findSessionUid(request);
+
   const form = await request.formData();
-  const name = invariant(teamNameScheme.safeParse(form.get("name")));
-  const description = invariant(
-    descriptionScheme.safeParse(form.get("description"))
-  );
+  const name = invariant(teamNameScheme, form.get("name"));
+  const description = invariant(descriptionScheme, form.get("description"));
 
   if (!name) {
     throw new Response("team name is missing", { status: 400 });
   }
-  const userId = await findSessionUid(request);
-  if (!userId) {
-    throw redirect("/login");
-  }
+
   const { id: teamId } = await db.team.create({
     data: {
       name: name,
       description: description,
       createdAt: new Date(Date.now()),
       members: {
-        create: [{ userId: userId, role: TeamMemberRole.Owner }],
+        create: [
+          {
+            userId: self,
+            role: TeamMemberRole.Owner,
+          },
+        ],
       },
     },
   });
@@ -44,21 +49,34 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 };
 
 export default function NewTeam() {
-  return (
-    <>
-      <h3>New Team</h3>
+  const fetcher = useFetcher();
+  const isCreating = fetcher.state !== "idle";
 
-      <Form method="post" style={{ display: "flex", flexDirection: "column" }}>
-        <input type="text" name="name" placeholder="Team name" required />
-        <textarea
-          name="description"
-          id="description"
-          cols={30}
-          rows={10}
-          placeholder="description(optional)"
-        ></textarea>
-        <button type="submit">Create</button>
-      </Form>
-    </>
+  return (
+    <Typography>
+      <Typography.Title heading={3}>创建团队</Typography.Title>
+      <Typography.Paragraph>创建一个新的团队！</Typography.Paragraph>
+      <fetcher.Form method="post" style={{ maxWidth: 600 }}>
+        <FormItem label="名称" required layout="vertical" disabled={isCreating}>
+          <Input type="text" name="name" placeholder="团队名称" required />
+        </FormItem>
+        <FormItem label="描述" required layout="vertical" disabled={isCreating}>
+          <TextArea
+            name="description"
+            required
+            autoSize={{
+              minRows: 3,
+              maxRows: 10,
+            }}
+            placeholder="介绍信息"
+          />
+        </FormItem>
+        <FormItem>
+          <Button type="primary" htmlType="submit" loading={isCreating}>
+            创建团队
+          </Button>
+        </FormItem>
+      </fetcher.Form>
+    </Typography>
   );
 }

@@ -2,16 +2,31 @@ import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Table, Grid, Button } from "@arco-design/web-react";
+import { Table, Grid, Button, Typography, Empty } from "@arco-design/web-react";
+import { IconPlus } from "@arco-design/web-react/icon";
+import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 
 type LoaderData = {
-  problemSets: ProblemSet[];
+  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
+    _count: {
+      problems: number;
+    };
+  })[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async () => {
   const problemSets = await db.problemSet.findMany({
     orderBy: [{ id: "asc" }],
-    take: 20,
+    select: {
+      id: true,
+      title: true,
+      private: true,
+      _count: {
+        select: {
+          problems: true,
+        },
+      },
+    },
   });
 
   return { problemSets };
@@ -23,52 +38,50 @@ export const meta: MetaFunction<LoaderData> = () => ({
 
 export default function ProblemsetList() {
   const { problemSets } = useLoaderData<LoaderData>();
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (col: string) => <Link to={`/problemset/${col}`}>{col}</Link>,
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      render: (col: string, problemSet: ProblemSet) => (
-        <Link
-          to={`/problemset/${problemSet.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
-        </Link>
-      ),
-    },
-  ];
 
   return (
-    <>
-      <Grid.Row
-        justify="end"
-        align="center"
-        style={{
-          height: "3rem",
-        }}
-      >
-        <Link to="new">
-          <Button type="primary">Create ProblemSet</Button>
-        </Link>
-      </Grid.Row>
-      <Table
-        columns={tableColumns}
-        data={problemSets}
-        hover={false}
-        pagination={{
-          total: problemSets.length,
-          defaultPageSize: 20,
-          showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
-          showJumper: true,
-        }}
-      />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>
+        <Grid.Row justify="space-between" align="center">
+          <span>题单列表</span>
+          <Link to="new">
+            <Button type="primary" icon={<IconPlus />}>
+              创建题单
+            </Button>
+          </Link>
+        </Grid.Row>
+      </Typography.Title>
+
+      <Typography.Paragraph>
+        <Table
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "题单",
+              render: (_, problemset) => (
+                <ProblemSetLink problemset={problemset} />
+              ),
+            },
+            {
+              title: "题目数",
+              dataIndex: "_count.problems",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+          data={problemSets}
+          rowKey="id"
+          noDataElement={<Empty description="没有题单" />}
+          hover={false}
+          border={false}
+          pagination={false}
+        />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

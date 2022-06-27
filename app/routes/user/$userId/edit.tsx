@@ -21,13 +21,19 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
+import { checkUserWritePermission } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserWritePermission(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -52,28 +58,24 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const userId = invariant(idScheme.safeParse(params.userId), { status: 404 });
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+
+  await checkUserWritePermission(request, userId);
 
   const form = await request.formData();
 
-  const username = invariant(usernameScheme.safeParse(form.get("username")));
+  const username = invariant(usernameScheme, form.get("username"));
   const nickname = invariant(
-    nicknameScheme.or(emptyStringScheme).safeParse(form.get("nickname"))
+    nicknameScheme.or(emptyStringScheme),
+    form.get("nickname")
   );
   // TODO: avatar should not be like this
   const avatar = invariant(
-    z
-      .string()
-      .url("Avatar must be a valid URL")
-      .or(emptyStringScheme)
-      .safeParse(form.get("avatar"))
+    z.string().url("Avatar must be a valid URL").or(emptyStringScheme),
+    form.get("avatar")
   );
-  const email = invariant(
-    emailScheme.or(emptyStringScheme).safeParse(form.get("email"))
-  );
-  const bio = invariant(
-    bioScheme.or(emptyStringScheme).safeParse(form.get("bio"))
-  );
+  const email = invariant(emailScheme.or(emptyStringScheme), form.get("email"));
+  const bio = invariant(bioScheme.or(emptyStringScheme), form.get("bio"));
 
   const user = await db.user.findUnique({
     where: { username },
@@ -104,12 +106,8 @@ export default function UserEdit() {
   const loading = state === "submitting";
 
   return (
-    <RemixForm
-      method="post"
-      className="arco-form arco-form-horizontal arco-form-size-default"
-      style={{ maxWidth: 600 }}
-    >
-      <Form.Item label="用户名" required>
+    <RemixForm method="post">
+      <Form.Item label="用户名" required layout="vertical">
         <Input
           name="username"
           style={{ width: 270 }}
@@ -119,7 +117,7 @@ export default function UserEdit() {
           pattern="[a-zA-Z0-9_]+"
         />
       </Form.Item>
-      <Form.Item label="用户昵称">
+      <Form.Item label="用户昵称" layout="vertical">
         <Input
           name="nickname"
           defaultValue={user.nickname}
@@ -127,7 +125,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="电子邮箱">
+      <Form.Item label="电子邮箱" layout="vertical">
         <Input
           name="email"
           type="email"
@@ -136,7 +134,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="头像地址">
+      <Form.Item label="头像地址" layout="vertical">
         <Input
           name="avatar"
           defaultValue={user.avatar}
@@ -145,7 +143,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item label="个人介绍">
+      <Form.Item label="个人介绍" layout="vertical">
         <Input
           name="bio"
           defaultValue={user.bio}
@@ -153,7 +151,7 @@ export default function UserEdit() {
           style={{ width: 270 }}
         />
       </Form.Item>
-      <Form.Item wrapperCol={{ offset: 5 }}>
+      <Form.Item layout="vertical">
         <Button type="primary" htmlType="submit" loading={loading}>
           确认修改
         </Button>

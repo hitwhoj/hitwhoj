@@ -22,11 +22,8 @@ model User {
 
   password String
 
-  joinedAt DateTime @default(now())
-
-  role SystemUserRole @default(User)
-
-  // ==== relations ====
+  joinedAt DateTime       @default(now())
+  role     SystemUserRole @default(User)
 
   sessions UserSession[]
 
@@ -52,20 +49,29 @@ model User {
   juriedContests   Contest[] @relation("jury", references: [id])
 
   attendedTeams TeamMember[]
+
+  sentMessages     PrivateMessage[] @relation("send")
+  receivedMessages PrivateMessage[] @relation("receive")
+  chatRoom         ChatRoom[]
+  chatMessage      ChatMessage[]
+  enteredChatRoom  UserInChatRoom[]
 }
 
 enum SystemUserRole {
+  /// 超级用户
   Su
+  /// 管理员
   Admin
+  /// 普通用户
   User
-  Guest
+  /// 封禁用户
+  Banned
 }
 
+/// 用户登录会话
 model UserSession {
   session    String   @id @default(uuid())
   lastActive DateTime @default(now())
-
-  // ==== relations ====
 
   user   User @relation(fields: [userId], references: [id])
   userId Int
@@ -80,38 +86,44 @@ model File {
   mimetype  String   @default("application/octet-stream")
   createdAt DateTime @default(now())
 
-  // ==== relations ====
-
+  /// 文件所属的用户
   user   User? @relation(fields: [userId], references: [id])
   userId Int?
 
+  /// 文件作为数据所属的题目
   dataProblem   Problem? @relation("data", fields: [dataProblemId], references: [id])
   dataProblemId Int?
 
+  /// 文件作为附加文件所属的题目
   fileProblem   Problem? @relation("file", fields: [fileProblemId], references: [id])
   fileProblemId Int?
 }
 
+/// 题目
 model Problem {
   id Int @id @default(autoincrement())
 
   title       String
   description String
 
+  /// 是否公开
   private Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  timeLimit   Int @default(1000)
+  memoryLimit Int @default(128)
 
   tags ProblemTag[] @relation(references: [id])
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  data                File[]       @relation("data")
-  files               File[]       @relation("file")
-  includedContests    Contest[]    @relation(references: [id])
-  includedProblemSets ProblemSet[] @relation(references: [id])
+  data                File[]           @relation("data")
+  files               File[]           @relation("file")
+  includedContests    ContestProblem[]
+  includedProblemSets ProblemSet[]     @relation(references: [id])
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -156,7 +168,8 @@ model Contest {
   title       String
   description String
 
-  system ContestSystem
+  system  ContestSystem
+  private Boolean       @default(true)
 
   beginTime DateTime
   endTime   DateTime
@@ -169,7 +182,7 @@ model Contest {
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  problems Problem[] @relation(references: [id])
+  problems ContestProblem[]
 
   mods      User[] @relation("mod", references: [id])
   juries    User[] @relation("jury", references: [id])
@@ -199,6 +212,19 @@ enum ContestSystem {
   Homework
 }
 
+model ContestProblem {
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id])
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  rank Int
+
+  @@id([contestId, problemId])
+  @@unique([contestId, rank])
+}
+
 model Team {
   id   Int    @id @default(autoincrement())
   name String @unique
@@ -220,7 +246,7 @@ model TeamMember {
 
   role TeamMemberRole @default(Member)
 
-  @@unique([userId, teamId])
+  @@id([userId, teamId])
 }
 
 enum TeamMemberRole {
@@ -313,4 +339,74 @@ model Reply {
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
+}
+
+model PrivateMessage {
+  id Int @id @default(autoincrement())
+
+  /// 消息内容
+  content String
+  /// 发送时间
+  sentAt  DateTime @default(now())
+
+  // ==== relations ====
+
+  /// 发送方
+  from   User @relation("send", fields: [fromId], references: [id])
+  fromId Int
+
+  /// 接收方
+  to   User @relation("receive", fields: [toId], references: [id])
+  toId Int
+}
+
+model ChatRoom {
+  id Int @id @default(autoincrement())
+
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+
+  isPrivate Boolean @default(false)
+  password  String?
+
+  creator   User @relation(fields: [creatorId], references: [id])
+  creatorId Int
+
+  chatMessage    ChatMessage[]
+  userInChatRoom UserInChatRoom[]
+}
+
+enum ChatRoomRole {
+  Owner
+  Admin
+  Member
+}
+
+model UserInChatRoom {
+  role     ChatRoomRole @default(Member)
+  joinedAt DateTime     @default(now())
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@id([roomId, userId])
+}
+
+model ChatMessage {
+  id Int @id @default(autoincrement())
+
+  content String
+  sentAt  DateTime @default(now())
+
+  // ==== relations ====
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId Int
+
+  sender   User @relation(fields: [senderId], references: [id])
+  senderId Int
 }

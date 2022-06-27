@@ -1,12 +1,10 @@
 import type { File as ProblemFile, Problem } from "@prisma/client";
-
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
@@ -17,10 +15,11 @@ import {
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { Table, Button, Space } from "@arco-design/web-react";
+import { Table, Button, Space, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
+import { checkProblemUpdatePermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -29,10 +28,15 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -40,12 +44,12 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       title: true,
       files: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
       data: {
         orderBy: {
-          createdAt: "desc",
+          filename: "asc",
         },
       },
     },
@@ -70,9 +74,12 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemUpdatePermission(request, problemId);
+
   const form = await unstable_parseMultipartFormData(request, handler);
 
   const _action = form.get("_action");
@@ -102,7 +109,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     case ActionType.RemoveData:
     case ActionType.RemoveFile: {
-      const fid = invariant(uuidScheme.safeParse(form.get("fid")));
+      const fid = invariant(uuidScheme, form.get("fid"));
 
       // 删除文件
       await removeFile(fid);
@@ -122,7 +129,7 @@ function ProblemFileUploader({
   uploadText: string;
 }) {
   const fetcher = useFetcher();
-  const isUploading = fetcher.state === "submitting";
+  const isUploading = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -138,7 +145,7 @@ function ProblemFileUploader({
         type="file"
         name="file"
         multiple
-        style={{ display: "none" }}
+        hidden
         ref={inputRef}
         onInput={() => fetcher.submit(formRef.current)}
       />
@@ -157,10 +164,10 @@ function ProblemFileUploader({
 
 function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
+  const isDeleting = fetcher.state !== "idle";
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <Button
         type="primary"
@@ -170,7 +177,7 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
-        size="small"
+        size="mini"
       />
     </fetcher.Form>
   );
@@ -180,8 +187,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件名",
     dataIndex: "filename",
-    sorter: (a, b) =>
-      a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
     render: (_, file) => (
       <Link to={`/file/${file.id}`} target="_blank">
         {file.filename}
@@ -191,7 +196,6 @@ const columns: ColumnProps<ProblemFile>[] = [
   {
     title: "文件大小",
     dataIndex: "filesize",
-    sorter: (a, b) => a.filesize - b.filesize,
   },
   {
     title: "文件类型",
@@ -209,11 +213,22 @@ const columns: ColumnProps<ProblemFile>[] = [
     title: "操作",
     dataIndex: "action",
     render: (_, file) => <ProblemFileRemoveButton file={file} />,
+    align: "center",
+    cellStyle: { width: "5%", whiteSpace: "nowrap" },
   },
 ];
 
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
-  return <Table rowKey="fid" columns={columns} data={files} />;
+  return (
+    <Table
+      columns={columns}
+      data={files}
+      rowKey="id"
+      hover={false}
+      border={false}
+      pagination={false}
+    />
+  );
 }
 
 export default function ProblemData() {
@@ -222,37 +237,29 @@ export default function ProblemData() {
   } = useLoaderData<LoaderData>();
 
   return (
-    <div className="problem-data-grid">
-      <div>
-        <h2>测试数据</h2>
-        <p>用于评测的数据文件</p>
-      </div>
+    <Typography>
+      <Typography.Title heading={4}>测试数据</Typography.Title>
+      <Typography.Paragraph>用于评测的数据文件</Typography.Paragraph>
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader
+          action={ActionType.UploadData}
+          uploadText="上传数据"
+        />
+        <ProblemFileList files={data} />
+      </Space>
 
-      <div>
-        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-          <ProblemFileUploader
-            action={ActionType.UploadData}
-            uploadText="上传数据捏"
-          />
-          <ProblemFileList files={data} />
-        </Space>
-      </div>
-
-      <div>
-        <h2>附加文件</h2>
-        <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      </div>
-
-      <div>
-        <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-          <ProblemFileUploader
-            action={ActionType.UploadFile}
-            uploadText="上传文件捏"
-          />
-          <ProblemFileList files={files} />
-        </Space>
-      </div>
-    </div>
+      <Typography.Title heading={4}>附加文件</Typography.Title>
+      <Typography.Paragraph>
+        题目的附加资料，例如样例数据、PDF 题面等
+      </Typography.Paragraph>
+      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
+        <ProblemFileUploader
+          action={ActionType.UploadFile}
+          uploadText="上传文件"
+        />
+        <ProblemFileList files={files} />
+      </Space>
+    </Typography>
   );
 }
 

@@ -1,12 +1,17 @@
+import { Table, Typography } from "@arco-design/web-react";
 import type { Problem, Record, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { ProblemLink } from "~/src/problem/ProblemLink";
+import { RecordStatus } from "~/src/record/RecordStatus";
+import { UserLink } from "~/src/user/UserLink";
 import { db } from "~/utils/server/db.server";
+import { formatDateTime } from "~/utils/tools";
 
 type LoaderData = {
   records: (Pick<Record, "id" | "status" | "submittedAt"> & {
-    problem: Pick<Problem, "id" | "title">;
-    submitter: Pick<User, "id" | "username">;
+    problem: Pick<Problem, "id" | "title" | "private">;
+    submitter: Pick<User, "id" | "username" | "nickname">;
   })[];
 };
 
@@ -23,12 +28,14 @@ export const loader: LoaderFunction<LoaderData> = async () => {
         select: {
           id: true,
           title: true,
+          private: true,
         },
       },
       submitter: {
         select: {
           id: true,
           username: true,
+          nickname: true,
         },
       },
     },
@@ -46,43 +53,56 @@ export default function RecordList() {
   const { records } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h1>评测记录捏</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>状态</th>
-            <th>题目</th>
-            <th>用户</th>
-            <th>提交时间</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((record) => (
-            <tr key={record.id}>
-              <td>
-                <Link to={`/record/${record.id}`}>{record.id}</Link>
-              </td>
-              <td>
-                <Link to={`/record/${record.id}`}>{record.status}</Link>
-              </td>
-              <td>
-                <Link to={`/problem/${record.problem.id}`}>
-                  {record.problem.title}
+    <Typography>
+      <Typography.Title heading={3}>评测记录</Typography.Title>
+
+      <Typography.Paragraph>
+        <Table
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "状态",
+              dataIndex: "status",
+              render: (status, record) => (
+                <Link to={`/record/${record.id}`}>
+                  <RecordStatus status={status} />
                 </Link>
-              </td>
-              <td>
-                <Link to={`/user/${record.submitter.id}`}>
-                  {record.submitter.username}
-                </Link>
-              </td>
-              <td>{new Date(record.submittedAt).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+              ),
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "题目",
+              dataIndex: "problem",
+              render: (problem) => <ProblemLink problem={problem} />,
+            },
+            {
+              title: "用户",
+              dataIndex: "submitter",
+              render: (user) => <UserLink user={user} />,
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "提交时间",
+              dataIndex: "submittedAt",
+              render: (time) => formatDateTime(time),
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+          data={records}
+          rowKey="id"
+          hover={false}
+          border={false}
+          pagination={false}
+        />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

@@ -3,6 +3,7 @@
  */
 module.exports = {
   ignoredRouteFiles: ["**/.*"],
+  devServerPort: 8002,
   serverDependenciesToBundle: [
     /^rehype.*/,
     /^remark.*/,

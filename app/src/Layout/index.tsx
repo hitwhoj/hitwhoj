@@ -1,7 +1,20 @@
-import React from "react";
-import { Layout } from "@arco-design/web-react";
-import NavbarLeft from "./components/NavbarLeft";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Affix,
+  Alert,
+  Button,
+  Form,
+  Input,
+  Layout,
+  Modal,
+} from "@arco-design/web-react";
+import { NavbarTabs } from "./components/NavbarMenu";
 import NavbarTop from "./components/NavbarTop";
+import { IconCopyright } from "@arco-design/web-react/icon";
+import { useFetcher } from "@remix-run/react";
+import { LoginModalContext } from "~/utils/context/modal";
+import type { ActionData as LoginActionData } from "~/routes/login";
+import { version } from "../../../package.json";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -13,33 +26,106 @@ type LayoutProps = {
 };
 
 export default function MainLayout({ children }: LayoutProps) {
+  const [visible, setVisible] = useState(false);
+  const fetcher = useFetcher<LoginActionData>();
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const isFetching = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (!isFetching && fetcher.data) {
+      if (fetcher.data.success) {
+        setVisible(false);
+      }
+    }
+  }, [isFetching]);
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (!visible) {
+      setUsername("");
+      setPassword("");
+    }
+  }, [visible]);
+
   return (
-    <Layout
-      style={{
-        height: "100vh",
-        flexDirection: "row",
-        overflow: "hidden",
-      }}
-    >
-      <Sider breakpoint="lg" width="12rem" collapsible>
-        <NavbarLeft />
-      </Sider>
-      <Layout style={{ height: "100%" }}>
+    <LoginModalContext.Provider value={setVisible}>
+      <Layout
+        style={{ minHeight: "100vh", gap: 20 }}
+        className="header-context-footer-layout"
+      >
         <Header>
           <NavbarTop />
         </Header>
+
         <Layout
-          style={{
-            backgroundColor: "var(--color-bg-3)",
-            padding: "0 5%",
-            boxShadow: "0 0 10px #0000001b inset",
-            overflow: "auto",
-          }}
+          style={{ flexDirection: "row" }}
+          className="py-20% sider-context-layout"
         >
-          <Content style={{ marginTop: "1rem" }}>{children}</Content>
-          <Footer>Footer</Footer>
+          <Sider style={{ boxShadow: "none", width: undefined }}>
+            <Affix offsetTop={40}>
+              <NavbarTabs />
+            </Affix>
+          </Sider>
+
+          <Content>{children}</Content>
         </Layout>
+
+        <Footer style={{ padding: "10px 0", textAlign: "center" }}>
+          <div style={{ color: "var(--color-text-3)" }}>
+            Copyright <IconCopyright /> 2022 HITwh OJ Dev Team{" "}
+            <span style={{ color: "transparent" }}>{version}</span>
+          </div>
+        </Footer>
       </Layout>
-    </Layout>
+
+      <Modal
+        title="登录"
+        visible={visible}
+        style={{ width: 400 }}
+        footer={
+          <>
+            <Button type="default" onClick={() => setVisible(false)}>
+              注册
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => submitRef.current?.click()}
+              loading={isFetching}
+            >
+              登录
+            </Button>
+          </>
+        }
+        onCancel={() => setVisible(false)}
+      >
+        <fetcher.Form method="post" action="/login">
+          <Form.Item label="用户名" required>
+            <Input
+              type="text"
+              name="username"
+              required
+              disabled={isFetching}
+              value={username}
+              onChange={(value) => setUsername(value)}
+            />
+          </Form.Item>
+          <Form.Item label="密码" required>
+            <Input.Password
+              name="password"
+              required
+              disabled={isFetching}
+              value={password}
+              onChange={(value) => setPassword(value)}
+            />
+          </Form.Item>
+          {fetcher.data?.success === false && (
+            <Alert type="error" content={fetcher.data.reason} />
+          )}
+          <button type="submit" hidden ref={submitRef} />
+        </fetcher.Form>
+      </Modal>
+    </LoginModalContext.Provider>
   );
 }

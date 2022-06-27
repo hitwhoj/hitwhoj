@@ -9,7 +9,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { descriptionScheme, titleScheme } from "~/utils/scheme";
 import { findSessionUid } from "~/utils/sessions";
-import { Button, Input, Form } from "@arco-design/web-react";
+import { Button, Input, Form, Typography } from "@arco-design/web-react";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
@@ -32,10 +32,8 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 
   const form = await request.formData();
 
-  const title = invariant(titleScheme.safeParse(form.get("title")));
-  const description = invariant(
-    descriptionScheme.safeParse(form.get("description"))
-  );
+  const title = invariant(titleScheme, form.get("title"));
+  const description = invariant(descriptionScheme, form.get("description"));
 
   const { id: problemSetId } = await db.problemSet.create({
     data: {
@@ -54,37 +52,25 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemSetNew() {
   const { state } = useTransition();
-  const loading = state === "submitting";
+  const loading = state !== "idle";
 
   return (
-    <>
-      <h1>创建题单</h1>
+    <Typography>
+      <Typography.Title heading={3}>创建题单</Typography.Title>
       <RemixForm method="post" style={{ maxWidth: 600 }}>
-        <FormItem label="标题" required labelCol={{ span: 3 }}>
-          <Input
-            name="title"
-            style={{ width: "100%" }}
-            disabled={loading}
-            required
-          />
+        <FormItem label="标题" required layout="vertical">
+          <Input name="title" disabled={loading} required />
         </FormItem>
-        <FormItem label="描述" required labelCol={{ span: 3 }}>
-          <TextArea
-            name="description"
-            required
-            autoSize={{
-              minRows: 10,
-              maxRows: 10,
-            }}
-          />
+        <FormItem label="描述" required layout="vertical">
+          <TextArea name="description" required disabled={loading} />
         </FormItem>
-        <FormItem label=" " labelCol={{ span: 3 }}>
+        <FormItem>
           <Button type="primary" htmlType="submit" loading={loading}>
             创建题单
           </Button>
         </FormItem>
       </RemixForm>
-    </>
+    </Typography>
   );
 }
 

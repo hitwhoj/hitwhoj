@@ -6,6 +6,7 @@ import { idScheme, replyContentScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import {
   Card,
+  Comment as ArcoComment,
   Avatar,
   Divider,
   Typography,
@@ -22,6 +23,8 @@ import {
   IconHeart,
   IconHeartFill,
   IconMessage,
+  IconStar,
+  IconStarFill,
   IconTag,
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
@@ -44,9 +47,7 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const self = await findSessionUid(request);
-  const commentId = invariant(idScheme.safeParse(params.commentId), {
-    status: 404,
-  });
+  const commentId = invariant(idScheme, params.commentId);
 
   if (!self) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
@@ -61,9 +62,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
     case ActionType.Heart: {
-      const replyId = invariant(idScheme.safeParse(form.get("id")), {
-        status: 404,
-      });
+      const replyId = invariant(idScheme, form.get("id"));
       await db.reply.update({
         where: { id: replyId },
         data: {
@@ -77,9 +76,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
     case ActionType.UnHeart: {
-      const replyId = invariant(idScheme.safeParse(form.get("id")), {
-        status: 404,
-      });
+      const replyId = invariant(idScheme, form.get("id"));
       await db.reply.update({
         where: { id: replyId },
         data: {
@@ -93,12 +90,7 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
     case ActionType.Reply: {
-      const content = invariant(
-        replyContentScheme.safeParse(form.get("content")),
-        {
-          status: 400,
-        }
-      );
+      const content = invariant(replyContentScheme, form.get("content"));
       await db.reply.create({
         data: {
           content,
@@ -117,15 +109,8 @@ export const action: ActionFunction = async ({ request, params }) => {
       return null;
     }
     case ActionType.ReplyTo: {
-      const content = invariant(
-        replyContentScheme.safeParse(form.get("content")),
-        {
-          status: 400,
-        }
-      );
-      const replyToId = invariant(idScheme.safeParse(form.get("replyToId")), {
-        status: 404,
-      });
+      const content = invariant(replyContentScheme, form.get("content"));
+      const replyToId = invariant(idScheme, form.get("replyToId"));
       await db.reply.create({
         data: {
           content,
@@ -174,7 +159,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
   request,
 }) => {
-  const commentId = invariant(idScheme.safeParse(params.commentId), {
+  const commentId = invariant(idScheme, params.commentId, {
     status: 404,
   });
   const comment = await db.comment.findUnique({
@@ -454,21 +439,167 @@ function ReplyCard({
   );
 }
 
-function ReplyList({
+function CommentAndReply({
   replies,
   self,
 }: {
   replies: LoaderData["comment"]["replies"];
   self: LoaderData["self"];
 }) {
+  const [like, setLike] = useState<boolean>(false);
+  const [star, setStar] = useState<boolean>(true);
+
+  const actions = [
+    <span
+      className="custom-comment-action"
+      key="heart"
+      onClick={() => setLike(!like)}
+    >
+      {like ? <IconHeartFill style={{ color: "#f53f3f" }} /> : <IconHeart />}
+      {83 + (like ? 1 : 0)}
+    </span>,
+    <span
+      className="custom-comment-action"
+      key="star"
+      onClick={() => setStar(!star)}
+    >
+      {star ? <IconStarFill style={{ color: "#ffb400" }} /> : <IconStar />}
+      {3 + (star ? 1 : 0)}
+    </span>,
+    <span className="custom-comment-action" key="reply">
+      <IconMessage /> Reply
+    </span>,
+  ];
+
   if (!replies.length) {
     return <p>暂无回复</p>;
   } else {
     return (
+      // <Space direction="vertical" size={16} style={{ width: "100%" }}>
+      //   {replies.map((reply, index) => (
+      //     <ReplyCard key={reply.id} reply={reply} self={self} index={index} />
+      //   ))}
+      // </Space>
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        {replies.map((reply, index) => (
-          <ReplyCard key={reply.id} reply={reply} self={self} index={index} />
-        ))}
+        <ReplyCard
+          key={replies[0].id}
+          reply={replies[0]}
+          self={self}
+          index={0}
+        />
+        {/*<Divider style={{borderColor: "#4E5969"}}/>*/}
+        <br />
+        <ArcoComment
+          actions={actions}
+          author="Socrates"
+          align="right"
+          avatar={
+            <Avatar>
+              <img
+                alt="avatar"
+                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
+              />
+            </Avatar>
+          }
+          content={<div>Comment body content.</div>}
+          datetime="1 hour"
+        >
+          <ArcoComment
+            actions={actions}
+            author="Socrates"
+            align="right"
+            avatar={
+              <Avatar>
+                <img
+                  alt="avatar"
+                  src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
+                />
+              </Avatar>
+            }
+            content={<div>Comment body content.</div>}
+            datetime="1 hour"
+          />
+          <ArcoComment
+            actions={actions}
+            author="Socrates"
+            align="right"
+            avatar={
+              <Avatar>
+                <img
+                  alt="avatar"
+                  src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
+                />
+              </Avatar>
+            }
+            content={<div>Comment body content.</div>}
+            datetime="1 hour"
+          ></ArcoComment>
+        </ArcoComment>
+        <ArcoComment
+          actions={actions}
+          author="Socrates"
+          align="right"
+          avatar={
+            <Avatar>
+              <img
+                alt="avatar"
+                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
+              />
+            </Avatar>
+          }
+          content={<div>Comment body content.</div>}
+          datetime="1 hour"
+        />
+        <ArcoComment
+          actions={actions}
+          author="Socrates"
+          align="right"
+          avatar={
+            <Avatar>
+              <img
+                alt="avatar"
+                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
+              />
+            </Avatar>
+          }
+          content={<div>Comment body content.</div>}
+          datetime="1 hour"
+        />
+        <Card
+          title={<Title reply={replies[0]} self={self} index={0} />}
+          style={{ borderColor: "#4E5969" }}
+          bordered={false}
+        >
+          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
+          <Card
+            title={<Title reply={replies[0]} self={self} index={0} />}
+            style={{ borderColor: "#4E5969" }}
+            bordered={false}
+          >
+            <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
+          </Card>
+          <Card
+            title={<Title reply={replies[0]} self={self} index={0} />}
+            style={{ borderColor: "#4E5969" }}
+            bordered={false}
+          >
+            <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
+          </Card>
+        </Card>
+        <Card
+          title={<Title reply={replies[0]} self={self} index={0} />}
+          style={{ borderColor: "#4E5969" }}
+          bordered={false}
+        >
+          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
+        </Card>
+        <Card
+          title={<Title reply={replies[0]} self={self} index={0} />}
+          style={{ borderColor: "#4E5969" }}
+          bordered={false}
+        >
+          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
+        </Card>
       </Space>
     );
   }
@@ -576,7 +707,7 @@ export default function CommentView() {
   return (
     <>
       <Divider />
-      <ReplyList replies={comment.replies} self={self} />
+      <CommentAndReply replies={comment.replies} self={self} />
       <Divider />
       <NewReply />
       <Divider />

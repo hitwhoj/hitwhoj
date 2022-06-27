@@ -1,24 +1,44 @@
-import type { Contest } from "@prisma/client";
+import { Button, Grid, Typography } from "@arco-design/web-react";
+import { IconPlus } from "@arco-design/web-react/icon";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { db } from "~/utils/server/db.server";
-import { Table, Grid, Button } from "@arco-design/web-react";
+import { useContext } from "react";
+import { ContestList } from "~/src/contest/ContestList";
+import { UserInfoContext } from "~/utils/context/user";
+import type { ContestListData } from "~/utils/db/contest";
+import { findContestList } from "~/utils/db/contest";
+import { isAdmin } from "~/utils/permission";
+import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
-  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
+  contests: ContestListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async () => {
-  const contests = await db.contest.findMany({
-    orderBy: [{ id: "asc" }],
-    take: 20,
-    select: {
-      id: true,
-      title: true,
-      beginTime: true,
-      endTime: true,
-    },
-  });
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+  const self = await findSessionUserOptional(request);
+
+  let contests: ContestListData[];
+
+  // 访客只能看到公开的比赛
+  if (!self) {
+    contests = await findContestList({ private: false });
+  }
+  // 管理员可以看到所有比赛
+  else if (isAdmin(self.role)) {
+    contests = await findContestList({});
+  }
+  // 普通用户只能看到公开比赛以及自己创建、管理、裁判、参加的比赛
+  else {
+    contests = await findContestList({
+      OR: [
+        { private: false },
+        { creator: { id: self.id } },
+        { mods: { some: { id: self.id } } },
+        { juries: { some: { id: self.id } } },
+        { attendees: { some: { id: self.id } } },
+      ],
+    });
+  }
 
   return { contests };
 };
@@ -27,92 +47,28 @@ export const meta: MetaFunction = () => ({
   title: "比赛列表 - HITwh OJ",
 });
 
-export function ContestState({ begin, end }: { begin: Date; end: Date }) {
-  const status =
-    begin > new Date() ? "upcoming" : end < new Date() ? "ended" : "running";
-  return (
-    <span
-      style={{
-        color: "white",
-        backgroundColor:
-          status === "upcoming" ? "blue" : status === "ended" ? "red" : "green",
-        borderRadius: "10px",
-        padding: "0 10px",
-      }}
-    >
-      {status}
-    </span>
-  );
-}
-
-export function ContestList({
-  contests,
-}: {
-  contests: Pick<Contest, "id" | "title" | "beginTime" | "endTime">[];
-}) {
-  type ContestDetails = Pick<Contest, "id" | "title" | "beginTime" | "endTime">;
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (col: string) => <Link to={`/contest/${col}`}>{col}</Link>,
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      render: (col: string, contest: ContestDetails) => (
-        <Link
-          to={`/contest/${contest.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
-        </Link>
-      ),
-    },
-    {
-      title: "Status",
-      render: (_: any, contest: ContestDetails) => (
-        <ContestState
-          begin={new Date(contest.beginTime)}
-          end={new Date(contest.endTime)}
-        />
-      ),
-    },
-  ];
-  return (
-    <Table
-      columns={tableColumns}
-      data={contests}
-      hover={false}
-      pagination={{
-        total: contests.length,
-        defaultPageSize: 20,
-        showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
-        showJumper: true,
-      }}
-    />
-  );
-}
-
 export default function ContestListIndex() {
   const { contests } = useLoaderData<LoaderData>();
+  const user = useContext(UserInfoContext);
 
   return (
-    <>
-      <Grid.Row
-        justify="end"
-        align="center"
-        style={{
-          height: "3rem",
-        }}
-      >
-        <Link to="new">
-          <Button type="primary">Create Contest</Button>
-        </Link>
-      </Grid.Row>
-      <ContestList contests={contests} />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>
+        <Grid.Row justify="space-between" align="center">
+          比赛列表
+          {user && isAdmin(user.role) && (
+            <Link to="/contest/new">
+              <Button type="primary" icon={<IconPlus />}>
+                新建比赛
+              </Button>
+            </Link>
+          )}
+        </Grid.Row>
+      </Typography.Title>
+      <Typography.Paragraph>
+        <ContestList contests={contests} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

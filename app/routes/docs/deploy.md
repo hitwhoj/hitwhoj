@@ -1,85 +1,118 @@
 ---
 meta:
-  title: "Help: Deployment - HITwh OJ"
+  title: 帮助：部署网站 - HITwh OJ
 ---
 
-# Deployment
+# 部署网站
 
-Deploy our project is very easy.
+注意：本文介绍的是在 Linux 作业系统下的通用部署方式，对于在 Windows 作业系统部署，可以[参考这里](/docs/deploy-windows)。
 
-1.  Clone our project
+## 安装依赖
 
-    You can use `git clone` to clone our project.
+需要预先安装以下软件：
 
-    ```sh
-    git clone https://git.hit.edu.cn/hitwhoj/hitwhoj.git
-    cd hitwhoj
-    ```
+- [PostgreSQL][postgres]: 版本任意
+- [MinIO][minio]: 版本任意
+- [Node.js][nodejs]: 需要 v16，其他版本未经测试
 
-2.  Install dependencies
+## 构建
 
-    You can use `yarn install` to install dependencies.
+```bash
+git clone --depth=1 -b dev git@git.hit.edu.cn:hitwhoj/hitwhoj.git
+cd hitwhoj
 
-    ```sh
-    yarn install
-    ```
+# 安装依赖
+yarn install
+# 构建
+yarn build
+```
 
-3.  Configure database
+## 配置
 
-    You need to install postgresql yourself.
+之后需要配置 `.env` 文件在启动的时候自动设置环境变量，具体如下：
 
-    Afterwards, write connection string to `.env` file.
+```bash
+# === 数据库配置 ===
 
-    ```sh
-    echo "DATABASE_URL=postgres://user:password@host:port/database" >> .env
-    ```
+DATABASE_URL=postgres://username:password@localhost:5432/dbname
 
-    Then you can use `yarn prisma db push` to initialize database.
+# === MinIO 配置 ===
 
-4.  Configure MinIO storage
+S3_ENDPOINT=localhost
+S3_PORT=9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=hitwhoj
 
-    You need to install MinIO yourself.
+# === 网站配置 ===
 
-    Afterwards, write connection string to `.env` file.
+## 网站监听端口
+PORT=8080
 
-    ```sh
-    # end point, defaults to localhost
-    echo "S3_END_POINT=localhost" >> .env
+## 与评测机通信时的密钥
+# 如果非空，则需要在配置评测机的时候也输入相同的密钥
+JUDGE_PRIVATE_KEY=hitwhoj
 
-    # port number, defaults to 9000
-    echo "S3_PORT=9000" >> .env
+## 最大文件上传大小
+MAX_FILE_SIZE=20000000 # 默认 20MB
+```
 
-    # enable SSL, defaults to false
-    echo "S3_SSL=true" >> .env
+配置完成之后需要初始化数据库，具体如下：
 
-    # access key, defaults to "", choose one of the following:
-    echo "S3_ACCESS_KEY=access_key" >> .env
-    echo "S3_ROOT_USER=access_key" >> .env
+```bash
+# 初始化数据库
+yarn prisma db push
 
-    # secret key, defaults to "", choose one of the following:
-    echo "S3_SECRET_KEY=secret_key" >> .env
-    echo "S3_ROOT_PASSWORD=secret_key" >> .env
+## **如果您在开发模式，可以填充一些模拟数据到数据库中来测试**
+## **如果在生产环境就不需要**
+#yarn prisma db seed
+```
 
-    # bucket name, defaults to ""
-    echo "S3_BUCKET=bucket_name" >> .env
-    ```
+## 启动网站
 
-    If you host MinIO and the server on the same machine, you only need to configure `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_BUCKET` environment variables.
+使用 `yarn start` 启动网站。
 
-5.  Build the project
+## 本地代理
 
-    You can use `yarn build` to build the project.
+如果您打算使用 80/443 端口来开放网站，我们推荐使用 nginx 作为代理来监听 80/443 端口，再将流量转发到 8080 端口。
 
-    ```sh
-    yarn build
-    ```
+```conf
+# /etc/nginx/nginx.conf
 
-6.  Start the project
+http {
+  include       mime.types;
+  default_type  application/octet-stream;
 
-    You can use `yarn start` to start the project.
+  sendfile           on;
+  keepalive_timeout  65;
 
-    ```sh
-    yarn start
-    ```
+  server {
+    listen       80;
+    server_name  localhost;
 
-    You can visit the project by `http://localhost:8080`.
+    return 301 https://$host$request_uri;
+  }
+
+  server {
+    listen       443 ssl;
+    server_name  localhost_ssl;
+
+    ssl_certificate      /path/to/fullchain.pem;
+    ssl_certificate_key  /path/to/privkey.pem;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://127.0.0.1:8080;
+    }
+  }
+}
+```
+
+## 部署评测机
+
+请参阅[部署评测机](/docs/deploy-judge)。
+
+[postgres]: https://www.postgresql.org/
+[minio]: https://min.io/
+[nodejs]: https://nodejs.org/en/

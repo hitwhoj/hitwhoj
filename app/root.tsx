@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import { Button, Notification } from "@arco-design/web-react";
 import katexStyle from "katex/dist/katex.css";
 import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 
@@ -13,11 +14,13 @@ import {
   ScrollRestoration,
   useCatch,
   useLoaderData,
+  useNavigate,
 } from "@remix-run/react";
 
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { findSession } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
@@ -25,6 +28,8 @@ import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
 import type { UserInfo } from "./utils/context/user";
 import { UserInfoContext } from "./utils/context/user";
+import { WsContext } from "./utils/context/ws";
+import { WsClient } from "./utils/ws.client";
 
 export const links: LinksFunction = () => [
   {
@@ -44,27 +49,30 @@ export const links: LinksFunction = () => [
 type LoaderData = {
   theme: Theme;
   user: UserInfo | null;
+  session?: string | null;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
-  const self = await findSessionUid(request);
+  const self = await findSessionUserOptional(request);
 
   if (!self) {
     return { theme, user: null };
   }
-
   const user = await db.user.findUnique({
-    where: { id: self },
+    where: { id: self.id },
     select: {
       id: true,
       username: true,
       nickname: true,
+      role: true,
       avatar: true,
     },
   });
 
-  return { theme, user };
+  let session = await findSession(request);
+
+  return { theme, user, session };
 };
 
 interface DocumentProps {
@@ -98,19 +106,64 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 export default function App() {
   const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
   const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [wsc, setWsc] = useState<WsClient | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT`;
+    const wsc = new WsClient(user?.id);
+    setWsc(wsc);
+
+    if (user?.id) {
+      // 新私聊消息
+      const subscription = wsc.subscribePrivateMessage().subscribe((data) => {
+        // 生成一个随机 id 给 Notification
+        const id = Date.now().toString(16) + Math.random().toString(16);
+
+        Notification.info({
+          id,
+          title: "新私聊消息",
+          content: (
+            <span>
+              <b>{data.from.nickname || data.from.username}</b>
+              {": "}
+              {data.content}
+            </span>
+          ),
+          btn: (
+            <Button
+              type="primary"
+              onClick={() => {
+                navigate(`/chat/user/${data.from.id}`);
+                Notification.remove(id);
+              }}
+            >
+              View
+            </Button>
+          ),
+        });
+      });
+
+      return () => {
+        subscription.unsubscribe();
+        wsc.close();
+      };
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax`;
   }, [theme]);
 
   return (
     <Document theme={theme}>
       <UserInfoContext.Provider value={user}>
-        <ThemeContext.Provider value={{ theme, setTheme }}>
-          <Layout>
-            <Outlet />
-          </Layout>
-        </ThemeContext.Provider>
+        <WsContext.Provider value={wsc}>
+          <ThemeContext.Provider value={{ theme, setTheme }}>
+            <Layout>
+              <Outlet />
+            </Layout>
+          </ThemeContext.Provider>
+        </WsContext.Provider>
       </UserInfoContext.Provider>
     </Document>
   );

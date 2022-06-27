@@ -9,21 +9,27 @@ import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { judge } from "~/utils/server/judge.server";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
+import { checkProblemSubmitPermission } from "~/utils/permission/problem";
+import type { JudgeServer } from "server/judge.server";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
   problem: Pick<Problem, "title">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
+
+  await checkProblemSubmitPermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -41,19 +47,22 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交题目: ${data?.problem.title} - HITwh OJ`,
 });
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
-  const problemId = invariant(idScheme.safeParse(params.problemId), {
+export const action: ActionFunction<Response> = async ({
+  request,
+  params,
+  context,
+}) => {
+  const problemId = invariant(idScheme, params.problemId, {
     status: 404,
   });
 
+  await checkProblemSubmitPermission(request, problemId);
+
   const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect("/login");
-  }
 
   const form = await request.formData();
-  const code = invariant(codeScheme.safeParse(form.get("code")));
-  const language = invariant(languageScheme.safeParse(form.get("language")));
+  const code = invariant(codeScheme, form.get("code"));
+  const language = invariant(languageScheme, form.get("language"));
 
   const { id: recordId } = await db.record.create({
     data: {
@@ -65,7 +74,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  await judge.push(recordId);
+  await (context.judge as JudgeServer).push(recordId);
 
   return redirect(`/record/${recordId}`);
 };
@@ -73,7 +82,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");
   return (
-    <Form method="post">
+    <Form method="post" style={{ marginTop: "25px" }}>
       <Space
         direction="vertical"
         size="medium"

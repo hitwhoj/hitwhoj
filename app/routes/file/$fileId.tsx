@@ -3,13 +3,14 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
+import { Typography } from "@arco-design/web-react";
 
 type LoaderData = {
   filename: string;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const fileId = invariant(uuidScheme.safeParse(params.fileId), {
+  const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
 
@@ -35,9 +36,12 @@ export default function FileIndex() {
   const { filename } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h1>{filename}</h1>
-      <Outlet />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>{filename}</Typography.Title>
+
+      <Typography.Paragraph>
+        <Outlet />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
