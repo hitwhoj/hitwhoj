@@ -212,7 +212,7 @@ model Team {
   name String @unique
 
   createdAt   DateTime @default(now())
-  description String?
+  description String   @default("")
 
   members     TeamMember[]
   contests    Contest[]

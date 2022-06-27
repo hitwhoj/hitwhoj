@@ -1,12 +1,13 @@
 import type { ProblemSet, ProblemSetTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Typography } from "@arco-design/web-react";
+import { Tag, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
+import { IconTag } from "@arco-design/web-react/icon";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "title" | "description"> & {
@@ -52,6 +53,16 @@ export default function Problemset() {
   return (
     <Typography>
       <Typography.Title heading={3}>{problemSet.title}</Typography.Title>
+
+      <Typography.Paragraph>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {problemSet.tags.map(({ name }) => (
+            <Link to={`/problemset/tag/${name}`} key={name}>
+              <Tag icon={<IconTag />}>{name}</Tag>
+            </Link>
+          ))}
+        </div>
+      </Typography.Paragraph>
 
       <Typography.Paragraph>
         <Navigator

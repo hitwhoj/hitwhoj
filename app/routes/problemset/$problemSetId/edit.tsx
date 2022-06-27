@@ -4,7 +4,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -13,17 +13,32 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { Form, Input, Button, Tag, Table, Space } from "@arco-design/web-react";
-import { IconDelete, IconLoading } from "@arco-design/web-react/icon";
-import { useRef } from "react";
+import {
+  Form,
+  Input,
+  Button,
+  Tag,
+  Space,
+  Typography,
+} from "@arco-design/web-react";
+import {
+  IconDelete,
+  IconLoading,
+  IconPlus,
+  IconTag,
+} from "@arco-design/web-react/icon";
+import { useEffect, useRef, useState } from "react";
 import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
+import { ProblemList } from "~/src/problem/ProblemList";
+import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
 type LoaderData = {
   problemSet: ProblemSet & {
     tags: ProblemSetTag[];
-    problems: Pick<Problem, "id" | "title">[];
+    problems: ProblemListData[];
   };
 };
 
@@ -40,12 +55,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     where: { id: problemSetId },
     include: {
       tags: true,
-      problems: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
+      problems: { select: selectProblemListData },
     },
   });
 
@@ -167,19 +177,25 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
 
-function TitleEditor({
+function ProblemSetEditor({
   title,
   description,
+  tags,
 }: {
   title: string;
   description: string;
+  tags: string[];
 }) {
   const fetcher = useFetcher();
   const isUpdating = fetcher.state === "submitting";
 
   return (
     <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-      <FormItem label="标题" labelCol={{ span: 3 }} required>
+      <FormItem label="标签" layout="vertical">
+        <ProblemSetTagEditor tags={tags} />
+      </FormItem>
+
+      <FormItem label="标题" layout="vertical" required>
         <Input
           id="title"
           name="title"
@@ -189,17 +205,18 @@ function TitleEditor({
           required
         />
       </FormItem>
-      <FormItem label="描述" labelCol={{ span: 3 }} required>
+
+      <FormItem label="描述" layout="vertical">
         <TextArea
           id="description"
           name="description"
-          required
           defaultValue={description}
           disabled={isUpdating}
           autoSize={{ minRows: 3, maxRows: 10 }}
         />
       </FormItem>
-      <FormItem label=" " labelCol={{ span: 3 }}>
+
+      <FormItem>
         <Button
           type="primary"
           htmlType="submit"
@@ -207,7 +224,7 @@ function TitleEditor({
           name="_action"
           value={ActionType.UpdateInformation}
         >
-          提交捏
+          确认修改
         </Button>
       </FormItem>
     </fetcher.Form>
@@ -216,80 +233,92 @@ function TitleEditor({
 
 function ProblemSetTagItem({ name }: { name: string }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
+  const isDeleting = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <fetcher.Form
-      method="post"
-      style={{
-        display: "inline",
-        marginRight: 10,
-      }}
-      ref={formRef}
+    <Tag
+      visible={true}
+      closable
+      onClose={() => fetcher.submit(formRef.current)}
+      icon={isDeleting ? <IconLoading /> : <IconTag />}
     >
-      <input type="hidden" name="tag" value={name} />
-      <input type="hidden" name="_action" value={ActionType.DeleteTag} />
-      <Tag>
-        {name}
-        <Button
-          icon={isDeleting ? <IconLoading /> : <IconDelete />}
-          loading={isDeleting}
-          onClick={() => fetcher.submit(formRef.current)}
-        />
-      </Tag>
-    </fetcher.Form>
+      {name}
+      <fetcher.Form
+        method="post"
+        style={{
+          display: "inline",
+          marginRight: 10,
+        }}
+        ref={formRef}
+        hidden
+      >
+        <input type="hidden" name="tag" value={name} />
+        <input type="hidden" name="_action" value={ActionType.DeleteTag} />
+      </fetcher.Form>
+    </Tag>
   );
 }
 
 function ProblemSetTagCreator() {
+  const [showInput, setShowInput] = useState(false);
   const fetcher = useFetcher();
-  const isCreating = fetcher.state === "submitting";
+  const isCreating = fetcher.state !== "idle";
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (fetcher.type === "done" && !isCreating) {
+      setShowInput(false);
+    }
+  }, [isCreating]);
 
   return (
-    <fetcher.Form method="post">
-      <Space direction="horizontal" size="medium">
+    <fetcher.Form method="post" ref={formRef}>
+      <input type="hidden" name="_action" value={ActionType.CreateTag} />
+      {showInput ? (
         <Input
-          id="tag"
-          name="tag"
           type="text"
+          size="mini"
+          name="tag"
+          style={{ width: "82px" }}
+          autoFocus
+          onBlur={(e) =>
+            e.target.value
+              ? fetcher.submit(formRef.current)
+              : setShowInput(false)
+          }
           disabled={isCreating}
-          placeholder="输入标签"
           required
         />
-        <Button
-          type="primary"
-          htmlType="submit"
-          name="_action"
-          value={ActionType.CreateTag}
-          loading={isCreating}
+      ) : (
+        <Tag
+          icon={<IconPlus />}
+          style={{
+            cursor: "pointer",
+            width: "82px",
+            textAlign: "center",
+          }}
+          onClick={() => setShowInput(true)}
         >
-          添加捏
-        </Button>
-      </Space>
+          添加标签
+        </Tag>
+      )}
     </fetcher.Form>
   );
 }
 
-function ProblemSetTagEditor({ tags }: { tags: ProblemSetTag[] }) {
+function ProblemSetTagEditor({ tags }: { tags: string[] }) {
   return (
-    <>
-      {tags.length ? (
-        <div>
-          {tags.map(({ name }) => (
-            <ProblemSetTagItem name={name} key={name} />
-          ))}
-        </div>
-      ) : (
-        <div>没有标签捏</div>
-      )}
-      <br />
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {tags.map((name) => (
+        <ProblemSetTagItem name={name} key={name} />
+      ))}
       <ProblemSetTagCreator />
-    </>
+    </div>
   );
 }
 
-function ProblemSetProblemItem({ pid }: { pid: number }) {
+function ProblemSetProblemOperations({ pid }: { pid: number }) {
   const fetcher = useFetcher();
   const isDeleting = fetcher.state === "submitting";
 
@@ -299,6 +328,7 @@ function ProblemSetProblemItem({ pid }: { pid: number }) {
       <Button
         type="primary"
         status="danger"
+        size="mini"
         htmlType="submit"
         name="_action"
         value={ActionType.DeleteProblem}
@@ -338,36 +368,28 @@ function ProblemSetProblemCreator() {
   );
 }
 
-function ProblemEditor({
-  problems,
-}: {
-  problems: Pick<Problem, "id" | "title">[];
-}) {
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (id: number) => <Link to={`/problem/${id}`}>{id}</Link>,
-    },
-    {
-      title: "title",
-      dataIndex: "title",
-      render: (title: string, problem: Pick<Problem, "id" | "title">) => (
-        <Link to={`/problem/${problem.id}`}>{title}</Link>
-      ),
-    },
-    {
-      title: "操作",
-      render: (_: any, problem: Pick<Problem, "id" | "title">) => (
-        <ProblemSetProblemItem pid={problem.id} />
-      ),
-    },
-  ];
+function ProblemEditor({ problems }: { problems: ProblemListData[] }) {
   return (
     <>
-      <Table columns={tableColumns} data={problems} pagination={false} />
-      <br />
-      <ProblemSetProblemCreator />
+      <Typography.Paragraph>
+        <ProblemList
+          problems={problems}
+          columns={[
+            {
+              title: "操作",
+              render: (_: any, problem: Pick<Problem, "id" | "title">) => (
+                <ProblemSetProblemOperations pid={problem.id} />
+              ),
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+        />
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
+        <ProblemSetProblemCreator />
+      </Typography.Paragraph>
     </>
   );
 }
@@ -376,17 +398,21 @@ export default function ProblemSetEdit() {
   const { problemSet } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h2>标题与简介</h2>
-      <TitleEditor
-        title={problemSet.title}
-        description={problemSet.description}
-      />
-      <h2>标签</h2>
-      <ProblemSetTagEditor tags={problemSet.tags} />
-      <h2>题目</h2>
-      <ProblemEditor problems={problemSet.problems} />
-    </>
+    <Typography>
+      <Typography.Title heading={4}>编辑题单</Typography.Title>
+      <Typography.Paragraph>
+        <ProblemSetEditor
+          title={problemSet.title}
+          description={problemSet.description}
+          tags={problemSet.tags.map(({ name }) => name)}
+        />
+      </Typography.Paragraph>
+
+      <Typography.Title heading={4}>题目</Typography.Title>
+      <Typography.Paragraph>
+        <ProblemEditor problems={problemSet.problems} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

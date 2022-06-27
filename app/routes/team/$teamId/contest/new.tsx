@@ -83,7 +83,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "Create: Contest - HITwh OJ",
+  title: "创建团队比赛 - HITwh OJ",
 });
 
 export default function ContestNew() {
@@ -95,7 +95,8 @@ export default function ContestNew() {
 
   return (
     <Typography>
-      <Typography.Title heading={4}>创建比赛</Typography.Title>
+      <Typography.Title heading={4}>创建团队比赛</Typography.Title>
+
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
         <FormItem label="标题" required layout="vertical">
           <Input name="title" id="title" required />

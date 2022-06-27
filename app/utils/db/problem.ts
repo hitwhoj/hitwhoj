@@ -1,45 +1,33 @@
-import { db } from "~/utils/server/db.server";
+import type { Prisma, PrismaPromise, Problem } from "@prisma/client";
 import type { Unpack } from "../tools";
 
-// 这真是太优美了
-type ProblemWhereInput = NonNullable<
-  NonNullable<Parameters<typeof db.problem.findMany>["0"]>["where"]
+type ProblemFindMany<T> = Prisma.CheckSelect<
+  T,
+  PrismaPromise<Array<Problem>>,
+  PrismaPromise<Array<Prisma.ProblemGetPayload<T>>>
 >;
 
-/**
- * 筛选题目，会选中题单列表中需要的属性
- *
- * 通过 where 来过滤题目
- */
-export async function findProblemMany(where: ProblemWhereInput) {
-  return await db.problem.findMany({
-    where,
-    orderBy: [{ id: "asc" }],
+export type ProblemListData = Unpack<
+  Awaited<
+    ProblemFindMany<{
+      select: typeof selectProblemListData;
+    }>
+  >
+>;
+
+export const selectProblemListData = {
+  id: true,
+  title: true,
+  private: true,
+  tags: {
+    select: {
+      name: true,
+    },
+  },
+  team: {
     select: {
       id: true,
-      title: true,
-      private: true,
-      tags: {
-        select: {
-          name: true,
-        },
-      },
-      team: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      _count: {
-        select: {
-          relatedRecords: true,
-        },
-      },
+      name: true,
     },
-  });
-}
-
-/** 首页题单的数据格式 */
-export type ProblemListData = Unpack<
-  Awaited<ReturnType<typeof findProblemMany>>
->;
+  },
+} as const;

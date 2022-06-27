@@ -6,38 +6,22 @@ import { useContext } from "react";
 import { ContestList } from "~/src/contest/ContestList";
 import { UserInfoContext } from "~/utils/context/user";
 import type { ContestListData } from "~/utils/db/contest";
-import { findContestList } from "~/utils/db/contest";
+import { selectContestListData } from "~/utils/db/contest";
 import { isAdmin } from "~/utils/permission";
-import { findSessionUserOptional } from "~/utils/sessions";
+import { db } from "~/utils/server/db.server";
 
 type LoaderData = {
   contests: ContestListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const self = await findSessionUserOptional(request);
-
-  let contests: ContestListData[] = [];
-
-  // 访客只能看到公开的比赛
-  if (!self) {
-    contests = await findContestList({ private: false });
-  }
-  // 管理员可以看到所有比赛
-  else if (isAdmin(self.role)) {
-    contests = await findContestList({});
-  }
-  // 普通用户只能看到公开比赛以及自己创建、管理、裁判、参加的比赛
-  else {
-    contests = await findContestList({
-      OR: [
-        { private: false },
-        { mods: { some: { id: self.id } } },
-        { juries: { some: { id: self.id } } },
-        { attendees: { some: { id: self.id } } },
-      ],
-    });
-  }
+export const loader: LoaderFunction<LoaderData> = async () => {
+  const contests = await db.contest.findMany({
+    where: { team: null },
+    orderBy: [{ id: "asc" }],
+    select: {
+      ...selectContestListData,
+    },
+  });
 
   return { contests };
 };
@@ -64,6 +48,7 @@ export default function ContestListIndex() {
           )}
         </Grid.Row>
       </Typography.Title>
+
       <Typography.Paragraph>
         <ContestList contests={contests} />
       </Typography.Paragraph>

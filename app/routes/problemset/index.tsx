@@ -5,6 +5,9 @@ import { db } from "~/utils/server/db.server";
 import { Table, Grid, Button, Typography, Empty } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
+import { isAdmin } from "~/utils/permission";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -39,17 +42,21 @@ export const meta: MetaFunction<LoaderData> = () => ({
 
 export default function ProblemsetList() {
   const { problemSets } = useLoaderData<LoaderData>();
+  const user = useContext(UserInfoContext);
 
   return (
     <Typography>
       <Typography.Title heading={3}>
         <Grid.Row justify="space-between" align="center">
           <span>题单列表</span>
-          <Link to="new">
-            <Button type="primary" icon={<IconPlus />}>
-              创建题单
-            </Button>
-          </Link>
+
+          {user && isAdmin(user.role) && (
+            <Link to="new">
+              <Button type="primary" icon={<IconPlus />}>
+                创建题单
+              </Button>
+            </Link>
+          )}
         </Grid.Row>
       </Typography.Title>
 
