@@ -40,11 +40,6 @@ export async function checkProblemReadPermission(
     return;
   }
 
-  // 公开的题目可以查看
-  if (!problem.private) {
-    return;
-  }
-
   // 团队创建的题目
   if (problem.team) {
     if (self) {
@@ -71,6 +66,7 @@ export async function checkProblemReadPermission(
       }
     }
   } else {
+    // 如果是公开题目，则可以查看
     if (!problem.private) {
       return;
     }

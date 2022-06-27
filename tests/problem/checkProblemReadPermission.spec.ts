@@ -120,8 +120,8 @@ describe("checkProblemReadPermission", () => {
     resolves(check(guest, problemPub)));
   it("Guest 不可以访问不属于任何团队的私有题目", () =>
     rejects(check(guest, problemPrv)));
-  it("Guest 可以访问其他团队的公开题目", () =>
-    resolves(check(guest, problemTeamDPub)));
+  it("Guest 不可以访问其他团队的公开题目", () =>
+    rejects(check(guest, problemTeamDPub)));
   it("Guest 不可以访问其他团队的私有题目", () =>
     rejects(check(guest, problemTeamDPrv)));
 });

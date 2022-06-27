@@ -5,6 +5,8 @@ import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemList } from "~/src/problem/ProblemList";
 import { db } from "~/utils/server/db.server";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { isAdmin } from "~/utils/permission";
 
 // TODO: 分页
 type LoaderData = {
@@ -15,10 +17,15 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async () => {
-  // 全部展示，私有题目会有个标识，普通用户应该自己有自知之明
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+  const self = await findSessionUserOptional(request);
+
   const problems = await db.problem.findMany({
-    where: { team: null },
+    // 只有系统管理员可以看到私有题目
+    where:
+      self && isAdmin(self.role)
+        ? { team: null }
+        : { team: null, private: false },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectProblemListData,

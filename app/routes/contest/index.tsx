@@ -9,14 +9,21 @@ import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { isAdmin } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
+import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
   contests: ContestListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async () => {
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+  const self = await findSessionUserOptional(request);
+
   const contests = await db.contest.findMany({
-    where: { team: null },
+    // 只有系统管理员可以看到私有比赛
+    where:
+      self && isAdmin(self.role)
+        ? { team: null }
+        : { team: null, private: false },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectContestListData,
