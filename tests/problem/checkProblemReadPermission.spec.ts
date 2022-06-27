@@ -2,30 +2,16 @@ import { Request } from "@remix-run/node";
 import { before } from "mocha";
 import {
   createRequest,
-  problemAdmin2Private,
-  problemAdmin2Public,
-  problemAdminPrivate,
-  problemAdminPublic,
-  problemBanned2Private,
-  problemBanned2Public,
-  problemBannedPrivate,
-  problemBannedPublic,
-  problemRoot2Private,
-  problemRoot2Public,
-  problemRootPrivate,
-  problemRootPublic,
-  problemTeamAPrivate,
-  problemTeamAPublic,
-  problemTeamBPrivate,
-  problemTeamBPublic,
-  problemTeamCPrivate,
-  problemTeamCPublic,
-  problemTeamDPrivate,
-  problemTeamDPublic,
-  problemUser2Private,
-  problemUser2Public,
-  problemUserPrivate,
-  problemUserPublic,
+  problemPrv,
+  problemPub,
+  problemTeamAPrv,
+  problemTeamAPub,
+  problemTeamBPrv,
+  problemTeamBPub,
+  problemTeamCPrv,
+  problemTeamCPub,
+  problemTeamDPrv,
+  problemTeamDPub,
   rejects,
   resolves,
 } from "../tools";
@@ -46,177 +32,96 @@ describe("checkProblemReadPermission", () => {
     guest = new Request("http://localhost:8080/");
   });
 
-  // Root
-  it("Root 可以访问自己创建的公开题目", () =>
-    resolves(check(root, problemRootPublic)));
-  it("Root 可以访问自己创建的私有题目", () =>
-    resolves(check(root, problemRootPrivate)));
-  it("Root 可以访问其他 Root 创建的公开题目", () =>
-    resolves(check(root, problemRoot2Public)));
-  it("Root 可以访问其他 Root 创建的私有题目", () =>
-    resolves(check(root, problemRoot2Private)));
-  it("Root 可以访问其他 Admin 创建的公开题目", () =>
-    resolves(check(root, problemAdminPublic)));
-  it("Root 可以访问其他 Admin 创建的私有题目", () =>
-    resolves(check(root, problemAdminPrivate)));
-  it("Root 可以访问其他 User 创建的公开题目", () =>
-    resolves(check(root, problemUserPublic)));
-  it("Root 可以访问其他 User 创建的私有题目", () =>
-    resolves(check(root, problemUserPrivate)));
-  it("Root 可以访问其他 Banned 创建的公开题目", () =>
-    resolves(check(root, problemBannedPublic)));
-  it("Root 可以访问其他 Banned 创建的私有题目", () =>
-    resolves(check(root, problemBannedPrivate)));
-  it("Root 可以访问所属团队（Owner 身份）的公开题目", () =>
-    resolves(check(root, problemTeamAPublic)));
-  it("Root 可以访问所属团队（Owner 身份）的私有题目", () =>
-    resolves(check(root, problemTeamAPrivate)));
-  it("Root 可以访问所属团队（Admin 身份）的公开题目", () =>
-    resolves(check(root, problemTeamBPublic)));
-  it("Root 可以访问所属团队（Admin 身份）的私有题目", () =>
-    resolves(check(root, problemTeamBPrivate)));
-  it("Root 可以访问所属团队（Member 身份）的公开题目", () =>
-    resolves(check(root, problemTeamCPublic)));
-  it("Root 可以访问所属团队（Member 身份）的私有题目", () =>
-    resolves(check(root, problemTeamCPrivate)));
+  it("Root 可以访问不属于任何团队的公开题目", () =>
+    resolves(check(root, problemPub)));
+  it("Root 可以访问不属于任何团队的私有题目", () =>
+    resolves(check(root, problemPrv)));
+  it("Root 可以访问担任 Owner 身份的团队的公开题目", () =>
+    resolves(check(root, problemTeamAPub)));
+  it("Root 可以访问担任 Owner 身份的团队的私有题目", () =>
+    resolves(check(root, problemTeamAPrv)));
+  it("Root 可以访问担任 Admin 身份的团队的公开题目", () =>
+    resolves(check(root, problemTeamBPub)));
+  it("Root 可以访问担任 Admin 身份的团队的私有题目", () =>
+    resolves(check(root, problemTeamBPrv)));
+  it("Root 可以访问担任 Member 身份的团队的公开题目", () =>
+    resolves(check(root, problemTeamCPub)));
+  it("Root 可以访问担任 Member 身份的团队的私有题目", () =>
+    resolves(check(root, problemTeamCPrv)));
   it("Root 可以访问其他团队的公开题目", () =>
-    resolves(check(root, problemTeamDPublic)));
+    resolves(check(root, problemTeamDPub)));
   it("Root 可以访问其他团队的私有题目", () =>
-    resolves(check(root, problemTeamDPrivate)));
+    resolves(check(root, problemTeamDPrv)));
 
-  // Admin
-  it("Admin 可以访问自己创建的公开题目", () =>
-    resolves(check(admin, problemAdminPublic)));
-  it("Admin 可以访问自己创建的私有题目", () =>
-    resolves(check(admin, problemAdminPrivate)));
-  it("Admin 可以访问其他 Root 创建的公开题目", () =>
-    resolves(check(admin, problemRootPublic)));
-  it("Admin 可以访问其他 Root 创建的私有题目", () =>
-    resolves(check(admin, problemRootPrivate)));
-  it("Admin 可以访问其他 Admin 创建的公开题目", () =>
-    resolves(check(admin, problemAdmin2Public)));
-  it("Admin 可以访问其他 Admin 创建的私有题目", () =>
-    resolves(check(admin, problemAdmin2Private)));
-  it("Admin 可以访问其他 User 创建的公开题目", () =>
-    resolves(check(admin, problemUserPublic)));
-  it("Admin 可以访问其他 User 创建的私有题目", () =>
-    resolves(check(admin, problemUserPrivate)));
-  it("Admin 可以访问其他 Banned 创建的公开题目", () =>
-    resolves(check(admin, problemBannedPublic)));
-  it("Admin 可以访问其他 Banned 创建的私有题目", () =>
-    resolves(check(admin, problemBannedPrivate)));
-  it("Admin 可以访问所属团队（Owner 身份）的公开题目", () =>
-    resolves(check(admin, problemTeamAPublic)));
-  it("Admin 可以访问所属团队（Owner 身份）的私有题目", () =>
-    resolves(check(admin, problemTeamAPrivate)));
-  it("Admin 可以访问所属团队（Admin 身份）的公开题目", () =>
-    resolves(check(admin, problemTeamBPublic)));
-  it("Admin 可以访问所属团队（Admin 身份）的私有题目", () =>
-    resolves(check(admin, problemTeamBPrivate)));
-  it("Admin 可以访问所属团队（Member 身份）的公开题目", () =>
-    resolves(check(admin, problemTeamCPublic)));
-  it("Admin 可以访问所属团队（Member 身份）的私有题目", () =>
-    resolves(check(admin, problemTeamCPrivate)));
+  it("Admin 可以访问不属于任何团队的公开题目", () =>
+    resolves(check(admin, problemPub)));
+  it("Admin 可以访问不属于任何团队的私有题目", () =>
+    resolves(check(admin, problemPrv)));
+  it("Admin 可以访问担任 Owner 身份的团队的公开题目", () =>
+    resolves(check(admin, problemTeamAPub)));
+  it("Admin 可以访问担任 Owner 身份的团队的私有题目", () =>
+    resolves(check(admin, problemTeamAPrv)));
+  it("Admin 可以访问担任 Admin 身份的团队的公开题目", () =>
+    resolves(check(admin, problemTeamBPub)));
+  it("Admin 可以访问担任 Admin 身份的团队的私有题目", () =>
+    resolves(check(admin, problemTeamBPrv)));
+  it("Admin 可以访问担任 Member 身份的团队的公开题目", () =>
+    resolves(check(admin, problemTeamCPub)));
+  it("Admin 可以访问担任 Member 身份的团队的私有题目", () =>
+    resolves(check(admin, problemTeamCPrv)));
   it("Admin 可以访问其他团队的公开题目", () =>
-    resolves(check(admin, problemTeamDPublic)));
+    resolves(check(admin, problemTeamDPub)));
   it("Admin 可以访问其他团队的私有题目", () =>
-    resolves(check(admin, problemTeamDPrivate)));
+    resolves(check(admin, problemTeamDPrv)));
 
-  // User
-  it("User 可以访问自己创建的公开题目", () =>
-    resolves(check(user, problemUserPublic)));
-  it("User 可以访问自己创建的私有题目", () =>
-    resolves(check(user, problemUserPrivate)));
-  it("User 可以访问其他 Root 创建的公开题目", () =>
-    resolves(check(user, problemRootPublic)));
-  it("User 不可以访问其他 Root 创建的私有题目", () =>
-    rejects(check(user, problemRootPrivate)));
-  it("User 可以访问其他 Admin 创建的公开题目", () =>
-    resolves(check(user, problemAdminPublic)));
-  it("User 不可以访问其他 Admin 创建的私有题目", () =>
-    rejects(check(user, problemAdminPrivate)));
-  it("User 可以访问其他 User 创建的公开题目", () =>
-    resolves(check(user, problemUser2Public)));
-  it("User 不可以访问其他 User 创建的私有题目", () =>
-    rejects(check(user, problemUser2Private)));
-  it("User 可以访问其他 Banned 创建的公开题目", () =>
-    resolves(check(user, problemBannedPublic)));
-  it("User 不可以访问其他 Banned 创建的私有题目", () =>
-    rejects(check(user, problemBannedPrivate)));
-  it("User 可以访问所属团队（Owner 身份）的公开题目", () =>
-    resolves(check(user, problemTeamAPublic)));
-  it("User 可以访问所属团队（Owner 身份）的私有题目", () =>
-    resolves(check(user, problemTeamAPrivate)));
-  it("User 可以访问所属团队（Admin 身份）的公开题目", () =>
-    resolves(check(user, problemTeamBPublic)));
-  it("User 可以访问所属团队（Admin 身份）的私有题目", () =>
-    resolves(check(user, problemTeamBPrivate)));
-  it("User 可以访问所属团队（Member 身份）的公开题目", () =>
-    resolves(check(user, problemTeamCPublic)));
-  it("User 不可以访问所属团队（Member 身份）的私有题目", () =>
-    rejects(check(user, problemTeamCPrivate)));
-  it("User 可以访问其他团队的公开题目", () =>
-    resolves(check(user, problemTeamDPublic)));
+  it("User 可以访问不属于任何团队的公开题目", () =>
+    resolves(check(user, problemPub)));
+  it("User 不可以访问不属于任何团队的私有题目", () =>
+    rejects(check(user, problemPrv)));
+  it("User 可以访问担任 Owner 身份的团队的公开题目", () =>
+    resolves(check(user, problemTeamAPub)));
+  it("User 可以访问担任 Owner 身份的团队的私有题目", () =>
+    resolves(check(user, problemTeamAPrv)));
+  it("User 可以访问担任 Admin 身份的团队的公开题目", () =>
+    resolves(check(user, problemTeamBPub)));
+  it("User 可以访问担任 Admin 身份的团队的私有题目", () =>
+    resolves(check(user, problemTeamBPrv)));
+  it("User 可以访问担任 Member 身份的团队的公开题目", () =>
+    resolves(check(user, problemTeamCPub)));
+  it("User 不可以访问担任 Member 身份的团队的私有题目", () =>
+    rejects(check(user, problemTeamCPrv)));
+  it("User 不可以访问其他团队的公开题目", () =>
+    rejects(check(user, problemTeamDPub)));
   it("User 不可以访问其他团队的私有题目", () =>
-    rejects(check(user, problemTeamDPrivate)));
+    rejects(check(user, problemTeamDPrv)));
 
-  // Banned
-  it("Banned 可以访问自己创建的公开题目", () =>
-    resolves(check(banned, problemBannedPublic)));
-  it("Banned 可以访问自己创建的私有题目", () =>
-    resolves(check(banned, problemBannedPrivate)));
-  it("Banned 可以访问其他 Root 创建的公开题目", () =>
-    resolves(check(banned, problemRootPublic)));
-  it("Banned 不可以访问其他 Root 创建的私有题目", () =>
-    rejects(check(banned, problemRootPrivate)));
-  it("Banned 可以访问其他 Admin 创建的公开题目", () =>
-    resolves(check(banned, problemAdminPublic)));
-  it("Banned 不可以访问其他 Admin 创建的私有题目", () =>
-    rejects(check(banned, problemAdminPrivate)));
-  it("Banned 可以访问其他 User 创建的公开题目", () =>
-    resolves(check(banned, problemUserPublic)));
-  it("Banned 不可以访问其他 User 创建的私有题目", () =>
-    rejects(check(banned, problemUserPrivate)));
-  it("Banned 可以访问其他 Banned 创建的公开题目", () =>
-    resolves(check(banned, problemBanned2Public)));
-  it("Banned 不可以访问其他 Banned 创建的私有题目", () =>
-    rejects(check(banned, problemBanned2Private)));
-  it("Banned 可以访问所属团队（Owner 身份）的公开题目", () =>
-    resolves(check(banned, problemTeamAPublic)));
-  it("Banned 可以访问所属团队（Owner 身份）的私有题目", () =>
-    resolves(check(banned, problemTeamAPrivate)));
-  it("Banned 可以访问所属团队（Admin 身份）的公开题目", () =>
-    resolves(check(banned, problemTeamBPublic)));
-  it("Banned 可以访问所属团队（Admin 身份）的私有题目", () =>
-    resolves(check(banned, problemTeamBPrivate)));
-  it("Banned 可以访问所属团队（Member 身份）的公开题目", () =>
-    resolves(check(banned, problemTeamCPublic)));
-  it("Banned 不可以访问所属团队（Member 身份）的私有题目", () =>
-    rejects(check(banned, problemTeamCPrivate)));
-  it("Banned 可以访问其他团队的公开题目", () =>
-    resolves(check(banned, problemTeamDPublic)));
+  it("Banned 可以访问不属于任何团队的公开题目", () =>
+    resolves(check(banned, problemPub)));
+  it("Banned 不可以访问不属于任何团队的私有题目", () =>
+    rejects(check(banned, problemPrv)));
+  it("Banned 可以访问担任 Owner 身份的团队的公开题目", () =>
+    resolves(check(banned, problemTeamAPub)));
+  it("Banned 可以访问担任 Owner 身份的团队的私有题目", () =>
+    resolves(check(banned, problemTeamAPrv)));
+  it("Banned 可以访问担任 Admin 身份的团队的公开题目", () =>
+    resolves(check(banned, problemTeamBPub)));
+  it("Banned 可以访问担任 Admin 身份的团队的私有题目", () =>
+    resolves(check(banned, problemTeamBPrv)));
+  it("Banned 可以访问担任 Member 身份的团队的公开题目", () =>
+    resolves(check(banned, problemTeamCPub)));
+  it("Banned 不可以访问担任 Member 身份的团队的私有题目", () =>
+    rejects(check(banned, problemTeamCPrv)));
+  it("Banned 不可以访问其他团队的公开题目", () =>
+    rejects(check(banned, problemTeamDPub)));
   it("Banned 不可以访问其他团队的私有题目", () =>
-    rejects(check(banned, problemTeamDPrivate)));
+    rejects(check(banned, problemTeamDPrv)));
 
-  // Guest
-  it("Guest 可以访问其他 Root 创建的公开题目", () =>
-    resolves(check(guest, problemRootPublic)));
-  it("Guest 不可以访问其他 Root 创建的私有题目", () =>
-    rejects(check(guest, problemRootPrivate)));
-  it("Guest 可以访问其他 Admin 创建的公开题目", () =>
-    resolves(check(guest, problemAdminPublic)));
-  it("Guest 不可以访问其他 Admin 创建的私有题目", () =>
-    rejects(check(guest, problemAdminPrivate)));
-  it("Guest 可以访问其他 User 创建的公开题目", () =>
-    resolves(check(guest, problemUserPublic)));
-  it("Guest 不可以访问其他 User 创建的私有题目", () =>
-    rejects(check(guest, problemUserPrivate)));
-  it("Guest 可以访问其他 Banned 创建的公开题目", () =>
-    resolves(check(guest, problemBannedPublic)));
-  it("Guest 不可以访问其他 Banned 创建的私有题目", () =>
-    rejects(check(guest, problemBannedPrivate)));
+  it("Guest 可以访问不属于任何团队的公开题目", () =>
+    resolves(check(guest, problemPub)));
+  it("Guest 不可以访问不属于任何团队的私有题目", () =>
+    rejects(check(guest, problemPrv)));
   it("Guest 可以访问其他团队的公开题目", () =>
-    resolves(check(guest, problemTeamDPublic)));
+    resolves(check(guest, problemTeamDPub)));
   it("Guest 不可以访问其他团队的私有题目", () =>
-    rejects(check(guest, problemTeamDPrivate)));
+    rejects(check(guest, problemTeamDPrv)));
 });

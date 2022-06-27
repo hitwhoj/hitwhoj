@@ -119,7 +119,6 @@ int main() {
 }
 \`\`\`
 `,
-      creator: { connect: { id: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
@@ -210,7 +209,6 @@ this is language whatthefuck
 这是我是嘉然语言
 ~~~
 `,
-      creator: { connect: { id: bob } },
       private: false,
       tags: {
         connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],

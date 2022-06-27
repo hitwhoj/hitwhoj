@@ -1,6 +1,5 @@
 import type { Problem, ProblemTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -45,10 +44,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  if (problem.teamId) {
-    throw redirect(`/team/${problem.teamId}/problem/${problem.id}`);
-  }
-
   return { problem };
 };
 
@@ -64,25 +59,29 @@ export default function ProblemView() {
     <Typography>
       <Typography.Title heading={3}>{problem.title}</Typography.Title>
 
-      <Typography.Paragraph>
-        <Space>
-          {problem.tags.map((tag) => (
-            <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
-              <Tag icon={<IconTag />}>{tag.name}</Tag>
-            </Link>
-          ))}
-        </Space>
-      </Typography.Paragraph>
+      {problem.tags.length > 0 && (
+        <Typography.Paragraph>
+          <Space>
+            {problem.tags.map((tag) => (
+              <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
+                <Tag icon={<IconTag />}>{tag.name}</Tag>
+              </Link>
+            ))}
+          </Space>
+        </Typography.Paragraph>
+      )}
+
       <Navigator
         routes={[
-          { key: ".", title: "题面" },
-          { key: "submit", title: "提交" },
-          { key: "data", title: "数据" },
+          { title: "题面", key: "." },
+          { title: "提交", key: "submit" },
+          { title: "数据", key: "data" },
         ]}
       />
-      <main>
+
+      <Typography.Paragraph>
         <Outlet />
-      </main>
+      </Typography.Paragraph>
     </Typography>
   );
 }

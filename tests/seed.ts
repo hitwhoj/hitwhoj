@@ -25,24 +25,8 @@ async function seed() {
 
   await prisma.problem.createMany({
     data: [
-      // basic problems
-      { title: "Root Prv", creatorId: 1, private: true },
-      { title: "Root Pub", creatorId: 1, private: false },
-      { title: "Admin Prv", creatorId: 2, private: true },
-      { title: "Admin Pub", creatorId: 2, private: false },
-      { title: "User Prv", creatorId: 3, private: true },
-      { title: "User Pub", creatorId: 3, private: false },
-      { title: "Banned Prv", creatorId: 4, private: true },
-      { title: "Banned Pub", creatorId: 4, private: false },
-      // copy of those problems
-      { title: "Root 2 Prv", creatorId: 5, private: true },
-      { title: "Root 2 Pub", creatorId: 5, private: false },
-      { title: "Admin 2 Prv", creatorId: 6, private: true },
-      { title: "Admin 2 Pub", creatorId: 6, private: false },
-      { title: "User 2 Prv", creatorId: 7, private: true },
-      { title: "User 2 Pub", creatorId: 7, private: false },
-      { title: "Banned 2 Prv", creatorId: 8, private: true },
-      { title: "Banned 2 Pub", creatorId: 8, private: false },
+      { title: "Problem Pub", private: false },
+      { title: "Problem Prv", private: true },
     ],
   });
 
@@ -78,14 +62,14 @@ async function seed() {
 
   await prisma.problem.createMany({
     data: [
-      { title: "Team A Prv", creatorId: 1, teamId: 1, private: true },
-      { title: "Team A Pub", creatorId: 1, teamId: 1, private: false },
-      { title: "Team B Prv", creatorId: 1, teamId: 2, private: true },
-      { title: "Team B Pub", creatorId: 1, teamId: 2, private: false },
-      { title: "Team C Prv", creatorId: 1, teamId: 3, private: true },
-      { title: "Team C Pub", creatorId: 1, teamId: 3, private: false },
-      { title: "Team D Prv", creatorId: 1, teamId: 4, private: true },
-      { title: "Team D Pub", creatorId: 1, teamId: 4, private: false },
+      { title: "Team A Pub", teamId: 1, private: false },
+      { title: "Team A Prv", teamId: 1, private: true },
+      { title: "Team B Pub", teamId: 2, private: false },
+      { title: "Team B Prv", teamId: 2, private: true },
+      { title: "Team C Pub", teamId: 3, private: false },
+      { title: "Team C Prv", teamId: 3, private: true },
+      { title: "Team D Pub", teamId: 4, private: false },
+      { title: "Team D Prv", teamId: 4, private: true },
     ],
   });
 

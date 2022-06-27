@@ -1,10 +1,8 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Table, Typography } from "@arco-design/web-react";
-import { findSessionUserOptional } from "~/utils/sessions";
 import type { ProblemListData } from "~/utils/db/problem";
 import { findProblemMany } from "~/utils/db/problem";
-import { isAdmin, isUser } from "~/utils/permission";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 
 // TODO: 分页
@@ -12,39 +10,9 @@ type LoaderData = {
   problems: ProblemListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const self = await findSessionUserOptional(request);
-
-  let problems: ProblemListData[];
-
-  // 访客，只能访问到非团队所有的公开的题目
-  if (!self) {
-    problems = await findProblemMany({
-      private: false,
-      team: null,
-    });
-  }
-  // 系统管理员，可以访问所有题目
-  else if (isAdmin(self.role)) {
-    problems = await findProblemMany({
-      team: null,
-    });
-  }
-  // 普通用户，只能访问到公开的非团队题目或者自己创建的题目
-  else if (isUser(self.role)) {
-    problems = await findProblemMany({
-      OR: [
-        // 公开的非团队题目
-        { private: false, team: null },
-        // 自己创建的题目
-        { creator: { id: self.id }, team: null },
-      ],
-    });
-  }
-  // 封禁用户，啥也看不了
-  else {
-    problems = [];
-  }
+export const loader: LoaderFunction<LoaderData> = async () => {
+  // 全部展示，私有题目会有个标识，普通用户应该自己有自知之明
+  const problems = await findProblemMany({ team: null });
 
   return { problems };
 };

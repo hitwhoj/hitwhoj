@@ -28,7 +28,6 @@ model User {
   sessions UserSession[]
 
   createdFiles    File[]
-  createdProblems Problem[]
   createdComments Comment[]
   createdReplies  Reply[]
   createdRecords  Record[]
@@ -105,9 +104,6 @@ model Problem {
   memoryLimit Int @default(128)
 
   tags ProblemTag[] @relation(references: [id])
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
 
   data                File[]           @relation("data")
   files               File[]           @relation("file")

@@ -3,14 +3,12 @@ import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { File as UserFile, User } from "@prisma/client";
 import { useEffect, useRef } from "react";
-
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
@@ -146,10 +144,11 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
     <fetcher.Form method="post">
       <input type="hidden" name="fid" value={file.id} />
       <Button
-        type="text"
+        type="primary"
         status="danger"
         htmlType="submit"
         name="_action"
+        size="mini"
         value={ActionType.RemoveFile}
         loading={isDeleting}
         icon={<IconDelete />}
@@ -174,7 +173,6 @@ function UserFileList({ files }: { files: UserFile[] }) {
     {
       title: "文件大小",
       dataIndex: "filesize",
-      sorter: (a: UserFile, b: UserFile) => a.filesize - b.filesize,
     },
     {
       title: "文件类型",
@@ -192,11 +190,20 @@ function UserFileList({ files }: { files: UserFile[] }) {
       title: "操作",
       dataIndex: "action",
       render: (_, file) => <UserFileRemoveButton file={file} />,
+      align: "center",
+      cellStyle: { width: "5%", whiteSpace: "nowrap" },
     },
   ];
 
   return (
-    <Table rowKey="fid" columns={columns} data={files} pagination={false} />
+    <Table
+      columns={columns}
+      data={files}
+      rowKey="id"
+      hover={false}
+      border={false}
+      pagination={false}
+    />
   );
 }
 

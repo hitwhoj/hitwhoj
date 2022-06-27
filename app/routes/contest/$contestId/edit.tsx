@@ -573,6 +573,30 @@ function ContestProblemEditor({
   return (
     <>
       <Typography.Paragraph>
+        <fetcher.Form method="post">
+          <Space>
+            <Input
+              name="pid"
+              placeholder="请输入题目 ID"
+              pattern="\d+"
+              disabled={isUpdating}
+              required
+            />
+            <Button
+              type="primary"
+              icon={<IconPlus />}
+              htmlType="submit"
+              name="_action"
+              value={ActionType.CreateProblem}
+              loading={isUpdating}
+            >
+              添加题目
+            </Button>
+          </Space>
+        </fetcher.Form>
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
         <Table
           columns={[
             {
@@ -613,30 +637,6 @@ function ContestProblemEditor({
           pagination={false}
         />
       </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <fetcher.Form method="post">
-          <Space>
-            <Input
-              name="pid"
-              placeholder="请输入题目 ID"
-              pattern="\d+"
-              disabled={isUpdating}
-              required
-            />
-            <Button
-              type="primary"
-              icon={<IconPlus />}
-              htmlType="submit"
-              name="_action"
-              value={ActionType.CreateProblem}
-              loading={isUpdating}
-            >
-              添加题目
-            </Button>
-          </Space>
-        </fetcher.Form>
-      </Typography.Paragraph>
     </>
   );
 }
@@ -652,12 +652,14 @@ export default function ContestEdit() {
       </FormItem>
       <ContestInformationEditor contest={contest} />
       <Typography.Title heading={4}>修改比赛题目</Typography.Title>
-      <Typography.Paragraph>
-        <Alert
-          type="warning"
-          content="如果您在赛后修改题目，系统可能会出现一些奇妙的特性"
-        />
-      </Typography.Paragraph>
+      {new Date() > new Date(contest.beginTime) && (
+        <Typography.Paragraph>
+          <Alert
+            type="warning"
+            content="如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性"
+          />
+        </Typography.Paragraph>
+      )}
       <ContestProblemEditor problems={contest.problems} />
     </Typography>
   );

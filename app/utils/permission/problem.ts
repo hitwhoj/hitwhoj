@@ -8,12 +8,9 @@ import { findSessionUser, findSessionUserOptional } from "~/utils/sessions";
  * 对于所有的题目，如果满足以下条件之一可以直接查看：
  *
  * - 是系统管理员
- * - 是题目的创建者
- * - 题目是公开的
- *
- * 此外对于团队创建的题目，如果满足以下条件也可以查看：
- *
- * - 当前用户是团队的管理员
+ * - 或者当前用户是团队的管理员
+ * - 或者当前用户是团队的成员并且题目公开
+ * - 或者题目不属于任何团队并且公开
  */
 export async function checkProblemReadPermission(
   request: Request,
@@ -26,11 +23,6 @@ export async function checkProblemReadPermission(
     select: {
       id: true,
       private: true,
-      creator: {
-        select: {
-          id: true,
-        },
-      },
       team: {
         select: {
           id: true,
@@ -48,31 +40,38 @@ export async function checkProblemReadPermission(
     return;
   }
 
-  // 创建者可以查看自己的题目
-  if (self && problem.creator.id === self.id) {
-    return;
-  }
-
   // 公开的题目可以查看
   if (!problem.private) {
     return;
   }
 
-  // 团队创建的题目，如果当前用户是团队的管理员，则可以查看
-  if (self && problem.team) {
-    const member = await db.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: self.id,
-          teamId: problem.team.id,
+  // 团队创建的题目
+  if (problem.team) {
+    if (self) {
+      const member = await db.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: self.id,
+            teamId: problem.team.id,
+          },
         },
-      },
-      select: {
-        role: true,
-      },
-    });
+        select: {
+          role: true,
+        },
+      });
 
-    if (member && isTeamAdmin(member.role)) {
+      // 如果是团队的公开题目，则团队成员可以查看
+      if (member && !problem.private) {
+        return;
+      }
+
+      // 如果当前用户是团队的管理员，则可以查看
+      if (member && isTeamAdmin(member.role)) {
+        return;
+      }
+    }
+  } else {
+    if (!problem.private) {
       return;
     }
   }
@@ -88,12 +87,9 @@ export async function checkProblemReadPermission(
  * 其次如果满足以下条件之一可以直接提交：
  *
  * - 是系统管理员
- * - 是题目的创建者
- * - 题目是公开的
- *
- * 此外对于团队创建的题目，如果满足以下条件也可以提交：
- *
- * - 当前用户是团队的管理员
+ * - 或者当前用户是团队的管理员
+ * - 或者当前用户是团队的成员并且题目公开
+ * - 或者题目不属于任何团队并且公开
  */
 export async function checkProblemSubmitPermission(
   request: Request,
@@ -106,17 +102,9 @@ export async function checkProblemSubmitPermission(
     select: {
       id: true,
       private: true,
-      creator: {
-        select: {
-          id: true,
-        },
-      },
       team: {
         select: {
-          members: {
-            where: { userId: self.id },
-            select: { role: true },
-          },
+          id: true,
         },
       },
     },
@@ -131,23 +119,34 @@ export async function checkProblemSubmitPermission(
     return;
   }
 
-  if (isUser(self.role)) {
-    // 创建者可以提交自己的题目
-    if (problem.creator.id === self.id) {
+  if (!isUser(self.role)) {
+    throw new Response("您已被封禁", { status: 403 });
+  }
+
+  // 团队创建的题目，如果当前用户是团队的管理员，则可以提交
+  if (problem.team) {
+    const member = await db.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: self.id,
+          teamId: problem.team.id,
+        },
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    if (member && !problem.private) {
       return;
     }
 
-    // 公开的题目可以提交
+    if (member && isTeamAdmin(member.role)) {
+      return;
+    }
+  } else {
     if (!problem.private) {
       return;
-    }
-
-    // 团队创建的题目，如果当前用户是团队的管理员，则可以提交
-    if (problem.team) {
-      const role = problem.team.members.at(0)?.role;
-      if (role && isTeamAdmin(role)) {
-        return;
-      }
     }
   }
 
@@ -160,10 +159,9 @@ export async function checkProblemSubmitPermission(
  * 如果满足以下条件之一可以直接更新：
  *
  * - 是系统管理员
- * - 是题目的创建者
  * - 是题目所属团队的管理员
  *
- * 注意被封禁用户无法更新自己的题目
+ * 注意被封禁用户无法更新题目
  */
 export async function checkProblemWritePermission(
   request: Request,
@@ -176,17 +174,9 @@ export async function checkProblemWritePermission(
     select: {
       id: true,
       private: true,
-      creator: {
-        select: {
-          id: true,
-        },
-      },
       team: {
         select: {
-          members: {
-            where: { userId: self.id },
-            select: { role: true },
-          },
+          id: true,
         },
       },
     },
@@ -201,20 +191,27 @@ export async function checkProblemWritePermission(
     return;
   }
 
-  // 封禁用户除外
-  if (isUser(self.role)) {
-    // 创建者可以更新自己的题目
-    if (problem.creator.id === self.id) {
+  // 封禁用户什么也做不到
+  if (!isUser(self.role)) {
+    throw new Response("您已被封禁", { status: 403 });
+  }
+
+  // 团队题目，必须是团队的管理员
+  if (problem.team) {
+    const member = await db.teamMember.findUnique({
+      where: {
+        userId_teamId: {
+          userId: self.id,
+          teamId: problem.team.id,
+        },
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    if (member && isTeamAdmin(member.role)) {
       return;
-    }
-
-    // 团队管理员也可以直接修改题目
-    if (problem.team) {
-      const role = problem.team.members.at(0)?.role;
-
-      if (role && isTeamAdmin(role)) {
-        return;
-      }
     }
   }
 

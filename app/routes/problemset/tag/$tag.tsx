@@ -20,9 +20,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     status: 404,
   });
 
-  // TODO: Add filters
   const problemSets = await db.problemSet.findMany({
-    where: { tags: { some: { name: tag } } },
+    where: { tags: { some: { name: tag } }, team: null },
     orderBy: { id: "asc" },
     select: {
       id: true,

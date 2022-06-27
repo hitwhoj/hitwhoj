@@ -39,32 +39,17 @@ export const teamB = 2;
 export const teamC = 3;
 export const teamD = 4;
 
-export const problemRootPrivate = 1;
-export const problemRootPublic = 2;
-export const problemAdminPrivate = 3;
-export const problemAdminPublic = 4;
-export const problemUserPrivate = 5;
-export const problemUserPublic = 6;
-export const problemBannedPrivate = 7;
-export const problemBannedPublic = 8;
+export const problemPub = 1;
+export const problemPrv = 2;
 
-export const problemRoot2Private = 9;
-export const problemRoot2Public = 10;
-export const problemAdmin2Private = 11;
-export const problemAdmin2Public = 12;
-export const problemUser2Private = 13;
-export const problemUser2Public = 14;
-export const problemBanned2Private = 15;
-export const problemBanned2Public = 16;
-
-export const problemTeamAPrivate = 17;
-export const problemTeamAPublic = 18;
-export const problemTeamBPrivate = 19;
-export const problemTeamBPublic = 20;
-export const problemTeamCPrivate = 21;
-export const problemTeamCPublic = 22;
-export const problemTeamDPrivate = 23;
-export const problemTeamDPublic = 24;
+export const problemTeamAPub = 3;
+export const problemTeamAPrv = 4;
+export const problemTeamBPub = 5;
+export const problemTeamBPrv = 6;
+export const problemTeamCPub = 7;
+export const problemTeamCPrv = 8;
+export const problemTeamDPub = 9;
+export const problemTeamDPrv = 10;
 
 export const contestRunningACMModsPub = 1;
 export const contestRunningACMModsPrv = 2;
