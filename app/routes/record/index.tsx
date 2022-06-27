@@ -17,9 +17,8 @@ type LoaderData = {
 
 export const loader: LoaderFunction<LoaderData> = async () => {
   const records = await db.record.findMany({
-    orderBy: {
-      submittedAt: "desc",
-    },
+    where: { contest: null },
+    orderBy: [{ id: "desc" }],
     select: {
       id: true,
       status: true,
