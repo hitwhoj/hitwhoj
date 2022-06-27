@@ -4,10 +4,11 @@ import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Space, Typography, Tag } from "@arco-design/web-react";
+import { Typography, Tag } from "@arco-design/web-react";
 import { checkProblemReadPermission } from "~/utils/permission/problem";
 import { Navigator } from "~/src/Navigator";
 import { IconTag } from "@arco-design/web-react/icon";
+import { TagSpace } from "~/src/TagSpace";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -61,13 +62,13 @@ export default function ProblemView() {
 
       {problem.tags.length > 0 && (
         <Typography.Paragraph>
-          <Space>
+          <TagSpace>
             {problem.tags.map((tag) => (
               <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
                 <Tag icon={<IconTag />}>{tag.name}</Tag>
               </Link>
             ))}
-          </Space>
+          </TagSpace>
         </Typography.Paragraph>
       )}
 

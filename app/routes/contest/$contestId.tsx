@@ -9,7 +9,12 @@ import { checkContestReadPermission } from "~/utils/permission/contest";
 import type { ContestListData } from "~/utils/db/contest";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
-import { IconTag, IconTrophy } from "@arco-design/web-react/icon";
+import {
+  IconEyeInvisible,
+  IconTag,
+  IconTrophy,
+} from "@arco-design/web-react/icon";
+import { TagSpace } from "~/src/TagSpace";
 
 type LoaderData = {
   contest: ContestListData;
@@ -66,18 +71,19 @@ export default function ContestView() {
       </Typography.Title>
 
       <Typography.Paragraph className="contest-problem-hide">
-        <Space>
+        <TagSpace>
           <ContestStateTag
             beginTime={contest.beginTime}
             endTime={contest.endTime}
           />
           <ContestSystemTag system={contest.system} />
+          {contest.private && <Tag icon={<IconEyeInvisible />}>隐藏</Tag>}
           {contest.tags.map(({ name }) => (
             <Link to={`/contest/tag/${name}`} key={name}>
               <Tag icon={<IconTag />}>{name}</Tag>
             </Link>
           ))}
-        </Space>
+        </TagSpace>
       </Typography.Paragraph>
 
       <Typography.Paragraph className="contest-problem-hide">
