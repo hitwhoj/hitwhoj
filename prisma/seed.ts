@@ -284,6 +284,27 @@ this is language whatthefuck
   const { id: comment1 } = await prisma.comment.create({
     data: {
       title: "我好想做嘉然小姐的狗啊",
+      content:
+        "# 我好想做嘉然小姐的狗啊。\n\r" +
+        "可是嘉然小姐说她喜欢的是猫，我哭了。\n\r" +
+        "我知道既不是狗也不是猫的我为什么要哭的。因为我其实是一只老鼠。\n\r" +
+        "## 我从没奢望嘉然小姐能喜欢自己。我明白的，所有人都喜欢理解余裕上手天才打钱的萌萌的狗狗或者猫猫，没有人会喜欢阴湿带病的老鼠。\n\r" +
+        "但我还是问了嘉然小姐:“我能不能做你的狗？”\n\r" +
+        "我知道我是注定做不了狗的。但如果她喜欢狗，我就可以一直在身边看着她了，哪怕她怀里抱着的永远都是狗。\n\r" +
+        "## 可是她说喜欢的是猫。\n\r" +
+        "她现在还在看着我，还在逗我开心，是因为猫还没有出现，只有我这老鼠每天蹑手蹑脚地从洞里爬出来，远远地和她对视。\n\r" +
+        "等她喜欢的猫来了的时候，我就该重新滚回我的洞了吧。\n\r" +
+        "但我还是好喜欢她，她能在我还在她身边的时候多看我几眼吗？\n\r" +
+        "嘉然小姐说接下来的每个圣诞夜都要和大家一起过[注2]。我不知道大家指哪些人。好希望这个集合能够对我做一次胞吞。\n\r" +
+        "\n\r" +
+        "猫猫还在害怕嘉然小姐。\n\r" +
+        "我会去把她爱的猫猫引来的。\n\r" +
+        "我知道稍有不慎，我就会葬身猫口。\n\r" +
+        "那时候嘉然小姐大概会把我的身体好好地装起来扔到门外吧。\n\r" +
+        "###### 那我就成了一包鼠条，嘻嘻[注3]。\n\r" +
+        "我希望她能把我扔得近一点，因为我还是好喜欢她。会一直喜欢下去的。\n\r" +
+        "\n\r" +
+        "我的灵魂透过窗户向里面看去，挂着的铃铛在轻轻鸣响，嘉然小姐慵懒地靠在沙发上，表演得非常温顺的橘猫坐在她的肩膀。壁炉的火光照在她的脸庞，我冻僵的心脏在风里微微发烫。",
       creator: { connect: { id: alice } },
       tags: { create: [{ name: "P1001" }] },
     },
@@ -292,6 +313,7 @@ this is language whatthefuck
   const { id: comment2 } = await prisma.comment.create({
     data: {
       title: "一条来自乃淇淋的评论",
+      content: "## 嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
       creator: { connect: { id: alice } },
       tags: { create: [{ name: "C1001" }] },
     },
@@ -354,6 +376,36 @@ this is language whatthefuck
     },
   });
 
+  const { id: replyMark3 } = await prisma.reply.create({
+    data: {
+      content: "我知道嘉然小姐会把我的身体好好地装起来扔到门外吧。\n\r",
+      creator: { connect: { id: alice } },
+      comment: { connect: { id: comment1 } },
+      domReply: { connect: { id: replyMark2 } },
+    },
+  });
+
+  const { id: replyMark4 } = await prisma.reply.create({
+    data: {
+      content:
+        "我希望她能把我扔得近一点，因为我还是好喜欢她。会一直喜欢下去的。",
+      creator: { connect: { id: bob } },
+      comment: { connect: { id: comment1 } },
+      domReply: { connect: { id: replyMark2 } },
+      replyTo: { connect: { id: replyMark3 } },
+    },
+  });
+
+  await prisma.reply.create({
+    data: {
+      content: "我知道嘉然小姐会把我的身体好好地装起来扔到门外吧。\n\r",
+      creator: { connect: { id: cherry } },
+      comment: { connect: { id: comment1 } },
+      domReply: { connect: { id: replyMark2 } },
+      replyTo: { connect: { id: replyMark4 } },
+    },
+  });
+
   await prisma.reply.createMany({
     data: [
       {
@@ -366,37 +418,33 @@ this is language whatthefuck
         content: "注 1 : 指嘉然发表的上一篇，即12月23日的动态",
         creatorId: alice,
         commentId: comment1,
-        replyToId: replyMark1,
+        domId: reply0,
       },
       {
         content: "注 2: 此处neta了某位已毕业的vup转生后的账号名称",
         creatorId: alice,
         commentId: comment1,
-        replyToId: replyMark2,
+        domId: replyMark1,
       },
       {
         content: "Я хочу стать собакой Мисс Дианы",
         creatorId: alice,
         commentId: comment1,
-        replyToId: reply0,
       },
       {
         content: "I want to be Miss Diana's dog.",
         creatorId: bob,
         commentId: comment1,
-        replyToId: reply0,
       },
       {
         content: "私（わたし）は　ディーナちゃんの犬（いぬ）になりたい",
         creatorId: cherry,
         commentId: comment1,
-        replyToId: reply0,
       },
       {
         content: "So möchte ich ein Hund von Frau Diana werden.",
         creatorId: david,
         commentId: comment1,
-        replyToId: reply0,
       },
       {
         content:

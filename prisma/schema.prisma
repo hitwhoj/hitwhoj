@@ -297,7 +297,8 @@ model CommentTag {
 model Comment {
   id Int @id @default(autoincrement())
 
-  title String
+  title   String
+  content String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -329,6 +330,10 @@ model Reply {
   replyTo   Reply?  @relation("replies", fields: [replyToId], references: [id])
   replyToId Int?
   replies   Reply[] @relation("replies")
+
+  domReply   Reply?  @relation("dsReplies", fields: [domId], references: [id])
+  domId      Int?
+  subReplies Reply[] @relation("dsReplies")
 
   heartees  User[] @relation("heartedReplies", references: [id])
   starrees  User[] @relation("starredReplies", references: [id])

@@ -4,70 +4,26 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Table, Grid, Button, Space } from "@arco-design/web-react";
+import { Table, Grid, Button, Space, Typography } from "@arco-design/web-react";
 import {
   IconExclamationCircle,
   IconExclamationCircleFill,
   IconHeart,
   IconHeartFill,
   IconMessage,
+  IconPlus,
   IconStarFill,
   IconThumbUp,
 } from "@arco-design/web-react/icon";
-import type { CSSProperties } from "react";
 import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-
-export type likeProps = {
-  id: number;
-  like?: boolean | undefined;
-  count: number;
-  likeAction: string;
-  dislikeAction?: string;
-  likeElement: JSX.Element;
-  dislikeElement?: JSX.Element;
-  style?: CSSProperties | undefined;
-  action?: ActionFunction | undefined;
-};
-
-export function Like({ props }: { props: likeProps }) {
-  if (props.like === undefined) {
-    props.like = false;
-    props.dislikeAction = props.likeAction;
-    props.dislikeElement = props.likeElement;
-  }
-  const fetcher = useFetcher();
-  const isFetching = fetcher.state !== "idle";
-
-  return (
-    <fetcher.Form method="post">
-      <input type="hidden" name="id" value={props.id} />
-      <input type="hidden" />
-      <button
-        type="submit"
-        name="_action"
-        value={props.like ? props.dislikeAction : props.likeAction}
-        disabled={isFetching}
-      >
-        {isFetching ? (
-          <div style={props.style}>
-            {!props.like ? props.likeElement : props.dislikeElement}{" "}
-            {props.count + (props.like ? -1 : 1)}
-          </div>
-        ) : (
-          <div style={props.style}>
-            {props.like ? props.likeElement : props.dislikeElement}{" "}
-            {props.count}
-          </div>
-        )}
-      </button>
-    </fetcher.Form>
-  );
-}
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
+import { Like } from "~/src/comment/like";
 
 enum ActionType {
   None = "none",
@@ -283,7 +239,9 @@ export function CommentList({
     <Table
       columns={tableColumns}
       data={comments}
+      rowKey="id"
       hover={false}
+      border={false}
       pagination={{
         total: comments.length,
         defaultPageSize: 20,
@@ -296,22 +254,26 @@ export function CommentList({
 
 export default function CommentListIndex() {
   const { comments, self } = useLoaderData<LoaderData>();
+  const user = useContext(UserInfoContext);
 
   return (
-    <>
-      <Grid.Row
-        justify="end"
-        align="center"
-        style={{
-          height: "3rem",
-        }}
-      >
-        <Link to="new">
-          <Button type="primary">Create comment</Button>
-        </Link>
-      </Grid.Row>
-      <CommentList comments={comments} self={self} />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>
+        <Grid.Row justify="space-between" align="center">
+          讨论列表
+          {user && (
+            <Link to="new">
+              <Button type="primary" icon={<IconPlus />}>
+                新建讨论
+              </Button>
+            </Link>
+          )}
+        </Grid.Row>
+      </Typography.Title>
+      <Typography.Paragraph>
+        <CommentList comments={comments} self={self} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

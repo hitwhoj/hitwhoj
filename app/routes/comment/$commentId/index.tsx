@@ -1,13 +1,12 @@
 import type { Comment, Reply, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Link, Form } from "@remix-run/react";
+import { useLoaderData, Form } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme, replyContentScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import {
   Card,
   Comment as ArcoComment,
-  Avatar,
   Divider,
   Typography,
   Space,
@@ -23,13 +22,11 @@ import {
   IconHeart,
   IconHeartFill,
   IconMessage,
-  IconStar,
-  IconStarFill,
-  IconTag,
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { findSessionUid } from "~/utils/sessions";
-import { Like } from "~/routes/comment";
+import { Like } from "~/src/comment/like";
+import { Avatar } from "~/src/comment/avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
@@ -39,10 +36,13 @@ const TextArea = Input.TextArea;
 
 enum ActionType {
   None = "none",
+  CommentHeart = "commentHeart",
+  CommentUnHeart = "commentUnHeart",
   Heart = "heart",
   UnHeart = "unheart",
   Reply = "reply",
   ReplyTo = "replyTo",
+  ReplyToSub = "replyToSub",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -59,6 +59,34 @@ export const action: ActionFunction = async ({ request, params }) => {
   switch (_action) {
     case ActionType.None: {
       console.log("none");
+      return null;
+    }
+    case ActionType.CommentHeart: {
+      const id = invariant(idScheme, form.get("id"));
+      await db.comment.update({
+        where: { id },
+        data: {
+          heartees: {
+            connect: {
+              id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+    case ActionType.CommentUnHeart: {
+      const id = invariant(idScheme, form.get("id"));
+      await db.comment.update({
+        where: { id },
+        data: {
+          heartees: {
+            disconnect: {
+              id: self,
+            },
+          },
+        },
+      });
       return null;
     }
     case ActionType.Heart: {
@@ -124,7 +152,7 @@ export const action: ActionFunction = async ({ request, params }) => {
               id: commentId,
             },
           },
-          replyTo: {
+          domReply: {
             connect: {
               id: replyToId,
             },
@@ -132,6 +160,36 @@ export const action: ActionFunction = async ({ request, params }) => {
         },
       });
       return null;
+    }
+    case ActionType.ReplyToSub: {
+      const content = invariant(replyContentScheme, form.get("content"));
+      const domId = invariant(idScheme, form.get("domId"));
+      const replyToId = invariant(idScheme, form.get("replyToId"));
+      await db.reply.create({
+        data: {
+          content,
+          creator: {
+            connect: {
+              id: self,
+            },
+          },
+          comment: {
+            connect: {
+              id: commentId,
+            },
+          },
+          domReply: {
+            connect: {
+              id: domId,
+            },
+          },
+          replyTo: {
+            connect: {
+              id: replyToId,
+            },
+          },
+        },
+      });
     }
   }
   return null;
@@ -144,12 +202,15 @@ type LoaderData = {
     reportees: Pick<User, "id">[];
     replies: (Reply & {
       creator: Pick<User, "id" | "nickname" | "avatar">;
-      replyTo:
-        | (Pick<Reply, "content"> & { creator: Pick<User, "id" | "nickname"> })
-        | null;
+      subReplies: (Reply & {
+        replyTo:
+          | (Pick<Reply, "content"> & {
+              creator: Pick<User, "id" | "nickname">;
+            })
+          | null;
+      })[];
       heartees: Pick<User, "id">[];
       reportees: Pick<User, "id">[];
-      replies: Pick<Reply, "id">[];
     })[];
   };
   self: number;
@@ -191,12 +252,17 @@ export const loader: LoaderFunction<LoaderData> = async ({
               avatar: true,
             },
           },
-          replyTo: {
+          subReplies: {
             include: {
-              creator: {
+              replyTo: {
                 select: {
-                  id: true,
-                  nickname: true,
+                  content: true,
+                  creator: {
+                    select: {
+                      id: true,
+                      nickname: true,
+                    },
+                  },
                 },
               },
             },
@@ -207,11 +273,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
             },
           },
           reportees: {
-            select: {
-              id: true,
-            },
-          },
-          replies: {
             select: {
               id: true,
             },
@@ -228,6 +289,10 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw "comment not found";
   }
   const self = await findSessionUid(request);
+
+  // 过滤二级回复
+  comment.replies = comment.replies.filter((reply) => reply.domId === null);
+
   if (!self) {
     return {
       comment,
@@ -241,18 +306,14 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,
 });
 
-function Title({
-  reply,
+function CommentTitle({
+  comment,
   self,
-  index,
 }: {
-  reply: LoaderData["comment"]["replies"][number];
-  self: number;
-  index: number;
+  comment: LoaderData["comment"];
+  self: LoaderData["self"];
 }) {
-  const color = ["orange", "green", "blue", "purple", "magenta", "gold"];
-
-  const author = reply.creator;
+  const author = comment.creator;
 
   const likeStyle = { fontSize: "0.9rem" };
   const likeButtonStyle = { width: "6.5rem", padding: "0.1rem" };
@@ -276,32 +337,17 @@ function Title({
         }}
       >
         <NewReplyTo
-          replyToId={reply.id}
-          onCancel={() => {
-            setVisible(false);
-          }}
-          onReply={() => {
-            setVisible(false);
-          }}
+          replyToId={0}
+          onReply={() => setVisible(false)}
+          onCancel={() => setVisible(false)}
+          action={ActionType.Reply}
         />
       </Modal>
       <span style={{ display: "flex", alignItems: "center" }}>
-        <Avatar
-          style={{
-            marginRight: 8,
-            backgroundColor: color[Math.floor(Math.random() * color.length)],
-          }}
-          size={32}
-        >
-          {author.avatar ? (
-            <img src={author.avatar} alt="加载失败捏" />
-          ) : (
-            author.nickname[0]
-          )}
-        </Avatar>
+        <Avatar src={author.avatar} name={author.nickname} size={32} />
         <Typography.Text>{author.nickname}</Typography.Text>
         <Typography.Text>
-          &emsp;@{reply.createdAt.toLocaleString().slice(0, 16)}
+          &emsp;@{comment.createdAt.toLocaleString().slice(0, 16)}
         </Typography.Text>
       </span>
       <Space size={8}>
@@ -309,26 +355,11 @@ function Title({
         <Button type="text" size="small" style={likeButtonStyle}>
           <Like
             props={{
-              id: reply.id,
-              count: index,
-              likeAction: ActionType.None,
-              likeElement: (
-                <>
-                  <IconTag /> #{" "}
-                </>
-              ),
-              style: likeStyle,
-            }}
-          />
-        </Button>
-        <Button type="text" size="small" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: reply.id,
-              like: reply.heartees.map((u) => u.id).includes(self),
-              count: reply.heartees.length,
-              likeAction: ActionType.Heart,
-              dislikeAction: ActionType.UnHeart,
+              id: comment.id,
+              like: comment.heartees.map((u) => u.id).includes(self),
+              count: comment.heartees.length,
+              likeAction: ActionType.CommentHeart,
+              dislikeAction: ActionType.CommentUnHeart,
               likeElement: (
                 <>
                   <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
@@ -353,15 +384,22 @@ function Title({
         >
           <Like
             props={{
-              id: reply.id,
-              count: reply.replies.length,
+              id: comment.id,
+              like: comment.replies.map((u) => u.creatorId).includes(self),
+              count: comment.replies.length,
               likeAction: ActionType.None,
               likeElement: (
+                <>
+                  <IconMessage style={{ color: "#00B42A" }} /> Reply{" "}
+                </>
+              ),
+              dislikeElement: (
                 <>
                   <IconMessage /> Reply{" "}
                 </>
               ),
               style: likeStyle,
+              preload: false,
             }}
           />
         </Button>
@@ -369,9 +407,9 @@ function Title({
         <Button type="text" size="small" style={likeButtonStyle}>
           <Like
             props={{
-              id: reply.id,
-              like: reply.reportees.map((u) => u.id).includes(self),
-              count: reply.reportees.length,
+              id: comment.id,
+              like: comment.reportees.map((u) => u.id).includes(self),
+              count: comment.reportees.length,
               likeAction: ActionType.None,
               dislikeAction: ActionType.None,
               likeElement: (
@@ -382,7 +420,7 @@ function Title({
               ),
               dislikeElement: (
                 <>
-                  {reply.reportees.length > 0 ? (
+                  {comment.reportees.length > 0 ? (
                     <IconExclamationCircle style={{ color: "#F53F3F" }} />
                   ) : (
                     <IconExclamationCircle />
@@ -391,6 +429,7 @@ function Title({
                 </>
               ),
               style: likeStyle,
+              preload: false,
             }}
           />
         </Button>
@@ -399,22 +438,19 @@ function Title({
   );
 }
 
-function ReplyTo({
-  replyTo,
+function CommentCard({
+  comment,
+  self,
 }: {
-  replyTo: LoaderData["comment"]["replies"][number]["replyTo"];
+  comment: LoaderData["comment"];
+  self: LoaderData["self"];
 }) {
-  if (!replyTo) {
-    return null;
-  }
   return (
-    <Card>
-      <Link to={"/user/" + replyTo.creator.id} style={{ color: "#165DFF" }}>
-        @{replyTo.creator.nickname} :
-      </Link>
-      <Typography.Paragraph ellipsis={{ rows: 2, expandable: true }}>
-        <Markdown>{replyTo.content}</Markdown>
-      </Typography.Paragraph>
+    <Card
+      title={<CommentTitle comment={comment} self={self} />}
+      style={{ borderColor: "#4E5969" }}
+    >
+      <Markdown>{comment.content}</Markdown>
     </Card>
   );
 }
@@ -422,185 +458,154 @@ function ReplyTo({
 function ReplyCard({
   reply,
   self,
-  index,
 }: {
   reply: LoaderData["comment"]["replies"][number];
   self: LoaderData["self"];
-  index: number;
 }) {
+  const author = reply.creator;
+
+  const likeStyle = { fontSize: "0.9rem" };
+  const likeButtonStyle = {
+    width: "2.5rem",
+    height: "1.3rem",
+    padding: "0.1rem",
+  };
+
+  const [visible, setVisible] = useState(false);
+
+  const actions = (
+    <Space size={2}>
+      <Modal
+        title="New Reply"
+        visible={visible}
+        footer={null}
+        onCancel={() => {
+          setVisible(false);
+        }}
+      >
+        <NewReplyTo
+          replyToId={reply.id}
+          onCancel={() => {
+            setVisible(false);
+          }}
+          onReply={() => {
+            setVisible(false);
+          }}
+          action={ActionType.ReplyTo}
+        />
+      </Modal>
+      <Button type="text" size="mini" style={likeButtonStyle}>
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.heartees.map((u) => u.id).includes(self),
+            count: reply.heartees.length,
+            likeAction: ActionType.Heart,
+            dislikeAction: ActionType.UnHeart,
+            likeElement: (
+              <>
+                <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconHeart />{" "}
+              </>
+            ),
+            style: likeStyle,
+          }}
+        />
+      </Button>
+      <Button
+        type="text"
+        size="mini"
+        onClick={() => {
+          setVisible(true);
+        }}
+        style={likeButtonStyle}
+      >
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.subReplies.map((u) => u.creatorId).includes(self),
+            count: reply.subReplies.length,
+            likeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconMessage style={{ color: "#00B42A" }} />{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconMessage />{" "}
+              </>
+            ),
+            style: likeStyle,
+            preload: false,
+          }}
+        />
+      </Button>
+      {/* TODO : 举办机制与页面没做 */}
+      <Button type="text" size="mini" style={likeButtonStyle}>
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.reportees.map((u) => u.id).includes(self),
+            count: reply.reportees.length,
+            likeAction: ActionType.None,
+            dislikeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                {reply.reportees.length > 0 ? (
+                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                ) : (
+                  <IconExclamationCircle />
+                )}{" "}
+              </>
+            ),
+            style: likeStyle,
+            preload: false,
+          }}
+        />
+      </Button>
+    </Space>
+  );
+
   return (
-    <Card
-      title={<Title reply={reply} self={self} index={index} />}
-      style={{ borderColor: "#4E5969" }}
-    >
-      <ReplyTo replyTo={reply.replyTo} />
-      <Markdown>{reply.content}</Markdown>
-    </Card>
+    <ArcoComment
+      actions={actions}
+      author={author.nickname}
+      // align="right"
+      key={"reply" + reply.id}
+      avatar={<Avatar src={author.avatar} name={author.nickname} />}
+      content={<div>{reply.content}</div>}
+      datetime={reply.createdAt.toLocaleString().slice(0, 16)}
+    />
   );
 }
 
-function CommentAndReply({
+function ReplyList({
   replies,
   self,
 }: {
   replies: LoaderData["comment"]["replies"];
   self: LoaderData["self"];
 }) {
-  const [like, setLike] = useState<boolean>(false);
-  const [star, setStar] = useState<boolean>(true);
-
-  const actions = [
-    <span
-      className="custom-comment-action"
-      key="heart"
-      onClick={() => setLike(!like)}
-    >
-      {like ? <IconHeartFill style={{ color: "#f53f3f" }} /> : <IconHeart />}
-      {83 + (like ? 1 : 0)}
-    </span>,
-    <span
-      className="custom-comment-action"
-      key="star"
-      onClick={() => setStar(!star)}
-    >
-      {star ? <IconStarFill style={{ color: "#ffb400" }} /> : <IconStar />}
-      {3 + (star ? 1 : 0)}
-    </span>,
-    <span className="custom-comment-action" key="reply">
-      <IconMessage /> Reply
-    </span>,
-  ];
-
   if (!replies.length) {
     return <p>暂无回复</p>;
   } else {
     return (
-      // <Space direction="vertical" size={16} style={{ width: "100%" }}>
-      //   {replies.map((reply, index) => (
-      //     <ReplyCard key={reply.id} reply={reply} self={self} index={index} />
-      //   ))}
-      // </Space>
-      <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        <ReplyCard
-          key={replies[0].id}
-          reply={replies[0]}
-          self={self}
-          index={0}
-        />
-        {/*<Divider style={{borderColor: "#4E5969"}}/>*/}
+      <>
         <br />
-        <ArcoComment
-          actions={actions}
-          author="Socrates"
-          align="right"
-          avatar={
-            <Avatar>
-              <img
-                alt="avatar"
-                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
-              />
-            </Avatar>
-          }
-          content={<div>Comment body content.</div>}
-          datetime="1 hour"
-        >
-          <ArcoComment
-            actions={actions}
-            author="Socrates"
-            align="right"
-            avatar={
-              <Avatar>
-                <img
-                  alt="avatar"
-                  src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
-                />
-              </Avatar>
-            }
-            content={<div>Comment body content.</div>}
-            datetime="1 hour"
-          />
-          <ArcoComment
-            actions={actions}
-            author="Socrates"
-            align="right"
-            avatar={
-              <Avatar>
-                <img
-                  alt="avatar"
-                  src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
-                />
-              </Avatar>
-            }
-            content={<div>Comment body content.</div>}
-            datetime="1 hour"
-          ></ArcoComment>
-        </ArcoComment>
-        <ArcoComment
-          actions={actions}
-          author="Socrates"
-          align="right"
-          avatar={
-            <Avatar>
-              <img
-                alt="avatar"
-                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
-              />
-            </Avatar>
-          }
-          content={<div>Comment body content.</div>}
-          datetime="1 hour"
-        />
-        <ArcoComment
-          actions={actions}
-          author="Socrates"
-          align="right"
-          avatar={
-            <Avatar>
-              <img
-                alt="avatar"
-                src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/e278888093bef8910e829486fb45dd69.png~tplv-uwbnlip3yd-webp.webp"
-              />
-            </Avatar>
-          }
-          content={<div>Comment body content.</div>}
-          datetime="1 hour"
-        />
-        <Card
-          title={<Title reply={replies[0]} self={self} index={0} />}
-          style={{ borderColor: "#4E5969" }}
-          bordered={false}
-        >
-          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
-          <Card
-            title={<Title reply={replies[0]} self={self} index={0} />}
-            style={{ borderColor: "#4E5969" }}
-            bordered={false}
-          >
-            <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
-          </Card>
-          <Card
-            title={<Title reply={replies[0]} self={self} index={0} />}
-            style={{ borderColor: "#4E5969" }}
-            bordered={false}
-          >
-            <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
-          </Card>
-        </Card>
-        <Card
-          title={<Title reply={replies[0]} self={self} index={0} />}
-          style={{ borderColor: "#4E5969" }}
-          bordered={false}
-        >
-          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
-        </Card>
-        <Card
-          title={<Title reply={replies[0]} self={self} index={0} />}
-          style={{ borderColor: "#4E5969" }}
-          bordered={false}
-        >
-          <Markdown>评论评论凑够15字凑够15字凑够15字</Markdown>
-        </Card>
-      </Space>
+        {replies.map((reply, index) => (
+          <ReplyCard reply={reply} self={self} key={index} />
+        ))}
+      </>
     );
   }
 }
@@ -650,10 +655,12 @@ function NewReplyTo({
   replyToId,
   onCancel,
   onReply,
+  action,
 }: {
   replyToId: number;
   onCancel: () => void;
   onReply: () => void;
+  action: ActionType;
 }) {
   const [content, setContent] = useState<string>("");
 
@@ -691,7 +698,7 @@ function NewReplyTo({
           type="primary"
           htmlType="submit"
           name="_action"
-          value={ActionType.ReplyTo}
+          value={action}
           onClick={onReply}
         >
           Reply !
@@ -707,7 +714,8 @@ export default function CommentView() {
   return (
     <>
       <Divider />
-      <CommentAndReply replies={comment.replies} self={self} />
+      <CommentCard comment={comment} self={self} />
+      <ReplyList replies={comment.replies} self={self} />
       <Divider />
       <NewReply />
       <Divider />

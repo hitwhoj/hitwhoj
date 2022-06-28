@@ -16,10 +16,12 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
   const title = invariant(commentScheme, form.get("title"));
   const tag = invariant(tagScheme, form.get("tag"));
+  const content = invariant(commentScheme, form.get("content"));
 
   const { id } = await db.comment.create({
     data: {
       title,
+      content,
       creator: { connect: { id: self } },
       tags: {
         connectOrCreate: {
@@ -47,6 +49,9 @@ export default function CommentNew() {
         <br />
         <label>Tag</label>
         <input name="tag" />
+        <br />
+        <label>Content</label>
+        <input name="content" />
         <button type="submit">Submit</button>
       </Form>
     </div>
