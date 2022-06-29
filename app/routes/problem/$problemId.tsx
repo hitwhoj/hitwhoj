@@ -9,6 +9,9 @@ import { checkProblemReadPermission } from "~/utils/permission/problem";
 import { Navigator } from "~/src/Navigator";
 import { IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
+import { isAdmin } from "~/utils/permission";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -55,6 +58,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
+  const self = useContext(UserInfoContext);
 
   return (
     <Typography>
@@ -76,7 +80,9 @@ export default function ProblemView() {
         routes={[
           { title: "题面", key: "." },
           { title: "提交", key: "submit" },
-          { title: "数据", key: "data" },
+          ...(self && isAdmin(self?.role)
+            ? [{ title: "数据", key: "data" }]
+            : []),
         ]}
       />
 
