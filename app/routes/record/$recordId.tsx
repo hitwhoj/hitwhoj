@@ -1,4 +1,4 @@
-import type { Contest, Problem, Record, User } from "@prisma/client";
+import type { Contest, Problem, Record } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -23,6 +23,8 @@ import { WsContext } from "~/utils/context/ws";
 import { IconCopy, IconEyeInvisible } from "@arco-design/web-react/icon";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
+import type { UserData } from "~/utils/db/user";
+import { selectUserData } from "~/utils/db/user";
 
 type LoaderData = {
   record: Pick<
@@ -36,7 +38,7 @@ type LoaderData = {
     | "memory"
     | "subtasks"
   > & {
-    submitter: Pick<User, "id" | "nickname" | "username">;
+    submitter: UserData;
     problem: Pick<Problem, "id" | "title" | "private">;
     contest: Pick<
       Contest,
@@ -64,9 +66,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       subtasks: true,
       submitter: {
         select: {
-          id: true,
-          nickname: true,
-          username: true,
+          ...selectUserData,
         },
       },
       problem: {

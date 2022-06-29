@@ -4,6 +4,17 @@ import { invariant } from "~/utils/invariant";
 import { s3 } from "~/utils/server/s3.server";
 import { uuidScheme } from "~/utils/scheme";
 
+const WHITELIST = [
+  // 所有视频
+  "video/",
+  // 所有音频
+  "audio/",
+  // 文本文件
+  "text/plain",
+  // 所有图片
+  "image/",
+];
+
 /**
  * Encode filename to be used in Content-Disposition header
  *
@@ -62,9 +73,13 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
 
   const headers = new Headers();
   headers.set("Accept-Ranges", "bytes");
-  // 设置 CSP，关闭嗅探，防止 XSS 攻击
-  headers.set("Content-Security-Policy", "default-src 'none'");
-  headers.set("X-Content-Type-Options", "nosniff");
+
+  // 检查是否是安全的 MIME 类型
+  if (!WHITELIST.some((prefix) => file.mimetype.startsWith(prefix))) {
+    // 设置 CSP，关闭嗅探，防止 XSS 攻击
+    headers.set("Content-Security-Policy", "default-src 'none'");
+    headers.set("X-Content-Type-Options", "nosniff");
+  }
 
   // 返回部分文件
   if (request.headers.has("Range")) {

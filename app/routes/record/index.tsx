@@ -1,17 +1,19 @@
 import { Table, Typography } from "@arco-design/web-react";
-import type { Problem, Record, User } from "@prisma/client";
+import type { Problem, Record } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
+import type { UserData } from "~/utils/db/user";
+import { selectUserData } from "~/utils/db/user";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
 
 type LoaderData = {
   records: (Pick<Record, "id" | "status" | "submittedAt"> & {
     problem: Pick<Problem, "id" | "title" | "private">;
-    submitter: Pick<User, "id" | "username" | "nickname">;
+    submitter: UserData;
   })[];
 };
 
@@ -32,13 +34,10 @@ export const loader: LoaderFunction<LoaderData> = async () => {
       },
       submitter: {
         select: {
-          id: true,
-          username: true,
-          nickname: true,
+          ...selectUserData,
         },
       },
     },
-    take: 20,
   });
 
   return { records };
@@ -76,13 +75,11 @@ export default function RecordList() {
             },
             {
               title: "题目",
-              dataIndex: "problem",
-              render: (problem) => <ProblemLink problem={problem} />,
+              render: (_, record) => <ProblemLink problem={record.problem} />,
             },
             {
               title: "用户",
-              dataIndex: "submitter",
-              render: (user) => <UserLink user={user} />,
+              render: (_, record) => <UserLink user={record.submitter} />,
               align: "center",
               cellStyle: { width: "5%", whiteSpace: "nowrap" },
             },
