@@ -52,7 +52,11 @@ jobs:
           export S3_SECRET_KEY="testpassword"
           export S3_BUCKET="hitwhoj"
           yarn prisma db push
-          yarn prisma db seed
+
+      - name: Test
+        run: |
+          node -r esbuild-register tests/seed.ts
+          yarn test
 
       - name: Build
         run: yarn build

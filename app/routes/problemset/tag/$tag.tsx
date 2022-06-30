@@ -1,12 +1,18 @@
 import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData, useParams } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
+import { Empty, Table, Typography } from "@arco-design/web-react";
+import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 
 type LoaderData = {
-  problemSets: ProblemSet[];
+  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
+    _count: {
+      problems: number;
+    };
+  })[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
@@ -15,14 +21,18 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   });
 
   const problemSets = await db.problemSet.findMany({
-    where: {
-      tags: {
-        some: {
-          name: tag,
+    where: { tags: { some: { name: tag } }, team: null },
+    orderBy: { id: "asc" },
+    select: {
+      id: true,
+      title: true,
+      private: true,
+      _count: {
+        select: {
+          problems: true,
         },
       },
     },
-    take: 20,
   });
 
   if (!problemSets.length) {
@@ -41,19 +51,39 @@ export default function ProblemSetTag() {
   const { problemSets } = useLoaderData<LoaderData>();
 
   return (
-    <>
-      <h1>Tag: {tag}</h1>
-      <ul>
-        {problemSets.map((problemSet) => (
-          <li key={problemSet.id}>
-            <Link to={`/problemset/${problemSet.id}`}>
-              <span style={{ color: "red" }}>S{problemSet.id}</span>
-              {problemSet.title}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
+    <Typography>
+      <Typography.Title heading={3}>题单标签：{tag}</Typography.Title>
+
+      <Typography.Paragraph>
+        <Table
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "题单",
+              render: (_, problemset) => (
+                <ProblemSetLink problemset={problemset} />
+              ),
+            },
+            {
+              title: "题目数",
+              dataIndex: "_count.problems",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+          data={problemSets}
+          rowKey="id"
+          noDataElement={<Empty description="没有题单" />}
+          hover={false}
+          border={false}
+          pagination={false}
+        />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

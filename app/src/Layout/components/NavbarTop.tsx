@@ -2,7 +2,6 @@ import { NavLink, useFetcher } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import {
   Grid,
-  Avatar,
   Space,
   Switch,
   Dropdown,
@@ -12,17 +11,13 @@ import {
   Drawer,
   Message,
 } from "@arco-design/web-react";
-import {
-  IconUser,
-  IconSun,
-  IconMoon,
-  IconMenu,
-} from "@arco-design/web-react/icon";
+import { IconSun, IconMoon, IconMenu } from "@arco-design/web-react/icon";
 import { ThemeContext } from "~/utils/context/theme";
 import { UserInfoContext } from "~/utils/context/user";
 import { LoginModalContext } from "~/utils/context/modal";
 import { NavbarMenu } from "./NavbarMenu";
 import type { ActionData as LogoutActionData } from "~/routes/logout";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 const Row = Grid.Row;
 const MenuItem = Menu.Item;
@@ -106,18 +101,13 @@ export default function NavbarTop() {
               </Menu>
             }
           >
-            <Avatar
+            <UserAvatar
+              user={user}
               style={{
                 cursor: "pointer",
                 backgroundColor: "rgb(var(--primary-6))",
               }}
-            >
-              {user.avatar ? (
-                <img alt="avatar" src={user.avatar} />
-              ) : (
-                <IconUser />
-              )}
-            </Avatar>
+            />
           </Dropdown>
         ) : (
           <Space>

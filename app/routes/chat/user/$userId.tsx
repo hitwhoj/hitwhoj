@@ -4,7 +4,7 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import { Avatar, Button, Empty, Input } from "@arco-design/web-react";
+import { Button, Empty, Input } from "@arco-design/web-react";
 import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
@@ -14,7 +14,7 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState, useRef } from "react";
 import { WsContext } from "~/utils/context/ws";
 import type { WsServer } from "server/ws.server";
-import { IconUser } from "@arco-design/web-react/icon";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
@@ -174,18 +174,7 @@ export default function ChatIndex() {
                 }`}
               >
                 <div className="chat-content-message-avatar">
-                  {isLast && (
-                    <Avatar>
-                      {user.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.nickname || user.username}
-                        />
-                      ) : (
-                        <IconUser />
-                      )}
-                    </Avatar>
-                  )}
+                  {isLast && <UserAvatar user={user} />}
                 </div>
                 <div className="chat-content-message-bubble">
                   <span>{message.content}</span>

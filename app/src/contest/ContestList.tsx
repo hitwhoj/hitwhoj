@@ -1,3 +1,4 @@
+import type { TableColumnProps } from "@arco-design/web-react";
 import { Empty, Table } from "@arco-design/web-react";
 import type { ContestListData } from "~/utils/db/contest";
 import { formatDateTime } from "~/utils/tools";
@@ -6,9 +7,10 @@ import { ContestLink } from "./ContestLink";
 
 type Props = {
   contests: ContestListData[];
+  columns?: TableColumnProps<ContestListData>[];
 };
 
-export function ContestList({ contests }: Props) {
+export function ContestList({ contests, columns }: Props) {
   return (
     <Table
       columns={[
@@ -38,6 +40,7 @@ export function ContestList({ contests }: Props) {
           cellStyle: { width: "5%", whiteSpace: "nowrap" },
           render: (time) => formatDateTime(time),
         },
+        ...(columns || []),
       ]}
       data={contests}
       rowKey="id"

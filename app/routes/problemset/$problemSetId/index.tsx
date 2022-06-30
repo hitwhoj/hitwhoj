@@ -7,6 +7,7 @@ import { idScheme } from "~/utils/scheme";
 import { Table, Typography, Empty } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
 import { ProblemLink } from "~/src/problem/ProblemLink";
+import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
 
 type LoaderData = {
   problemSet: ProblemSet & {
@@ -15,10 +16,14 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  await checkProblemSetReadPermission(request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },

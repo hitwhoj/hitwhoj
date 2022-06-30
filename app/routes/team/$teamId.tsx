@@ -9,16 +9,18 @@ import { Navigator } from "~/src/Navigator";
 import { IconUserGroup } from "@arco-design/web-react/icon";
 
 type LoaderData = {
-  team: Team;
+  team: Pick<Team, "name">;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const teamId = invariant(idScheme, params.teamId);
   const team = await db.team.findUnique({
     where: { id: teamId },
+    select: { name: true },
   });
+
   if (!team) {
-    throw new Response("Team not found", { status: 404 });
+    throw new Response("团队不存在", { status: 404 });
   }
 
   return { team };
@@ -35,6 +37,7 @@ export default function Record() {
           {team.name}
         </Space>
       </Typography.Title>
+
       <Typography.Paragraph>
         <Navigator
           routes={[
@@ -45,7 +48,13 @@ export default function Record() {
           ]}
         />
       </Typography.Paragraph>
-      <Outlet />
+
+      <Typography.Paragraph>
+        <Outlet />
+      </Typography.Paragraph>
     </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

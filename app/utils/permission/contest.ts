@@ -1,4 +1,4 @@
-import { isAdmin } from "../permission";
+import { isAdmin, isUser } from "../permission";
 import { db } from "../server/db.server";
 import { findSessionUser, findSessionUserOptional } from "../sessions";
 
@@ -38,7 +38,6 @@ async function getContestRole(contestId: number, userId: number) {
   const contest = await db.contest.findUnique({
     where: { id: contestId },
     select: {
-      creator: { select: { id: true } },
       mods: { where: { id: userId }, select: { id: true } },
       juries: { where: { id: userId }, select: { id: true } },
       attendees: { where: { id: userId }, select: { id: true } },
@@ -49,12 +48,11 @@ async function getContestRole(contestId: number, userId: number) {
     throw new Response("比赛不存在", { status: 404 });
   }
 
-  const isCreator = contest.creator.id === userId;
   const isMod = contest.mods.length > 0;
   const isJury = contest.juries.length > 0;
   const isAttendee = contest.attendees.length > 0;
 
-  return { isCreator, isMod, isJury, isAttendee };
+  return { isMod, isJury, isAttendee };
 }
 
 /**
@@ -82,12 +80,12 @@ export async function checkContestReadPermission(
     return;
   }
 
-  const { isCreator, isMod, isJury, isAttendee } = await getContestRole(
+  const { isMod, isJury, isAttendee } = await getContestRole(
     contestId,
     self.id
   );
 
-  if (isCreator || isMod || isJury || isAttendee) {
+  if (isMod || isJury || isAttendee) {
     return;
   }
 
@@ -97,7 +95,7 @@ export async function checkContestReadPermission(
 /**
  * 检查是否有修改比赛信息的权限
  *
- * - 用户必须是系统管理员或者比赛创建者
+ * - 用户必须是系统管理员或者比赛管理员（并且没有被封禁）
  */
 export async function checkContestWritePermission(
   request: Request,
@@ -109,10 +107,12 @@ export async function checkContestWritePermission(
     return;
   }
 
-  const { isCreator } = await getContestRole(contestId, self.id);
+  if (isUser(self.role)) {
+    const { isMod } = await getContestRole(contestId, self.id);
 
-  if (isCreator) {
-    return;
+    if (isMod) {
+      return;
+    }
   }
 
   throw new Response("您没有权限修改比赛信息", { status: 403 });
@@ -122,9 +122,9 @@ export async function checkContestWritePermission(
  * 检查是否有查看比赛题目列表的权限
  *
  * 对于比赛分为三个阶段
- * - 未开始：只有系统管理员、比赛创建者、比赛管理员、比赛裁判可以查看到题目列表
- * - 进行中：只有系统管理员、比赛创建者、比赛管理员、比赛裁判、比赛选手可以查看到题目列表
- * - 已结束：只要是系统管理员、比赛创建者、比赛管理员、比赛裁判、比赛选手，或者比赛是公开的就可以查看到题目列表
+ * - 未开始：只有系统管理员、比赛管理员、比赛裁判可以查看到题目列表
+ * - 进行中：只有系统管理员、比赛管理员、比赛裁判、比赛选手可以查看到题目列表
+ * - 已结束：只要是系统管理员、比赛管理员、比赛裁判、比赛选手，或者比赛是公开的就可以查看到题目列表
  */
 export async function checkContestProblemReadPermission(
   request: Request,
@@ -135,17 +135,16 @@ export async function checkContestProblemReadPermission(
   const self = await findSessionUserOptional(request);
 
   const isSysAdmin = self && isAdmin(self.role);
-  const { isCreator, isMod, isJury, isAttendee } = self
+  const { isMod, isJury, isAttendee } = self
     ? await getContestRole(contestId, self.id)
-    : { isCreator: false, isMod: false, isJury: false, isAttendee: false };
+    : { isMod: false, isJury: false, isAttendee: false };
 
   if (
-    (status === ContestStatus.NOT_STARTED &&
-      (isSysAdmin || isCreator || isMod || isJury)) ||
+    (status === ContestStatus.NOT_STARTED && (isSysAdmin || isMod || isJury)) ||
     (status === ContestStatus.RUNNING &&
-      (isSysAdmin || isCreator || isMod || isJury || isAttendee)) ||
+      (isSysAdmin || isMod || isJury || isAttendee)) ||
     (status === ContestStatus.ENDED &&
-      (isSysAdmin || isCreator || isMod || isJury || isAttendee || isPublic))
+      (isSysAdmin || isMod || isJury || isAttendee || isPublic))
   ) {
     return;
   }
@@ -163,6 +162,10 @@ export async function checkContestProblemSubmitPermission(
   contestId: number
 ) {
   const self = await findSessionUser(request);
+
+  if (!isUser(self.role)) {
+    throw new Response("您已被封禁", { status: 403 });
+  }
 
   const { status } = await getContestInformations(contestId);
 
@@ -188,19 +191,36 @@ export async function checkContestProblemSubmitPermission(
  * - 比赛必须公开
  * - 比赛必须未开始
  * - 用户必须不是比赛选手
+ * - 用户必须不是管理员、裁判
  */
 export async function checkContestAttendPermission(
   request: Request,
   contestId: number
 ) {
   const self = await findSessionUser(request);
+
+  if (!isUser(self.role)) {
+    throw new Response("您已被封禁", { status: 403 });
+  }
+
   const { status } = await getContestInformations(contestId);
 
   if (status === ContestStatus.NOT_STARTED) {
-    const { isAttendee } = await getContestRole(contestId, self.id);
+    const { isAttendee, isJury, isMod } = await getContestRole(
+      contestId,
+      self.id
+    );
 
     if (isAttendee) {
       throw new Response("您已经报名参加比赛", { status: 403 });
+    }
+
+    if (isJury) {
+      throw new Response("您是裁判，不能报名参加比赛", { status: 403 });
+    }
+
+    if (isMod) {
+      throw new Response("您是管理员，不能报名参加比赛", { status: 403 });
     }
   } else if (status === ContestStatus.RUNNING) {
     throw new Response("比赛已经开始", { status: 403 });
