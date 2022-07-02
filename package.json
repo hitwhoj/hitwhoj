@@ -88,7 +88,9 @@
     "yorkie": "^2.0.0"
   },
   "resolutions": {
-    "katex": "^0.15.3"
+    "katex": "^0.15.3",
+    "minimist": "^1.2.6",
+    "got": "^11.8.5"
   },
   "engines": {
     "node": "=16"
