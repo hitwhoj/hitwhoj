@@ -1,14 +1,17 @@
 import type { Problem, ProblemTag } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Space, Typography, Tag } from "@arco-design/web-react";
+import { Typography, Tag } from "@arco-design/web-react";
 import { checkProblemReadPermission } from "~/utils/permission/problem";
 import { Navigator } from "~/src/Navigator";
 import { IconTag } from "@arco-design/web-react/icon";
+import { TagSpace } from "~/src/TagSpace";
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
+import { isAdmin } from "~/utils/permission";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -45,10 +48,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  if (problem.teamId) {
-    throw redirect(`/team/${problem.teamId}/problem/${problem.id}`);
-  }
-
   return { problem };
 };
 
@@ -59,30 +58,37 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export default function ProblemView() {
   const { problem } = useLoaderData<LoaderData>();
+  const self = useContext(UserInfoContext);
 
   return (
     <Typography>
       <Typography.Title heading={3}>{problem.title}</Typography.Title>
 
-      <Typography.Paragraph>
-        <Space>
-          {problem.tags.map((tag) => (
-            <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
-              <Tag icon={<IconTag />}>{tag.name}</Tag>
-            </Link>
-          ))}
-        </Space>
-      </Typography.Paragraph>
+      {problem.tags.length > 0 && (
+        <Typography.Paragraph>
+          <TagSpace>
+            {problem.tags.map((tag) => (
+              <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
+                <Tag icon={<IconTag />}>{tag.name}</Tag>
+              </Link>
+            ))}
+          </TagSpace>
+        </Typography.Paragraph>
+      )}
+
       <Navigator
         routes={[
-          { key: ".", title: "题面" },
-          { key: "submit", title: "提交" },
-          { key: "data", title: "数据" },
+          { title: "题面", key: "." },
+          { title: "提交", key: "submit" },
+          ...(self && isAdmin(self?.role)
+            ? [{ title: "数据", key: "data" }]
+            : []),
         ]}
       />
-      <main>
+
+      <Typography.Paragraph>
         <Outlet />
-      </main>
+      </Typography.Paragraph>
     </Typography>
   );
 }

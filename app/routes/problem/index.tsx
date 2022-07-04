@@ -1,50 +1,41 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { Table, Typography } from "@arco-design/web-react";
-import { findSessionUserOptional } from "~/utils/sessions";
+import { Typography } from "@arco-design/web-react";
 import type { ProblemListData } from "~/utils/db/problem";
-import { findProblemMany } from "~/utils/db/problem";
-import { isAdmin, isUser } from "~/utils/permission";
-import { ProblemLink } from "~/src/problem/ProblemLink";
+import { selectProblemListData } from "~/utils/db/problem";
+import { ProblemList } from "~/src/problem/ProblemList";
+import { db } from "~/utils/server/db.server";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { isAdmin } from "~/utils/permission";
 
 // TODO: 分页
 type LoaderData = {
-  problems: ProblemListData[];
+  problems: (ProblemListData & {
+    _count: {
+      relatedRecords: number;
+    };
+  })[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const self = await findSessionUserOptional(request);
 
-  let problems: ProblemListData[];
-
-  // 访客，只能访问到非团队所有的公开的题目
-  if (!self) {
-    problems = await findProblemMany({
-      private: false,
-      team: null,
-    });
-  }
-  // 系统管理员，可以访问所有题目
-  else if (isAdmin(self.role)) {
-    problems = await findProblemMany({
-      team: null,
-    });
-  }
-  // 普通用户，只能访问到公开的非团队题目或者自己创建的题目
-  else if (isUser(self.role)) {
-    problems = await findProblemMany({
-      OR: [
-        // 公开的非团队题目
-        { private: false, team: null },
-        // 自己创建的题目
-        { creator: { id: self.id }, team: null },
-      ],
-    });
-  }
-  // 封禁用户，啥也看不了
-  else {
-    problems = [];
-  }
+  const problems = await db.problem.findMany({
+    // 只有系统管理员可以看到私有题目
+    where:
+      self && isAdmin(self.role)
+        ? { team: null }
+        : { team: null, private: false },
+    orderBy: [{ id: "asc" }],
+    select: {
+      ...selectProblemListData,
+      _count: {
+        select: {
+          relatedRecords: true,
+        },
+      },
+    },
+  });
 
   return { problems };
 };
@@ -61,18 +52,9 @@ export default function ProblemIndex() {
       <Typography.Title heading={3}>题目列表</Typography.Title>
 
       <Typography.Paragraph>
-        <Table
+        <ProblemList
+          problems={problems}
           columns={[
-            {
-              title: "#",
-              dataIndex: "id",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-            {
-              title: "题目",
-              dataIndex: "title",
-              render: (_, problem) => <ProblemLink problem={problem} />,
-            },
             {
               title: "提交",
               dataIndex: "_count.relatedRecords",
@@ -80,11 +62,6 @@ export default function ProblemIndex() {
               cellStyle: { width: "5%", whiteSpace: "nowrap" },
             },
           ]}
-          data={problems}
-          rowKey="id"
-          hover={false}
-          border={false}
-          pagination={false}
         />
       </Typography.Paragraph>
     </Typography>

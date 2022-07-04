@@ -1,5 +1,5 @@
 import { Space } from "@arco-design/web-react";
-import { IconEyeInvisible } from "@arco-design/web-react/icon";
+import { IconEyeInvisible, IconTrophy } from "@arco-design/web-react/icon";
 import type { Contest } from "@prisma/client";
 import { Link } from "@remix-run/react";
 import { ContestStateTag } from "./ContestStateTag";
@@ -12,6 +12,7 @@ export function ContestLink({ contest }: Props) {
   return (
     <Link to={`/contest/${contest.id}`}>
       <Space>
+        <IconTrophy />
         {contest.title}
         {contest.private && <IconEyeInvisible />}
         <ContestStateTag

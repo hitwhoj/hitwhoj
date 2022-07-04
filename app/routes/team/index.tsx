@@ -9,10 +9,19 @@ import { db } from "~/utils/server/db.server";
 import { teamNameScheme } from "~/utils/scheme";
 import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
-import { Button, Grid, Input, Space, Table } from "@arco-design/web-react";
+import {
+  Button,
+  Grid,
+  Input,
+  Space,
+  Table,
+  Typography,
+} from "@arco-design/web-react";
+import { IconPlus } from "@arco-design/web-react/icon";
+import { TeamLink } from "~/src/team/TeamLink";
 
 export const meta: MetaFunction = () => ({
-  title: "Team List",
+  title: "团队列表 - HITwh OJ",
 });
 
 export const action: ActionFunction<Response> = async ({ request }) => {
@@ -50,65 +59,59 @@ export const loader: LoaderFunction<LoaderData> = async () => {
 
 export default function TeamList() {
   const { teams } = useLoaderData<LoaderData>();
-  const tableColumns = [
-    {
-      title: "#",
-      dataIndex: "id",
-      render: (col: string) => <Link to={`/problemset/${col}`}>{col}</Link>,
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      render: (col: string, team: Team) => (
-        <Link to={`/team/${team.id}`}>{col}</Link>
-      ),
-    },
-  ];
 
   return (
-    <>
-      <Grid.Row
-        justify="space-between"
-        align="center"
-        style={{
-          height: "3rem",
-        }}
-      >
-        <Form
-          method="post"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+    <Typography>
+      <Typography.Title heading={3}>
+        <Grid.Row justify="space-between" align="center">
+          <span>团队列表</span>
+          <Link to="new">
+            <Button type="primary" icon={<IconPlus />}>
+              创建团队
+            </Button>
+          </Link>
+        </Grid.Row>
+      </Typography.Title>
+
+      <Typography.Paragraph>
+        <Form method="post">
           <Space>
             <Input
               type="text"
               name="teamName"
-              placeholder="teamName"
+              placeholder="团队名称"
               required
             />
             <Button htmlType="submit" type="primary">
-              go
+              前往
             </Button>
           </Space>
         </Form>
-        <Link to="new">
-          <Button type="primary">Create Team</Button>
-        </Link>
-      </Grid.Row>
-      <Table
-        columns={tableColumns}
-        data={teams}
-        hover={false}
-        rowKey="id"
-        pagination={{
-          total: teams.length,
-          defaultPageSize: 20,
-          showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
-          showJumper: true,
-        }}
-      />
-    </>
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
+        <Table
+          columns={[
+            {
+              title: "#",
+              dataIndex: "id",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+            {
+              title: "团队",
+              render: (_, team) => <TeamLink team={team} />,
+            },
+          ]}
+          data={teams}
+          rowKey="id"
+          hover={false}
+          border={false}
+          pagination={false}
+        />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

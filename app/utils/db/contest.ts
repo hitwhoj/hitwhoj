@@ -1,35 +1,31 @@
-import { db } from "../server/db.server";
+import type { Contest, Prisma, PrismaPromise } from "@prisma/client";
 import type { Unpack } from "../tools";
 
-// 这真是太优美了
-type ContestWhereInput = NonNullable<
-  NonNullable<Parameters<typeof db.contest.findMany>["0"]>["where"]
+type ContestFindMany<T> = Prisma.CheckSelect<
+  T,
+  PrismaPromise<Array<Contest>>,
+  PrismaPromise<Array<Prisma.ContestGetPayload<T>>>
 >;
-
-/**
- * 筛选比赛，自动过滤掉团队的比赛
- */
-export function findContestList(where: ContestWhereInput) {
-  return db.contest.findMany({
-    where: { teamId: null, ...where },
-    orderBy: [{ beginTime: "desc" }],
-    select: {
-      id: true,
-      title: true,
-      beginTime: true,
-      endTime: true,
-      system: true,
-      private: true,
-      tags: {
-        orderBy: { name: "asc" },
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
-}
 
 export type ContestListData = Unpack<
-  Awaited<ReturnType<typeof findContestList>>
+  Awaited<
+    ContestFindMany<{
+      select: typeof selectContestListData;
+    }>
+  >
 >;
+
+export const selectContestListData = {
+  id: true,
+  title: true,
+  beginTime: true,
+  endTime: true,
+  system: true,
+  private: true,
+  tags: {
+    orderBy: { name: "asc" },
+    select: {
+      name: true,
+    },
+  },
+} as const;

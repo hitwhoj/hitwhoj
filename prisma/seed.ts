@@ -34,7 +34,7 @@ async function seed() {
 
   await prisma.user.update({
     where: { id: alice },
-    data: { avatar: `/file/${jiaran}/raw` },
+    data: { avatar: `/file/${jiaran}/avatar.jpg` },
   });
 
   const { id: bob } = await prisma.user.create({
@@ -65,7 +65,7 @@ async function seed() {
 
   await prisma.user.update({
     where: { id: cherry },
-    data: { avatar: `/file/${chenrui}/raw` },
+    data: { avatar: `/file/${chenrui}/avatar.png` },
   });
 
   const { id: david } = await prisma.user.create({
@@ -74,7 +74,17 @@ async function seed() {
       username: "David",
       password: "david",
       nickname: "蒙古上单",
+      role: SystemUserRole.Banned,
     },
+  });
+
+  await prisma.user.createMany({
+    data: [
+      { username: "Alice2", password: "alice2", role: SystemUserRole.Su },
+      { username: "Bob2", password: "bob2", role: SystemUserRole.Admin },
+      { username: "Cherry2", password: "cherry2", role: SystemUserRole.User },
+      { username: "David2", password: "david2", role: SystemUserRole.Banned },
+    ],
   });
 
   const { id: p1 } = await prisma.problem.create({
@@ -109,7 +119,6 @@ int main() {
 }
 \`\`\`
 `,
-      creator: { connect: { id: alice } },
       tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
@@ -200,7 +209,6 @@ this is language whatthefuck
 这是我是嘉然语言
 ~~~
 `,
-      creator: { connect: { id: bob } },
       private: false,
       tags: {
         connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],
@@ -216,7 +224,7 @@ this is language whatthefuck
       endTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
 
-      creator: { connect: { id: cherry } },
+      mods: { connect: [{ id: cherry }] },
       attendees: { connect: [{ id: david }, { id: alice }] },
       juries: { connect: { id: bob } },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
@@ -237,7 +245,7 @@ this is language whatthefuck
       endTime: new Date(Date.now() + 3600000),
       system: ContestSystem.IOI,
 
-      creator: { connect: { id: alice } },
+      mods: { connect: [{ id: alice }] },
       tags: { create: [{ name: "a-soul" }] },
       problems: {
         create: [
@@ -253,7 +261,6 @@ this is language whatthefuck
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
 
-      creator: { connect: { id: david } },
       tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: { connect: [{ id: p1 }, { id: p2 }] },
     },
@@ -264,7 +271,6 @@ this is language whatthefuck
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
 
-      creator: { connect: { id: alice } },
       tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ id: p2 }, { id: p1 }] },
     },
@@ -275,7 +281,6 @@ this is language whatthefuck
       title: "嘉然可爱捏",
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
-      creator: { connect: { id: alice } },
       tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: { connect: [{ id: p2 }, { id: p1 }] },
     },

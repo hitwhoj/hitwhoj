@@ -5,7 +5,6 @@ import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import {
-  Avatar,
   Button,
   Card,
   Grid,
@@ -16,6 +15,7 @@ import {
 } from "@arco-design/web-react";
 import { IconDelete, IconPlus } from "@arco-design/web-react/icon";
 import { useEffect, useState } from "react";
+import { UserAvatar } from "~/src/user/UserAvatar";
 const Row = Grid.Row;
 const Col = Grid.Col;
 
@@ -92,16 +92,11 @@ const MemberCard = ({ id, username, avatar }: Member) => {
       <Row justify="space-between" align="center">
         <Link to={`/user/${id}`}>
           <span style={{ display: "flex", alignItems: "center" }}>
-            <Avatar
+            <UserAvatar
+              user={{ username, avatar, nickname: username }}
               style={{ marginRight: 10, backgroundColor: "#165DFF" }}
               size={32}
-            >
-              {avatar ? (
-                <img alt="avatar" src={avatar} />
-              ) : (
-                <span>{username.charAt(0)}</span>
-              )}
-            </Avatar>
+            />
             <Typography.Text>{username}</Typography.Text>
           </span>
         </Link>
@@ -210,3 +205,6 @@ export default function MemberList() {
     </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

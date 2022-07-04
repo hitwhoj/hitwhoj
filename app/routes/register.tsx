@@ -4,6 +4,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
+import { checkUsernameTaken } from "~/utils/permission/user";
 
 export type ActionData =
   | {
@@ -20,9 +21,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   const username = invariant(usernameScheme, form.get("username"));
   const password = invariant(passwordScheme, form.get("password"));
 
-  const oldUser = await db.user.findUnique({ where: { username } });
-
-  if (oldUser) {
+  if (await checkUsernameTaken(username)) {
     return json(
       { success: false, reason: "用户名已经被注册" },
       { status: 400 }

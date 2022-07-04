@@ -1,8 +1,9 @@
-import { Avatar, Empty } from "@arco-design/web-react";
+import { Empty } from "@arco-design/web-react";
 import type { User } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { UserAvatar } from "~/src/user/UserAvatar";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import type { PrivateMessageWithUser } from "~/utils/ws.types";
@@ -72,15 +73,7 @@ export default function UserChatIndex() {
             prefetch="intent"
           >
             <div className="chat-selection">
-              <Avatar>
-                {user.avatar ? (
-                  <img src={user.avatar} alt="avatar" />
-                ) : user.nickname ? (
-                  user.nickname
-                ) : (
-                  user.username
-                )}
-              </Avatar>
+              <UserAvatar user={user} />
               <div className="chat-selection-detail">
                 <div className="chat-selection-detail-name">
                   {user.nickname || user.username}
@@ -98,3 +91,6 @@ export default function UserChatIndex() {
     </div>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

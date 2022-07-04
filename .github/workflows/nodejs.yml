@@ -52,7 +52,15 @@ jobs:
           export S3_SECRET_KEY="testpassword"
           export S3_BUCKET="hitwhoj"
           yarn prisma db push
-          yarn prisma db seed
+
+      - name: Test
+        run: |
+          export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
+          export S3_ACCESS_KEY="testadmin"
+          export S3_SECRET_KEY="testpassword"
+          export S3_BUCKET="hitwhoj"
+          node -r esbuild-register tests/seed.ts
+          yarn test
 
       - name: Build
         run: yarn build

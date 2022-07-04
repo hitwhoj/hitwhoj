@@ -75,3 +75,6 @@ export default function FileIndex() {
     </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

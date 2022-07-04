@@ -13,9 +13,9 @@ import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { WsContext } from "~/utils/context/ws";
 import type { WsServer } from "server/ws.server";
-import { Avatar, Button, Input } from "@arco-design/web-react";
+import { Button, Input } from "@arco-design/web-react";
 import type { ChatMessageWithUser } from "~/utils/ws.types";
-import { IconUser } from "@arco-design/web-react/icon";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `聊天室: ${data?.room.name} - HITwh OJ`,
@@ -152,18 +152,7 @@ export default function ChatRoomIndex() {
               <div className="chat-content-message-avatar">
                 {isLast && (
                   <Link to={`/user/${message.sender.id}`}>
-                    <Avatar>
-                      {message.sender.avatar ? (
-                        <img
-                          src={message.sender.avatar}
-                          alt={
-                            message.sender.nickname || message.sender.username
-                          }
-                        />
-                      ) : (
-                        <IconUser />
-                      )}
-                    </Avatar>
+                    <UserAvatar user={message.sender} />
                   </Link>
                 )}
               </div>

@@ -27,13 +27,10 @@ model User {
 
   sessions UserSession[]
 
-  createdFiles       File[]
-  createdProblems    Problem[]
-  createdProblemSets ProblemSet[]
-  createdContests    Contest[]
-  createdComments    Comment[]
-  createdReplies     Reply[]
-  createdRecords     Record[]
+  createdFiles    File[]
+  createdComments Comment[]
+  createdReplies  Reply[]
+  createdRecords  Record[]
 
   heartedComments  Comment[] @relation(name: "heartedComments")
   heartedReplies   Reply[]   @relation(name: "heartedReplies")
@@ -104,7 +101,7 @@ model Problem {
   id Int @id @default(autoincrement())
 
   title       String
-  description String
+  description String @default("")
 
   /// 是否公开
   private Boolean @default(true)
@@ -116,9 +113,6 @@ model Problem {
   memoryLimit Int @default(128)
 
   tags ProblemTag[] @relation(references: [id])
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
 
   data                File[]           @relation("data")
   files               File[]           @relation("file")
@@ -141,7 +135,7 @@ model ProblemSet {
   id Int @id @default(autoincrement())
 
   title       String
-  description String
+  description String @default("")
 
   private Boolean @default(true)
 
@@ -151,8 +145,8 @@ model ProblemSet {
   tags     ProblemSetTag[] @relation(references: [id])
   problems Problem[]       @relation(references: [id])
 
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
+  team   Team? @relation(fields: [teamId], references: [id])
+  teamId Int?
 }
 
 model ProblemSetTag {
@@ -166,7 +160,7 @@ model Contest {
   id Int @id @default(autoincrement())
 
   title       String
-  description String
+  description String @default("")
 
   system  ContestSystem
   private Boolean       @default(true)
@@ -178,9 +172,6 @@ model Contest {
   updatedAt DateTime @updatedAt
 
   tags ContestTag[] @relation(references: [id])
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
 
   problems ContestProblem[]
 
@@ -230,11 +221,12 @@ model Team {
   name String @unique
 
   createdAt   DateTime @default(now())
-  description String?
+  description String   @default("")
 
-  members  TeamMember[]
-  contests Contest[]
-  problems Problem[]
+  members     TeamMember[]
+  contests    Contest[]
+  problems    Problem[]
+  problemSets ProblemSet[]
 }
 
 model TeamMember {

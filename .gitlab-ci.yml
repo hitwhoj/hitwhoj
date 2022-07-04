@@ -34,7 +34,10 @@ test_build:
     - export S3_SECRET_KEY=$MINIO_SECRET_KEY
     - export S3_BUCKET=hitwhoj
     - yarn prisma db push
-    - yarn prisma db seed
+
+    # test
+    - node -r esbuild-register tests/seed.ts
+    - yarn test
 
     # build
     - yarn build

@@ -8,7 +8,7 @@ export function adjustTimezone(date: Date, timezoneOffset: number) {
 }
 
 /**
- * 获取时间的 datetime-local 格式，用于填充 <input type="datetime-local"> 的默认值
+ * 获取时间的 datetime-local 格式，用于填充 `<input type="datetime-local">` 的默认值
  *
  * @param time 时间 (默认为当前时间)
  */

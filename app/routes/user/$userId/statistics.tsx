@@ -1,16 +1,26 @@
-import type { Contest, ProblemSet } from "@prisma/client";
+import type { Contest } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { checkUserReadPermission } from "~/utils/permission/user";
-import { Typography } from "@arco-design/web-react";
+import {
+  Typography,
+  Link as ArcoLink,
+  Statistic,
+  Space,
+} from "@arco-design/web-react";
 
 type LoaderData = {
-  createdProblemSets: Pick<ProblemSet, "id" | "title">[];
-  createdContests: Pick<Contest, "id" | "title">[];
-  attendedContests: Pick<Contest, "id" | "title">[];
+  user: {
+    attendedContests: Pick<Contest, "id" | "title">[];
+    _count: {
+      createdRecords: number;
+      createdComments: number;
+      createdReplies: number;
+    };
+  };
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -18,30 +28,22 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await checkUserReadPermission(request);
+  await checkUserReadPermission(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
-      createdProblemSets: {
-        where: {
-          private: false,
-        },
-        select: {
-          id: true,
-          title: true,
-        },
-      },
-      createdContests: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
       attendedContests: {
         select: {
           id: true,
           title: true,
+        },
+      },
+      _count: {
+        select: {
+          createdRecords: true,
+          createdComments: true,
+          createdReplies: true,
         },
       },
     },
@@ -51,54 +53,31 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return user;
+  return { user };
 };
 
 export default function UserStatistics() {
-  const { createdProblemSets, createdContests, attendedContests } =
-    useLoaderData<LoaderData>();
+  const { user } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
-      <Typography.Title heading={4}>创建的题单</Typography.Title>
       <Typography.Paragraph>
-        {createdProblemSets.length ? (
-          <ul>
-            {createdProblemSets.map((problemset) => (
-              <li key={problemset.id}>
-                <Link to={`/problemset/${problemset.id}`}>
-                  {problemset.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>没有喵</div>
-        )}
-      </Typography.Paragraph>
-
-      <Typography.Title heading={4}>创建的比赛</Typography.Title>
-      <Typography.Paragraph>
-        {createdContests.length ? (
-          <ul>
-            {createdContests.map((contest) => (
-              <li key={contest.id}>
-                <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>没有喵</div>
-        )}
+        <Space size="large">
+          <Statistic title="提交" value={user._count.createdRecords} />
+          <Statistic title="评论" value={user._count.createdComments} />
+          <Statistic title="回复" value={user._count.createdReplies} />
+        </Space>
       </Typography.Paragraph>
 
       <Typography.Title heading={4}>参与的比赛</Typography.Title>
       <Typography.Paragraph>
-        {attendedContests.length ? (
+        {user.attendedContests.length ? (
           <ul>
-            {attendedContests.map((contest) => (
+            {user.attendedContests.map((contest) => (
               <li key={contest.id}>
-                <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
+                <ArcoLink>
+                  <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
+                </ArcoLink>
               </li>
             ))}
           </ul>
@@ -109,3 +88,6 @@ export default function UserStatistics() {
     </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

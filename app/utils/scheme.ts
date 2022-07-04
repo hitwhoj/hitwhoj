@@ -69,13 +69,11 @@ export const tagScheme = z.string().nonempty("Tag must be nonempty");
 export const titleScheme = z.string().nonempty("Title must be nonempty");
 
 /**
- * 各类简介
+ * 各类简介，都可以为空
  *
  * @example "其实就是一个字符串"
  */
-export const descriptionScheme = z
-  .string()
-  .nonempty("Description must be nonempty");
+export const descriptionScheme = z.string();
 
 /**
  * 个人邮箱，必须是哈工大的邮箱

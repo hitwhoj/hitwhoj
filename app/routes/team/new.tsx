@@ -1,4 +1,8 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type {
+  ActionFunction,
+  LoaderFunction,
+  MetaFunction,
+} from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -9,6 +13,10 @@ import { TeamMemberRole } from "@prisma/client";
 import { Button, Input, Form, Typography } from "@arco-design/web-react";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
+
+export const meta: MetaFunction = () => ({
+  title: "新建团队 - HITwh OJ",
+});
 
 export const loader: LoaderFunction = async ({ request }) => {
   const self = await findSessionUid(request);
@@ -80,3 +88,6 @@ export default function NewTeam() {
     </Typography>
   );
 }
+
+export { CatchBoundary } from "~/src/CatchBoundary";
+export { ErrorBoundary } from "~/src/ErrorBoundary";

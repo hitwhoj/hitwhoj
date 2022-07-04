@@ -19,7 +19,7 @@ import { Table, Button, Space, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
-import { checkProblemUpdatePermission } from "~/utils/permission/problem";
+import { checkProblemWritePermission } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -36,7 +36,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     status: 404,
   });
 
-  await checkProblemUpdatePermission(request, problemId);
+  await checkProblemWritePermission(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -78,7 +78,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     status: 404,
   });
 
-  await checkProblemUpdatePermission(request, problemId);
+  await checkProblemWritePermission(request, problemId);
 
   const form = await unstable_parseMultipartFormData(request, handler);
 
