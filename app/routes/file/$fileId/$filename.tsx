@@ -13,6 +13,8 @@ const WHITELIST = [
   "text/plain",
   // 所有图片
   "image/",
+  // pdf 文件
+  "application/pdf",
 ];
 
 /**
