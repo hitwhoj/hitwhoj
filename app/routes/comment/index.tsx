@@ -1,94 +1,279 @@
-import type { Comment, User, CommentTag } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { Comment, User, Reply } from "@prisma/client";
+import type {
+  ActionFunction,
+  LoaderFunction,
+  MetaFunction,
+} from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
+import { Table, Grid, Button, Space, Typography } from "@arco-design/web-react";
+import {
+  IconExclamationCircle,
+  IconExclamationCircleFill,
+  IconHeart,
+  IconHeartFill,
+  IconMessage,
+  IconPlus,
+  IconStarFill,
+  IconThumbUp,
+} from "@arco-design/web-react/icon";
+import { findSessionUid } from "~/utils/sessions";
+import { redirect } from "@remix-run/node";
+import { invariant } from "~/utils/invariant";
+import { idScheme } from "~/utils/scheme";
+import { useContext } from "react";
+import { UserInfoContext } from "~/utils/context/user";
+import { Like } from "~/src/comment/like";
 
-type LoaderData = {
-  comments: (Comment & {
-    creator: Pick<User, "id" | "username" | "avatar">;
-    tags: Pick<CommentTag, "name">[];
-  })[];
+enum ActionType {
+  None = "none",
+  Heart = "heart",
+  UnHeart = "unheart",
+}
+
+export const action: ActionFunction = async ({ request }) => {
+  const self = await findSessionUid(request);
+
+  if (!self) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
+  const form = await request.formData();
+  const _action = form.get("_action");
+
+  switch (_action) {
+    case ActionType.None: {
+      return null;
+    }
+    case ActionType.Heart: {
+      const id = invariant(idScheme, form.get("id"));
+      await db.comment.update({
+        where: { id },
+        data: {
+          heartees: {
+            connect: {
+              id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+    case ActionType.UnHeart: {
+      const id = invariant(idScheme, form.get("id"));
+      await db.comment.update({
+        where: { id },
+        data: {
+          heartees: {
+            disconnect: {
+              id: self,
+            },
+          },
+        },
+      });
+      return null;
+    }
+  }
+  return null;
 };
 
-export const loader: LoaderFunction<LoaderData> = async () => {
+type LoaderData = {
+  comments: (Pick<Comment, "id" | "title" | "createdAt" | "updatedAt"> & {
+    creator: Pick<User, "id" | "nickname">;
+    heartees: Pick<User, "id" | "nickname">[];
+    replies: Pick<Reply, "id" | "creatorId">[];
+    reportees: Pick<User, "id">[];
+  })[];
+  self: number;
+};
+
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const comments = await db.comment.findMany({
     orderBy: {
-      createdAt: "desc",
+      updatedAt: "desc",
     },
     take: 20,
     include: {
       creator: {
         select: {
           id: true,
-          username: true,
-          avatar: true,
+          nickname: true,
         },
       },
-      tags: {
+      heartees: {
         select: {
-          name: true,
+          id: true,
+          nickname: true,
+        },
+      },
+      replies: {
+        select: {
+          id: true,
+          creatorId: true,
+        },
+      },
+      reportees: {
+        select: {
+          id: true,
         },
       },
     },
   });
-  return { comments };
+  const self = await findSessionUid(request);
+  if (!self) {
+    return {
+      comments,
+      self: -1,
+    };
+  }
+  return { comments, self };
 };
 
 export const meta: MetaFunction = () => ({
   title: "讨论列表 - HITwh OJ",
 });
 
-export function CommentItem({
-  comment,
-}: {
-  comment: Comment & {
-    creator: Pick<User, "id" | "username" | "avatar">;
-    tags: Pick<CommentTag, "name">[];
-  };
-}) {
-  return (
-    <>
-      <img src={comment.creator.avatar} alt="没有头像捏" />
-      {comment.creator.username}
-
-      {"    发布时间:  " + comment.createdAt}
-      {"    最近更新:  " + comment.updatedAt}
-      {"    标签:  " + comment.tags.map((tag) => tag.name).join(", ")}
-      <Link to={`/comment/${comment.id}`}>
-        <h2>{comment.title} ←←点这个进入comment页</h2>
-      </Link>
-    </>
-  );
-}
-
 export function CommentList({
   comments,
+  self,
 }: {
-  comments: (Comment & {
-    creator: Pick<User, "id" | "username" | "avatar">;
-    tags: Pick<CommentTag, "name">[];
-  })[];
+  comments: LoaderData["comments"];
+  self: LoaderData["self"];
 }) {
+  type CommentDetails = typeof comments[number];
+  const tableColumns = [
+    {
+      title: "Forum",
+      render: (_: any, comment: CommentDetails) => (
+        <Link to={`/comment/forum/${comment.id}`}>
+          P123: A + B Problem 公告版
+        </Link>
+      ),
+    },
+    {
+      title: "Title",
+      dataIndex: "title",
+      render: (col: string, comment: CommentDetails) => (
+        <Link
+          to={`/comment/${comment.id}`}
+          // TODO: 写个hover样式qwq
+          style={{}}
+        >
+          {col}
+        </Link>
+      ),
+    },
+    {
+      title: (
+        <Space size={12}>
+          <IconHeart />
+          <IconStarFill />
+          <IconThumbUp />
+          <IconMessage />
+        </Space>
+      ),
+      render: (_: any, comment: CommentDetails) => (
+        <Space size={6}>
+          <Like
+            props={{
+              id: comment.id,
+              like: comment.heartees.map((u) => u.id).includes(self),
+              count: comment.heartees.length,
+              likeAction: ActionType.Heart,
+              dislikeAction: ActionType.UnHeart,
+              likeElement: <IconHeartFill style={{ color: "#f53f3f" }} />,
+              dislikeElement: <IconHeart />,
+              style: { fontSize: "1rem" },
+            }}
+          />
+          <Link to={`/comment/${comment.id}`}>
+            <Like
+              props={{
+                id: comment.id,
+                like: comment.replies.map((u) => u.creatorId).includes(self),
+                count: comment.replies.length,
+                likeAction: ActionType.None,
+                dislikeAction: ActionType.None,
+                likeElement: <IconMessage style={{ color: "#00B42A" }} />,
+                dislikeElement: <IconMessage />,
+                style: { fontSize: "1rem" },
+              }}
+            />
+          </Link>
+          <Link to={`/comment/${comment.id}/report`}>
+            <Like
+              props={{
+                id: comment.id,
+                like: comment.reportees.map((u) => u.id).includes(self),
+                count: comment.reportees.length,
+                likeAction: ActionType.None,
+                dislikeAction: ActionType.None,
+                likeElement: (
+                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />
+                ),
+                dislikeElement:
+                  comment.reportees.length > 0 ? (
+                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                  ) : (
+                    <IconExclamationCircle />
+                  ),
+                style: { fontSize: "1rem" },
+              }}
+            />
+          </Link>
+        </Space>
+      ),
+    },
+    {
+      title: "Author",
+      render: (_: any, comment: CommentDetails) => (
+        <Link to={`/user/${comment.creator.id}`}>
+          {comment.creator.nickname}
+          {" @"}
+          {comment.createdAt.toLocaleString()}
+        </Link>
+      ),
+    },
+  ];
   return (
-    <div className="comment-list">
-      {comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} />
-      ))}
-    </div>
+    <Table
+      columns={tableColumns}
+      data={comments}
+      rowKey="id"
+      hover={false}
+      border={false}
+      pagination={{
+        total: comments.length,
+        defaultPageSize: 20,
+        showTotal: (total: number) => `Total ${Math.ceil(total / 20)} pages`,
+        showJumper: true,
+      }}
+    />
   );
 }
 
 export default function CommentListIndex() {
-  const { comments } = useLoaderData<LoaderData>();
+  const { comments, self } = useLoaderData<LoaderData>();
+  const user = useContext(UserInfoContext);
 
   return (
-    <>
-      <h1>latest comments</h1>
-      <Link to="new">
-        <button>create a comment</button>
-      </Link>
-      <CommentList comments={comments} />
-    </>
+    <Typography>
+      <Typography.Title heading={3}>
+        <Grid.Row justify="space-between" align="center">
+          讨论列表
+          {user && (
+            <Link to="new">
+              <Button type="primary" icon={<IconPlus />}>
+                新建讨论
+              </Button>
+            </Link>
+          )}
+        </Grid.Row>
+      </Typography.Title>
+      <Typography.Paragraph>
+        <CommentList comments={comments} self={self} />
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 
