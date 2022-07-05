@@ -32,6 +32,15 @@ model User {
   createdReplies  Reply[]
   createdRecords  Record[]
 
+  heartedComments  Comment[] @relation(name: "heartedComments")
+  heartedReplies   Reply[]   @relation(name: "heartedReplies")
+  starredComments  Comment[] @relation(name: "starredComments")
+  starredReplies   Reply[]   @relation(name: "starredReplies")
+  reportedComments Comment[] @relation(name: "reportedComments")
+  reportedReplies  Reply[]   @relation(name: "reportedReplies")
+
+
+  // TODO: reference?
   attendedContests Contest[] @relation("attendee", references: [id])
   moddedContests   Contest[] @relation("mod", references: [id])
   juriedContests   Contest[] @relation("jury", references: [id])
@@ -280,12 +289,17 @@ model CommentTag {
 model Comment {
   id Int @id @default(autoincrement())
 
-  title String
+  title   String
+  content String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // === relations ===
+
+  heartees  User[] @relation("heartedComments", references: [id])
+  starrees  User[] @relation("starredComments", references: [id])
+  reportees User[] @relation("reportedComments", references: [id])
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
@@ -304,6 +318,18 @@ model Reply {
   updatedAt DateTime @updatedAt
 
   // ==== relations ====
+
+  replyTo   Reply?  @relation("replies", fields: [replyToId], references: [id])
+  replyToId Int?
+  replies   Reply[] @relation("replies")
+
+  domReply   Reply?  @relation("dsReplies", fields: [domId], references: [id])
+  domId      Int?
+  subReplies Reply[] @relation("dsReplies")
+
+  heartees  User[] @relation("heartedReplies", references: [id])
+  starrees  User[] @relation("starredReplies", references: [id])
+  reportees User[] @relation("reportedReplies", references: [id])
 
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int

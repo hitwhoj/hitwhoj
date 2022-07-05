@@ -1,13 +1,13 @@
 import * as io from "socket.io";
-import { db } from "../app/utils/server/db.server";
-import { s3 } from "../app/utils/server/s3.server";
+import { db } from "~/utils/server/db.server";
+import { s3 } from "~/utils/server/s3.server";
 import type {
   ClientEvent,
   JudgeRequest,
   JudgeResult,
   ServerEvent,
 } from "./judge.types";
-import { WsServer } from "server/ws.server";
+import type { WsServer } from "server/ws.server";
 
 /**
  * 后端服务器

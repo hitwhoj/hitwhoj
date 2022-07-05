@@ -150,6 +150,17 @@ export const commentScheme = z
   .min(10, "Comment must be at least 10 characters");
 
 /**
+ * 回复的内容，8-1000字符, 支持 Markdown
+ *
+ * @example "# 这里是嘉然！别看我小小的，我超能吃还超可爱的哦~"
+ */
+export const replyContentScheme = z
+  .string()
+  .nonempty("Reply content must be nonempty")
+  .min(8, "Reply content must be at least 8 characters")
+  .max(1000, "Reply content must be at most 1000 characters");
+
+/**
  * 回复的内容，需要十个字符以上
  */
 export const replyScheme = z

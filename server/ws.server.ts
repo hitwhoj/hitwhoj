@@ -1,12 +1,13 @@
-import {
+import type {
   ChatMessageWithUser,
   ContestRecordUpdateMessage,
   PrivateMessageWithUser,
   RecordUpdateMessage,
   WebSocketMessage,
 } from "~/utils/ws.types";
-import { Server as HttpServer } from "http";
-import { Server as WebSocketServer, WebSocket } from "ws";
+import type { Server as HttpServer } from "http";
+import type { WebSocket } from "ws";
+import { Server as WebSocketServer } from "ws";
 
 class WsServer {
   #server: WebSocketServer;
