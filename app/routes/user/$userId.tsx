@@ -60,8 +60,12 @@ export default function UserProfile() {
             <AvatarBadge icon="大" color="magenta">
               <UserAvatar user={user} size={60} />
             </AvatarBadge>
-          ) : (
+          ) : isUser(user.role) ? (
             <UserAvatar user={user} size={60} />
+          ) : (
+            <AvatarBadge icon="封" color="gray">
+              <UserAvatar user={user} size={60} />
+            </AvatarBadge>
           )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>
@@ -87,6 +91,9 @@ export default function UserProfile() {
                   { title: "文件", key: "files" },
                   { title: "编辑", key: "edit" },
                 ]
+              : []),
+            ...(self && isAdmin(self.role)
+              ? [{ title: "滥权", key: "admin" }]
               : []),
           ]}
         />

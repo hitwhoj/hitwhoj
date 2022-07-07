@@ -236,12 +236,4 @@ export async function checkContestAttendPermission(
  *
  * - 用户必须是系统管理员
  */
-export async function checkContestCreatePermission(request: Request) {
-  const self = await findSessionUser(request);
-
-  if (!isAdmin(self.role)) {
-    throw new Response("您没有权限创建题目", { status: 403 });
-  }
-
-  return;
-}
+export { checkAdminPermission as checkContestCreatePermission } from "./user";

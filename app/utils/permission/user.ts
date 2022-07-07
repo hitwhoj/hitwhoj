@@ -31,3 +31,25 @@ export async function checkUserReadPermission(
 ) {
   return true;
 }
+
+/**
+ * 检查用户是否是管理员
+ */
+export async function checkAdminPermission(request: Request) {
+  const { role } = await findSessionUser(request);
+
+  if (isAdmin(role)) return;
+
+  throw new Response("权限不足", { status: 403 });
+}
+
+/**
+ * 检查用户是否是超级管理员
+ */
+export async function checkSuperUserPermission(request: Request) {
+  const { role } = await findSessionUser(request);
+
+  if (role === "Su") return;
+
+  throw new Response("权限不足", { status: 403 });
+}

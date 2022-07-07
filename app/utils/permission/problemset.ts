@@ -113,12 +113,4 @@ export async function checkProblemSetWritePermission(
  *
  * - 必须是系统管理员
  */
-export async function checkProblemSetCreatePermission(request: Request) {
-  const self = await findSessionUser(request);
-
-  if (isAdmin(self.role)) {
-    return;
-  }
-
-  throw new Response("您没有权限创建题单", { status: 403 });
-}
+export { checkAdminPermission as checkProblemSetCreatePermission } from "./user";
