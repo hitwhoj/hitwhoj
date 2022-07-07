@@ -77,7 +77,11 @@ export default function ContestView() {
             endTime={contest.endTime}
           />
           <ContestSystemTag system={contest.system} />
-          {contest.private && <Tag icon={<IconEyeInvisible />}>隐藏</Tag>}
+          {contest.private && (
+            <Tag icon={<IconEyeInvisible />} color="gold">
+              隐藏
+            </Tag>
+          )}
           {contest.tags.map(({ name }) => (
             <Link to={`/contest/tag/${name}`} key={name}>
               <Tag icon={<IconTag />}>{name}</Tag>

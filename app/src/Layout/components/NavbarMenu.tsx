@@ -4,6 +4,7 @@ import {
   IconArchive,
   IconBook,
   IconHistory,
+  IconHome,
   IconMessage,
   IconQuestionCircle,
   IconTrophy,
@@ -13,6 +14,11 @@ import { useEffect, useState } from "react";
 
 // 左侧导航栏列表
 const navBarRoutes = [
+  {
+    name: "首页",
+    href: "/",
+    icon: <IconHome />,
+  },
   {
     name: "题目",
     href: "/problem",

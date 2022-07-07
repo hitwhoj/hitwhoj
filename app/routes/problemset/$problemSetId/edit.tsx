@@ -1,4 +1,9 @@
-import type { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
+import type {
+  Problem,
+  ProblemSet,
+  ProblemSetProblem,
+  ProblemSetTag,
+} from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
@@ -20,12 +25,16 @@ import {
   Tag,
   Space,
   Typography,
+  Checkbox,
+  Message,
 } from "@arco-design/web-react";
 import {
   IconDelete,
+  IconDown,
   IconLoading,
   IconPlus,
   IconTag,
+  IconUp,
 } from "@arco-design/web-react/icon";
 import { useEffect, useRef, useState } from "react";
 import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
@@ -37,9 +46,11 @@ const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
 type LoaderData = {
-  problemSet: ProblemSet & {
+  problemSet: Pick<ProblemSet, "id" | "title" | "description" | "private"> & {
     tags: ProblemSetTag[];
-    problems: ProblemListData[];
+    problems: (Pick<ProblemSetProblem, "rank"> & {
+      problem: ProblemListData;
+    })[];
   };
 };
 
@@ -54,9 +65,23 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      private: true,
       tags: true,
-      problems: { select: selectProblemListData },
+      problems: {
+        orderBy: { rank: "asc" },
+        select: {
+          rank: true,
+          problem: {
+            select: {
+              ...selectProblemListData,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -73,6 +98,8 @@ enum ActionType {
   CreateProblem = "createProblem",
   DeleteProblem = "deleteProblem",
   UpdateInformation = "updateInformation",
+  MoveProblemUp = "moveProblemUp",
+  MoveProblemDown = "moveProblemDown",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -89,15 +116,21 @@ export const action: ActionFunction = async ({ request, params }) => {
     case ActionType.CreateProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          problems: {
-            connect: {
-              id: problemId,
-            },
+      await db.$transaction(async (db) => {
+        const {
+          _max: { rank },
+        } = await db.problemSetProblem.aggregate({
+          where: { problemSetId },
+          _max: { rank: true },
+        });
+
+        await db.problemSetProblem.create({
+          data: {
+            problemSetId,
+            problemId,
+            rank: (rank ?? 0) + 1,
           },
-        },
+        });
       });
 
       return null;
@@ -106,15 +139,91 @@ export const action: ActionFunction = async ({ request, params }) => {
     case ActionType.DeleteProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          problems: {
-            disconnect: {
-              id: problemId,
+      await db.$transaction(async () => {
+        const { rank } = await db.problemSetProblem.delete({
+          where: {
+            problemSetId_problemId: {
+              problemSetId,
+              problemId,
             },
           },
-        },
+        });
+
+        await db.problemSetProblem.updateMany({
+          where: { rank: { gte: rank } },
+          data: { rank: { decrement: 1 } },
+        });
+      });
+
+      return null;
+    }
+
+    case ActionType.MoveProblemUp:
+    case ActionType.MoveProblemDown: {
+      const problemId = invariant(idScheme, form.get("pid"));
+
+      await db.$transaction(async (db) => {
+        const problem = await db.problemSetProblem.findUnique({
+          where: {
+            problemSetId_problemId: {
+              problemSetId,
+              problemId,
+            },
+          },
+        });
+
+        if (!problem) {
+          throw new Response("题目不存在", { status: 404 });
+        }
+
+        const { rank } = problem;
+
+        const target = await db.problemSetProblem.findUnique({
+          where: {
+            problemSetId_rank: {
+              problemSetId,
+              rank: _action === ActionType.MoveProblemUp ? rank - 1 : rank + 1,
+            },
+          },
+        });
+
+        if (!target) {
+          throw new Response("移动失败", { status: 400 });
+        }
+
+        // 删除原来的位置
+        await db.problemSetProblem.delete({
+          where: {
+            problemSetId_problemId: {
+              problemSetId,
+              problemId,
+            },
+          },
+        });
+        await db.problemSetProblem.delete({
+          where: {
+            problemSetId_problemId: {
+              problemSetId,
+              problemId: target.problemId,
+            },
+          },
+        });
+
+        // 插入新的位置
+        await db.problemSetProblem.createMany({
+          data: [
+            {
+              problemSetId,
+              problemId: target.problemId,
+              rank,
+            },
+            {
+              problemSetId,
+              problemId,
+              rank: rank + (_action === ActionType.MoveProblemUp ? -1 : 1),
+            },
+          ],
+        });
       });
 
       return null;
@@ -158,12 +267,14 @@ export const action: ActionFunction = async ({ request, params }) => {
     case ActionType.UpdateInformation: {
       const title = invariant(titleScheme, form.get("title"));
       const description = invariant(descriptionScheme, form.get("description"));
+      const priv = form.get("private") === "true";
 
       await db.problemSet.update({
         where: { id: problemSetId },
         data: {
           title,
           description,
+          private: priv,
         },
       });
 
@@ -181,14 +292,27 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 function ProblemSetEditor({
   title,
   description,
+  private: _priv,
   tags,
 }: {
   title: string;
   description: string;
+  private: boolean;
   tags: string[];
 }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state === "submitting";
+  const isUpdating = fetcher.state !== "idle";
+
+  const [priv, setPriv] = useState(_priv);
+  const [first, setFirst] = useState(true);
+
+  useEffect(() => {
+    if (first) {
+      setFirst(false);
+    } else if (!isUpdating) {
+      Message.success("更新成功");
+    }
+  }, [isUpdating]);
 
   return (
     <fetcher.Form method="post" style={{ maxWidth: 600 }}>
@@ -218,6 +342,17 @@ function ProblemSetEditor({
       </FormItem>
 
       <FormItem>
+        <input type="hidden" name="private" value={String(priv)} />
+        <Checkbox
+          checked={priv}
+          onChange={(checked) => setPriv(checked)}
+          disabled={isUpdating}
+        >
+          首页隐藏
+        </Checkbox>
+      </FormItem>
+
+      <FormItem>
         <Button
           type="primary"
           htmlType="submit"
@@ -234,7 +369,7 @@ function ProblemSetEditor({
 
 function ProblemSetTagItem({ name }: { name: string }) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
+  const isUpdating = fetcher.state !== "idle";
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
@@ -242,7 +377,7 @@ function ProblemSetTagItem({ name }: { name: string }) {
       visible={true}
       closable
       onClose={() => fetcher.submit(formRef.current)}
-      icon={isDeleting ? <IconLoading /> : <IconTag />}
+      icon={isUpdating ? <IconLoading /> : <IconTag />}
     >
       {name}
       <fetcher.Form
@@ -319,30 +454,70 @@ function ProblemSetTagEditor({ tags }: { tags: string[] }) {
   );
 }
 
-function ProblemSetProblemOperations({ pid }: { pid: number }) {
+function ProblemSetProblemOperations({
+  pid,
+  isFirst,
+  isLast,
+}: {
+  pid: number;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
+  const isUpdating = fetcher.state !== "idle";
 
   return (
     <fetcher.Form method="post">
       <input type="hidden" name="pid" value={pid} />
-      <Button
-        type="primary"
-        status="danger"
-        size="mini"
-        htmlType="submit"
-        name="_action"
-        value={ActionType.DeleteProblem}
-        loading={isDeleting}
-        icon={<IconDelete />}
-      />
+      <Space size="mini">
+        <Button
+          type="primary"
+          status="danger"
+          size="mini"
+          htmlType="submit"
+          name="_action"
+          value={ActionType.DeleteProblem}
+          loading={
+            isUpdating &&
+            fetcher.submission?.formData.get("_action") ===
+              ActionType.DeleteProblem
+          }
+          icon={<IconDelete />}
+        />
+        <Button
+          size="mini"
+          htmlType="submit"
+          name="_action"
+          value={ActionType.MoveProblemUp}
+          disabled={isFirst}
+          loading={
+            isUpdating &&
+            fetcher.submission?.formData.get("_action") ===
+              ActionType.MoveProblemUp
+          }
+          icon={<IconUp />}
+        />
+        <Button
+          size="mini"
+          htmlType="submit"
+          name="_action"
+          value={ActionType.MoveProblemDown}
+          disabled={isLast}
+          loading={
+            isUpdating &&
+            fetcher.submission?.formData.get("_action") ===
+              ActionType.MoveProblemDown
+          }
+          icon={<IconDown />}
+        />
+      </Space>
     </fetcher.Form>
   );
 }
 
 function ProblemSetProblemCreator() {
   const fetcher = useFetcher();
-  const isCreating = fetcher.state === "submitting";
+  const isCreating = fetcher.state !== "idle";
 
   return (
     <fetcher.Form method="post">
@@ -369,17 +544,38 @@ function ProblemSetProblemCreator() {
   );
 }
 
-function ProblemEditor({ problems }: { problems: ProblemListData[] }) {
+function ProblemEditor({
+  problems,
+}: {
+  problems: (Pick<ProblemSetProblem, "rank"> & { problem: ProblemListData })[];
+}) {
   return (
     <>
       <Typography.Paragraph>
         <ProblemList
-          problems={problems}
+          problems={problems.map(({ problem }) => problem)}
+          columnsBefore={[
+            {
+              title: "#",
+              render: (_, problem) =>
+                problems.find((p) => p.problem === problem)?.rank,
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
           columns={[
             {
               title: "操作",
-              render: (_: any, problem: Pick<Problem, "id" | "title">) => (
-                <ProblemSetProblemOperations pid={problem.id} />
+              render: (
+                _: any,
+                problem: Pick<Problem, "id" | "title">,
+                index
+              ) => (
+                <ProblemSetProblemOperations
+                  pid={problem.id}
+                  isFirst={index === 0}
+                  isLast={index === problems.length - 1}
+                />
               ),
               align: "center",
               cellStyle: { width: "5%", whiteSpace: "nowrap" },
@@ -405,6 +601,7 @@ export default function ProblemSetEdit() {
         <ProblemSetEditor
           title={problemSet.title}
           description={problemSet.description}
+          private={problemSet.private}
           tags={problemSet.tags.map(({ name }) => name)}
         />
       </Typography.Paragraph>

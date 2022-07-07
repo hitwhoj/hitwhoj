@@ -1,20 +1,32 @@
-import type { Problem, ProblemSet, ProblemSetTag } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
+import type {
+  Problem,
+  ProblemSet,
+  ProblemSetProblem,
+  ProblemSetTag,
+} from "@prisma/client";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Table, Typography, Empty } from "@arco-design/web-react";
+import { Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
-import { ProblemLink } from "~/src/problem/ProblemLink";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
+import { ProblemList } from "~/src/problem/ProblemList";
 
 type LoaderData = {
-  problemSet: ProblemSet & {
+  problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
     tags: ProblemSetTag[];
-    problems: Pick<Problem, "id" | "title" | "private">[];
+    problems: (Pick<ProblemSetProblem, "rank"> & {
+      problem: Pick<Problem, "id" | "title" | "private">;
+    })[];
   };
 };
+
+export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+  title: `题单: ${data?.problemSet.title} - HITwh OJ`,
+  description: data?.problemSet.description,
+});
 
 export const loader: LoaderFunction<LoaderData> = async ({
   request,
@@ -27,13 +39,22 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
       tags: true,
       problems: {
+        orderBy: { rank: "asc" },
         select: {
-          id: true,
-          title: true,
-          private: true,
+          rank: true,
+          problem: {
+            select: {
+              id: true,
+              title: true,
+              private: true,
+            },
+          },
         },
       },
     },
@@ -56,25 +77,21 @@ export default function ProblemSetIndex() {
       <Markdown>{problemSet.description}</Markdown>
 
       <Typography.Title heading={4}>题目</Typography.Title>
-      <Table
-        columns={[
-          {
-            title: "#",
-            dataIndex: "id",
-            cellStyle: { width: "5%", whiteSpace: "nowrap" },
-          },
-          {
-            title: "题目",
-            render: (_, problem) => <ProblemLink problem={problem} />,
-          },
-        ]}
-        data={problemSet.problems}
-        rowKey="id"
-        hover={false}
-        border={false}
-        pagination={false}
-        noDataElement={<Empty description="没有题目" />}
-      />
+
+      <Typography.Paragraph>
+        <ProblemList
+          problems={problemSet.problems.map(({ problem }) => problem)}
+          columnsBefore={[
+            {
+              title: "#",
+              render: (_, problem) =>
+                problemSet.problems.find((p) => p.problem === problem)?.rank,
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
+        />
+      </Typography.Paragraph>
     </Typography>
   );
 }

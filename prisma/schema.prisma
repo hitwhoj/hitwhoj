@@ -109,14 +109,14 @@ model Problem {
   updatedAt DateTime @updatedAt
 
   timeLimit   Int @default(1000)
-  memoryLimit Int @default(128)
+  memoryLimit Int @default(134217728)
 
   tags ProblemTag[]
 
-  data                File[]           @relation("data")
-  files               File[]           @relation("file")
+  data                File[]              @relation("data")
+  files               File[]              @relation("file")
   includedContests    ContestProblem[]
-  includedProblemSets ProblemSet[]
+  includedProblemSets ProblemSetProblem[]
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -142,10 +142,23 @@ model ProblemSet {
   updatedAt DateTime @updatedAt
 
   tags     ProblemSetTag[]
-  problems Problem[]
+  problems ProblemSetProblem[]
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
+}
+
+model ProblemSetProblem {
+  problem   Problem @relation(fields: [problemId], references: [id])
+  problemId Int
+
+  problemSet   ProblemSet @relation(fields: [problemSetId], references: [id])
+  problemSetId Int
+
+  rank Int
+
+  @@id([problemSetId, problemId])
+  @@unique([problemSetId, rank])
 }
 
 model ProblemSetTag {

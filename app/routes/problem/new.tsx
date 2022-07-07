@@ -6,7 +6,7 @@ import {
 } from "@arco-design/web-react";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { checkProblemCreatePermission } from "~/utils/permission/problem";
 import { titleScheme } from "~/utils/scheme";
@@ -35,6 +35,9 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 };
 
 export default function ProblemNew() {
+  const { state } = useTransition();
+  const isUpdating = state !== "idle";
+
   return (
     <Typography>
       <Typography.Title heading={3}>新建题目</Typography.Title>
@@ -46,10 +49,10 @@ export default function ProblemNew() {
       <Typography.Paragraph>
         <Form method="post">
           <FormItem layout="vertical" label="题目名称" required>
-            <Input name="title" required />
+            <Input name="title" required disabled={isUpdating} />
           </FormItem>
           <FormItem layout="vertical">
-            <Button type="primary" htmlType="submit">
+            <Button type="primary" htmlType="submit" loading={isUpdating}>
               创建题目
             </Button>
           </FormItem>

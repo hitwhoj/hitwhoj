@@ -69,6 +69,14 @@ export default function ProblemIndex() {
       <Typography.Paragraph>
         <ProblemList
           problems={problems}
+          columnsBefore={[
+            {
+              title: "#",
+              dataIndex: "id",
+              align: "center",
+              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+            },
+          ]}
           columns={[
             {
               title: "提交",

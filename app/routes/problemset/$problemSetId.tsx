@@ -7,11 +7,11 @@ import { idScheme } from "~/utils/scheme";
 import { Tag, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
-import { IconTag } from "@arco-design/web-react/icon";
+import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
 
 type LoaderData = {
-  problemSet: Pick<ProblemSet, "title" | "description"> & {
+  problemSet: Pick<ProblemSet, "title" | "description" | "private"> & {
     tags: Pick<ProblemSetTag, "name">[];
   };
 };
@@ -30,6 +30,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     select: {
       title: true,
       description: true,
+      private: true,
       tags: { select: { name: true } },
     },
   });
@@ -55,9 +56,14 @@ export default function Problemset() {
     <Typography>
       <Typography.Title heading={3}>{problemSet.title}</Typography.Title>
 
-      {problemSet.tags.length > 0 && (
+      {(problemSet.tags.length > 0 || problemSet.private) && (
         <Typography.Paragraph>
           <TagSpace>
+            {problemSet.private && (
+              <Tag icon={<IconEyeInvisible />} color="gold">
+                隐藏
+              </Tag>
+            )}
             {problemSet.tags.map(({ name }) => (
               <Link to={`/problemset/tag/${name}`} key={name}>
                 <Tag icon={<IconTag />}>{name}</Tag>

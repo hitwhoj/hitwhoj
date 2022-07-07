@@ -134,23 +134,25 @@ export const action: ActionFunction<ActionData> = async ({
     case ActionType.CreateProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      const {
-        _max: { rank },
-      } = await db.contestProblem.aggregate({
-        where: { contestId },
-        _max: { rank: true },
-      });
+      await db.$transaction(async (db) => {
+        const {
+          _max: { rank },
+        } = await db.contestProblem.aggregate({
+          where: { contestId },
+          _max: { rank: true },
+        });
 
-      await db.contest.update({
-        where: { id: contestId },
-        data: {
-          problems: {
-            create: {
-              problemId,
-              rank: (rank ?? 0) + 1,
+        await db.contest.update({
+          where: { id: contestId },
+          data: {
+            problems: {
+              create: {
+                problemId,
+                rank: (rank ?? 0) + 1,
+              },
             },
           },
-        },
+        });
       });
 
       return { success: true };
@@ -160,39 +162,20 @@ export const action: ActionFunction<ActionData> = async ({
     case ActionType.DeleteProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      const record = await db.contestProblem.findUnique({
-        where: {
-          contestId_problemId: {
-            contestId,
-            problemId,
+      await db.$transaction(async (db) => {
+        const { rank } = await db.contestProblem.delete({
+          where: {
+            contestId_problemId: {
+              contestId,
+              problemId,
+            },
           },
-        },
-      });
+        });
 
-      if (!record) {
-        throw new Response("Problem not found", { status: 400 });
-      }
-
-      const { rank } = await db.contestProblem.delete({
-        where: {
-          contestId_problemId: {
-            contestId,
-            problemId,
-          },
-        },
-        select: {
-          rank: true,
-        },
-      });
-
-      await db.contestProblem.updateMany({
-        where: {
-          contestId,
-          rank: { gte: rank },
-        },
-        data: {
-          rank: { decrement: 1 },
-        },
+        await db.contestProblem.updateMany({
+          where: { contestId, rank: { gte: rank } },
+          data: { rank: { decrement: 1 } },
+        });
       });
 
       return { success: true };
@@ -202,52 +185,53 @@ export const action: ActionFunction<ActionData> = async ({
     case ActionType.MoveProblemDown: {
       const problemId = invariant(idScheme, form.get("pid"));
 
-      const record = await db.contestProblem.findUnique({
-        where: {
-          contestId_problemId: {
-            contestId,
-            problemId,
+      await db.$transaction(async (db) => {
+        const record = await db.contestProblem.findUnique({
+          where: {
+            contestId_problemId: {
+              contestId,
+              problemId,
+            },
           },
-        },
-      });
+        });
 
-      if (!record) {
-        throw new Response("Problem not found", { status: 400 });
-      }
+        if (!record) {
+          throw new Response("Problem not found", { status: 400 });
+        }
 
-      // 获取交换的题目
-      const target = await db.contestProblem.findUnique({
-        where: {
-          contestId_rank: {
-            contestId,
-            rank:
-              _action === ActionType.MoveProblemUp
-                ? record.rank - 1
-                : record.rank + 1,
+        // 获取交换的题目
+        const target = await db.contestProblem.findUnique({
+          where: {
+            contestId_rank: {
+              contestId,
+              rank:
+                _action === ActionType.MoveProblemUp
+                  ? record.rank - 1
+                  : record.rank + 1,
+            },
           },
-        },
-      });
+        });
 
-      if (!target) {
-        throw new Response("Cannot move problem", { status: 400 });
-      }
+        if (!target) {
+          throw new Response("Cannot move problem", { status: 400 });
+        }
 
-      await db.$transaction([
         // 删除原来的排名
-        db.contestProblem.delete({
+        await db.contestProblem.delete({
           where: { contestId_rank: { contestId, rank: record.rank } },
-        }),
-        db.contestProblem.delete({
+        });
+        await db.contestProblem.delete({
           where: { contestId_rank: { contestId, rank: target.rank } },
-        }),
+        });
+
         // 添加新的排名
-        db.contestProblem.create({
-          data: { contestId, problemId: record.problemId, rank: target.rank },
-        }),
-        db.contestProblem.create({
-          data: { contestId, problemId: target.problemId, rank: record.rank },
-        }),
-      ]);
+        await db.contestProblem.createMany({
+          data: [
+            { contestId, problemId: record.problemId, rank: target.rank },
+            { contestId, problemId: target.problemId, rank: record.rank },
+          ],
+        });
+      });
 
       return { success: true };
     }
