@@ -6,6 +6,8 @@ import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { Empty, Table, Typography } from "@arco-design/web-react";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { isAdmin } from "~/utils/permission";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -15,13 +17,18 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const tag = invariant(tagScheme, params.tag, {
-    status: 404,
-  });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const tag = invariant(tagScheme, params.tag, { status: 404 });
+  const self = await findSessionUserOptional(request);
 
   const problemSets = await db.problemSet.findMany({
-    where: { tags: { some: { name: tag } }, team: null },
+    where:
+      self && isAdmin(self.role)
+        ? { team: null, tags: { some: { name: tag } } }
+        : { team: null, tags: { some: { name: tag } }, private: false },
     orderBy: { id: "asc" },
     select: {
       id: true,

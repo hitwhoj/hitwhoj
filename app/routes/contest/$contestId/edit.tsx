@@ -34,6 +34,7 @@ import {
   Message,
   Alert,
   Table,
+  Checkbox,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useRef, useState } from "react";
@@ -54,7 +55,16 @@ const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 type LoaderData = {
-  contest: Contest & {
+  contest: Pick<
+    Contest,
+    | "id"
+    | "title"
+    | "description"
+    | "beginTime"
+    | "endTime"
+    | "system"
+    | "private"
+  > & {
     tags: ContestTag[];
     problems: (Pick<ContestProblem, "rank"> & {
       problem: Pick<Problem, "id" | "title">;
@@ -74,7 +84,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      beginTime: true,
+      endTime: true,
+      system: true,
+      private: true,
       tags: true,
       problems: {
         orderBy: { rank: "asc" },
@@ -291,6 +308,7 @@ export const action: ActionFunction<ActionData> = async ({
       );
 
       const system = invariant(systemScheme, form.get("system"));
+      const priv = form.get("private") === "true";
 
       await db.contest.update({
         where: { id: contestId },
@@ -300,6 +318,7 @@ export const action: ActionFunction<ActionData> = async ({
           beginTime,
           endTime,
           system,
+          private: priv,
         },
       });
 
@@ -317,16 +336,26 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 function ContestInformationEditor({
   contest,
 }: {
-  contest: Contest & { tags: Pick<ContestTag, "name">[] };
+  contest: Pick<
+    Contest,
+    | "id"
+    | "title"
+    | "description"
+    | "beginTime"
+    | "endTime"
+    | "system"
+    | "private"
+  > & { tags: Pick<ContestTag, "name">[] };
 }) {
   const fetcher = useFetcher();
-  const isUpdating = fetcher.state === "submitting";
+  const isUpdating = fetcher.state !== "idle";
 
   const [beginTime, setBeginTime] = useState(
     new Date(contest.beginTime).getTime()
   );
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
+  const [priv, setPriv] = useState(contest.private);
 
   useEffect(() => {
     if (!isUpdating && fetcher.submission) {
@@ -397,6 +426,17 @@ function ContestInformationEditor({
             <Option key={system} value={system} />
           ))}
         </Select>
+      </FormItem>
+
+      <FormItem>
+        <input type="hidden" name="private" value={String(priv)} />
+        <Checkbox
+          checked={priv}
+          onChange={(checked) => setPriv(checked)}
+          disabled={isUpdating}
+        >
+          首页隐藏
+        </Checkbox>
       </FormItem>
 
       <FormItem>
@@ -617,6 +657,7 @@ function ContestProblemEditor({
             },
           ]}
           data={problems}
+          rowKey="id"
           hover={false}
           border={false}
           pagination={false}

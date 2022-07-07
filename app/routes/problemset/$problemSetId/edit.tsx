@@ -469,7 +469,7 @@ function ProblemSetProblemOperations({
   return (
     <fetcher.Form method="post">
       <input type="hidden" name="pid" value={pid} />
-      <Space size="mini">
+      <Space>
         <Button
           type="primary"
           status="danger"
