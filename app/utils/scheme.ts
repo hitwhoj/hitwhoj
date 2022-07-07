@@ -186,3 +186,8 @@ export const contentScheme = z
 export const problemRankScheme = z
   .string()
   .regex(/^[A-Z]$/, "contest problem id must be a single uppercase letter");
+
+export const limitScheme = z
+  .string()
+  .regex(/^\d+$/, "limit must be a number")
+  .transform((x) => parseInt(x, 10));

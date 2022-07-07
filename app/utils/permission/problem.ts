@@ -213,3 +213,19 @@ export async function checkProblemWritePermission(
 
   throw new Response("您没有权限更新该题目", { status: 403 });
 }
+
+/**
+ * 检查题目创建权限
+ *
+ * 只有系统管理员可以创建题目
+ */
+export async function checkProblemCreatePermission(request: Request) {
+  const self = await findSessionUser(request);
+
+  // 系统管理员可以创建题目
+  if (isAdmin(self.role)) {
+    return;
+  }
+
+  throw new Response("您没有权限创建题目", { status: 403 });
+}

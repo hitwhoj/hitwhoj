@@ -81,7 +81,10 @@ export default function ProblemView() {
           { title: "题面", key: "." },
           { title: "提交", key: "submit" },
           ...(self && isAdmin(self?.role)
-            ? [{ title: "数据", key: "data" }]
+            ? [
+                { title: "数据", key: "data" },
+                { title: "编辑", key: "edit" },
+              ]
             : []),
         ]}
       />
