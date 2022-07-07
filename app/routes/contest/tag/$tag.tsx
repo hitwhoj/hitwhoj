@@ -7,21 +7,25 @@ import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { isAdmin } from "~/utils/permission";
 
 type LoaderData = {
   contests: ContestListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const tag = invariant(tagScheme, params.tag, {
-    status: 404,
-  });
+export const loader: LoaderFunction<LoaderData> = async ({
+  params,
+  request,
+}) => {
+  const tag = invariant(tagScheme, params.tag, { status: 404 });
+  const self = await findSessionUserOptional(request);
 
   const contests = await db.contest.findMany({
-    where: {
-      team: null,
-      tags: { some: { name: tag } },
-    },
+    where:
+      self && isAdmin(self.role)
+        ? { team: null, tags: { some: { name: tag } } }
+        : { team: null, tags: { some: { name: tag } }, private: false },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectContestListData,

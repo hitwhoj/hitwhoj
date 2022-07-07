@@ -2,7 +2,6 @@ import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import type { ProblemListData } from "~/utils/db/problem";
-import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemList } from "~/src/problem/ProblemList";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
@@ -13,7 +12,7 @@ import { IconPlus } from "@arco-design/web-react/icon";
 
 // TODO: 分页
 type LoaderData = {
-  problems: (ProblemListData & {
+  problems: (Pick<ProblemListData, "id" | "title" | "private"> & {
     _count: {
       relatedRecords: number;
     };
@@ -31,7 +30,9 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
         : { team: null, private: false },
     orderBy: [{ id: "asc" }],
     select: {
-      ...selectProblemListData,
+      id: true,
+      title: true,
+      private: true,
       _count: {
         select: {
           relatedRecords: true,

@@ -1,5 +1,4 @@
 import type {
-  Problem,
   ProblemSet,
   ProblemSetProblem,
   ProblemSetTag,
@@ -13,12 +12,14 @@ import { Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
 import { ProblemList } from "~/src/problem/ProblemList";
+import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
     tags: ProblemSetTag[];
     problems: (Pick<ProblemSetProblem, "rank"> & {
-      problem: Pick<Problem, "id" | "title" | "private">;
+      problem: ProblemListData;
     })[];
   };
 };
@@ -50,9 +51,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
           rank: true,
           problem: {
             select: {
-              id: true,
-              title: true,
-              private: true,
+              ...selectProblemListData,
             },
           },
         },

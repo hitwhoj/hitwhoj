@@ -7,10 +7,11 @@ import { findSessionUserOptional } from "~/utils/sessions";
 import { isAdmin } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import type { Problem } from "@prisma/client";
+import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
 
 type LoaderData = {
-  problems: (Pick<Problem, "id" | "title" | "private"> & {
+  problems: (ProblemListData & {
     _count: {
       relatedRecords: number;
     };
@@ -32,9 +33,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
         : { team: null, tags: { some: { name: tag } }, private: false },
     orderBy: [{ id: "asc" }],
     select: {
-      id: true,
-      title: true,
-      private: true,
+      ...selectProblemListData,
       _count: {
         select: {
           relatedRecords: true,
