@@ -33,18 +33,16 @@ model User {
   createdReplies  Reply[]
   createdRecords  Record[]
 
-  heartedComments  Comment[] @relation(name: "heartedComments")
-  heartedReplies   Reply[]   @relation(name: "heartedReplies")
-  starredComments  Comment[] @relation(name: "starredComments")
-  starredReplies   Reply[]   @relation(name: "starredReplies")
-  reportedComments Comment[] @relation(name: "reportedComments")
-  reportedReplies  Reply[]   @relation(name: "reportedReplies")
+  heartedComments  Comment[] @relation("heartedComments")
+  heartedReplies   Reply[]   @relation("heartedReplies")
+  starredComments  Comment[] @relation("starredComments")
+  starredReplies   Reply[]   @relation("starredReplies")
+  reportedComments Comment[] @relation("reportedComments")
+  reportedReplies  Reply[]   @relation("reportedReplies")
 
-
-  // TODO: reference?
-  attendedContests Contest[] @relation("attendee", references: [id])
-  moddedContests   Contest[] @relation("mod", references: [id])
-  juriedContests   Contest[] @relation("jury", references: [id])
+  attendedContests Contest[] @relation("attendee")
+  moddedContests   Contest[] @relation("mod")
+  juriedContests   Contest[] @relation("jury")
 
   attendedTeams TeamMember[]
 
@@ -113,12 +111,12 @@ model Problem {
   timeLimit   Int @default(1000)
   memoryLimit Int @default(128)
 
-  tags ProblemTag[] @relation(references: [id])
+  tags ProblemTag[]
 
   data                File[]           @relation("data")
   files               File[]           @relation("file")
   includedContests    ContestProblem[]
-  includedProblemSets ProblemSet[]     @relation(references: [id])
+  includedProblemSets ProblemSet[]
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -129,7 +127,7 @@ model ProblemTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problems Problem[] @relation(references: [id])
+  problems Problem[]
 }
 
 model ProblemSet {
@@ -143,8 +141,8 @@ model ProblemSet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tags     ProblemSetTag[] @relation(references: [id])
-  problems Problem[]       @relation(references: [id])
+  tags     ProblemSetTag[]
+  problems Problem[]
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
@@ -154,7 +152,7 @@ model ProblemSetTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problemSets ProblemSet[] @relation(references: [id])
+  problemSets ProblemSet[]
 }
 
 model Contest {
@@ -172,13 +170,13 @@ model Contest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tags ContestTag[] @relation(references: [id])
+  tags ContestTag[]
 
   problems ContestProblem[]
 
-  mods      User[] @relation("mod", references: [id])
-  juries    User[] @relation("jury", references: [id])
-  attendees User[] @relation("attendee", references: [id])
+  mods      User[] @relation("mod")
+  juries    User[] @relation("jury")
+  attendees User[] @relation("attendee")
 
   relatedRecords Record[]
 
@@ -190,7 +188,7 @@ model ContestTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  contests Contest[] @relation(references: [id])
+  contests Contest[]
 }
 
 enum ContestSystem {
@@ -284,7 +282,7 @@ model CommentTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  comments Comment[] @relation(references: [id])
+  comments Comment[]
 }
 
 model Comment {
@@ -298,14 +296,14 @@ model Comment {
 
   // === relations ===
 
-  heartees  User[] @relation("heartedComments", references: [id])
-  starrees  User[] @relation("starredComments", references: [id])
-  reportees User[] @relation("reportedComments", references: [id])
+  heartees  User[] @relation("heartedComments")
+  starrees  User[] @relation("starredComments")
+  reportees User[] @relation("reportedComments")
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  tags CommentTag[] @relation(references: [id])
+  tags CommentTag[]
 
   replies Reply[]
 }
@@ -328,9 +326,9 @@ model Reply {
   domId      Int?
   subReplies Reply[] @relation("dsReplies")
 
-  heartees  User[] @relation("heartedReplies", references: [id])
-  starrees  User[] @relation("starredReplies", references: [id])
-  reportees User[] @relation("reportedReplies", references: [id])
+  heartees  User[] @relation("heartedReplies")
+  starrees  User[] @relation("starredReplies")
+  reportees User[] @relation("reportedReplies")
 
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int

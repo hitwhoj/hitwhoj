@@ -2,3 +2,4 @@
 /public/build
 /app/styles
 /.cache
+/.nyc_output
