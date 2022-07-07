@@ -4,6 +4,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
+import { passwordHash } from "~/utils/tools";
 
 export type ActionData =
   | {
@@ -26,11 +27,11 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   if (!user) {
-    return json({ success: false, reason: "用户不存在" }, { status: 400 });
+    return json({ success: false, reason: "用户不存在" }, 400);
   }
 
-  if (user.password !== password) {
-    return json({ success: false, reason: "密码错误" }, { status: 400 });
+  if (user.password !== passwordHash(password)) {
+    return json({ success: false, reason: "密码错误" }, 400);
   }
 
   return json(

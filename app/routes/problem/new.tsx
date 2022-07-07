@@ -58,3 +58,6 @@ export default function ProblemNew() {
     </Typography>
   );
 }
+
+export { ErrorBoundary } from "~/src/ErrorBoundary";
+export { CatchBoundary } from "~/src/CatchBoundary";

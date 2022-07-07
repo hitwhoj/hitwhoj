@@ -1,6 +1,5 @@
 import { isAdmin, isUser } from "~/utils/permission";
 import { findSessionUser } from "~/utils/sessions";
-import { db } from "~/utils/server/db.server";
 
 /**
  * 检查是否对用户具有写权限
@@ -31,13 +30,4 @@ export async function checkUserReadPermission(
   _target: number
 ) {
   return true;
-}
-
-/**
- * 检查用户名是否被占用
- */
-export async function checkUsernameTaken(username: string) {
-  const user = await db.user.findUnique({ where: { username } });
-
-  return !!user;
 }

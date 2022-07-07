@@ -232,21 +232,22 @@ export const action: ActionFunction<ActionData> = async ({
         throw new Response("Cannot move problem", { status: 400 });
       }
 
-      // 删除原来的排名
-      await db.contestProblem.delete({
-        where: { contestId_rank: { contestId, rank: record.rank } },
-      });
-      await db.contestProblem.delete({
-        where: { contestId_rank: { contestId, rank: target.rank } },
-      });
-
-      // 添加新的排名
-      await db.contestProblem.create({
-        data: { contestId, problemId: record.problemId, rank: target.rank },
-      });
-      await db.contestProblem.create({
-        data: { contestId, problemId: target.problemId, rank: record.rank },
-      });
+      await db.$transaction([
+        // 删除原来的排名
+        db.contestProblem.delete({
+          where: { contestId_rank: { contestId, rank: record.rank } },
+        }),
+        db.contestProblem.delete({
+          where: { contestId_rank: { contestId, rank: target.rank } },
+        }),
+        // 添加新的排名
+        db.contestProblem.create({
+          data: { contestId, problemId: record.problemId, rank: target.rank },
+        }),
+        db.contestProblem.create({
+          data: { contestId, problemId: target.problemId, rank: record.rank },
+        }),
+      ]);
 
       return { success: true };
     }

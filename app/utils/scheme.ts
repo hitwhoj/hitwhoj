@@ -33,11 +33,14 @@ export const usernameScheme = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
 
 /**
- * 用户密码
+ * 用户密码，是 sha256 哈希过后的字符串
  *
- * @example "我就是用中文密码你能拿我怎么样"
+ * @example "9107c989b1db02af062647dc602e33238a6efaf57cf2febfe5e12e09ea4610db"
  */
-export const passwordScheme = z.string().nonempty("Password must be nonempty");
+export const passwordScheme = z
+  .string()
+  .nonempty("Password must be nonempty")
+  .regex(/^[0-9a-f]{64}$/, "Password must be a sha256 hash");
 
 /**
  * 用户昵称

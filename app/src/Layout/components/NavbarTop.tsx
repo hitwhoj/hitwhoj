@@ -1,9 +1,8 @@
-import { NavLink, useFetcher } from "@remix-run/react";
+import { Link, NavLink, useFetcher } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import {
   Grid,
   Space,
-  Switch,
   Dropdown,
   Menu,
   Button,
@@ -67,12 +66,13 @@ export default function NavbarTop() {
       </div>
 
       <Space size="large">
-        <Switch
-          checked={theme === "dark"}
-          onChange={() => setTheme(theme === "dark" ? "light" : "dark")}
-          checkedIcon={<IconMoon />}
-          uncheckedIcon={<IconSun />}
-        />
+        <div
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          style={{ fontSize: 20, cursor: "pointer" }}
+        >
+          {theme === "dark" ? <IconMoon /> : <IconSun />}
+        </div>
+
         {user ? (
           <Dropdown
             position="bottom"
@@ -112,7 +112,9 @@ export default function NavbarTop() {
         ) : (
           <Space>
             <Button onClick={() => setLoginVisible(true)}>登录</Button>
-            <Button type="primary">注册</Button>
+            <Link to="/register">
+              <Button type="primary">注册</Button>
+            </Link>
           </Space>
         )}
       </Space>

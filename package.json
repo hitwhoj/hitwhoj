@@ -36,6 +36,7 @@
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
+    "hash.js": "^1.1.7",
     "hast-to-hyperscript": "^10.0.1",
     "katex": "^0.15.3",
     "lowlight": "^2.6.1",
