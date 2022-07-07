@@ -8,10 +8,7 @@ import { idScheme } from "~/utils/scheme";
 import { checkUserReadPermission } from "~/utils/permission/user";
 
 type LoaderData = {
-  user: Pick<
-    User,
-    "id" | "bio" | "username" | "nickname" | "email" | "password"
-  >;
+  user: Pick<User, "id" | "bio" | "username" | "nickname" | "email">;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -29,7 +26,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
       username: true,
       nickname: true,
       email: true,
-      password: true,
     },
   });
 
@@ -60,10 +56,6 @@ export default function Profile() {
     {
       label: "电子邮箱",
       value: <a href={`mailto:${user.email}`}>{user.email}</a>,
-    },
-    {
-      label: "密码",
-      value: <code style={{ color: "red" }}>{user.password}</code>,
     },
   ];
 
