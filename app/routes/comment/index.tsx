@@ -14,8 +14,8 @@ import {
   IconHeartFill,
   IconMessage,
   IconPlus,
-  IconStarFill,
-  IconThumbUp,
+  // IconStarFill,
+  // IconThumbUp,
 } from "@arco-design/web-react/icon";
 import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
@@ -23,7 +23,10 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
-import { Like } from "~/src/comment/like";
+import { Like } from "~/src/comment/Like";
+import type { CommentTag as CommentTagType } from "@prisma/client";
+import { CommentTag } from "~/src/comment/CommentTag";
+import { formatDateTime } from "~/utils/tools";
 
 enum ActionType {
   None = "none",
@@ -80,6 +83,7 @@ export const action: ActionFunction = async ({ request }) => {
 type LoaderData = {
   comments: (Pick<Comment, "id" | "title" | "createdAt" | "updatedAt"> & {
     creator: Pick<User, "id" | "nickname">;
+    tags: Pick<CommentTagType, "id" | "name">[];
     heartees: Pick<User, "id" | "nickname">[];
     replies: Pick<Reply, "id" | "creatorId">[];
     reportees: Pick<User, "id">[];
@@ -98,6 +102,12 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
         select: {
           id: true,
           nickname: true,
+        },
+      },
+      tags: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       heartees: {
@@ -143,35 +153,45 @@ export function CommentList({
   type CommentDetails = typeof comments[number];
   const tableColumns = [
     {
-      title: "Forum",
-      render: (_: any, comment: CommentDetails) => (
-        <Link to={`/comment/forum/${comment.id}`}>
-          P123: A + B Problem 公告版
-        </Link>
-      ),
-    },
-    {
       title: "Title",
       dataIndex: "title",
       render: (col: string, comment: CommentDetails) => (
-        <Link
-          to={`/comment/${comment.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
-        </Link>
+        <>
+          <Space size={6}>
+            <Link
+              to={`/comment/${comment.id}`}
+              // TODO: 写个hover样式qwq
+              style={{}}
+            >
+              {col}
+            </Link>
+            {comment.tags.slice(0, 3).map((tag) => (
+              <Link to={`/comment/tag/${tag.name}`} key={tag.id}>
+                <CommentTag name={tag.name} />
+              </Link>
+            ))}
+          </Space>
+        </>
       ),
     },
+    // {
+    //   title: "Tags",
+    //   render: (col: string[], comment: CommentDetails) => (
+    //     <Link to={`/comment/tag/${comment.id}`}>
+    //       {col}
+    //     </Link>
+    //   ),
+    // },
     {
-      title: (
-        <Space size={12}>
-          <IconHeart />
-          <IconStarFill />
-          <IconThumbUp />
-          <IconMessage />
-        </Space>
-      ),
+      title: "Stars",
+      // title: (
+      //   <Space size={12}>
+      //     <IconHeart />
+      //     <IconStarFill />
+      //     <IconThumbUp />
+      //     <IconMessage />
+      //   </Space>
+      // ),
       render: (_: any, comment: CommentDetails) => (
         <Space size={6}>
           <Like
@@ -229,8 +249,8 @@ export function CommentList({
       render: (_: any, comment: CommentDetails) => (
         <Link to={`/user/${comment.creator.id}`}>
           {comment.creator.nickname}
-          {" @"}
-          {comment.createdAt.toLocaleString()}
+          {" @ "}
+          {formatDateTime(comment.createdAt)}
         </Link>
       ),
     },

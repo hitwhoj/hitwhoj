@@ -25,8 +25,8 @@ import {
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { findSessionUid } from "~/utils/sessions";
-import { Like } from "~/src/comment/like";
-import { Avatar } from "~/src/comment/avatar";
+import { Like } from "~/src/comment/Like";
+import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
