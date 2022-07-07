@@ -311,6 +311,18 @@ this is language whatthefuck
     },
   });
 
+  const { id: commentTag1 } = await prisma.commentTag.create({
+    data: {
+      name: "P1001",
+    },
+  });
+
+  const { id: commentTag2 } = await prisma.commentTag.create({
+    data: {
+      name: "C1001",
+    },
+  });
+
   const { id: comment1 } = await prisma.comment.create({
     data: {
       title: "我好想做嘉然小姐的狗啊",
@@ -336,7 +348,7 @@ this is language whatthefuck
         "\n\r" +
         "我的灵魂透过窗户向里面看去，挂着的铃铛在轻轻鸣响，嘉然小姐慵懒地靠在沙发上，表演得非常温顺的橘猫坐在她的肩膀。壁炉的火光照在她的脸庞，我冻僵的心脏在风里微微发烫。",
       creator: { connect: { id: alice } },
-      tags: { create: [{ name: "P1001" }] },
+      tags: { connect: [{ id: commentTag1 }, { id: commentTag2 }] },
     },
   });
 
@@ -345,7 +357,7 @@ this is language whatthefuck
       title: "一条来自乃淇淋的评论",
       content: "## 嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
       creator: { connect: { id: alice } },
-      tags: { create: [{ name: "C1001" }] },
+      tags: { connect: [{ id: commentTag2 }] },
     },
   });
 

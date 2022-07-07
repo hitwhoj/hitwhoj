@@ -1,6 +1,6 @@
 import type { Comment, Reply, User } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Form } from "@remix-run/react";
+import { useLoaderData, Form, Link } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme, replyContentScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -30,6 +30,7 @@ import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
+import { ReportType } from "~/routes/comment/report/$report";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -403,36 +404,37 @@ function CommentTitle({
             }}
           />
         </Button>
-        {/* TODO : 举办机制与页面没做 */}
-        <Button type="text" size="small" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: comment.id,
-              like: comment.reportees.map((u) => u.id).includes(self),
-              count: comment.reportees.length,
-              likeAction: ActionType.None,
-              dislikeAction: ActionType.None,
-              likeElement: (
-                <>
-                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
-                  Report
-                </>
-              ),
-              dislikeElement: (
-                <>
-                  {comment.reportees.length > 0 ? (
-                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
-                  ) : (
-                    <IconExclamationCircle />
-                  )}{" "}
-                  Report
-                </>
-              ),
-              style: likeStyle,
-              preload: false,
-            }}
-          />
-        </Button>
+        <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
+          <Button type="text" size="small" style={likeButtonStyle}>
+            <Like
+              props={{
+                id: comment.id,
+                like: comment.reportees.map((u) => u.id).includes(self),
+                count: comment.reportees.length,
+                likeAction: ActionType.None,
+                dislikeAction: ActionType.None,
+                likeElement: (
+                  <>
+                    <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+                    Report
+                  </>
+                ),
+                dislikeElement: (
+                  <>
+                    {comment.reportees.length > 0 ? (
+                      <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                    ) : (
+                      <IconExclamationCircle />
+                    )}{" "}
+                    Report
+                  </>
+                ),
+                style: likeStyle,
+                preload: false,
+              }}
+            />
+          </Button>
+        </Link>
       </Space>
     </div>
   );
@@ -545,34 +547,35 @@ function ReplyCard({
           }}
         />
       </Button>
-      {/* TODO : 举办机制与页面没做 */}
-      <Button type="text" size="mini" style={likeButtonStyle}>
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.reportees.map((u) => u.id).includes(self),
-            count: reply.reportees.length,
-            likeAction: ActionType.None,
-            dislikeAction: ActionType.None,
-            likeElement: (
-              <>
-                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
-              </>
-            ),
-            dislikeElement: (
-              <>
-                {reply.reportees.length > 0 ? (
-                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
-                ) : (
-                  <IconExclamationCircle />
-                )}{" "}
-              </>
-            ),
-            style: likeStyle,
-            preload: false,
-          }}
-        />
-      </Button>
+      <Link to={`/comment/report/${ReportType.Reply + reply.id}`}>
+        <Button type="text" size="mini" style={likeButtonStyle}>
+          <Like
+            props={{
+              id: reply.id,
+              like: reply.reportees.map((u) => u.id).includes(self),
+              count: reply.reportees.length,
+              likeAction: ActionType.None,
+              dislikeAction: ActionType.None,
+              likeElement: (
+                <>
+                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+                </>
+              ),
+              dislikeElement: (
+                <>
+                  {reply.reportees.length > 0 ? (
+                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                  ) : (
+                    <IconExclamationCircle />
+                  )}{" "}
+                </>
+              ),
+              style: likeStyle,
+              preload: false,
+            }}
+          />
+        </Button>
+      </Link>
     </Space>
   );
 

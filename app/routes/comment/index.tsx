@@ -27,6 +27,7 @@ import { Like } from "~/src/comment/Like";
 import type { CommentTag as CommentTagType } from "@prisma/client";
 import { CommentTag } from "~/src/comment/CommentTag";
 import { formatDateTime } from "~/utils/tools";
+import { ReportType } from "~/routes/comment/report/$report";
 
 enum ActionType {
   None = "none",
@@ -220,7 +221,7 @@ export function CommentList({
               }}
             />
           </Link>
-          <Link to={`/comment/${comment.id}/report`}>
+          <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
             <Like
               props={{
                 id: comment.id,
