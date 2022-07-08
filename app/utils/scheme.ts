@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContestSystem } from "@prisma/client";
+import { ContestSystem, ReportType } from "@prisma/client";
 
 /**
  * 数字 ID，非负整数
@@ -194,3 +194,16 @@ export const limitScheme = z
   .string()
   .regex(/^\d+$/, "limit must be a number")
   .transform((x) => parseInt(x, 10));
+
+/**
+ * 举办的类型捏
+ */
+export const reportTypeScheme = z.nativeEnum(ReportType);
+
+/**
+ * 举办的理由捏
+ */
+export const reasonScheme = z
+  .string()
+  .nonempty("Reason content must be nonempty")
+  .min(8, "Reason must be at least 8 characters");

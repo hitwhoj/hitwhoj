@@ -350,8 +350,8 @@ model Reply {
 }
 
 enum ReportType {
-  Comment
-  Reply
+  C // Comment
+  R // Reply
 }
 
 model Report {

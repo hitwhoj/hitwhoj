@@ -393,7 +393,7 @@ function CommentTitle({
             },
           }}
         />
-        <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
+        <Link to={`/comment/report/${ReportType.C + comment.id}`}>
           <Like
             props={{
               id: comment.id,
@@ -526,7 +526,7 @@ function ReplyCard({
           },
         }}
       />
-      <Link to={`/comment/report/${ReportType.Reply + reply.id}`}>
+      <Link to={`/comment/report/${ReportType.R + reply.id}`}>
         <Like
           props={{
             id: reply.id,
