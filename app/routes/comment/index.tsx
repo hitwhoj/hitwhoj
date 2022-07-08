@@ -151,6 +151,11 @@ export function CommentList({
   comments: LoaderData["comments"];
   self: LoaderData["self"];
 }) {
+  const likeStyles = {
+    fontSize: "1rem",
+    height: "1.7rem",
+    padding: "0 0.3rem",
+  };
   type CommentDetails = typeof comments[number];
   const tableColumns = [
     {
@@ -175,24 +180,8 @@ export function CommentList({
         </>
       ),
     },
-    // {
-    //   title: "Tags",
-    //   render: (col: string[], comment: CommentDetails) => (
-    //     <Link to={`/comment/tag/${comment.id}`}>
-    //       {col}
-    //     </Link>
-    //   ),
-    // },
     {
       title: "Stars",
-      // title: (
-      //   <Space size={12}>
-      //     <IconHeart />
-      //     <IconStarFill />
-      //     <IconThumbUp />
-      //     <IconMessage />
-      //   </Space>
-      // ),
       render: (_: any, comment: CommentDetails) => (
         <Space size={6}>
           <Like
@@ -204,7 +193,7 @@ export function CommentList({
               dislikeAction: ActionType.UnHeart,
               likeElement: <IconHeartFill style={{ color: "#f53f3f" }} />,
               dislikeElement: <IconHeart />,
-              style: { fontSize: "1rem" },
+              style: likeStyles,
             }}
           />
           <Link to={`/comment/${comment.id}`}>
@@ -217,7 +206,7 @@ export function CommentList({
                 dislikeAction: ActionType.None,
                 likeElement: <IconMessage style={{ color: "#00B42A" }} />,
                 dislikeElement: <IconMessage />,
-                style: { fontSize: "1rem" },
+                style: likeStyles,
               }}
             />
           </Link>
@@ -238,7 +227,7 @@ export function CommentList({
                   ) : (
                     <IconExclamationCircle />
                   ),
-                style: { fontSize: "1rem" },
+                style: likeStyles,
               }}
             />
           </Link>
