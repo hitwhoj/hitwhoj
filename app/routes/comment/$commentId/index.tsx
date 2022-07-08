@@ -317,7 +317,6 @@ function CommentTitle({
   const author = comment.creator;
 
   const likeStyle = { fontSize: "0.9rem" };
-  const likeButtonStyle = { width: "6.5rem", padding: "0.1rem" };
 
   const [visible, setVisible] = useState(false);
 
@@ -352,88 +351,77 @@ function CommentTitle({
         </Typography.Text>
       </span>
       <Space size={8}>
-        {/* TODO : 套一层 Button 会导致多一次 None 的提交请求 */}
-        <Button type="text" size="small" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: comment.id,
-              like: comment.heartees.map((u) => u.id).includes(self),
-              count: comment.heartees.length,
-              likeAction: ActionType.CommentHeart,
-              dislikeAction: ActionType.CommentUnHeart,
-              likeElement: (
-                <>
-                  <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
-                </>
-              ),
-              dislikeElement: (
-                <>
-                  <IconHeart /> Star{" "}
-                </>
-              ),
-              style: likeStyle,
-            }}
-          />
-        </Button>
-        <Button
-          type="text"
-          size="small"
-          onClick={() => {
-            setVisible(true);
+        <Like
+          props={{
+            id: comment.id,
+            like: comment.heartees.map((u) => u.id).includes(self),
+            count: comment.heartees.length,
+            likeAction: ActionType.CommentHeart,
+            dislikeAction: ActionType.CommentUnHeart,
+            likeElement: (
+              <>
+                <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconHeart /> Star{" "}
+              </>
+            ),
+            style: likeStyle,
           }}
-          style={likeButtonStyle}
-        >
+        />
+        <Like
+          props={{
+            id: comment.id,
+            like: comment.replies.map((u) => u.creatorId).includes(self),
+            count: comment.replies.length,
+            likeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconMessage style={{ color: "#00B42A" }} /> Reply{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconMessage /> Reply{" "}
+              </>
+            ),
+            style: likeStyle,
+            preload: false,
+            onClick: () => {
+              setVisible(true);
+            },
+          }}
+        />
+        <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
           <Like
             props={{
               id: comment.id,
-              like: comment.replies.map((u) => u.creatorId).includes(self),
-              count: comment.replies.length,
+              like: comment.reportees.map((u) => u.id).includes(self),
+              count: comment.reportees.length,
               likeAction: ActionType.None,
+              dislikeAction: ActionType.None,
               likeElement: (
                 <>
-                  <IconMessage style={{ color: "#00B42A" }} /> Reply{" "}
+                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+                  Report
                 </>
               ),
               dislikeElement: (
                 <>
-                  <IconMessage /> Reply{" "}
+                  {comment.reportees.length > 0 ? (
+                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                  ) : (
+                    <IconExclamationCircle />
+                  )}{" "}
+                  Report
                 </>
               ),
               style: likeStyle,
               preload: false,
             }}
           />
-        </Button>
-        <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
-          <Button type="text" size="small" style={likeButtonStyle}>
-            <Like
-              props={{
-                id: comment.id,
-                like: comment.reportees.map((u) => u.id).includes(self),
-                count: comment.reportees.length,
-                likeAction: ActionType.None,
-                dislikeAction: ActionType.None,
-                likeElement: (
-                  <>
-                    <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
-                    Report
-                  </>
-                ),
-                dislikeElement: (
-                  <>
-                    {comment.reportees.length > 0 ? (
-                      <IconExclamationCircle style={{ color: "#F53F3F" }} />
-                    ) : (
-                      <IconExclamationCircle />
-                    )}{" "}
-                    Report
-                  </>
-                ),
-                style: likeStyle,
-                preload: false,
-              }}
-            />
-          </Button>
         </Link>
       </Space>
     </div>
@@ -466,11 +454,11 @@ function ReplyCard({
 }) {
   const author = reply.creator;
 
-  const likeStyle = { fontSize: "0.9rem" };
-  const likeButtonStyle = {
+  const likeStyles = {
+    fontSize: "0.9rem",
     width: "2.5rem",
-    height: "1.3rem",
-    padding: "0.1rem",
+    height: "1.5rem",
+    padding: "0 0.3rem",
   };
 
   const [visible, setVisible] = useState(false);
@@ -478,7 +466,7 @@ function ReplyCard({
   const actions = (
     <Space size={2}>
       <Modal
-        title="New Reply"
+        title={`New Reply To #${reply.id}`}
         visible={visible}
         footer={null}
         onCancel={() => {
@@ -496,85 +484,75 @@ function ReplyCard({
           action={ActionType.ReplyTo}
         />
       </Modal>
-      <Button type="text" size="mini" style={likeButtonStyle}>
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.heartees.map((u) => u.id).includes(self),
-            count: reply.heartees.length,
-            likeAction: ActionType.Heart,
-            dislikeAction: ActionType.UnHeart,
-            likeElement: (
-              <>
-                <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
-              </>
-            ),
-            dislikeElement: (
-              <>
-                <IconHeart />{" "}
-              </>
-            ),
-            style: likeStyle,
-          }}
-        />
-      </Button>
-      <Button
-        type="text"
-        size="mini"
-        onClick={() => {
-          setVisible(true);
+      <Like
+        props={{
+          id: reply.id,
+          like: reply.heartees.map((u) => u.id).includes(self),
+          count: reply.heartees.length,
+          likeAction: ActionType.Heart,
+          dislikeAction: ActionType.UnHeart,
+          likeElement: (
+            <>
+              <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
+            </>
+          ),
+          dislikeElement: (
+            <>
+              <IconHeart />{" "}
+            </>
+          ),
+          style: likeStyles,
         }}
-        style={likeButtonStyle}
-      >
+      />
+      <Like
+        props={{
+          id: reply.id,
+          like: reply.subReplies.map((u) => u.creatorId).includes(self),
+          count: reply.subReplies.length,
+          likeAction: ActionType.None,
+          likeElement: (
+            <>
+              <IconMessage style={{ color: "#00B42A" }} />{" "}
+            </>
+          ),
+          dislikeElement: (
+            <>
+              <IconMessage />{" "}
+            </>
+          ),
+          style: likeStyles,
+          preload: false,
+          onClick: () => {
+            setVisible(true);
+          },
+        }}
+      />
+      <Link to={`/comment/report/${ReportType.Reply + reply.id}`}>
         <Like
           props={{
             id: reply.id,
-            like: reply.subReplies.map((u) => u.creatorId).includes(self),
-            count: reply.subReplies.length,
+            like: reply.reportees.map((u) => u.id).includes(self),
+            count: reply.reportees.length,
             likeAction: ActionType.None,
+            dislikeAction: ActionType.None,
             likeElement: (
               <>
-                <IconMessage style={{ color: "#00B42A" }} />{" "}
+                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
               </>
             ),
             dislikeElement: (
               <>
-                <IconMessage />{" "}
+                {reply.reportees.length > 0 ? (
+                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                ) : (
+                  <IconExclamationCircle />
+                )}{" "}
               </>
             ),
-            style: likeStyle,
+            style: likeStyles,
             preload: false,
           }}
         />
-      </Button>
-      <Link to={`/comment/report/${ReportType.Reply + reply.id}`}>
-        <Button type="text" size="mini" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: reply.id,
-              like: reply.reportees.map((u) => u.id).includes(self),
-              count: reply.reportees.length,
-              likeAction: ActionType.None,
-              dislikeAction: ActionType.None,
-              likeElement: (
-                <>
-                  <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
-                </>
-              ),
-              dislikeElement: (
-                <>
-                  {reply.reportees.length > 0 ? (
-                    <IconExclamationCircle style={{ color: "#F53F3F" }} />
-                  ) : (
-                    <IconExclamationCircle />
-                  )}{" "}
-                </>
-              ),
-              style: likeStyle,
-              preload: false,
-            }}
-          />
-        </Button>
       </Link>
     </Space>
   );
@@ -585,7 +563,6 @@ function ReplyCard({
     <ArcoComment
       actions={actions}
       author={author.nickname}
-      // align="right"
       key={"reply" + reply.id}
       avatar={<Avatar src={author.avatar} name={author.nickname} />}
       content={<div>{reply.content}</div>}
