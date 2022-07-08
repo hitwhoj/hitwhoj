@@ -1,4 +1,4 @@
-import type { Comment, Reply, User } from "@prisma/client";
+import type { Comment, Reply, User, Report } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, Form, Link } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -30,7 +30,8 @@ import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
-import { ReportType } from "~/routes/comment/report/$report";
+import { ReportType } from "@prisma/client";
+import { formatDateTime } from "~/utils/tools";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -200,7 +201,7 @@ type LoaderData = {
   comment: Comment & {
     creator: Pick<User, "id" | "nickname" | "avatar">;
     heartees: Pick<User, "id">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
     replies: (Reply & {
       creator: Pick<User, "id" | "nickname" | "avatar">;
       subReplies: (Reply & {
@@ -211,7 +212,7 @@ type LoaderData = {
           | null;
       })[];
       heartees: Pick<User, "id">[];
-      reportees: Pick<User, "id">[];
+      reports: Pick<Report, "creatorId">[];
     })[];
   };
   self: number;
@@ -239,9 +240,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
           id: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
       replies: {
@@ -273,9 +274,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
               id: true,
             },
           },
-          reportees: {
+          reports: {
             select: {
-              id: true,
+              creatorId: true,
             },
           },
         },
@@ -346,9 +347,7 @@ function CommentTitle({
       <span style={{ display: "flex", alignItems: "center" }}>
         <Avatar src={author.avatar} name={author.nickname} size={32} />
         <Typography.Text>{author.nickname}</Typography.Text>
-        <Typography.Text>
-          &emsp;@{comment.createdAt.toLocaleString().slice(0, 16)}
-        </Typography.Text>
+        <Typography.Text>@{formatDateTime(comment.createdAt)}</Typography.Text>
       </span>
       <Space size={8}>
         <Like
@@ -398,8 +397,8 @@ function CommentTitle({
           <Like
             props={{
               id: comment.id,
-              like: comment.reportees.map((u) => u.id).includes(self),
-              count: comment.reportees.length,
+              like: comment.reports.map((r) => r.creatorId).includes(self),
+              count: comment.reports.length,
               likeAction: ActionType.None,
               dislikeAction: ActionType.None,
               likeElement: (
@@ -410,7 +409,7 @@ function CommentTitle({
               ),
               dislikeElement: (
                 <>
-                  {comment.reportees.length > 0 ? (
+                  {comment.reports.length > 0 ? (
                     <IconExclamationCircle style={{ color: "#F53F3F" }} />
                   ) : (
                     <IconExclamationCircle />
@@ -531,8 +530,8 @@ function ReplyCard({
         <Like
           props={{
             id: reply.id,
-            like: reply.reportees.map((u) => u.id).includes(self),
-            count: reply.reportees.length,
+            like: reply.reports.map((r) => r.creatorId).includes(self),
+            count: reply.reports.length,
             likeAction: ActionType.None,
             dislikeAction: ActionType.None,
             likeElement: (
@@ -542,7 +541,7 @@ function ReplyCard({
             ),
             dislikeElement: (
               <>
-                {reply.reportees.length > 0 ? (
+                {reply.reports.length > 0 ? (
                   <IconExclamationCircle style={{ color: "#F53F3F" }} />
                 ) : (
                   <IconExclamationCircle />
@@ -566,7 +565,7 @@ function ReplyCard({
       key={"reply" + reply.id}
       avatar={<Avatar src={author.avatar} name={author.nickname} />}
       content={<div>{reply.content}</div>}
-      datetime={reply.createdAt.toLocaleString().slice(0, 16)}
+      datetime={formatDateTime(reply.createdAt)}
     />
   );
 }

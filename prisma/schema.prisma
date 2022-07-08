@@ -33,12 +33,10 @@ model User {
   createdReplies  Reply[]
   createdRecords  Record[]
 
-  heartedComments  Comment[] @relation("heartedComments")
-  heartedReplies   Reply[]   @relation("heartedReplies")
-  starredComments  Comment[] @relation("starredComments")
-  starredReplies   Reply[]   @relation("starredReplies")
-  reportedComments Comment[] @relation("reportedComments")
-  reportedReplies  Reply[]   @relation("reportedReplies")
+  heartedComments Comment[] @relation("heartedComments")
+  heartedReplies  Reply[]   @relation("heartedReplies")
+  starredComments Comment[] @relation("starredComments")
+  starredReplies  Reply[]   @relation("starredReplies")
 
   attendedContests Contest[] @relation("attendee")
   moddedContests   Contest[] @relation("mod")
@@ -50,6 +48,7 @@ model User {
   receivedMessages PrivateMessage[] @relation("receive")
   chatMessage      ChatMessage[]
   enteredChatRoom  UserInChatRoom[]
+  reports          Report[]         @relation("reports")
 }
 
 enum SystemUserRole {
@@ -308,9 +307,8 @@ model Comment {
 
   // === relations ===
 
-  heartees  User[] @relation("heartedComments")
-  starrees  User[] @relation("starredComments")
-  reportees User[] @relation("reportedComments")
+  heartees User[] @relation("heartedComments")
+  starrees User[] @relation("starredComments")
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
@@ -318,6 +316,7 @@ model Comment {
   tags CommentTag[]
 
   replies Reply[]
+  reports Report[] @relation("reportedComments")
 }
 
 model Reply {
@@ -338,15 +337,41 @@ model Reply {
   domId      Int?
   subReplies Reply[] @relation("dsReplies")
 
-  heartees  User[] @relation("heartedReplies")
-  starrees  User[] @relation("starredReplies")
-  reportees User[] @relation("reportedReplies")
+  heartees User[] @relation("heartedReplies")
+  starrees User[] @relation("starredReplies")
 
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int
 
-  creator   User @relation(fields: [creatorId], references: [id])
+  creator   User     @relation(fields: [creatorId], references: [id])
   creatorId Int
+  reports   Report[] @relation("reportedReplies")
+}
+
+enum ReportType {
+  Comment
+  Reply
+}
+
+model Report {
+  id Int @id @default(autoincrement())
+
+  type ReportType
+
+  reason String
+
+  createdAt DateTime @default(now())
+
+  // ==== relations ====
+
+  creator   User @relation("reports", fields: [creatorId], references: [id])
+  creatorId Int
+
+  comment   Comment? @relation("reportedComments", fields: [commentId], references: [id])
+  commentId Int?
+
+  reply   Reply? @relation("reportedReplies", fields: [replyId], references: [id])
+  replyId Int?
 }
 
 model PrivateMessage {

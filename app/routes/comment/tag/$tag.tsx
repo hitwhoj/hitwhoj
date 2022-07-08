@@ -1,4 +1,4 @@
-import type { Comment, Reply, User } from "@prisma/client";
+import type { Comment, Reply, User, Report } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -17,7 +17,7 @@ type LoaderData = {
     tags: Pick<CommentTag, "id" | "name">[];
     heartees: Pick<User, "id" | "nickname">[];
     replies: Pick<Reply, "id" | "creatorId">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
   })[];
   self: number;
 };
@@ -67,9 +67,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
           creatorId: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
     },

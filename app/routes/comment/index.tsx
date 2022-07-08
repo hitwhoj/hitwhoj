@@ -1,4 +1,10 @@
-import type { Comment, User, Reply } from "@prisma/client";
+import type {
+  Comment,
+  User,
+  Reply,
+  CommentTag as CommentTagType,
+  Report,
+} from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
@@ -24,10 +30,9 @@ import { idScheme } from "~/utils/scheme";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
 import { Like } from "~/src/comment/Like";
-import type { CommentTag as CommentTagType } from "@prisma/client";
+import { ReportType } from "@prisma/client";
 import { CommentTag } from "~/src/comment/CommentTag";
 import { formatDateTime } from "~/utils/tools";
-import { ReportType } from "~/routes/comment/report/$report";
 
 enum ActionType {
   None = "none",
@@ -87,7 +92,7 @@ type LoaderData = {
     tags: Pick<CommentTagType, "id" | "name">[];
     heartees: Pick<User, "id" | "nickname">[];
     replies: Pick<Reply, "id" | "creatorId">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
   })[];
   self: number;
 };
@@ -123,9 +128,9 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
           creatorId: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
     },
@@ -214,15 +219,15 @@ export function CommentList({
             <Like
               props={{
                 id: comment.id,
-                like: comment.reportees.map((u) => u.id).includes(self),
-                count: comment.reportees.length,
+                like: comment.reports.map((r) => r.creatorId).includes(self),
+                count: comment.reports.length,
                 likeAction: ActionType.None,
                 dislikeAction: ActionType.None,
                 likeElement: (
                   <IconExclamationCircleFill style={{ color: "#F53F3F" }} />
                 ),
                 dislikeElement:
-                  comment.reportees.length > 0 ? (
+                  comment.reports.length > 0 ? (
                     <IconExclamationCircle style={{ color: "#F53F3F" }} />
                   ) : (
                     <IconExclamationCircle />
