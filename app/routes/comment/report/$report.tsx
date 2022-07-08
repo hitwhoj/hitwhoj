@@ -4,14 +4,10 @@ import { idScheme } from "~/utils/scheme";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { Button, Form, Input, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
+import { ReportType } from "@prisma/client";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
-
-export enum ReportType {
-  Comment = "C",
-  Reply = "R",
-}
 
 export type LoaderData = {
   id: number;
