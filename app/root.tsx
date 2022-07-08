@@ -20,7 +20,6 @@ import {
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
-import { findSession } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
@@ -49,7 +48,6 @@ export const links: LinksFunction = () => [
 type LoaderData = {
   theme: Theme;
   user: UserInfo | null;
-  session?: string | null;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
@@ -59,6 +57,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   if (!self) {
     return { theme, user: null };
   }
+
   const user = await db.user.findUnique({
     where: { id: self.id },
     select: {
@@ -70,9 +69,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  let session = await findSession(request);
-
-  return { theme, user, session };
+  return { theme, user };
 };
 
 interface DocumentProps {

@@ -48,7 +48,6 @@ model User {
 
   sentMessages     PrivateMessage[] @relation("send")
   receivedMessages PrivateMessage[] @relation("receive")
-  chatRoom         ChatRoom[]
   chatMessage      ChatMessage[]
   enteredChatRoom  UserInChatRoom[]
 }
@@ -373,14 +372,11 @@ model ChatRoom {
   id Int @id @default(autoincrement())
 
   name        String
-  description String
+  description String   @default("")
   createdAt   DateTime @default(now())
 
-  isPrivate Boolean @default(false)
-  password  String?
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
+  private  Boolean @default(false)
+  password String  @default("")
 
   chatMessage    ChatMessage[]
   userInChatRoom UserInChatRoom[]

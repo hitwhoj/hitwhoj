@@ -535,9 +535,16 @@ this is language whatthefuck
     data: {
       name: "TestChatRoom",
       description: "Test ChatRoom",
-      isPrivate: true,
-      password: hash("123456"),
-      creatorId: alice,
+      private: true,
+      password: "123456",
+    },
+  });
+
+  await prisma.chatRoom.create({
+    data: {
+      name: "Public Room",
+      description: "Another Test ChatRoom",
+      private: false,
     },
   });
 
