@@ -215,7 +215,7 @@ export function CommentList({
               }}
             />
           </Link>
-          <Link to={`/comment/report/${ReportType.Comment + comment.id}`}>
+          <Link to={`/comment/report/${ReportType.C + comment.id}`}>
             <Like
               props={{
                 id: comment.id,
