@@ -1,7 +1,7 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme, reasonScheme, reportTypeScheme } from "~/utils/scheme";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Button, Form, Input, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { ReportType } from "@prisma/client";
@@ -77,50 +77,56 @@ export type LoaderData = {
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const report = params.report;
-  let reportTo = "";
-  let reportContent = "";
   if (!report) {
     throw new Response("cannot report to a teapot", { status: 400 });
   }
+
   const type = invariant(reportTypeScheme, report[0]);
   const id = invariant(idScheme, report.slice(1, report.length), {
     status: 404,
   });
-  console.log(type, id);
-  if (type == ReportType.C) {
-    const comment = await db.comment.findUnique({
-      where: { id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            nickname: true,
+
+  let reportTo = "";
+  let reportContent = "";
+  switch (type) {
+    case ReportType.C: {
+      const comment = await db.comment.findUnique({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              nickname: true,
+            },
           },
         },
-      },
-    });
-    if (!comment) {
-      throw "comment not found";
+      });
+      if (!comment) {
+        throw "comment not found";
+      }
+      reportTo = `Comment: #${comment.id}`;
+      reportContent = `@${comment.creator.nickname}: ${comment.title}`;
+      break;
     }
-    reportTo = `Comment: #${comment.id}`;
-    reportContent = `@${comment.creator.nickname}: ${comment.title}`;
-  } else if (type === ReportType.R) {
-    const reply = await db.reply.findUnique({
-      where: { id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            nickname: true,
+    case ReportType.R: {
+      const reply = await db.reply.findUnique({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              nickname: true,
+            },
           },
         },
-      },
-    });
-    if (!reply) {
-      throw "reply not found";
+      });
+      if (!reply) {
+        throw "reply not found";
+      }
+      reportTo = `Reply: #${reply.id}`;
+      reportContent = `@${reply.creator.nickname}: ${reply.content}`;
+      break;
     }
-    reportTo = `Reply: #${reply.id}`;
-    reportContent = `@${reply.creator.nickname}: ${reply.content}`;
   }
   return {
     id,
@@ -135,6 +141,8 @@ export default function Report() {
 
   const fetcher = useFetcher();
   const isCreating = fetcher.state === "submitting";
+
+  const navigate = useNavigate();
 
   return (
     <Typography>
@@ -160,7 +168,12 @@ export default function Report() {
           />
         </FormItem>
         <FormItem layout="vertical">
-          <Button type="primary" htmlType="submit" loading={isCreating}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isCreating}
+            onClick={() => navigate(-1)}
+          >
             狠狠地举办捏
           </Button>
         </FormItem>
