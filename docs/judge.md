@@ -17,22 +17,15 @@ meta:
 
 评测结果有以下几种：
 
-import { RecordStatus } from "~/src/record/RecordStatus";
-
-- <RecordStatus status="Accepted" />
-  代码通过所有测试用例，并且程序运行正常。
-- <RecordStatus status="Wrong Answer" />
-  代码对于一部分测试数据输出了错误的结果。
-- <RecordStatus status="Time Limit Exceeded" />
-  代码运行时间超过了题目规定的时间限制。
-- <RecordStatus status="Memory Limit Exceeded" />
-  代码使用了超过了题目规定的内存限制。
-- <RecordStatus status="Runtime Error" />
-  代码运行时出现了非预期的错误。
-- <RecordStatus status="Compile Error" />
-  代码编译时出现了非预期的错误。
-- <RecordStatus status="System Error" />
-  网站评测系统出现了非预期的错误，如果出现此类错误，请联系网站管理员。
+| 状态                                                              | 说明                                                               |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| <span style="color:rgb(39,195,70)">Accepted</span>                | 代码通过所有测试用例，并且程序运行正常                             |
+| <span style="color:rgb(247,105,101)">Wrong Answer</span>          | 代码对于一部分测试数据输出了错误的结果                             |
+| <span style="color:rgb(247,105,101)">Time Limit Exceeded</span>   | 代码运行时间超过了题目规定的时间限制                               |
+| <span style="color:rgb(247,105,101)">Memory Limit Exceeded</span> | 代码使用了超过了题目规定的内存限制                                 |
+| <span style="color:rgb(247,105,101)">Runtime Error</span>         | 代码运行时出现了非预期的错误                                       |
+| <span style="color:rgb(247,105,101)">Compile Error</span>         | 代码编译时出现了非预期的错误                                       |
+| <span style="color:rgb(247,105,101)">System Error</span>          | 网站评测系统出现了非预期的错误，如果出现此类错误，请联系网站管理员 |
 
 ## 测试数据
 
