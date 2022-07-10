@@ -2,13 +2,14 @@ import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import type { ProblemListData } from "~/utils/db/problem";
-import { ProblemList } from "~/src/problem/ProblemList";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
 import { isAdmin } from "~/utils/permission";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
 import { IconPlus } from "@arco-design/web-react/icon";
+import { TableList } from "~/src/TableList";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 // TODO: 分页
 type LoaderData = {
@@ -68,22 +69,24 @@ export default function ProblemIndex() {
       </Typography.Title>
 
       <Typography.Paragraph>
-        <ProblemList
-          problems={problems}
-          columnsBefore={[
-            {
-              title: "#",
-              dataIndex: "id",
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-          ]}
+        <TableList
+          data={problems}
           columns={[
             {
-              title: "提交",
-              dataIndex: "_count.relatedRecords",
+              title: "#",
+              render: ({ id }) => id,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
+            },
+            {
+              title: "题目",
+              render: (problem) => <ProblemLink problem={problem} />,
+            },
+            {
+              title: "提交",
+              render: ({ _count: { relatedRecords } }) => relatedRecords,
+              align: "center",
+              minimize: true,
             },
           ]}
         />

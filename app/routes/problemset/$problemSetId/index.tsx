@@ -11,9 +11,10 @@ import { idScheme } from "~/utils/scheme";
 import { Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
 import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
-import { ProblemList } from "~/src/problem/ProblemList";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
+import { TableList } from "~/src/TableList";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
@@ -78,15 +79,18 @@ export default function ProblemSetIndex() {
       <Typography.Title heading={4}>题目</Typography.Title>
 
       <Typography.Paragraph>
-        <ProblemList
-          problems={problemSet.problems.map(({ problem }) => problem)}
-          columnsBefore={[
+        <TableList
+          data={problemSet.problems.map(({ problem }) => problem)}
+          columns={[
             {
               title: "#",
-              render: (_, problem) =>
-                problemSet.problems.find((p) => p.problem === problem)?.rank,
+              render: (_, index) => index + 1,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
+            },
+            {
+              title: "题目",
+              render: (problem) => <ProblemLink problem={problem} />,
             },
           ]}
         />

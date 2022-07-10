@@ -5,9 +5,12 @@ import { invariant } from "~/utils/invariant";
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
-import { ContestList } from "~/src/contest/ContestList";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { db } from "~/utils/server/db.server";
+import { TableList } from "~/src/TableList";
+import { ContestLink } from "~/src/contest/ContestLink";
+import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
+import { formatDateTime } from "~/utils/tools";
 
 type LoaderData = {
   contests: ContestListData[];
@@ -48,7 +51,33 @@ export default function HomeworkList() {
       </Typography.Title>
 
       <Typography.Paragraph>
-        <ContestList contests={contests} />
+        <TableList
+          data={contests}
+          columns={[
+            {
+              title: "标题",
+              render: (contest) => <ContestLink contest={contest} />,
+            },
+            {
+              title: "赛制",
+              render: ({ system }) => <ContestSystemTag system={system} />,
+              align: "center",
+              minimize: true,
+            },
+            {
+              title: "开始时间",
+              render: ({ beginTime }) => formatDateTime(beginTime),
+              align: "center",
+              minimize: true,
+            },
+            {
+              title: "结束时间",
+              render: ({ endTime }) => formatDateTime(endTime),
+              align: "center",
+              minimize: true,
+            },
+          ]}
+        />
       </Typography.Paragraph>
     </Typography>
   );

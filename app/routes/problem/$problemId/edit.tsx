@@ -5,20 +5,13 @@ import {
   Button,
   Checkbox,
   Message,
-  Tag,
 } from "@arco-design/web-react";
-import { IconLoading, IconPlus, IconTag } from "@arco-design/web-react/icon";
 import type { Problem, ProblemTag } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { Response } from "@remix-run/node";
-import {
-  Form,
-  useFetcher,
-  useLoaderData,
-  useTransition,
-} from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
-import { TagSpace } from "~/src/TagSpace";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import { TagEditor } from "~/src/TagEditor";
 import { invariant } from "~/utils/invariant";
 import { checkProblemWritePermission } from "~/utils/permission/problem";
 import {
@@ -134,108 +127,19 @@ export const action: ActionFunction = async ({ request, params }) => {
   throw new Response("无效的操作", { status: 400 });
 };
 
-function ProblemTagItem({ name }: { name: string }) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-
-  return (
-    <Tag
-      visible={true}
-      closable
-      onClose={() => fetcher.submit(formRef.current)}
-      icon={isUpdating ? <IconLoading /> : <IconTag />}
-    >
-      {name}
-      <fetcher.Form
-        method="post"
-        style={{
-          display: "inline",
-          marginRight: 10,
-        }}
-        ref={formRef}
-        hidden
-      >
-        <input type="hidden" name="tag" value={name} />
-        <input type="hidden" name="_action" value={ActionType.DeleteTag} />
-      </fetcher.Form>
-    </Tag>
-  );
-}
-
-function ProblemTagCreator() {
-  const [showInput, setShowInput] = useState(false);
-  const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (fetcher.type === "done" && !isCreating) {
-      setShowInput(false);
-    }
-  }, [isCreating]);
-
-  return (
-    <fetcher.Form method="post" ref={formRef}>
-      <input type="hidden" name="_action" value={ActionType.CreateTag} />
-      {showInput ? (
-        <Input
-          type="text"
-          size="mini"
-          name="tag"
-          style={{ width: "82px" }}
-          autoFocus
-          onBlur={(e) =>
-            e.target.value
-              ? fetcher.submit(formRef.current)
-              : setShowInput(false)
-          }
-          disabled={isCreating}
-          required
-        />
-      ) : (
-        <Tag
-          icon={<IconPlus />}
-          style={{
-            cursor: "pointer",
-            width: "82px",
-            textAlign: "center",
-          }}
-          onClick={() => setShowInput(true)}
-        >
-          添加标签
-        </Tag>
-      )}
-    </fetcher.Form>
-  );
-}
-
-function ProblemTagEditor({ tags }: { tags: string[] }) {
-  return (
-    <TagSpace>
-      {tags.map((name) => (
-        <ProblemTagItem name={name} key={name} />
-      ))}
-      <ProblemTagCreator />
-    </TagSpace>
-  );
-}
-
 export default function ProblemEdit() {
   const { problem } = useLoaderData<LoaderData>();
 
   const [hide, setHide] = useState(problem.private);
 
-  const { state } = useTransition();
-  const isUpdating = state !== "idle";
-  const [first, setFirst] = useState(true);
-
+  const { state, type } = useTransition();
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isUpdating = state === "submitting" || isActionReload;
   useEffect(() => {
-    if (!first && !isUpdating) {
+    if (isActionReload) {
       Message.success("更新成功");
     }
-    if (first) setFirst(false);
-  }, [isUpdating]);
+  }, [isActionReload]);
 
   return (
     <Typography>
@@ -243,7 +147,11 @@ export default function ProblemEdit() {
 
       <Typography.Paragraph>
         <FormItem layout="vertical" label="题目标签">
-          <ProblemTagEditor tags={problem.tags.map(({ name }) => name)} />
+          <TagEditor
+            tags={problem.tags.map(({ name }) => name)}
+            createAction={ActionType.CreateTag}
+            deleteAction={ActionType.DeleteTag}
+          />
         </FormItem>
         <Form method="post">
           <FormItem layout="vertical" label="题目名称" required>

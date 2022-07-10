@@ -1,5 +1,4 @@
-import type { TableColumnProps } from "@arco-design/web-react";
-import { Button, Table, Typography } from "@arco-design/web-react";
+import { Button, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import type { File as UserFile, User } from "@prisma/client";
 import { useEffect, useRef } from "react";
@@ -16,6 +15,7 @@ import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
 import { checkUserWritePermission } from "~/utils/permission/user";
+import { TableList } from "~/src/TableList";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {
@@ -158,51 +158,41 @@ function UserFileRemoveButton({ file }: { file: UserFile }) {
 }
 
 function UserFileList({ files }: { files: UserFile[] }) {
-  const columns: TableColumnProps<UserFile>[] = [
-    {
-      title: "文件名",
-      dataIndex: "filename",
-      sorter: (a: UserFile, b: UserFile) =>
-        a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
-      render: (_, file) => (
-        <Link to={`/file/${file.id}`} target="_blank">
-          {file.filename}
-        </Link>
-      ),
-    },
-    {
-      title: "文件大小",
-      dataIndex: "filesize",
-    },
-    {
-      title: "文件类型",
-      dataIndex: "mimetype",
-      filters: [
-        { text: "图片", value: "image" },
-        { text: "文档", value: "text" },
-        { text: "音频", value: "audio" },
-        { text: "视频", value: "video" },
-      ],
-      onFilter: (value: string, file: UserFile) =>
-        file.mimetype.startsWith(value),
-    },
-    {
-      title: "操作",
-      dataIndex: "action",
-      render: (_, file) => <UserFileRemoveButton file={file} />,
-      align: "center",
-      cellStyle: { width: "5%", whiteSpace: "nowrap" },
-    },
-  ];
-
   return (
-    <Table
-      columns={columns}
+    <TableList
       data={files}
-      rowKey="id"
-      hover={false}
-      border={false}
-      pagination={false}
+      columns={[
+        {
+          title: "文件名",
+          render: ({ id, filename }) => (
+            <Link to={`/file/${id}`} target="_blank">
+              {filename}
+            </Link>
+          ),
+          sorter: (a, b) =>
+            a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
+        },
+        {
+          title: "文件类型",
+          render: ({ mimetype }) => mimetype,
+          align: "center",
+          minimize: true,
+        },
+        {
+          title: "文件大小",
+          render: ({ filesize }) => `${filesize} bytes`,
+          align: "center",
+          minimize: true,
+          sorter: (a, b) =>
+            a.filesize > b.filesize ? 1 : a.filesize < b.filesize ? -1 : 0,
+        },
+        {
+          title: "操作",
+          render: (file) => <UserFileRemoveButton file={file} />,
+          align: "center",
+          minimize: true,
+        },
+      ]}
     />
   );
 }

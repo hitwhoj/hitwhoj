@@ -15,11 +15,11 @@ import {
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { Table, Button, Space, Typography } from "@arco-design/web-react";
+import { Button, Space, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import type { ColumnProps } from "@arco-design/web-react/es/Table";
 import { useEffect, useRef } from "react";
 import { checkProblemWritePermission } from "~/utils/permission/problem";
+import { TableList } from "~/src/TableList";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -183,50 +183,34 @@ function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
   );
 }
 
-const columns: ColumnProps<ProblemFile>[] = [
-  {
-    title: "文件名",
-    dataIndex: "filename",
-    render: (_, file) => (
-      <Link to={`/file/${file.id}`} target="_blank">
-        {file.filename}
-      </Link>
-    ),
-  },
-  {
-    title: "文件大小",
-    dataIndex: "filesize",
-  },
-  {
-    title: "文件类型",
-    dataIndex: "mimetype",
-    filters: [
-      { text: "图片", value: "image" },
-      { text: "文档", value: "text" },
-      { text: "音频", value: "audio" },
-      { text: "视频", value: "video" },
-    ],
-    onFilter: (value: string, file: ProblemFile) =>
-      file.mimetype.startsWith(value),
-  },
-  {
-    title: "操作",
-    dataIndex: "action",
-    render: (_, file) => <ProblemFileRemoveButton file={file} />,
-    align: "center",
-    cellStyle: { width: "5%", whiteSpace: "nowrap" },
-  },
-];
-
 function ProblemFileList({ files }: { files: ProblemFile[] }) {
   return (
-    <Table
-      columns={columns}
+    <TableList
       data={files}
-      rowKey="id"
-      hover={false}
-      border={false}
-      pagination={false}
+      columns={[
+        {
+          title: "文件名",
+          render: ({ id, filename }) => (
+            <Link to={`/file/${id}`} target="_blank">
+              {filename}
+            </Link>
+          ),
+        },
+        {
+          title: "文件大小",
+          render: ({ filesize }) => filesize,
+        },
+        {
+          title: "文件类型",
+          render: ({ mimetype }) => mimetype,
+        },
+        {
+          title: "操作",
+          render: (file) => <ProblemFileRemoveButton file={file} />,
+          align: "center",
+          minimize: true,
+        },
+      ]}
     />
   );
 }

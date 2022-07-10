@@ -1,7 +1,6 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { Grid, Typography } from "@arco-design/web-react";
-import { ProblemList } from "~/src/problem/ProblemList";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
 import { isAdmin } from "~/utils/permission";
@@ -9,6 +8,8 @@ import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
+import { TableList } from "~/src/TableList";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 type LoaderData = {
   problems: (ProblemListData & {
@@ -62,22 +63,24 @@ export default function ProblemIndex() {
       </Typography.Title>
 
       <Typography.Paragraph>
-        <ProblemList
-          problems={problems}
-          columnsBefore={[
-            {
-              title: "#",
-              dataIndex: "id",
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-          ]}
+        <TableList
+          data={problems}
           columns={[
             {
-              title: "提交",
-              dataIndex: "_count.relatedRecords",
+              title: "#",
+              render: ({ id }) => id,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
+            },
+            {
+              title: "题目",
+              render: (problem) => <ProblemLink problem={problem} />,
+            },
+            {
+              title: "提交",
+              render: ({ _count: { relatedRecords } }) => relatedRecords,
+              align: "center",
+              minimize: true,
             },
           ]}
         />

@@ -1,15 +1,10 @@
-import type {
-  Problem,
-  ProblemSet,
-  ProblemSetProblem,
-  ProblemSetTag,
-} from "@prisma/client";
+import type { ProblemSet, ProblemSetTag } from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -19,38 +14,28 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import {
-  Form,
+  Form as ArcoForm,
   Input,
   Button,
-  Tag,
-  Space,
   Typography,
   Checkbox,
   Message,
 } from "@arco-design/web-react";
-import {
-  IconDelete,
-  IconDown,
-  IconLoading,
-  IconPlus,
-  IconTag,
-  IconUp,
-} from "@arco-design/web-react/icon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
-import { ProblemList } from "~/src/problem/ProblemList";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
-import { TagSpace } from "~/src/TagSpace";
-const FormItem = Form.Item;
+import { TagEditor } from "~/src/TagEditor";
+import { ProblemEditor } from "~/src/ProblemEditor";
+const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "id" | "title" | "description" | "private"> & {
     tags: ProblemSetTag[];
-    problems: (Pick<ProblemSetProblem, "rank"> & {
+    problems: {
       problem: ProblemListData;
-    })[];
+    }[];
   };
 };
 
@@ -74,7 +59,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
       problems: {
         orderBy: { rank: "asc" },
         select: {
-          rank: true,
           problem: {
             select: {
               ...selectProblemListData,
@@ -289,326 +273,88 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
 
-function ProblemSetEditor({
-  title,
-  description,
-  private: _priv,
-  tags,
-}: {
-  title: string;
-  description: string;
-  private: boolean;
-  tags: string[];
-}) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-
-  const [priv, setPriv] = useState(_priv);
-  const [first, setFirst] = useState(true);
-
-  useEffect(() => {
-    if (first) {
-      setFirst(false);
-    } else if (!isUpdating) {
-      Message.success("更新成功");
-    }
-  }, [isUpdating]);
-
-  return (
-    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-      <FormItem label="标签" layout="vertical">
-        <ProblemSetTagEditor tags={tags} />
-      </FormItem>
-
-      <FormItem label="标题" layout="vertical" required>
-        <Input
-          id="title"
-          name="title"
-          type="text"
-          defaultValue={title}
-          disabled={isUpdating}
-          required
-        />
-      </FormItem>
-
-      <FormItem label="描述" layout="vertical">
-        <TextArea
-          id="description"
-          name="description"
-          defaultValue={description}
-          disabled={isUpdating}
-          autoSize={{ minRows: 3, maxRows: 10 }}
-        />
-      </FormItem>
-
-      <FormItem>
-        <input type="hidden" name="private" value={String(priv)} />
-        <Checkbox
-          checked={priv}
-          onChange={(checked) => setPriv(checked)}
-          disabled={isUpdating}
-        >
-          首页隐藏
-        </Checkbox>
-      </FormItem>
-
-      <FormItem>
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={isUpdating}
-          name="_action"
-          value={ActionType.UpdateInformation}
-        >
-          确认修改
-        </Button>
-      </FormItem>
-    </fetcher.Form>
-  );
-}
-
-function ProblemSetTagItem({ name }: { name: string }) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-
-  return (
-    <Tag
-      visible={true}
-      closable
-      onClose={() => fetcher.submit(formRef.current)}
-      icon={isUpdating ? <IconLoading /> : <IconTag />}
-    >
-      {name}
-      <fetcher.Form
-        method="post"
-        style={{
-          display: "inline",
-          marginRight: 10,
-        }}
-        ref={formRef}
-        hidden
-      >
-        <input type="hidden" name="tag" value={name} />
-        <input type="hidden" name="_action" value={ActionType.DeleteTag} />
-      </fetcher.Form>
-    </Tag>
-  );
-}
-
-function ProblemSetTagCreator() {
-  const [showInput, setShowInput] = useState(false);
-  const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (fetcher.type === "done" && !isCreating) {
-      setShowInput(false);
-    }
-  }, [isCreating]);
-
-  return (
-    <fetcher.Form method="post" ref={formRef}>
-      <input type="hidden" name="_action" value={ActionType.CreateTag} />
-      {showInput ? (
-        <Input
-          type="text"
-          size="mini"
-          name="tag"
-          style={{ width: "82px" }}
-          autoFocus
-          onBlur={(e) =>
-            e.target.value
-              ? fetcher.submit(formRef.current)
-              : setShowInput(false)
-          }
-          disabled={isCreating}
-          required
-        />
-      ) : (
-        <Tag
-          icon={<IconPlus />}
-          style={{
-            cursor: "pointer",
-            width: "82px",
-            textAlign: "center",
-          }}
-          onClick={() => setShowInput(true)}
-        >
-          添加标签
-        </Tag>
-      )}
-    </fetcher.Form>
-  );
-}
-
-function ProblemSetTagEditor({ tags }: { tags: string[] }) {
-  return (
-    <TagSpace>
-      {tags.map((name) => (
-        <ProblemSetTagItem name={name} key={name} />
-      ))}
-      <ProblemSetTagCreator />
-    </TagSpace>
-  );
-}
-
-function ProblemSetProblemOperations({
-  pid,
-  isFirst,
-  isLast,
-}: {
-  pid: number;
-  isFirst: boolean;
-  isLast: boolean;
-}) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-
-  return (
-    <fetcher.Form method="post">
-      <input type="hidden" name="pid" value={pid} />
-      <Space>
-        <Button
-          type="primary"
-          status="danger"
-          size="mini"
-          htmlType="submit"
-          name="_action"
-          value={ActionType.DeleteProblem}
-          loading={
-            isUpdating &&
-            fetcher.submission?.formData.get("_action") ===
-              ActionType.DeleteProblem
-          }
-          icon={<IconDelete />}
-        />
-        <Button
-          size="mini"
-          htmlType="submit"
-          name="_action"
-          value={ActionType.MoveProblemUp}
-          disabled={isFirst}
-          loading={
-            isUpdating &&
-            fetcher.submission?.formData.get("_action") ===
-              ActionType.MoveProblemUp
-          }
-          icon={<IconUp />}
-        />
-        <Button
-          size="mini"
-          htmlType="submit"
-          name="_action"
-          value={ActionType.MoveProblemDown}
-          disabled={isLast}
-          loading={
-            isUpdating &&
-            fetcher.submission?.formData.get("_action") ===
-              ActionType.MoveProblemDown
-          }
-          icon={<IconDown />}
-        />
-      </Space>
-    </fetcher.Form>
-  );
-}
-
-function ProblemSetProblemCreator() {
-  const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
-
-  return (
-    <fetcher.Form method="post">
-      <Space direction="horizontal" size="medium">
-        <Input
-          id="pid"
-          name="pid"
-          type="text"
-          disabled={isCreating}
-          required
-          placeholder="输入题目pid"
-        />
-        <Button
-          type="primary"
-          htmlType="submit"
-          name="_action"
-          value={ActionType.CreateProblem}
-          loading={isCreating}
-        >
-          添加捏
-        </Button>
-      </Space>
-    </fetcher.Form>
-  );
-}
-
-function ProblemEditor({
-  problems,
-}: {
-  problems: (Pick<ProblemSetProblem, "rank"> & { problem: ProblemListData })[];
-}) {
-  return (
-    <>
-      <Typography.Paragraph>
-        <ProblemList
-          problems={problems.map(({ problem }) => problem)}
-          columnsBefore={[
-            {
-              title: "#",
-              render: (_, problem) =>
-                problems.find((p) => p.problem === problem)?.rank,
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-          ]}
-          columns={[
-            {
-              title: "操作",
-              render: (
-                _: any,
-                problem: Pick<Problem, "id" | "title">,
-                index
-              ) => (
-                <ProblemSetProblemOperations
-                  pid={problem.id}
-                  isFirst={index === 0}
-                  isLast={index === problems.length - 1}
-                />
-              ),
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <ProblemSetProblemCreator />
-      </Typography.Paragraph>
-    </>
-  );
-}
-
 export default function ProblemSetEdit() {
   const { problemSet } = useLoaderData<LoaderData>();
+
+  const [priv, setPriv] = useState(problemSet.private);
+
+  const { state, type } = useTransition();
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isUpdating = state === "submitting" || isActionReload;
+  useEffect(() => {
+    if (isActionReload) {
+      Message.success("更新成功");
+    }
+  }, [isActionReload]);
 
   return (
     <Typography>
       <Typography.Title heading={4}>编辑题单</Typography.Title>
       <Typography.Paragraph>
-        <ProblemSetEditor
-          title={problemSet.title}
-          description={problemSet.description}
-          private={problemSet.private}
-          tags={problemSet.tags.map(({ name }) => name)}
-        />
+        <Form method="post">
+          <FormItem label="标签" layout="vertical">
+            <TagEditor
+              tags={problemSet.tags.map(({ name }) => name)}
+              createAction={ActionType.CreateTag}
+              deleteAction={ActionType.DeleteTag}
+            />
+          </FormItem>
+
+          <FormItem label="标题" layout="vertical" required>
+            <Input
+              id="title"
+              name="title"
+              type="text"
+              defaultValue={problemSet.title}
+              disabled={isUpdating}
+              required
+            />
+          </FormItem>
+
+          <FormItem label="描述" layout="vertical">
+            <TextArea
+              id="description"
+              name="description"
+              defaultValue={problemSet.description}
+              disabled={isUpdating}
+              autoSize={{ minRows: 3, maxRows: 10 }}
+            />
+          </FormItem>
+
+          <FormItem>
+            <input type="hidden" name="private" value={String(priv)} />
+            <Checkbox
+              checked={priv}
+              onChange={(checked) => setPriv(checked)}
+              disabled={isUpdating}
+            >
+              首页隐藏
+            </Checkbox>
+          </FormItem>
+
+          <FormItem>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isUpdating}
+              name="_action"
+              value={ActionType.UpdateInformation}
+            >
+              确认修改
+            </Button>
+          </FormItem>
+        </Form>
       </Typography.Paragraph>
 
       <Typography.Title heading={4}>题目</Typography.Title>
       <Typography.Paragraph>
-        <ProblemEditor problems={problemSet.problems} />
+        <ProblemEditor
+          problems={problemSet.problems.map(({ problem }) => problem)}
+          createAction={ActionType.CreateProblem}
+          deleteAction={ActionType.DeleteProblem}
+          moveUpAction={ActionType.MoveProblemUp}
+          moveDownAction={ActionType.MoveProblemDown}
+        />
       </Typography.Paragraph>
     </Typography>
   );

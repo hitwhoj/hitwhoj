@@ -1,16 +1,11 @@
-import type {
-  Contest,
-  ContestProblem,
-  ContestTag,
-  Problem,
-} from "@prisma/client";
+import type { Contest, ContestTag } from "@prisma/client";
 import { ContestSystem } from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -24,32 +19,24 @@ import {
 } from "~/utils/scheme";
 import {
   Button,
-  Form,
+  Form as ArcoForm,
   Input,
   DatePicker,
   Select,
-  Space,
-  Tag,
   Typography,
   Message,
   Alert,
-  Table,
   Checkbox,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { useEffect, useRef, useState } from "react";
-import {
-  IconCheck,
-  IconDelete,
-  IconDown,
-  IconLoading,
-  IconPlus,
-  IconTag,
-  IconUp,
-} from "@arco-design/web-react/icon";
+import { useEffect, useState } from "react";
 import { checkContestWritePermission } from "~/utils/permission/contest";
+import { TagEditor } from "~/src/TagEditor";
+import { ProblemEditor } from "~/src/ProblemEditor";
+import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
 
-const FormItem = Form.Item;
+const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
@@ -66,9 +53,9 @@ type LoaderData = {
     | "private"
   > & {
     tags: ContestTag[];
-    problems: (Pick<ContestProblem, "rank"> & {
-      problem: Pick<Problem, "id" | "title">;
-    })[];
+    problems: {
+      problem: ProblemListData;
+    }[];
   };
 };
 
@@ -96,11 +83,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
       problems: {
         orderBy: { rank: "asc" },
         select: {
-          rank: true,
           problem: {
             select: {
-              id: true,
-              title: true,
+              ...selectProblemListData,
             },
           },
         },
@@ -333,22 +318,8 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `编辑比赛: ${data?.contest.title} - HITwh OJ`,
 });
 
-function ContestInformationEditor({
-  contest,
-}: {
-  contest: Pick<
-    Contest,
-    | "id"
-    | "title"
-    | "description"
-    | "beginTime"
-    | "endTime"
-    | "system"
-    | "private"
-  > & { tags: Pick<ContestTag, "name">[] };
-}) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
+export default function ContestEdit() {
+  const { contest } = useLoaderData<LoaderData>();
 
   const [beginTime, setBeginTime] = useState(
     new Date(contest.beginTime).getTime()
@@ -357,326 +328,116 @@ function ContestInformationEditor({
   const [system, setSystem] = useState(contest.system);
   const [priv, setPriv] = useState(contest.private);
 
+  const { state, type } = useTransition();
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isUpdating = state === "submitting" || isActionReload;
   useEffect(() => {
-    if (!isUpdating && fetcher.submission) {
+    if (isActionReload) {
       Message.success("更新成功");
     }
-  }, [isUpdating]);
-
-  return (
-    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-      <FormItem label="标题" required layout="vertical">
-        <Input
-          name="title"
-          defaultValue={contest.title}
-          disabled={isUpdating}
-          required
-        />
-      </FormItem>
-
-      <FormItem label="描述" required layout="vertical">
-        <TextArea
-          name="description"
-          defaultValue={contest.description}
-          disabled={isUpdating}
-        />
-      </FormItem>
-
-      <FormItem label="时间" required layout="vertical">
-        <input
-          type="hidden"
-          name="beginTime"
-          value={getDatetimeLocal(beginTime)}
-          required
-        />
-        <input
-          type="hidden"
-          name="endTime"
-          value={getDatetimeLocal(endTime)}
-          required
-        />
-        <input
-          type="hidden"
-          name="timezone"
-          value={new Date().getTimezoneOffset()}
-          required
-        />
-        <RangePicker
-          defaultValue={[beginTime, endTime]}
-          showTime={{ format: "HH:mm" }}
-          format="YYYY-MM-DD HH:mm"
-          allowClear={false}
-          onChange={(dates) => {
-            setBeginTime(new Date(dates[0]).getTime());
-            setEndTime(new Date(dates[1]).getTime());
-          }}
-          disabled={isUpdating}
-        />
-      </FormItem>
-
-      <FormItem label="赛制" required layout="vertical">
-        <input type="hidden" name="system" value={system} required />
-        <Select
-          value={system}
-          onChange={(value) => setSystem(value as ContestSystem)}
-          style={{ width: 150 }}
-          disabled={isUpdating}
-        >
-          {Object.values(ContestSystem).map((system) => (
-            <Option key={system} value={system} />
-          ))}
-        </Select>
-      </FormItem>
-
-      <FormItem>
-        <input type="hidden" name="private" value={String(priv)} />
-        <Checkbox
-          checked={priv}
-          onChange={(checked) => setPriv(checked)}
-          disabled={isUpdating}
-        >
-          首页隐藏
-        </Checkbox>
-      </FormItem>
-
-      <FormItem>
-        <Button
-          type="primary"
-          htmlType="submit"
-          icon={<IconCheck />}
-          loading={isUpdating}
-          name="_action"
-          value={ActionType.UpdateInformation}
-        >
-          确认更新
-        </Button>
-      </FormItem>
-    </fetcher.Form>
-  );
-}
-
-function ContestTagItem({ name }: { name: string }) {
-  const fetcher = useFetcher<ActionData>();
-  const isUpdating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (fetcher.data && !isUpdating) {
-      setVisible(false);
-    }
-  }, [isUpdating]);
-
-  return (
-    <Tag
-      closable
-      visible={visible}
-      icon={isUpdating ? <IconLoading /> : <IconTag />}
-      onClose={() => fetcher.submit(formRef.current)}
-    >
-      {name}
-      <fetcher.Form method="post" ref={formRef} hidden>
-        <input type="hidden" name="tag" value={name} />
-        <input type="hidden" name="_action" value={ActionType.DeleteTag} />
-      </fetcher.Form>
-    </Tag>
-  );
-}
-
-function ContestTagEditor({ tags }: { tags: Pick<ContestTag, "name">[] }) {
-  const fetcher = useFetcher<ActionData>();
-  const isUpdating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-  const [showInput, setShowInput] = useState(false);
-
-  useEffect(() => {
-    if (fetcher.data && !isUpdating) {
-      setShowInput(false);
-    }
-  }, [isUpdating]);
-
-  return (
-    <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
-      {tags.map(({ name }) => (
-        <ContestTagItem key={name} name={name} />
-      ))}
-
-      <fetcher.Form method="post" ref={formRef}>
-        <input type="hidden" name="_action" value={ActionType.CreateTag} />
-        {showInput ? (
-          <Input
-            type="text"
-            size="mini"
-            name="tag"
-            style={{ width: "82px" }}
-            autoFocus
-            onBlur={(e) =>
-              e.target.value
-                ? fetcher.submit(formRef.current)
-                : setShowInput(false)
-            }
-            disabled={isUpdating}
-            required
-          />
-        ) : (
-          <Tag
-            icon={<IconPlus />}
-            style={{
-              cursor: "pointer",
-              width: "82px",
-              textAlign: "center",
-            }}
-            onClick={() => setShowInput(true)}
-          >
-            添加标签
-          </Tag>
-        )}
-      </fetcher.Form>
-    </div>
-  );
-}
-
-function ContestProblemEditItem({
-  id,
-  isFirst,
-  isLast,
-}: {
-  id: number;
-  isFirst: boolean;
-  isLast: boolean;
-}) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-
-  return (
-    <fetcher.Form method="post">
-      <input type="hidden" name="pid" value={id} />
-      <Space>
-        <Button
-          type="primary"
-          icon={<IconDelete />}
-          size="mini"
-          status="danger"
-          disabled={isUpdating}
-          htmlType="submit"
-          name="_action"
-          value={ActionType.DeleteProblem}
-        />
-        <Button
-          type="default"
-          icon={<IconUp />}
-          size="mini"
-          disabled={isFirst || isUpdating}
-          htmlType="submit"
-          name="_action"
-          value={ActionType.MoveProblemUp}
-        />
-        <Button
-          type="default"
-          icon={<IconDown />}
-          size="mini"
-          disabled={isLast || isUpdating}
-          htmlType="submit"
-          name="_action"
-          value={ActionType.MoveProblemDown}
-        />
-      </Space>
-    </fetcher.Form>
-  );
-}
-
-function ContestProblemEditor({
-  problems,
-}: {
-  problems: (Pick<ContestProblem, "rank"> & {
-    problem: Pick<Problem, "id" | "title">;
-  })[];
-}) {
-  const fetcher = useFetcher();
-  const isUpdating = fetcher.state !== "idle";
-
-  return (
-    <>
-      <Typography.Paragraph>
-        <fetcher.Form method="post">
-          <Space>
-            <Input
-              name="pid"
-              placeholder="请输入题目 ID"
-              pattern="\d+"
-              disabled={isUpdating}
-              required
-            />
-            <Button
-              type="primary"
-              icon={<IconPlus />}
-              htmlType="submit"
-              name="_action"
-              value={ActionType.CreateProblem}
-              loading={isUpdating}
-            >
-              添加题目
-            </Button>
-          </Space>
-        </fetcher.Form>
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <Table
-          columns={[
-            {
-              title: "#",
-              dataIndex: "rank",
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-              render(rank) {
-                return String.fromCharCode(0x40 + rank);
-              },
-            },
-            {
-              title: "题目",
-              render(_, { problem }) {
-                return (
-                  <Link to={`/problem/${problem.id}`}>{problem.title}</Link>
-                );
-              },
-            },
-            {
-              title: "操作",
-              render(_, { rank, problem }) {
-                return (
-                  <ContestProblemEditItem
-                    id={problem.id}
-                    isFirst={rank === 1}
-                    isLast={rank === problems.length}
-                  />
-                );
-              },
-              align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
-            },
-          ]}
-          data={problems}
-          rowKey="id"
-          hover={false}
-          border={false}
-          pagination={false}
-        />
-      </Typography.Paragraph>
-    </>
-  );
-}
-
-export default function ContestEdit() {
-  const { contest } = useLoaderData<LoaderData>();
+  }, [isActionReload]);
 
   return (
     <Typography>
       <Typography.Title heading={4}>修改比赛信息</Typography.Title>
-      <FormItem label="标签" layout="vertical">
-        <ContestTagEditor tags={contest.tags} />
-      </FormItem>
-      <ContestInformationEditor contest={contest} />
+      <Typography.Paragraph>
+        <FormItem label="标签" layout="vertical">
+          <TagEditor
+            tags={contest.tags.map(({ name }) => name)}
+            createAction={ActionType.CreateTag}
+            deleteAction={ActionType.DeleteTag}
+          />
+        </FormItem>
+
+        <Form method="post">
+          <FormItem label="标题" required layout="vertical">
+            <Input
+              name="title"
+              defaultValue={contest.title}
+              disabled={isUpdating}
+              required
+            />
+          </FormItem>
+
+          <FormItem label="描述" required layout="vertical">
+            <TextArea
+              name="description"
+              defaultValue={contest.description}
+              disabled={isUpdating}
+            />
+          </FormItem>
+
+          <FormItem label="时间" required layout="vertical">
+            <input
+              type="hidden"
+              name="beginTime"
+              value={getDatetimeLocal(beginTime)}
+              required
+            />
+            <input
+              type="hidden"
+              name="endTime"
+              value={getDatetimeLocal(endTime)}
+              required
+            />
+            <input
+              type="hidden"
+              name="timezone"
+              value={new Date().getTimezoneOffset()}
+              required
+            />
+            <RangePicker
+              defaultValue={[beginTime, endTime]}
+              showTime={{ format: "HH:mm" }}
+              format="YYYY-MM-DD HH:mm"
+              allowClear={false}
+              onChange={(dates) => {
+                setBeginTime(new Date(dates[0]).getTime());
+                setEndTime(new Date(dates[1]).getTime());
+              }}
+              disabled={isUpdating}
+            />
+          </FormItem>
+
+          <FormItem label="赛制" required layout="vertical">
+            <input type="hidden" name="system" value={system} required />
+            <Select
+              value={system}
+              onChange={(value) => setSystem(value as ContestSystem)}
+              style={{ width: 150 }}
+              disabled={isUpdating}
+            >
+              {Object.values(ContestSystem).map((system) => (
+                <Option key={system} value={system} />
+              ))}
+            </Select>
+          </FormItem>
+
+          <FormItem>
+            <input type="hidden" name="private" value={String(priv)} />
+            <Checkbox
+              checked={priv}
+              onChange={(checked) => setPriv(checked)}
+              disabled={isUpdating}
+            >
+              首页隐藏
+            </Checkbox>
+          </FormItem>
+
+          <FormItem>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isUpdating}
+              name="_action"
+              value={ActionType.UpdateInformation}
+            >
+              确认更新
+            </Button>
+          </FormItem>
+        </Form>
+      </Typography.Paragraph>
+
       <Typography.Title heading={4}>修改比赛题目</Typography.Title>
       {new Date() > new Date(contest.beginTime) && (
         <Typography.Paragraph>
@@ -686,7 +447,15 @@ export default function ContestEdit() {
           />
         </Typography.Paragraph>
       )}
-      <ContestProblemEditor problems={contest.problems} />
+      <Typography.Paragraph>
+        <ProblemEditor
+          problems={contest.problems.map(({ problem }) => problem)}
+          createAction={ActionType.CreateProblem}
+          deleteAction={ActionType.DeleteProblem}
+          moveUpAction={ActionType.MoveProblemUp}
+          moveDownAction={ActionType.MoveProblemDown}
+        />
+      </Typography.Paragraph>
     </Typography>
   );
 }
