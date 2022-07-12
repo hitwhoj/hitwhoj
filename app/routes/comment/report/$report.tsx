@@ -1,12 +1,13 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme, reasonScheme, reportTypeScheme } from "~/utils/scheme";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import { Button, Form, Input, Typography } from "@arco-design/web-react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import { Button, Form, Input, Modal, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { ReportType } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
+import { useEffect, useState } from "react";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
@@ -27,6 +28,17 @@ export const action: ActionFunction = async ({ request }) => {
 
   switch (type) {
     case ReportType.C: {
+      const lastReport = await db.report.findFirst({
+        where: {
+          type: ReportType.C,
+          reason,
+          creatorId: self,
+        },
+      });
+      if (lastReport) {
+        throw new Error("请不要提交重复的举报");
+      }
+
       await db.report.create({
         data: {
           type: ReportType.C,
@@ -46,6 +58,17 @@ export const action: ActionFunction = async ({ request }) => {
       return null;
     }
     case ReportType.R: {
+      const lastReport = await db.report.findFirst({
+        where: {
+          type: ReportType.R,
+          reason,
+          creatorId: self,
+        },
+      });
+      if (lastReport) {
+        throw new Error("请不要提交重复的举报");
+      }
+
       await db.report.create({
         data: {
           type: ReportType.R,
@@ -142,10 +165,33 @@ export default function Report() {
   const fetcher = useFetcher();
   const isCreating = fetcher.state === "submitting";
 
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (isCreating) {
+      setSubmitting(true);
+    }
+    if (submitting && !isCreating) {
+      setVisible(true);
+      setSubmitting(false);
+    }
+  }, [isCreating]);
 
   return (
     <Typography>
+      {visible ? (
+        <Modal
+          title="Submit Report"
+          visible={visible}
+          onOk={() => setVisible(false)}
+          onCancel={() => setVisible(false)}
+          focusLock={true}
+          autoFocus={true}
+        >
+          举办已提交，请等待管理员审核。
+        </Modal>
+      ) : null}
       <Typography.Title heading={3}>开始举办</Typography.Title>
       <fetcher.Form method="post" style={{ maxWidth: 600 }}>
         <FormItem label="举报对象" layout="vertical">
@@ -168,12 +214,7 @@ export default function Report() {
           />
         </FormItem>
         <FormItem layout="vertical">
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={isCreating}
-            onClick={() => navigate(-1)}
-          >
+          <Button type="primary" htmlType="submit" loading={isCreating}>
             狠狠地举办捏
           </Button>
         </FormItem>
