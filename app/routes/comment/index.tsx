@@ -1,4 +1,10 @@
-import type { Comment, User, Reply } from "@prisma/client";
+import type {
+  Comment,
+  User,
+  Reply,
+  CommentTag as CommentTagType,
+  Report,
+} from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
@@ -14,8 +20,8 @@ import {
   IconHeartFill,
   IconMessage,
   IconPlus,
-  IconStarFill,
-  IconThumbUp,
+  // IconStarFill,
+  // IconThumbUp,
 } from "@arco-design/web-react/icon";
 import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
@@ -23,7 +29,10 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
-import { Like } from "~/src/comment/like";
+import { Like } from "~/src/comment/Like";
+import { ReportType } from "@prisma/client";
+import { CommentTag } from "~/src/comment/CommentTag";
+import { formatDateTime } from "~/utils/tools";
 
 enum ActionType {
   None = "none",
@@ -80,9 +89,10 @@ export const action: ActionFunction = async ({ request }) => {
 type LoaderData = {
   comments: (Pick<Comment, "id" | "title" | "createdAt" | "updatedAt"> & {
     creator: Pick<User, "id" | "nickname">;
+    tags: Pick<CommentTagType, "id" | "name">[];
     heartees: Pick<User, "id" | "nickname">[];
     replies: Pick<Reply, "id" | "creatorId">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
   })[];
   self: number;
 };
@@ -100,6 +110,12 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
           nickname: true,
         },
       },
+      tags: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       heartees: {
         select: {
           id: true,
@@ -112,9 +128,9 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
           creatorId: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
     },
@@ -140,38 +156,37 @@ export function CommentList({
   comments: LoaderData["comments"];
   self: LoaderData["self"];
 }) {
+  const likeStyles = {
+    fontSize: "1rem",
+    height: "1.7rem",
+    padding: "0 0.3rem",
+  };
   type CommentDetails = typeof comments[number];
   const tableColumns = [
-    {
-      title: "Forum",
-      render: (_: any, comment: CommentDetails) => (
-        <Link to={`/comment/forum/${comment.id}`}>
-          P123: A + B Problem 公告版
-        </Link>
-      ),
-    },
     {
       title: "Title",
       dataIndex: "title",
       render: (col: string, comment: CommentDetails) => (
-        <Link
-          to={`/comment/${comment.id}`}
-          // TODO: 写个hover样式qwq
-          style={{}}
-        >
-          {col}
-        </Link>
+        <>
+          <Space size={6}>
+            <Link
+              to={`/comment/${comment.id}`}
+              // TODO: 写个hover样式qwq
+              style={{}}
+            >
+              {col}
+            </Link>
+            {comment.tags.slice(0, 3).map((tag) => (
+              <Link to={`/comment/tag/${tag.name}`} key={tag.id}>
+                <CommentTag name={tag.name} />
+              </Link>
+            ))}
+          </Space>
+        </>
       ),
     },
     {
-      title: (
-        <Space size={12}>
-          <IconHeart />
-          <IconStarFill />
-          <IconThumbUp />
-          <IconMessage />
-        </Space>
-      ),
+      title: "Stars",
       render: (_: any, comment: CommentDetails) => (
         <Space size={6}>
           <Like
@@ -183,7 +198,7 @@ export function CommentList({
               dislikeAction: ActionType.UnHeart,
               likeElement: <IconHeartFill style={{ color: "#f53f3f" }} />,
               dislikeElement: <IconHeart />,
-              style: { fontSize: "1rem" },
+              style: likeStyles,
             }}
           />
           <Link to={`/comment/${comment.id}`}>
@@ -196,28 +211,28 @@ export function CommentList({
                 dislikeAction: ActionType.None,
                 likeElement: <IconMessage style={{ color: "#00B42A" }} />,
                 dislikeElement: <IconMessage />,
-                style: { fontSize: "1rem" },
+                style: likeStyles,
               }}
             />
           </Link>
-          <Link to={`/comment/${comment.id}/report`}>
+          <Link to={`/comment/report/${ReportType.C + comment.id}`}>
             <Like
               props={{
                 id: comment.id,
-                like: comment.reportees.map((u) => u.id).includes(self),
-                count: comment.reportees.length,
+                like: comment.reports.map((r) => r.creatorId).includes(self),
+                count: comment.reports.length,
                 likeAction: ActionType.None,
                 dislikeAction: ActionType.None,
                 likeElement: (
                   <IconExclamationCircleFill style={{ color: "#F53F3F" }} />
                 ),
                 dislikeElement:
-                  comment.reportees.length > 0 ? (
+                  comment.reports.length > 0 ? (
                     <IconExclamationCircle style={{ color: "#F53F3F" }} />
                   ) : (
                     <IconExclamationCircle />
                   ),
-                style: { fontSize: "1rem" },
+                style: likeStyles,
               }}
             />
           </Link>
@@ -229,8 +244,8 @@ export function CommentList({
       render: (_: any, comment: CommentDetails) => (
         <Link to={`/user/${comment.creator.id}`}>
           {comment.creator.nickname}
-          {" @"}
-          {comment.createdAt.toLocaleString()}
+          {" @ "}
+          {formatDateTime(comment.createdAt)}
         </Link>
       ),
     },
