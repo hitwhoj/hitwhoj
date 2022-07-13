@@ -1,15 +1,16 @@
-import { Button, Form, Input } from "@arco-design/web-react";
+import {
+  Button,
+  Form as ArcoForm,
+  Input,
+  Typography,
+} from "@arco-design/web-react";
 import type { User } from "@prisma/client";
 import type {
   ActionFunction,
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import {
-  Form as RemixForm,
-  useLoaderData,
-  useTransition,
-} from "@remix-run/react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -98,63 +99,61 @@ export const action: ActionFunction = async ({ request, params }) => {
   return null;
 };
 
+const FormItem = ArcoForm.Item;
+
 export default function UserEdit() {
   const { user } = useLoaderData<LoaderData>();
   const { state } = useTransition();
   const loading = state === "submitting";
 
   return (
-    <RemixForm method="post">
-      <Form.Item label="用户名" required layout="vertical">
-        <Input
-          name="username"
-          style={{ width: 270 }}
-          defaultValue={user.username}
-          disabled={loading}
-          required
-          pattern="[a-zA-Z0-9_]+"
-        />
-      </Form.Item>
-      <Form.Item label="用户昵称" layout="vertical">
-        <Input
-          name="nickname"
-          defaultValue={user.nickname}
-          disabled={loading}
-          style={{ width: 270 }}
-        />
-      </Form.Item>
-      <Form.Item label="电子邮箱" layout="vertical">
-        <Input
-          name="email"
-          type="email"
-          defaultValue={user.email}
-          disabled={loading}
-          style={{ width: 270 }}
-        />
-      </Form.Item>
-      <Form.Item label="头像地址" layout="vertical">
-        <Input
-          name="avatar"
-          defaultValue={user.avatar}
-          placeholder="https://"
-          disabled={loading}
-          style={{ width: 270 }}
-        />
-      </Form.Item>
-      <Form.Item label="个人介绍" layout="vertical">
-        <Input
-          name="bio"
-          defaultValue={user.bio}
-          disabled={loading}
-          style={{ width: 270 }}
-        />
-      </Form.Item>
-      <Form.Item layout="vertical">
-        <Button type="primary" htmlType="submit" loading={loading}>
-          确认修改
-        </Button>
-      </Form.Item>
-    </RemixForm>
+    <Typography>
+      <Typography.Title heading={4}>编辑个人资料</Typography.Title>
+      <Typography.Paragraph>
+        <Form method="post">
+          <FormItem label="用户名 (字母数字下划线)" required layout="vertical">
+            <Input
+              name="username"
+              defaultValue={user.username}
+              disabled={loading}
+              required
+              pattern="[a-zA-Z0-9_]+"
+            />
+          </FormItem>
+          <FormItem label="用户昵称" layout="vertical">
+            <Input
+              name="nickname"
+              defaultValue={user.nickname}
+              disabled={loading}
+            />
+          </FormItem>
+          <FormItem label="电子邮箱" layout="vertical">
+            <Input
+              name="email"
+              type="email"
+              defaultValue={user.email}
+              disabled={loading}
+            />
+          </FormItem>
+          <FormItem label="头像地址" layout="vertical">
+            <Input
+              name="avatar"
+              defaultValue={user.avatar}
+              placeholder="https://"
+              disabled={loading}
+            />
+          </FormItem>
+          <FormItem label="个人介绍" layout="vertical">
+            <Input name="bio" defaultValue={user.bio} disabled={loading} />
+          </FormItem>
+          <FormItem layout="vertical">
+            <Button type="primary" htmlType="submit" loading={loading}>
+              确认修改
+            </Button>
+          </FormItem>
+        </Form>
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 

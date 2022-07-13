@@ -18,7 +18,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   const path = params["*"];
   if (!path) {
     throw redirect(`/docs/index.md`);
-  } else if (!path?.endsWith(".md")) {
+  } else if (!path.endsWith(".md")) {
     throw redirect(`/docs/${path}.md`);
   }
   const filepath = resolve("docs", path);

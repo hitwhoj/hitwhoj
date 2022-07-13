@@ -140,6 +140,15 @@ a > .arco-btn {
   display: block;
 }
 
-.arco-select-popup {
+.arco-select-popup,
+.arco-popover-content {
   border: none;
+}
+
+.arco-table-content-scroll {
+  overflow: auto;
+}
+
+pre {
+  overflow: auto;
 }

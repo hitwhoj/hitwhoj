@@ -30,9 +30,9 @@ export function TableList<T extends Id>(props: TableListProps<T>) {
           title: column.title,
           render: (_, row, index) => column.render(row, index),
           ...(column.align && { align: column.align }),
-          ...(column.minimize && {
-            cellStyle: { whiteSpace: "nowrap", width: "5%" },
-          }),
+          cellStyle: column.minimize
+            ? { whiteSpace: "nowrap", width: "5%" }
+            : { whiteSpace: "nowrap" },
           ...(column.sorter && { sorter: column.sorter }),
         })
       )}

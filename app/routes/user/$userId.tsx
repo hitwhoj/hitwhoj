@@ -69,9 +69,16 @@ export default function UserProfile() {
           )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>
-              {user.nickname
-                ? `${user.nickname} (${user.username})`
-                : user.username}
+              {user.nickname ? (
+                <Space>
+                  {user.nickname}
+                  <span style={{ color: "rgb(var(--gray-5))" }}>
+                    ({user.username})
+                  </span>
+                </Space>
+              ) : (
+                user.username
+              )}
             </span>
             {user.bio || (
               <i style={{ color: "rgb(var(--gray-6))" }}>没有签名</i>
