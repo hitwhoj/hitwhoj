@@ -113,12 +113,3 @@ export function Markdown({ children }: Props) {
     </ReactMarkdown>
   );
 }
-
-export function parseFrontmatter(markdown: string): [string, string] {
-  const frontmatter = markdown.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!frontmatter) {
-    return ["", markdown];
-  }
-
-  return [frontmatter[1].trim(), markdown.slice(frontmatter[0].length).trim()];
-}

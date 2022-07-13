@@ -1,7 +1,7 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { Markdown, parseFrontmatter } from "~/src/Markdown";
+import { Markdown } from "~/src/Markdown";
 import { constants, fs } from "~/utils/fs";
 import { resolve } from "path";
 
@@ -32,11 +32,14 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
 
   // try to read the file
   try {
-    const _markdown = await fs.readFile(filepath, "utf8");
-    const [frontmatter, markdown] = parseFrontmatter(_markdown);
-    const title =
-      frontmatter.match(/title: "?([\s\S]*?)"?(\n|$)/)?.[1] ??
-      "帮助 - HITwh OJ";
+    const markdown = (await fs.readFile(filepath, "utf8")).trim();
+    const _title = markdown.startsWith("# ")
+      ? (markdown.indexOf("\n") > -1
+          ? markdown.slice(0, markdown.indexOf("\n"))
+          : markdown
+        ).slice(2)
+      : "";
+    const title = _title ? `帮助：${_title} - HITwhOJ` : "帮助 - HITwh OJ";
 
     return { markdown, title };
   } catch (e) {

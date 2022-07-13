@@ -1,21 +1,16 @@
----
-meta:
-  title: "帮助：在 Windows 上部署 - HITwh OJ"
----
-
-## Deployment on Windows
+# Deployment on Windows
 
 ~~Deploy our project is very easy.(?)~~
 
 ~~Why is this document in English? Because it can torture those who read this.~~
 
-### Install PostgreSQL
+## Install PostgreSQL
 
 Download [here](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads), then install just following the setup wizard.
 
 It will automatically create a service and running on port 5432.
 
-### Install MinIO
+## Install MinIO
 
 Follow the steps below or you can just refer to this: https://juejin.cn/post/6973840027524530206
 
@@ -66,11 +61,11 @@ Follow the steps below or you can just refer to this: https://juejin.cn/post/697
 
       (or other ways you like, for example, start the service by the task manager)
 
-### install nvm
+## install nvm
 
 This project needs your node version to be 16, maybe you have to [install nvm](https://github.com/coreybutler/nvm-windows/releases) yourself. (or just install node v16 is fine).
 
-### Clone and set config
+## Clone and set config
 
 1. Clone and install dependences:
 
@@ -131,14 +126,14 @@ This project needs your node version to be 16, maybe you have to [install nvm](h
    S3_BUCKET=hitwhoj
    ```
 
-### Init database
+## Init database
 
 ```bash
 yarn prisma db push
 yarn prisma db seed # add some data in development mode
 ```
 
-### Build and run the project
+## Build and run the project
 
 ```bash
 yarn build

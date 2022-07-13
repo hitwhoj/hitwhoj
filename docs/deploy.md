@@ -1,11 +1,6 @@
----
-meta:
-  title: 帮助：部署网站 - HITwh OJ
----
-
 # 部署网站
 
-注意：本文介绍的是在 Linux 作业系统下的通用部署方式，对于在 Windows 作业系统部署，可以[参考这里](/docs/deploy-windows)。
+注意：本文介绍的是在 Linux 作业系统下的通用部署方式，对于在 Windows 作业系统部署，可以[参考这里](/docs/deploy-windows.md)。
 
 ## 安装依赖
 
@@ -111,7 +106,7 @@ http {
 
 ## 部署评测机
 
-请参阅[部署评测机](/docs/deploy-judge)。
+请参阅[部署评测机](/docs/deploy-judge.md)。
 
 [postgres]: https://www.postgresql.org/
 [minio]: https://min.io/
