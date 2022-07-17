@@ -1,28 +1,28 @@
 import {
-  contestRunningACMAttendeesPrv,
-  contestRunningACMAttendeesPub,
-  contestRunningACMGuestsPrv,
-  contestRunningACMGuestsPub,
-  contestRunningACMJuriesPrv,
-  contestRunningACMJuriesPub,
-  contestRunningACMModsPrv,
-  contestRunningACMModsPub,
-  contestNotStartedACMAttendeesPrv,
-  contestNotStartedACMAttendeesPub,
-  contestNotStartedACMGuestsPrv,
-  contestNotStartedACMGuestsPub,
-  contestNotStartedACMJuriesPrv,
-  contestNotStartedACMJuriesPub,
-  contestNotStartedACMModsPrv,
-  contestNotStartedACMModsPub,
-  contestEndedACMAttendeesPrv,
-  contestEndedACMAttendeesPub,
-  contestEndedACMGuestsPrv,
-  contestEndedACMGuestsPub,
-  contestEndedACMJuriesPrv,
-  contestEndedACMJuriesPub,
-  contestEndedACMModsPrv,
-  contestEndedACMModsPub,
+  contestRunningAttendeesPrv,
+  contestRunningAttendeesPub,
+  contestRunningGuestsPrv,
+  contestRunningGuestsPub,
+  contestRunningJuriesPrv,
+  contestRunningJuriesPub,
+  contestRunningModsPrv,
+  contestRunningModsPub,
+  contestNotStartedAttendeesPrv,
+  contestNotStartedAttendeesPub,
+  contestNotStartedGuestsPrv,
+  contestNotStartedGuestsPub,
+  contestNotStartedJuriesPrv,
+  contestNotStartedJuriesPub,
+  contestNotStartedModsPrv,
+  contestNotStartedModsPub,
+  contestEndedAttendeesPrv,
+  contestEndedAttendeesPub,
+  contestEndedGuestsPrv,
+  contestEndedGuestsPub,
+  contestEndedJuriesPrv,
+  contestEndedJuriesPub,
+  contestEndedModsPrv,
+  contestEndedModsPub,
   createRequest,
   rejects,
   resolves,
@@ -45,234 +45,228 @@ describe("checkContestProblemReadPermission", () => {
     guest = new Request("http://localhost:8080/");
   });
 
-  describe("ACM", () => {
-    describe("Running", () => {
-      it("Root 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(root, contestRunningACMModsPub)));
-      it("Root 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(root, contestRunningACMModsPrv)));
-      it("Root 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(root, contestRunningACMJuriesPub)));
-      it("Root 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(root, contestRunningACMJuriesPrv)));
-      it("Root 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(root, contestRunningACMAttendeesPub)));
-      it("Root 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(root, contestRunningACMAttendeesPrv)));
-      it("Root 可以在比赛中查看其他的公开比赛的题目", () =>
-        resolves(check(root, contestRunningACMGuestsPub)));
-      it("Root 可以在比赛中查看其他的私有比赛的题目", () =>
-        resolves(check(root, contestRunningACMGuestsPrv)));
+  describe("Running", () => {
+    it("Root 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(root, contestRunningModsPub)));
+    it("Root 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(root, contestRunningModsPrv)));
+    it("Root 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(root, contestRunningJuriesPub)));
+    it("Root 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(root, contestRunningJuriesPrv)));
+    it("Root 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(root, contestRunningAttendeesPub)));
+    it("Root 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(root, contestRunningAttendeesPrv)));
+    it("Root 可以在比赛中查看其他的公开比赛的题目", () =>
+      resolves(check(root, contestRunningGuestsPub)));
+    it("Root 可以在比赛中查看其他的私有比赛的题目", () =>
+      resolves(check(root, contestRunningGuestsPrv)));
 
-      it("Admin 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(admin, contestRunningACMModsPub)));
-      it("Admin 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(admin, contestRunningACMModsPrv)));
-      it("Admin 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(admin, contestRunningACMJuriesPub)));
-      it("Admin 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(admin, contestRunningACMJuriesPrv)));
-      it("Admin 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(admin, contestRunningACMAttendeesPub)));
-      it("Admin 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(admin, contestRunningACMAttendeesPrv)));
-      it("Admin 可以在比赛中查看其他的公开比赛的题目", () =>
-        resolves(check(admin, contestRunningACMGuestsPub)));
-      it("Admin 可以在比赛中查看其他的私有比赛的题目", () =>
-        resolves(check(admin, contestRunningACMGuestsPrv)));
+    it("Admin 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(admin, contestRunningModsPub)));
+    it("Admin 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(admin, contestRunningModsPrv)));
+    it("Admin 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(admin, contestRunningJuriesPub)));
+    it("Admin 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(admin, contestRunningJuriesPrv)));
+    it("Admin 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(admin, contestRunningAttendeesPub)));
+    it("Admin 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(admin, contestRunningAttendeesPrv)));
+    it("Admin 可以在比赛中查看其他的公开比赛的题目", () =>
+      resolves(check(admin, contestRunningGuestsPub)));
+    it("Admin 可以在比赛中查看其他的私有比赛的题目", () =>
+      resolves(check(admin, contestRunningGuestsPrv)));
 
-      it("User 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(user, contestRunningACMModsPub)));
-      it("User 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(user, contestRunningACMModsPrv)));
-      it("User 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(user, contestRunningACMJuriesPub)));
-      it("User 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(user, contestRunningACMJuriesPrv)));
-      it("User 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(user, contestRunningACMAttendeesPub)));
-      it("User 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(user, contestRunningACMAttendeesPrv)));
-      it("User 不可以在比赛中查看其他的公开比赛的题目", () =>
-        rejects(check(user, contestRunningACMGuestsPub)));
-      it("User 不可以在比赛中查看其他的私有比赛的题目", () =>
-        rejects(check(user, contestRunningACMGuestsPrv)));
+    it("User 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(user, contestRunningModsPub)));
+    it("User 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(user, contestRunningModsPrv)));
+    it("User 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(user, contestRunningJuriesPub)));
+    it("User 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(user, contestRunningJuriesPrv)));
+    it("User 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(user, contestRunningAttendeesPub)));
+    it("User 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(user, contestRunningAttendeesPrv)));
+    it("User 不可以在比赛中查看其他的公开比赛的题目", () =>
+      rejects(check(user, contestRunningGuestsPub)));
+    it("User 不可以在比赛中查看其他的私有比赛的题目", () =>
+      rejects(check(user, contestRunningGuestsPrv)));
 
-      it("Banned 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(banned, contestRunningACMModsPub)));
-      it("Banned 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(banned, contestRunningACMModsPrv)));
-      it("Banned 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(banned, contestRunningACMJuriesPub)));
-      it("Banned 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(banned, contestRunningACMJuriesPrv)));
-      it("Banned 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(banned, contestRunningACMAttendeesPub)));
-      it("Banned 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(banned, contestRunningACMAttendeesPrv)));
-      it("Banned 不可以在比赛中查看其他的公开比赛的题目", () =>
-        rejects(check(banned, contestRunningACMGuestsPub)));
-      it("Banned 不可以在比赛中查看其他的私有比赛的题目", () =>
-        rejects(check(banned, contestRunningACMGuestsPrv)));
+    it("Banned 可以在比赛中查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(banned, contestRunningModsPub)));
+    it("Banned 可以在比赛中查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(banned, contestRunningModsPrv)));
+    it("Banned 可以在比赛中查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(banned, contestRunningJuriesPub)));
+    it("Banned 可以在比赛中查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(banned, contestRunningJuriesPrv)));
+    it("Banned 可以在比赛中查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(banned, contestRunningAttendeesPub)));
+    it("Banned 可以在比赛中查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(banned, contestRunningAttendeesPrv)));
+    it("Banned 不可以在比赛中查看其他的公开比赛的题目", () =>
+      rejects(check(banned, contestRunningGuestsPub)));
+    it("Banned 不可以在比赛中查看其他的私有比赛的题目", () =>
+      rejects(check(banned, contestRunningGuestsPrv)));
 
-      it("Guest 不可以在比赛中查看其他的公开比赛的题目", () =>
-        rejects(check(guest, contestRunningACMGuestsPub)));
-      it("Guest 不可以在比赛中查看其他的私有比赛的题目", () =>
-        rejects(check(guest, contestRunningACMGuestsPrv)));
-    });
-
-    describe("Not Started", () => {
-      it("Root 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMModsPub)));
-      it("Root 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMModsPrv)));
-      it("Root 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMJuriesPub)));
-      it("Root 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMJuriesPrv)));
-      it("Root 可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMAttendeesPub)));
-      it("Root 可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMAttendeesPrv)));
-      it("Root 可以在比赛开始前查看其他的公开比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMGuestsPub)));
-      it("Root 可以在比赛开始前查看其他的私有比赛的题目", () =>
-        resolves(check(root, contestNotStartedACMGuestsPrv)));
-
-      it("Admin 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMModsPub)));
-      it("Admin 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMModsPrv)));
-      it("Admin 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMJuriesPub)));
-      it("Admin 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMJuriesPrv)));
-      it("Admin 可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMAttendeesPub)));
-      it("Admin 可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMAttendeesPrv)));
-      it("Admin 可以在比赛开始前查看其他的公开比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMGuestsPub)));
-      it("Admin 可以在比赛开始前查看其他的私有比赛的题目", () =>
-        resolves(check(admin, contestNotStartedACMGuestsPrv)));
-
-      it("User 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(user, contestNotStartedACMModsPub)));
-      it("User 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(user, contestNotStartedACMModsPrv)));
-      it("User 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(user, contestNotStartedACMJuriesPub)));
-      it("User 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(user, contestNotStartedACMJuriesPrv)));
-      it("User 不可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
-        rejects(check(user, contestNotStartedACMAttendeesPub)));
-      it("User 不可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
-        rejects(check(user, contestNotStartedACMAttendeesPrv)));
-      it("User 不可以在比赛开始前查看其他的公开比赛的题目", () =>
-        rejects(check(user, contestNotStartedACMGuestsPub)));
-      it("User 不可以在比赛开始前查看其他的私有比赛的题目", () =>
-        rejects(check(user, contestNotStartedACMGuestsPrv)));
-
-      it("Banned 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(banned, contestNotStartedACMModsPub)));
-      it("Banned 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(banned, contestNotStartedACMModsPrv)));
-      it("Banned 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(banned, contestNotStartedACMJuriesPub)));
-      it("Banned 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(banned, contestNotStartedACMJuriesPrv)));
-      it("Banned 不可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
-        rejects(check(banned, contestNotStartedACMAttendeesPub)));
-      it("Banned 不可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
-        rejects(check(banned, contestNotStartedACMAttendeesPrv)));
-      it("Banned 不可以在比赛开始前查看其他的公开比赛的题目", () =>
-        rejects(check(banned, contestNotStartedACMGuestsPub)));
-      it("Banned 不可以在比赛开始前查看其他的私有比赛的题目", () =>
-        rejects(check(banned, contestNotStartedACMGuestsPrv)));
-
-      it("Guest 不可以在比赛开始前查看其他的公开比赛的题目", () =>
-        rejects(check(guest, contestNotStartedACMGuestsPub)));
-      it("Guest 不可以在比赛开始前查看其他的私有比赛的题目", () =>
-        rejects(check(guest, contestNotStartedACMGuestsPrv)));
-    });
-
-    describe("Ended", () => {
-      it("Root 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(root, contestEndedACMModsPub)));
-      it("Root 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(root, contestEndedACMModsPrv)));
-      it("Root 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(root, contestEndedACMJuriesPub)));
-      it("Root 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(root, contestEndedACMJuriesPrv)));
-      it("Root 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(root, contestEndedACMAttendeesPub)));
-      it("Root 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(root, contestEndedACMAttendeesPrv)));
-      it("Root 可以在比赛结束后查看其他的公开比赛的题目", () =>
-        resolves(check(root, contestEndedACMGuestsPub)));
-      it("Root 可以在比赛结束后查看其他的私有比赛的题目", () =>
-        resolves(check(root, contestEndedACMGuestsPrv)));
-
-      it("Admin 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(admin, contestEndedACMModsPub)));
-      it("Admin 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(admin, contestEndedACMModsPrv)));
-      it("Admin 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(admin, contestEndedACMJuriesPub)));
-      it("Admin 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(admin, contestEndedACMJuriesPrv)));
-      it("Admin 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(admin, contestEndedACMAttendeesPub)));
-      it("Admin 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(admin, contestEndedACMAttendeesPrv)));
-      it("Admin 可以在比赛结束后查看其他的公开比赛的题目", () =>
-        resolves(check(admin, contestEndedACMGuestsPub)));
-      it("Admin 可以在比赛结束后查看其他的私有比赛的题目", () =>
-        resolves(check(admin, contestEndedACMGuestsPrv)));
-
-      it("User 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(user, contestEndedACMModsPub)));
-      it("User 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(user, contestEndedACMModsPrv)));
-      it("User 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(user, contestEndedACMJuriesPub)));
-      it("User 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(user, contestEndedACMJuriesPrv)));
-      it("User 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(user, contestEndedACMAttendeesPub)));
-      it("User 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(user, contestEndedACMAttendeesPrv)));
-      it("User 可以在比赛结束后查看其他的公开比赛的题目", () =>
-        resolves(check(user, contestEndedACMGuestsPub)));
-      it("User 不可以在比赛结束后查看其他的私有比赛的题目", () =>
-        rejects(check(user, contestEndedACMGuestsPrv)));
-
-      it("Banned 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
-        resolves(check(banned, contestEndedACMModsPub)));
-      it("Banned 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
-        resolves(check(banned, contestEndedACMModsPrv)));
-      it("Banned 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
-        resolves(check(banned, contestEndedACMJuriesPub)));
-      it("Banned 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
-        resolves(check(banned, contestEndedACMJuriesPrv)));
-      it("Banned 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
-        resolves(check(banned, contestEndedACMAttendeesPub)));
-      it("Banned 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
-        resolves(check(banned, contestEndedACMAttendeesPrv)));
-      it("Banned 可以在比赛结束后查看其他的公开比赛的题目", () =>
-        resolves(check(banned, contestEndedACMGuestsPub)));
-      it("Banned 不可以在比赛结束后查看其他的私有比赛的题目", () =>
-        rejects(check(banned, contestEndedACMGuestsPrv)));
-
-      it("Guest 可以在比赛结束后查看其他的公开比赛的题目", () =>
-        resolves(check(guest, contestEndedACMGuestsPub)));
-      it("Guest 不可以在比赛结束后查看其他的私有比赛的题目", () =>
-        rejects(check(guest, contestEndedACMGuestsPrv)));
-    });
+    it("Guest 不可以在比赛中查看其他的公开比赛的题目", () =>
+      rejects(check(guest, contestRunningGuestsPub)));
+    it("Guest 不可以在比赛中查看其他的私有比赛的题目", () =>
+      rejects(check(guest, contestRunningGuestsPrv)));
   });
 
-  describe("IOI", () => {});
-  describe("OI", () => {});
-  describe("Homework", () => {});
+  describe("Not Started", () => {
+    it("Root 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(root, contestNotStartedModsPub)));
+    it("Root 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(root, contestNotStartedModsPrv)));
+    it("Root 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(root, contestNotStartedJuriesPub)));
+    it("Root 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(root, contestNotStartedJuriesPrv)));
+    it("Root 可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(root, contestNotStartedAttendeesPub)));
+    it("Root 可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(root, contestNotStartedAttendeesPrv)));
+    it("Root 可以在比赛开始前查看其他的公开比赛的题目", () =>
+      resolves(check(root, contestNotStartedGuestsPub)));
+    it("Root 可以在比赛开始前查看其他的私有比赛的题目", () =>
+      resolves(check(root, contestNotStartedGuestsPrv)));
+
+    it("Admin 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(admin, contestNotStartedModsPub)));
+    it("Admin 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(admin, contestNotStartedModsPrv)));
+    it("Admin 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(admin, contestNotStartedJuriesPub)));
+    it("Admin 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(admin, contestNotStartedJuriesPrv)));
+    it("Admin 可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(admin, contestNotStartedAttendeesPub)));
+    it("Admin 可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(admin, contestNotStartedAttendeesPrv)));
+    it("Admin 可以在比赛开始前查看其他的公开比赛的题目", () =>
+      resolves(check(admin, contestNotStartedGuestsPub)));
+    it("Admin 可以在比赛开始前查看其他的私有比赛的题目", () =>
+      resolves(check(admin, contestNotStartedGuestsPrv)));
+
+    it("User 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(user, contestNotStartedModsPub)));
+    it("User 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(user, contestNotStartedModsPrv)));
+    it("User 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(user, contestNotStartedJuriesPub)));
+    it("User 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(user, contestNotStartedJuriesPrv)));
+    it("User 不可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
+      rejects(check(user, contestNotStartedAttendeesPub)));
+    it("User 不可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
+      rejects(check(user, contestNotStartedAttendeesPrv)));
+    it("User 不可以在比赛开始前查看其他的公开比赛的题目", () =>
+      rejects(check(user, contestNotStartedGuestsPub)));
+    it("User 不可以在比赛开始前查看其他的私有比赛的题目", () =>
+      rejects(check(user, contestNotStartedGuestsPrv)));
+
+    it("Banned 可以在比赛开始前查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(banned, contestNotStartedModsPub)));
+    it("Banned 可以在比赛开始前查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(banned, contestNotStartedModsPrv)));
+    it("Banned 可以在比赛开始前查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(banned, contestNotStartedJuriesPub)));
+    it("Banned 可以在比赛开始前查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(banned, contestNotStartedJuriesPrv)));
+    it("Banned 不可以在比赛开始前查看担任 attendee 的公开比赛的题目", () =>
+      rejects(check(banned, contestNotStartedAttendeesPub)));
+    it("Banned 不可以在比赛开始前查看担任 attendee 的私有比赛的题目", () =>
+      rejects(check(banned, contestNotStartedAttendeesPrv)));
+    it("Banned 不可以在比赛开始前查看其他的公开比赛的题目", () =>
+      rejects(check(banned, contestNotStartedGuestsPub)));
+    it("Banned 不可以在比赛开始前查看其他的私有比赛的题目", () =>
+      rejects(check(banned, contestNotStartedGuestsPrv)));
+
+    it("Guest 不可以在比赛开始前查看其他的公开比赛的题目", () =>
+      rejects(check(guest, contestNotStartedGuestsPub)));
+    it("Guest 不可以在比赛开始前查看其他的私有比赛的题目", () =>
+      rejects(check(guest, contestNotStartedGuestsPrv)));
+  });
+
+  describe("Ended", () => {
+    it("Root 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(root, contestEndedModsPub)));
+    it("Root 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(root, contestEndedModsPrv)));
+    it("Root 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(root, contestEndedJuriesPub)));
+    it("Root 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(root, contestEndedJuriesPrv)));
+    it("Root 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(root, contestEndedAttendeesPub)));
+    it("Root 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(root, contestEndedAttendeesPrv)));
+    it("Root 可以在比赛结束后查看其他的公开比赛的题目", () =>
+      resolves(check(root, contestEndedGuestsPub)));
+    it("Root 可以在比赛结束后查看其他的私有比赛的题目", () =>
+      resolves(check(root, contestEndedGuestsPrv)));
+
+    it("Admin 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(admin, contestEndedModsPub)));
+    it("Admin 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(admin, contestEndedModsPrv)));
+    it("Admin 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(admin, contestEndedJuriesPub)));
+    it("Admin 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(admin, contestEndedJuriesPrv)));
+    it("Admin 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(admin, contestEndedAttendeesPub)));
+    it("Admin 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(admin, contestEndedAttendeesPrv)));
+    it("Admin 可以在比赛结束后查看其他的公开比赛的题目", () =>
+      resolves(check(admin, contestEndedGuestsPub)));
+    it("Admin 可以在比赛结束后查看其他的私有比赛的题目", () =>
+      resolves(check(admin, contestEndedGuestsPrv)));
+
+    it("User 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(user, contestEndedModsPub)));
+    it("User 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(user, contestEndedModsPrv)));
+    it("User 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(user, contestEndedJuriesPub)));
+    it("User 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(user, contestEndedJuriesPrv)));
+    it("User 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(user, contestEndedAttendeesPub)));
+    it("User 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(user, contestEndedAttendeesPrv)));
+    it("User 可以在比赛结束后查看其他的公开比赛的题目", () =>
+      resolves(check(user, contestEndedGuestsPub)));
+    it("User 不可以在比赛结束后查看其他的私有比赛的题目", () =>
+      rejects(check(user, contestEndedGuestsPrv)));
+
+    it("Banned 可以在比赛结束后查看担任 mod 的公开比赛的题目", () =>
+      resolves(check(banned, contestEndedModsPub)));
+    it("Banned 可以在比赛结束后查看担任 mod 的私有比赛的题目", () =>
+      resolves(check(banned, contestEndedModsPrv)));
+    it("Banned 可以在比赛结束后查看担任 jury 的公开比赛的题目", () =>
+      resolves(check(banned, contestEndedJuriesPub)));
+    it("Banned 可以在比赛结束后查看担任 jury 的私有比赛的题目", () =>
+      resolves(check(banned, contestEndedJuriesPrv)));
+    it("Banned 可以在比赛结束后查看担任 attendee 的公开比赛的题目", () =>
+      resolves(check(banned, contestEndedAttendeesPub)));
+    it("Banned 可以在比赛结束后查看担任 attendee 的私有比赛的题目", () =>
+      resolves(check(banned, contestEndedAttendeesPrv)));
+    it("Banned 可以在比赛结束后查看其他的公开比赛的题目", () =>
+      resolves(check(banned, contestEndedGuestsPub)));
+    it("Banned 不可以在比赛结束后查看其他的私有比赛的题目", () =>
+      rejects(check(banned, contestEndedGuestsPrv)));
+
+    it("Guest 可以在比赛结束后查看其他的公开比赛的题目", () =>
+      resolves(check(guest, contestEndedGuestsPub)));
+    it("Guest 不可以在比赛结束后查看其他的私有比赛的题目", () =>
+      rejects(check(guest, contestEndedGuestsPrv)));
+  });
 });

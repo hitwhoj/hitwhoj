@@ -26,8 +26,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const self = await findSessionUserOptional(request);
   await checkContestProblemReadPermission(request, contestId);
+  const self = await findSessionUserOptional(request);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },

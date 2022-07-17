@@ -51,8 +51,10 @@ type LoaderData = {
     | "endTime"
     | "system"
     | "private"
+    | "allowPublicRegistration"
+    | "allowAfterRegistration"
   > & {
-    tags: ContestTag[];
+    tags: Pick<ContestTag, "name">[];
     problems: {
       problem: ProblemListData;
     }[];
@@ -79,7 +81,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
       endTime: true,
       system: true,
       private: true,
-      tags: true,
+      allowAfterRegistration: true,
+      allowPublicRegistration: true,
+      tags: { select: { name: true } },
       problems: {
         orderBy: { rank: "asc" },
         select: {
@@ -110,22 +114,8 @@ enum ActionType {
   MoveProblemDown = "MoveProblemDown",
 }
 
-type ActionData =
-  | {
-      success: true;
-    }
-  | {
-      success: false;
-      reason: string;
-    };
-
-export const action: ActionFunction<ActionData> = async ({
-  params,
-  request,
-}) => {
-  const contestId = invariant(idScheme, params.contestId, {
-    status: 404,
-  });
+export const action: ActionFunction = async ({ params, request }) => {
+  const contestId = invariant(idScheme, params.contestId, { status: 404 });
   await checkContestWritePermission(request, contestId);
 
   const form = await request.formData();
@@ -144,20 +134,16 @@ export const action: ActionFunction<ActionData> = async ({
           _max: { rank: true },
         });
 
-        await db.contest.update({
-          where: { id: contestId },
+        await db.contestProblem.create({
           data: {
-            problems: {
-              create: {
-                problemId,
-                rank: (rank ?? 0) + 1,
-              },
-            },
+            contestId,
+            problemId,
+            rank: (rank ?? 0) + 1,
           },
         });
       });
 
-      return { success: true };
+      return null;
     }
 
     // 删除题目
@@ -180,9 +166,10 @@ export const action: ActionFunction<ActionData> = async ({
         });
       });
 
-      return { success: true };
+      return null;
     }
 
+    // 移动题目
     case ActionType.MoveProblemUp:
     case ActionType.MoveProblemDown: {
       const problemId = invariant(idScheme, form.get("pid"));
@@ -235,7 +222,7 @@ export const action: ActionFunction<ActionData> = async ({
         });
       });
 
-      return { success: true };
+      return null;
     }
 
     // 创建标签
@@ -254,7 +241,7 @@ export const action: ActionFunction<ActionData> = async ({
         },
       });
 
-      return { success: true };
+      return null;
     }
 
     // 删除标签
@@ -272,7 +259,7 @@ export const action: ActionFunction<ActionData> = async ({
         },
       });
 
-      return { success: true };
+      return null;
     }
 
     // 更新比赛信息
@@ -294,6 +281,10 @@ export const action: ActionFunction<ActionData> = async ({
 
       const system = invariant(systemScheme, form.get("system"));
       const priv = form.get("private") === "true";
+      const allowPublicRegistration =
+        form.get("allowPublicRegistration") === "true";
+      const allowAfterRegistration =
+        form.get("allowAfterRegistration") === "true";
 
       await db.contest.update({
         where: { id: contestId },
@@ -304,10 +295,12 @@ export const action: ActionFunction<ActionData> = async ({
           endTime,
           system,
           private: priv,
+          allowPublicRegistration,
+          allowAfterRegistration,
         },
       });
 
-      return { success: true };
+      return null;
     }
   }
 
@@ -327,10 +320,17 @@ export default function ContestEdit() {
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
   const [priv, setPriv] = useState(contest.private);
+  const [allowPublicRegisteration, setAllowPublicRegistration] = useState(
+    contest.allowPublicRegistration
+  );
+  const [allowAfterRegistration, setAllowAfterRegistration] = useState(
+    contest.allowAfterRegistration
+  );
 
   const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
   const isActionReload = state === "loading" && type === "actionReload";
-  const isUpdating = state === "submitting" || isActionReload;
+  const isUpdating = isActionSubmit || isActionReload;
   useEffect(() => {
     if (isActionReload) {
       Message.success("更新成功");
@@ -350,24 +350,29 @@ export default function ContestEdit() {
         </FormItem>
 
         <Form method="post">
-          <FormItem label="标题" required layout="vertical">
-            <Input
-              name="title"
-              defaultValue={contest.title}
-              disabled={isUpdating}
-              required
-            />
+          <FormItem
+            label="标题"
+            required
+            layout="vertical"
+            disabled={isUpdating}
+          >
+            <Input name="title" defaultValue={contest.title} required />
           </FormItem>
 
-          <FormItem label="描述" required layout="vertical">
+          <FormItem label="描述" layout="vertical" disabled={isUpdating}>
             <TextArea
               name="description"
               defaultValue={contest.description}
-              disabled={isUpdating}
+              autoSize={{ minRows: 3 }}
             />
           </FormItem>
 
-          <FormItem label="时间" required layout="vertical">
+          <FormItem
+            label="时间"
+            required
+            layout="vertical"
+            disabled={isUpdating}
+          >
             <input
               type="hidden"
               name="beginTime"
@@ -395,17 +400,20 @@ export default function ContestEdit() {
                 setBeginTime(new Date(dates[0]).getTime());
                 setEndTime(new Date(dates[1]).getTime());
               }}
-              disabled={isUpdating}
             />
           </FormItem>
 
-          <FormItem label="赛制" required layout="vertical">
+          <FormItem
+            label="赛制"
+            required
+            layout="vertical"
+            disabled={isUpdating}
+          >
             <input type="hidden" name="system" value={system} required />
             <Select
               value={system}
               onChange={(value) => setSystem(value as ContestSystem)}
               style={{ width: 150 }}
-              disabled={isUpdating}
             >
               {Object.values(ContestSystem).map((system) => (
                 <Option key={system} value={system} />
@@ -413,14 +421,44 @@ export default function ContestEdit() {
             </Select>
           </FormItem>
 
-          <FormItem>
+          <FormItem disabled={isUpdating}>
             <input type="hidden" name="private" value={String(priv)} />
             <Checkbox
               checked={priv}
               onChange={(checked) => setPriv(checked)}
               disabled={isUpdating}
             >
-              首页隐藏
+              不公开比赛
+            </Checkbox>
+          </FormItem>
+
+          <FormItem disabled={isUpdating || priv}>
+            <input
+              type="hidden"
+              name="allowPublicRegistration"
+              value={String(allowPublicRegisteration)}
+            />
+            <Checkbox
+              checked={allowPublicRegisteration}
+              onChange={(checked) => setAllowPublicRegistration(checked)}
+              disabled={isUpdating}
+            >
+              允许公开报名
+            </Checkbox>
+          </FormItem>
+
+          <FormItem disabled={isUpdating || priv || !allowPublicRegisteration}>
+            <input
+              type="hidden"
+              name="allowAfterRegistration"
+              value={String(allowAfterRegistration)}
+            />
+            <Checkbox
+              checked={allowAfterRegistration}
+              onChange={(checked) => setAllowAfterRegistration(checked)}
+              disabled={isUpdating}
+            >
+              允许比赛开始后报名
             </Checkbox>
           </FormItem>
 

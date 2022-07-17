@@ -86,42 +86,32 @@ async function seed() {
   const oneYearLater = new Date(Date.now() + year);
   const twoYearsLater = new Date(Date.now() + year * 2);
 
-  // 枚举比赛类型
-  for (const system of [
-    ContestSystem.ACM,
-    // ContestSystem.IOI,
-    // ContestSystem.OI,
-    // ContestSystem.Homework,
-  ]) {
-    // 枚举比赛状态
-    for (const [status, beginTime, endTime] of [
-      ["Running", oneYearAgo, oneYearLater],
-      ["Not Started", oneYearLater, twoYearsLater],
-      ["Ended", twoYearsAgo, oneYearAgo],
+  // 枚举比赛状态
+  for (const [status, beginTime, endTime] of [
+    ["Running", oneYearAgo, oneYearLater],
+    ["Not Started", oneYearLater, twoYearsLater],
+    ["Ended", twoYearsAgo, oneYearAgo],
+  ] as const) {
+    // 枚举用户的身份
+    const connect = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+    for (const [type, addon] of [
+      ["Mods", { mods: { connect } }],
+      ["Juries", { juries: { connect } }],
+      ["Attendees", { attendees: { connect } }],
+      ["Guests", {}],
     ] as const) {
-      // 枚举用户的身份
-      const connect = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
-      for (const [type, addon] of [
-        ["Mods", { mods: { connect } }],
-        ["Juries", { juries: { connect } }],
-        ["Attendees", { attendees: { connect } }],
-        ["Guests", {}],
-      ] as const) {
-        // 枚举比赛是否公开
-        for (const priv of [false, true]) {
-          await prisma.contest.create({
-            data: {
-              title: `${status} ${system} Contest ${type} ${
-                priv ? "Private" : "Public"
-              }`,
-              system,
-              beginTime,
-              endTime,
-              private: priv,
-              ...addon,
-            },
-          });
-        }
+      // 枚举比赛是否公开
+      for (const priv of [false, true]) {
+        await prisma.contest.create({
+          data: {
+            title: `${status} Contest ${type} ${priv ? "Private" : "Public"}`,
+            system: ContestSystem.ACM,
+            beginTime,
+            endTime,
+            private: priv,
+            ...addon,
+          },
+        });
       }
     }
   }

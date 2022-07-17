@@ -3,7 +3,7 @@ import { db } from "../server/db.server";
 import { findSessionUser, findSessionUserOptional } from "../sessions";
 
 enum ContestStatus {
-  NOT_STARTED,
+  PENDING,
   RUNNING,
   ENDED,
 }
@@ -15,6 +15,8 @@ async function getContestInformations(contestId: number) {
       private: true,
       beginTime: true,
       endTime: true,
+      allowPublicRegistration: true,
+      allowAfterRegistration: true,
     },
   });
 
@@ -25,13 +27,18 @@ async function getContestInformations(contestId: number) {
   const now = new Date();
   const status =
     now < contest.beginTime
-      ? ContestStatus.NOT_STARTED
+      ? ContestStatus.PENDING
       : now > contest.endTime
       ? ContestStatus.ENDED
       : ContestStatus.RUNNING;
   const isPublic = contest.private === false;
 
-  return { status, isPublic };
+  return {
+    status,
+    isPublic,
+    allowPublicRegistration: contest.allowPublicRegistration,
+    allowAfterRegistration: contest.allowAfterRegistration,
+  };
 }
 
 async function getContestRole(contestId: number, userId: number) {
@@ -140,7 +147,7 @@ export async function checkContestProblemReadPermission(
     : { isMod: false, isJury: false, isAttendee: false };
 
   if (
-    (status === ContestStatus.NOT_STARTED && (isSysAdmin || isMod || isJury)) ||
+    (status === ContestStatus.PENDING && (isSysAdmin || isMod || isJury)) ||
     (status === ContestStatus.RUNNING &&
       (isSysAdmin || isMod || isJury || isAttendee)) ||
     (status === ContestStatus.ENDED &&
@@ -169,7 +176,7 @@ export async function checkContestProblemSubmitPermission(
 
   const { status } = await getContestInformations(contestId);
 
-  if (status === ContestStatus.NOT_STARTED) {
+  if (status === ContestStatus.PENDING) {
     throw new Response("比赛还未开始", { status: 403 });
   } else if (status === ContestStatus.ENDED) {
     throw new Response("比赛已结束", { status: 403 });
@@ -180,18 +187,15 @@ export async function checkContestProblemSubmitPermission(
   if (!isAttendee) {
     throw new Response("您不是比赛选手", { status: 403 });
   }
-
-  return;
 }
 
 /**
  * 检查是否有报名参加比赛的权限
  *
- * - 用户必须登录
- * - 比赛必须公开
- * - 比赛必须未开始
- * - 用户必须不是比赛选手
- * - 用户必须不是管理员、裁判
+ * - 如果比赛未开始：必须公开并且允许公开报名
+ * - 如果比赛正在进行：必须公开并且允许公开报名并且允许中途报名
+ *
+ * 已经报名的用户不能再报名，比赛的管理员和裁判也不能报名
  */
 export async function checkContestAttendPermission(
   request: Request,
@@ -203,32 +207,37 @@ export async function checkContestAttendPermission(
     throw new Response("您已被封禁", { status: 403 });
   }
 
-  const { status } = await getContestInformations(contestId);
+  const { status, isPublic, allowPublicRegistration, allowAfterRegistration } =
+    await getContestInformations(contestId);
 
-  if (status === ContestStatus.NOT_STARTED) {
-    const { isAttendee, isJury, isMod } = await getContestRole(
-      contestId,
-      self.id
-    );
+  const { isAttendee, isJury, isMod } = await getContestRole(
+    contestId,
+    self.id
+  );
 
-    if (isAttendee) {
-      throw new Response("您已经报名参加比赛", { status: 403 });
-    }
+  if (isAttendee) {
+    throw new Response("您已经报名参加比赛", { status: 403 });
+  }
 
-    if (isJury) {
-      throw new Response("您是裁判，不能报名参加比赛", { status: 403 });
-    }
+  if (isJury) {
+    throw new Response("您是裁判，不能报名参加比赛", { status: 403 });
+  }
 
-    if (isMod) {
-      throw new Response("您是管理员，不能报名参加比赛", { status: 403 });
+  if (isMod) {
+    throw new Response("您是管理员，不能报名参加比赛", { status: 403 });
+  }
+
+  if (status === ContestStatus.PENDING) {
+    if (!isPublic || !allowPublicRegistration) {
+      throw new Response("比赛不公开报名", { status: 403 });
     }
   } else if (status === ContestStatus.RUNNING) {
-    throw new Response("比赛已经开始", { status: 403 });
+    if (!isPublic || !allowPublicRegistration || !allowAfterRegistration) {
+      throw new Response("比赛报名已截止", { status: 403 });
+    }
   } else {
     throw new Response("比赛已经结束", { status: 403 });
   }
-
-  return;
 }
 
 /**
