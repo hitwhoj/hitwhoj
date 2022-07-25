@@ -58,8 +58,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(root, contestRunningAttendeesPub)));
     it("Root 不可以在比赛中报名担任 attendee 的私有比赛", () =>
       rejects(check(root, contestRunningAttendeesPrv)));
-    it("Root 不可以在比赛中报名其他的公开比赛", () =>
-      rejects(check(root, contestRunningGuestsPub)));
+    it("Root 可以在比赛中报名其他的公开比赛", () =>
+      resolves(check(root, contestRunningGuestsPub)));
     it("Root 不可以在比赛中报名其他的私有比赛", () =>
       rejects(check(root, contestRunningGuestsPrv)));
 
@@ -75,8 +75,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(admin, contestRunningAttendeesPub)));
     it("Admin 不可以在比赛中报名担任 attendee 的私有比赛", () =>
       rejects(check(admin, contestRunningAttendeesPrv)));
-    it("Admin 不可以在比赛中报名其他的公开比赛", () =>
-      rejects(check(admin, contestRunningGuestsPub)));
+    it("Admin 可以在比赛中报名其他的公开比赛", () =>
+      resolves(check(admin, contestRunningGuestsPub)));
     it("Admin 不可以在比赛中报名其他的私有比赛", () =>
       rejects(check(admin, contestRunningGuestsPrv)));
 
@@ -92,8 +92,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(user, contestRunningAttendeesPub)));
     it("User 不可以在比赛中报名担任 attendee 的私有比赛", () =>
       rejects(check(user, contestRunningAttendeesPrv)));
-    it("User 不可以在比赛中报名其他的公开比赛", () =>
-      rejects(check(user, contestRunningGuestsPub)));
+    it("User 可以在比赛中报名其他的公开比赛", () =>
+      resolves(check(user, contestRunningGuestsPub)));
     it("User 不可以在比赛中报名其他的私有比赛", () =>
       rejects(check(user, contestRunningGuestsPrv)));
 
@@ -135,8 +135,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(root, contestNotStartedAttendeesPrv)));
     it("Root 可以在比赛开始前报名其他的公开比赛", () =>
       resolves(check(root, contestNotStartedGuestsPub)));
-    it("Root 可以在比赛开始前报名其他的私有比赛", () =>
-      resolves(check(root, contestNotStartedGuestsPrv)));
+    it("Root 不可以在比赛开始前报名其他的私有比赛", () =>
+      rejects(check(root, contestNotStartedGuestsPrv)));
 
     it("Admin 不可以在比赛开始前报名担任 mod 的公开比赛", () =>
       rejects(check(admin, contestNotStartedModsPub)));
@@ -152,8 +152,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(admin, contestNotStartedAttendeesPrv)));
     it("Admin 可以在比赛开始前报名其他的公开比赛", () =>
       resolves(check(admin, contestNotStartedGuestsPub)));
-    it("Admin 可以在比赛开始前报名其他的私有比赛", () =>
-      resolves(check(admin, contestNotStartedGuestsPrv)));
+    it("Admin 不可以在比赛开始前报名其他的私有比赛", () =>
+      rejects(check(admin, contestNotStartedGuestsPrv)));
 
     it("User 不可以在比赛开始前报名担任 mod 的公开比赛", () =>
       rejects(check(user, contestNotStartedModsPub)));
@@ -169,8 +169,8 @@ describe("checkContestAttendPermission", () => {
       rejects(check(user, contestNotStartedAttendeesPrv)));
     it("User 可以在比赛开始前报名其他的公开比赛", () =>
       resolves(check(user, contestNotStartedGuestsPub)));
-    it("User 可以在比赛开始前报名其他的私有比赛", () =>
-      resolves(check(user, contestNotStartedGuestsPrv)));
+    it("User 不可以在比赛开始前报名其他的私有比赛", () =>
+      rejects(check(user, contestNotStartedGuestsPrv)));
 
     it("Banned 不可以在比赛开始前报名担任 mod 的公开比赛", () =>
       rejects(check(banned, contestNotStartedModsPub)));
