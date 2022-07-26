@@ -22,11 +22,11 @@ import {
   Message,
 } from "@arco-design/web-react";
 import { useEffect, useState } from "react";
-import { checkProblemSetWritePermission } from "~/utils/permission/problemset";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
+import { permissionProblemSetUpdate } from "~/utils/permission/problemset";
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
@@ -46,7 +46,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await checkProblemSetWritePermission(request, problemSetId);
+  await permissionProblemSetUpdate.ensure(request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -90,7 +90,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await checkProblemSetWritePermission(request, problemSetId);
+  await permissionProblemSetUpdate.ensure(request, problemSetId);
 
   const form = await request.formData();
 

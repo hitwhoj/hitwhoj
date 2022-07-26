@@ -17,6 +17,7 @@ export class WsClient {
 
     this.#pms = userId
       ? // 使用 RxJS 的多路复用技术来订阅用户私聊消息的推送
+        // TODO: 这个貌似有点复杂而且不太好控制
         this.#subject
           .multiplex(
             () => ({ subscribe: `/user/${userId}` }),

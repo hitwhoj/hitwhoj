@@ -26,20 +26,20 @@ import {
   Button,
   Typography,
 } from "@arco-design/web-react";
-import { checkContestCreatePermission } from "~/utils/permission/contest";
+import { permissionContestCreate } from "~/utils/permission/contest";
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await checkContestCreatePermission(request);
+  await permissionContestCreate.ensure(request);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  await checkContestCreatePermission(request);
+  await permissionContestCreate.ensure(request);
 
   const self = await findSessionUid(request);
   const form = await request.formData();

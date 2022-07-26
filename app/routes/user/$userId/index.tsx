@@ -5,7 +5,7 @@ import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkUserReadPermission } from "~/utils/permission/user";
+import { permissionUserProfileRead } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "id" | "bio" | "username" | "nickname" | "email">;
@@ -16,7 +16,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await checkUserReadPermission(request, userId);
+  await permissionUserProfileRead.ensure(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

@@ -4,21 +4,21 @@ import { redirect } from "@remix-run/node";
 import { Form, useTransition } from "@remix-run/react";
 import { useEffect } from "react";
 import { invariant } from "~/utils/invariant";
-import { checkContestAttendPermission } from "~/utils/permission/contest";
+import { permissionContestAttend } from "~/utils/permission/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await checkContestAttendPermission(request, contestId);
+  await permissionContestAttend.ensure(request, contestId);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await checkContestAttendPermission(request, contestId);
+  await permissionContestAttend.ensure(request, contestId);
   const self = await findSessionUid(request);
 
   await db.contest.update({

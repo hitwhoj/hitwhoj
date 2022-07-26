@@ -44,13 +44,13 @@ import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
-import {
-  checkContestProblemReadPermission,
-  checkContestProblemSubmitPermission,
-} from "~/utils/permission/contest";
 import type { JudgeServer } from "server/judge.server";
 import { WsContext } from "~/utils/context/ws";
 import { UserInfoContext } from "~/utils/context/user";
+import {
+  permissionContestProblemRead,
+  permissionContestProblemSubmit,
+} from "~/utils/permission/contest";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
@@ -78,7 +78,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     0x40;
   const self = await findSessionUserOptional(request);
 
-  await checkContestProblemReadPermission(request, contestId);
+  await permissionContestProblemRead.ensure(request, contestId);
 
   const problem = await db.contestProblem.findUnique({
     where: {
@@ -157,7 +157,7 @@ export const action: ActionFunction<ActionData> = async ({
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  await checkContestProblemSubmitPermission(request, contestId);
+  await permissionContestProblemSubmit.ensure(request, contestId);
 
   const problem = await db.contestProblem.findUnique({
     where: { contestId_rank: { contestId, rank } },

@@ -30,11 +30,11 @@ import {
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
-import { checkContestWritePermission } from "~/utils/permission/contest";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
+import { permissionContestInfoWrite } from "~/utils/permission/contest";
 
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
@@ -69,7 +69,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     status: 404,
   });
 
-  await checkContestWritePermission(request, contestId);
+  await permissionContestInfoWrite.ensure(request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -116,7 +116,7 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ params, request }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await checkContestWritePermission(request, contestId);
+  await permissionContestInfoWrite.ensure(request, contestId);
 
   const form = await request.formData();
   const _action = form.get("_action");

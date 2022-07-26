@@ -1,3 +1,7 @@
+// FIXME: `crypto` is not available in browser!!!
+// @ts-ignore
+import sha256 from "hash.js/lib/hash/sha/256";
+
 /**
  * Parse redirect url pathname
  *
@@ -5,10 +9,6 @@
  *
  * If not, return a single slash as default
  */
-// FIXME: `crypto` is not available in browser!!!
-// @ts-ignore
-import sha256 from "hash.js/lib/hash/sha/256";
-
 export function parseRedirectPathname(redirect: unknown) {
   return typeof redirect === "string" && redirect.startsWith("/")
     ? redirect
@@ -16,24 +16,73 @@ export function parseRedirectPathname(redirect: unknown) {
 }
 
 /**
- * @example Unpack<number[]> == number
+ * @example Unpack<number[]> = number
  */
 export type Unpack<T> = T extends Array<infer U> ? U : never;
+
+const dateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric",
+});
 
 /**
  * Format time to YYYY/MM/DD HH:mm:ss
  */
 export function formatDateTime(time: Date | string) {
-  const date = new Date(time);
+  return dateTimeFormatter.format(new Date(time));
+}
 
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  }).format(date);
+const relativeDateTimeFormatter = new Intl.RelativeTimeFormat("zh-CN", {
+  numeric: "auto",
+});
+
+/**
+ * Format time to XXX 秒前 / XXX 分钟前 / XXX 小时前 / XXX 天前 / XXX 年前
+ */
+export function formatRelativeDateTime(time: Date | string) {
+  const date = new Date(time).getTime();
+  const now = Date.now();
+
+  const relativeSeconds = (now - date) / 1000;
+  if (Math.abs(relativeSeconds) < 60) {
+    return relativeDateTimeFormatter.format(
+      Math.floor(relativeSeconds),
+      "second"
+    );
+  }
+
+  const relativeMinutes = relativeSeconds / 60;
+  if (Math.abs(relativeMinutes) < 60) {
+    return relativeDateTimeFormatter.format(
+      Math.floor(relativeMinutes),
+      "minute"
+    );
+  }
+
+  const relativeHours = relativeMinutes / 60;
+  if (Math.abs(relativeHours) < 24) {
+    return relativeDateTimeFormatter.format(Math.floor(relativeHours), "hour");
+  }
+
+  const relativeDays = relativeHours / 24;
+  if (Math.abs(relativeDays) < 30) {
+    return relativeDateTimeFormatter.format(Math.floor(relativeDays), "day");
+  }
+
+  const relativeMonths = relativeDays / 30;
+  if (Math.abs(relativeMonths) < 12) {
+    return relativeDateTimeFormatter.format(
+      Math.floor(relativeMonths),
+      "month"
+    );
+  }
+
+  const relativeYears = relativeMonths / 12;
+  return relativeDateTimeFormatter.format(Math.floor(relativeYears), "year");
 }
 
 /**

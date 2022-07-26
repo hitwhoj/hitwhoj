@@ -6,9 +6,9 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Tag, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
-import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
 import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
+import { permissionProblemSetRead } from "~/utils/permission/problemset";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "title" | "description" | "private"> & {
@@ -23,7 +23,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await checkProblemSetReadPermission(request, problemSetId);
+  await permissionProblemSetRead.ensure(request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },

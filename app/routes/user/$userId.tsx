@@ -7,11 +7,11 @@ import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkUserReadPermission } from "~/utils/permission/user";
 import { Navigator } from "~/src/Navigator";
 import { isAdmin, isUser } from "~/utils/permission";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { AvatarBadge } from "~/src/AvatarBadge";
+import { permissionUserProfileRead } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id" | "role">;
@@ -22,8 +22,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-
-  await checkUserReadPermission(request, userId);
+  await permissionUserProfileRead.ensure(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

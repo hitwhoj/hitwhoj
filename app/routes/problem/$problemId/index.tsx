@@ -6,7 +6,7 @@ import { Link as ArcoLink, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkProblemReadPermission } from "~/utils/permission/problem";
+import { permissionProblemRead } from "~/utils/permission/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -18,11 +18,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
   request,
 }) => {
-  const problemId = invariant(idScheme, params.problemId, {
-    status: 404,
-  });
-
-  await checkProblemReadPermission(request, problemId);
+  const problemId = invariant(idScheme, params.problemId, { status: 404 });
+  await permissionProblemRead.ensure(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },

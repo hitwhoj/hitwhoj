@@ -8,20 +8,20 @@ import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
-import { checkProblemCreatePermission } from "~/utils/permission/problem";
+import { permissionProblemCreate } from "~/utils/permission/problem";
 import { titleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 const FormItem = ArcoForm.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await checkProblemCreatePermission(request);
+  await permissionProblemCreate.ensure(request);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  await checkProblemCreatePermission(request);
+  await permissionProblemCreate.ensure(request);
 
   const form = await request.formData();
 

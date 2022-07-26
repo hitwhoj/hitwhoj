@@ -10,11 +10,11 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
-import { checkProblemSetReadPermission } from "~/utils/permission/problemset";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
+import { permissionProblemSetRead } from "~/utils/permission/problemset";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
@@ -37,7 +37,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await checkProblemSetReadPermission(request, problemSetId);
+  await permissionProblemSetRead.ensure(request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
