@@ -1,9 +1,4 @@
-import {
-  ContestSystem,
-  PrismaClient,
-  SystemUserRole,
-  TeamMemberRole,
-} from "@prisma/client";
+import { ContestSystem, PrismaClient, SystemUserRole, TeamMemberRole } from "@prisma/client";
 import { passwordHash } from "~/utils/tools";
 
 const prisma = new PrismaClient();
@@ -38,12 +33,7 @@ async function seed() {
   });
 
   await prisma.team.createMany({
-    data: [
-      { name: "Team A" },
-      { name: "Team B" },
-      { name: "Team C" },
-      { name: "Team D" },
-    ],
+    data: [{ name: "Team A" }, { name: "Team B" }, { name: "Team C" }, { name: "Team D" }],
   });
 
   await prisma.teamMember.createMany({

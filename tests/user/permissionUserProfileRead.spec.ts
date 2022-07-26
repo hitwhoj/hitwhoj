@@ -1,89 +1,41 @@
-import { Request } from "@remix-run/node";
-import { assert } from "chai";
+import { adminUid, adminUid2, bannedUid, bannedUid2, createRequest, rootUid, rootUid2, userUid, userUid2 } from "../tools";
 import { permissionUserProfileRead as permission } from "~/utils/permission/user";
-import {
-  adminUid,
-  adminUid2,
-  bannedUid,
-  bannedUid2,
-  createRequest,
-  rootUid,
-  rootUid2,
-  userUid,
-  userUid2,
-} from "../tools";
+import test from "node:test";
+import assert from "node:assert";
 
-// 测试访问权限
-describe("permissionUserProfileRead", () => {
-  let root: Request;
-  let admin: Request;
-  let user: Request;
-  let banned: Request;
-  let guest: Request;
+test("permissionUserProfileRead", async () => {
+  const root = await createRequest(1);
+  const admin = await createRequest(2);
+  const user = await createRequest(3);
+  const banned = await createRequest(4);
+  const guest = new Request("http://localhost:8080/");
 
-  before(async () => {
-    root = await createRequest(1);
-    admin = await createRequest(2);
-    user = await createRequest(3);
-    banned = await createRequest(4);
-    guest = new Request("http://localhost:8080/");
-  });
+  assert(await permission.check(root, rootUid), "Root 可以访问自己");
+  assert(await permission.check(root, rootUid2), "Root 可以访问其他 Root");
+  assert(await permission.check(root, adminUid), "Root 可以访问 Admin");
+  assert(await permission.check(root, userUid), "Root 可以访问 User");
+  assert(await permission.check(root, bannedUid), "Root 可以访问 Banned");
 
-  // Root
-  it("Root 可以访问自己", async () =>
-    assert(await permission.check(root, rootUid)));
-  it("Root 可以访问其他 Root", async () =>
-    assert(await permission.check(root, rootUid2)));
-  it("Root 可以访问 Admin", async () =>
-    assert(await permission.check(root, adminUid)));
-  it("Root 可以访问 User", async () =>
-    assert(await permission.check(root, userUid)));
-  it("Root 可以访问 Banned", async () =>
-    assert(await permission.check(root, bannedUid)));
+  assert(await permission.check(admin, rootUid), "Admin 可以访问 Root");
+  assert(await permission.check(admin, adminUid), "Admin 可以访问自己");
+  assert(await permission.check(admin, adminUid2), "Admin 可以访问其他 Admin");
+  assert(await permission.check(admin, userUid), "Admin 可以访问 User");
+  assert(await permission.check(admin, bannedUid), "Admin 可以访问 Banned");
 
-  // Admin
-  it("Admin 可以访问 Root", async () =>
-    assert(await permission.check(admin, rootUid)));
-  it("Admin 可以访问自己", async () =>
-    assert(await permission.check(admin, adminUid)));
-  it("Admin 可以访问其他 Admin", async () =>
-    assert(await permission.check(admin, adminUid2)));
-  it("Admin 可以访问 User", async () =>
-    assert(await permission.check(admin, userUid)));
-  it("Admin 可以访问 Banned", async () =>
-    assert(await permission.check(admin, bannedUid)));
+  assert(await permission.check(user, rootUid), "User 可以访问 Root");
+  assert(await permission.check(user, adminUid), "User 可以访问 Admin");
+  assert(await permission.check(user, userUid), "User 可以访问自己");
+  assert(await permission.check(user, userUid2), "User 可以访问其他 User");
+  assert(await permission.check(user, bannedUid), "User 可以访问 Banned");
 
-  // User
-  it("User 可以访问 Root", async () =>
-    assert(await permission.check(user, rootUid)));
-  it("User 可以访问 Admin", async () =>
-    assert(await permission.check(user, adminUid)));
-  it("User 可以访问自己", async () =>
-    assert(await permission.check(user, userUid)));
-  it("User 可以访问其他 User", async () =>
-    assert(await permission.check(user, userUid2)));
-  it("User 可以访问 Banned", async () =>
-    assert(await permission.check(user, bannedUid)));
+  assert(await permission.check(banned, rootUid), "Banned 可以访问 Root");
+  assert(await permission.check(banned, adminUid), "Banned 可以访问 Admin");
+  assert(await permission.check(banned, userUid), "Banned 可以访问 User");
+  assert(await permission.check(banned, bannedUid), "Banned 可以访问自己");
+  assert(await permission.check(banned, bannedUid2), "Banned 可以访问其他 Banned");
 
-  // Banned
-  it("Banned 可以访问 Root", async () =>
-    assert(await permission.check(banned, rootUid)));
-  it("Banned 可以访问 Admin", async () =>
-    assert(await permission.check(banned, adminUid)));
-  it("Banned 可以访问 User", async () =>
-    assert(await permission.check(banned, userUid)));
-  it("Banned 可以访问自己", async () =>
-    assert(await permission.check(banned, bannedUid)));
-  it("Banned 可以访问其他 Banned", async () =>
-    assert(await permission.check(banned, bannedUid2)));
-
-  // Guest
-  it("Guest 可以访问 Root", async () =>
-    assert(await permission.check(guest, rootUid)));
-  it("Guest 可以访问 Admin", async () =>
-    assert(await permission.check(guest, adminUid)));
-  it("Guest 可以访问 User", async () =>
-    assert(await permission.check(guest, userUid)));
-  it("Guest 可以访问 Banned", async () =>
-    assert(await permission.check(guest, bannedUid)));
+  assert(await permission.check(guest, rootUid), "Guest 可以访问 Root");
+  assert(await permission.check(guest, adminUid), "Guest 可以访问 Admin");
+  assert(await permission.check(guest, userUid), "Guest 可以访问 User");
+  assert(await permission.check(guest, bannedUid), "Guest 可以访问 Banned");
 });

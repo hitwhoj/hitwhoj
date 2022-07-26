@@ -12,113 +12,62 @@ import {
   problemTeamDPub,
 } from "../tools";
 import { permissionProblemUpdate as permission } from "~/utils/permission/problem";
-import { assert } from "chai";
+import test from "node:test";
+import assert from "node:assert";
 
-describe("permissionProblemUpdate", () => {
-  let root: Request;
-  let admin: Request;
-  let user: Request;
-  let banned: Request;
-  let guest: Request;
+test("permissionProblemUpdate", async () => {
+  const root = await createRequest(1);
+  const admin = await createRequest(2);
+  const user = await createRequest(3);
+  const banned = await createRequest(4);
+  const guest = new Request("http://localhost:8080/");
 
-  before(async () => {
-    root = await createRequest(1);
-    admin = await createRequest(2);
-    user = await createRequest(3);
-    banned = await createRequest(4);
-    guest = new Request("http://localhost:8080/");
-  });
+  assert(await permission.check(root, problemPub), "Root 可以修改不属于任何团队的公开题目");
+  assert(await permission.check(root, problemPrv), "Root 可以修改不属于任何团队的私有题目");
+  assert(await permission.check(root, problemTeamAPub), "Root 可以修改担任 Owner 身份的团队的公开题目");
+  assert(await permission.check(root, problemTeamAPrv), "Root 可以修改担任 Owner 身份的团队的私有题目");
+  assert(await permission.check(root, problemTeamBPub), "Root 可以修改担任 Admin 身份的团队的公开题目");
+  assert(await permission.check(root, problemTeamBPrv), "Root 可以修改担任 Admin 身份的团队的私有题目");
+  assert(await permission.check(root, problemTeamCPub), "Root 可以修改担任 Member 身份的团队的公开题目");
+  assert(await permission.check(root, problemTeamCPrv), "Root 可以修改担任 Member 身份的团队的私有题目");
+  assert(await permission.check(root, problemTeamDPub), "Root 可以修改其他团队的公开题目");
+  assert(await permission.check(root, problemTeamDPrv), "Root 可以修改其他团队的私有题目");
 
-  it("Root 可以修改不属于任何团队的公开题目", async () =>
-    assert(await permission.check(root, problemPub)));
-  it("Root 可以修改不属于任何团队的私有题目", async () =>
-    assert(await permission.check(root, problemPrv)));
-  it("Root 可以修改担任 Owner 身份的团队的公开题目", async () =>
-    assert(await permission.check(root, problemTeamAPub)));
-  it("Root 可以修改担任 Owner 身份的团队的私有题目", async () =>
-    assert(await permission.check(root, problemTeamAPrv)));
-  it("Root 可以修改担任 Admin 身份的团队的公开题目", async () =>
-    assert(await permission.check(root, problemTeamBPub)));
-  it("Root 可以修改担任 Admin 身份的团队的私有题目", async () =>
-    assert(await permission.check(root, problemTeamBPrv)));
-  it("Root 可以修改担任 Member 身份的团队的公开题目", async () =>
-    assert(await permission.check(root, problemTeamCPub)));
-  it("Root 可以修改担任 Member 身份的团队的私有题目", async () =>
-    assert(await permission.check(root, problemTeamCPrv)));
-  it("Root 可以修改其他团队的公开题目", async () =>
-    assert(await permission.check(root, problemTeamDPub)));
-  it("Root 可以修改其他团队的私有题目", async () =>
-    assert(await permission.check(root, problemTeamDPrv)));
+  assert(await permission.check(admin, problemPub), "Admin 可以修改不属于任何团队的公开题目");
+  assert(await permission.check(admin, problemPrv), "Admin 可以修改不属于任何团队的私有题目");
+  assert(await permission.check(admin, problemTeamAPub), "Admin 可以修改担任 Owner 身份的团队的公开题目");
+  assert(await permission.check(admin, problemTeamAPrv), "Admin 可以修改担任 Owner 身份的团队的私有题目");
+  assert(await permission.check(admin, problemTeamBPub), "Admin 可以修改担任 Admin 身份的团队的公开题目");
+  assert(await permission.check(admin, problemTeamBPrv), "Admin 可以修改担任 Admin 身份的团队的私有题目");
+  assert(await permission.check(admin, problemTeamCPub), "Admin 可以修改担任 Member 身份的团队的公开题目");
+  assert(await permission.check(admin, problemTeamCPrv), "Admin 可以修改担任 Member 身份的团队的私有题目");
+  assert(await permission.check(admin, problemTeamDPub), "Admin 可以修改其他团队的公开题目");
+  assert(await permission.check(admin, problemTeamDPrv), "Admin 可以修改其他团队的私有题目");
 
-  it("Admin 可以修改不属于任何团队的公开题目", async () =>
-    assert(await permission.check(admin, problemPub)));
-  it("Admin 可以修改不属于任何团队的私有题目", async () =>
-    assert(await permission.check(admin, problemPrv)));
-  it("Admin 可以修改担任 Owner 身份的团队的公开题目", async () =>
-    assert(await permission.check(admin, problemTeamAPub)));
-  it("Admin 可以修改担任 Owner 身份的团队的私有题目", async () =>
-    assert(await permission.check(admin, problemTeamAPrv)));
-  it("Admin 可以修改担任 Admin 身份的团队的公开题目", async () =>
-    assert(await permission.check(admin, problemTeamBPub)));
-  it("Admin 可以修改担任 Admin 身份的团队的私有题目", async () =>
-    assert(await permission.check(admin, problemTeamBPrv)));
-  it("Admin 可以修改担任 Member 身份的团队的公开题目", async () =>
-    assert(await permission.check(admin, problemTeamCPub)));
-  it("Admin 可以修改担任 Member 身份的团队的私有题目", async () =>
-    assert(await permission.check(admin, problemTeamCPrv)));
-  it("Admin 可以修改其他团队的公开题目", async () =>
-    assert(await permission.check(admin, problemTeamDPub)));
-  it("Admin 可以修改其他团队的私有题目", async () =>
-    assert(await permission.check(admin, problemTeamDPrv)));
+  assert(!(await permission.check(user, problemPub)), "User 不可以修改不属于任何团队的公开题目");
+  assert(!(await permission.check(user, problemPrv)), "User 不可以修改不属于任何团队的私有题目");
+  assert(await permission.check(user, problemTeamAPub), "User 可以修改担任 Owner 身份的团队的公开题目");
+  assert(await permission.check(user, problemTeamAPrv), "User 可以修改担任 Owner 身份的团队的私有题目");
+  assert(await permission.check(user, problemTeamBPub), "User 可以修改担任 Admin 身份的团队的公开题目");
+  assert(await permission.check(user, problemTeamBPrv), "User 可以修改担任 Admin 身份的团队的私有题目");
+  assert(!(await permission.check(user, problemTeamCPub)), "User 不可以修改担任 Member 身份的团队的公开题目");
+  assert(!(await permission.check(user, problemTeamCPrv)), "User 不可以修改担任 Member 身份的团队的私有题目");
+  assert(!(await permission.check(user, problemTeamDPub)), "User 不可以修改其他团队的公开题目");
+  assert(!(await permission.check(user, problemTeamDPrv)), "User 不可以修改其他团队的私有题目");
 
-  it("User 不可以修改不属于任何团队的公开题目", async () =>
-    assert(!(await permission.check(user, problemPub))));
-  it("User 不可以修改不属于任何团队的私有题目", async () =>
-    assert(!(await permission.check(user, problemPrv))));
-  it("User 可以修改担任 Owner 身份的团队的公开题目", async () =>
-    assert(await permission.check(user, problemTeamAPub)));
-  it("User 可以修改担任 Owner 身份的团队的私有题目", async () =>
-    assert(await permission.check(user, problemTeamAPrv)));
-  it("User 可以修改担任 Admin 身份的团队的公开题目", async () =>
-    assert(await permission.check(user, problemTeamBPub)));
-  it("User 可以修改担任 Admin 身份的团队的私有题目", async () =>
-    assert(await permission.check(user, problemTeamBPrv)));
-  it("User 不可以修改担任 Member 身份的团队的公开题目", async () =>
-    assert(!(await permission.check(user, problemTeamCPub))));
-  it("User 不可以修改担任 Member 身份的团队的私有题目", async () =>
-    assert(!(await permission.check(user, problemTeamCPrv))));
-  it("User 不可以修改其他团队的公开题目", async () =>
-    assert(!(await permission.check(user, problemTeamDPub))));
-  it("User 不可以修改其他团队的私有题目", async () =>
-    assert(!(await permission.check(user, problemTeamDPrv))));
+  assert(!(await permission.check(banned, problemPub)), "Banned 不可以修改不属于任何团队的公开题目");
+  assert(!(await permission.check(banned, problemPrv)), "Banned 不可以修改不属于任何团队的私有题目");
+  assert(!(await permission.check(banned, problemTeamAPub)), "Banned 不可以修改担任 Owner 身份的团队的公开题目");
+  assert(!(await permission.check(banned, problemTeamAPrv)), "Banned 不可以修改担任 Owner 身份的团队的私有题目");
+  assert(!(await permission.check(banned, problemTeamBPub)), "Banned 不可以修改担任 Admin 身份的团队的公开题目");
+  assert(!(await permission.check(banned, problemTeamBPrv)), "Banned 不可以修改担任 Admin 身份的团队的私有题目");
+  assert(!(await permission.check(banned, problemTeamCPub)), "Banned 不可以修改担任 Member 身份的团队的公开题目");
+  assert(!(await permission.check(banned, problemTeamCPrv)), "Banned 不可以修改担任 Member 身份的团队的私有题目");
+  assert(!(await permission.check(banned, problemTeamDPub)), "Banned 不可以修改其他团队的公开题目");
+  assert(!(await permission.check(banned, problemTeamDPrv)), "Banned 不可以修改其他团队的私有题目");
 
-  it("Banned 不可以修改不属于任何团队的公开题目", async () =>
-    assert(!(await permission.check(banned, problemPub))));
-  it("Banned 不可以修改不属于任何团队的私有题目", async () =>
-    assert(!(await permission.check(banned, problemPrv))));
-  it("Banned 不可以修改担任 Owner 身份的团队的公开题目", async () =>
-    assert(!(await permission.check(banned, problemTeamAPub))));
-  it("Banned 不可以修改担任 Owner 身份的团队的私有题目", async () =>
-    assert(!(await permission.check(banned, problemTeamAPrv))));
-  it("Banned 不可以修改担任 Admin 身份的团队的公开题目", async () =>
-    assert(!(await permission.check(banned, problemTeamBPub))));
-  it("Banned 不可以修改担任 Admin 身份的团队的私有题目", async () =>
-    assert(!(await permission.check(banned, problemTeamBPrv))));
-  it("Banned 不可以修改担任 Member 身份的团队的公开题目", async () =>
-    assert(!(await permission.check(banned, problemTeamCPub))));
-  it("Banned 不可以修改担任 Member 身份的团队的私有题目", async () =>
-    assert(!(await permission.check(banned, problemTeamCPrv))));
-  it("Banned 不可以修改其他团队的公开题目", async () =>
-    assert(!(await permission.check(banned, problemTeamDPub))));
-  it("Banned 不可以修改其他团队的私有题目", async () =>
-    assert(!(await permission.check(banned, problemTeamDPrv))));
-
-  it("Guest 不可以修改不属于任何团队的公开题目", async () =>
-    assert(!(await permission.check(guest, problemPub))));
-  it("Guest 不可以修改不属于任何团队的私有题目", async () =>
-    assert(!(await permission.check(guest, problemPrv))));
-  it("Guest 不可以修改其他团队的公开题目", async () =>
-    assert(!(await permission.check(guest, problemTeamDPub))));
-  it("Guest 不可以修改其他团队的私有题目", async () =>
-    assert(!(await permission.check(guest, problemTeamDPrv))));
+  assert(!(await permission.check(guest, problemPub)), "Guest 不可以修改不属于任何团队的公开题目");
+  assert(!(await permission.check(guest, problemPrv)), "Guest 不可以修改不属于任何团队的私有题目");
+  assert(!(await permission.check(guest, problemTeamDPub)), "Guest 不可以修改其他团队的公开题目");
+  assert(!(await permission.check(guest, problemTeamDPrv)), "Guest 不可以修改其他团队的私有题目");
 });

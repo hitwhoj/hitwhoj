@@ -1,89 +1,42 @@
-import { Request } from "@remix-run/node";
-import { assert } from "chai";
+import { adminUid, adminUid2, bannedUid, bannedUid2, createRequest, rootUid, rootUid2, userUid, userUid2 } from "../tools";
 import { permissionUserProfileWrite as permission } from "~/utils/permission/user";
-import {
-  adminUid,
-  adminUid2,
-  bannedUid,
-  bannedUid2,
-  createRequest,
-  rootUid,
-  rootUid2,
-  userUid,
-  userUid2,
-} from "../tools";
+import test from "node:test";
+import assert from "node:assert";
 
 // 测试修改权限
-describe("permissionUserProfileWrite", () => {
-  let root: Request;
-  let admin: Request;
-  let user: Request;
-  let banned: Request;
-  let guest: Request;
+test("permissionUserProfileWrite", async () => {
+  const root = await createRequest(1);
+  const admin = await createRequest(2);
+  const user = await createRequest(3);
+  const banned = await createRequest(4);
+  const guest = new Request("http://localhost:8080/");
 
-  before(async () => {
-    root = await createRequest(1);
-    admin = await createRequest(2);
-    user = await createRequest(3);
-    banned = await createRequest(4);
-    guest = new Request("http://localhost:8080/");
-  });
+  assert(await permission.check(root, rootUid), "Root 可以修改自己的用户资料");
+  assert(await permission.check(root, rootUid2), "Root 可以修改其他 Root 的用户资料");
+  assert(await permission.check(root, adminUid), "Root 可以修改 Admin 的用户资料");
+  assert(await permission.check(root, userUid), "Root 可以修改 User 的用户资料");
+  assert(await permission.check(root, bannedUid), "Root 可以修改 Banned 的用户资料");
 
-  // Root
-  it("Root 可以修改自己的用户资料", async () =>
-    assert(await permission.check(root, rootUid)));
-  it("Root 可以修改其他 Root 的用户资料", async () =>
-    assert(await permission.check(root, rootUid2)));
-  it("Root 可以修改 Admin 的用户资料", async () =>
-    assert(await permission.check(root, adminUid)));
-  it("Root 可以修改 User 的用户资料", async () =>
-    assert(await permission.check(root, userUid)));
-  it("Root 可以修改 Banned 的用户资料", async () =>
-    assert(await permission.check(root, bannedUid)));
+  assert(await permission.check(admin, rootUid), "Admin 可以修改 Root 的用户资料");
+  assert(await permission.check(admin, adminUid), "Admin 可以修改自己的用户资料");
+  assert(await permission.check(admin, adminUid2), "Admin 可以修改其他 Admin 的用户资料");
+  assert(await permission.check(admin, userUid), "Admin 可以修改 User 的用户资料");
+  assert(await permission.check(admin, bannedUid), "Admin 可以修改 Banned 的用户资料");
 
-  // Admin
-  it("Admin 可以修改 Root 的用户资料", async () =>
-    assert(await permission.check(admin, rootUid)));
-  it("Admin 可以修改自己的用户资料", async () =>
-    assert(await permission.check(admin, adminUid)));
-  it("Admin 可以修改其他 Admin 的用户资料", async () =>
-    assert(await permission.check(admin, adminUid2)));
-  it("Admin 可以修改 User 的用户资料", async () =>
-    assert(await permission.check(admin, userUid)));
-  it("Admin 可以修改 Banned 的用户资料", async () =>
-    assert(await permission.check(admin, bannedUid)));
+  assert(!(await permission.check(user, rootUid)), "User 不可以修改 Root 的用户资料");
+  assert(!(await permission.check(user, adminUid)), "User 不可以修改 Admin 的用户资料");
+  assert(await permission.check(user, userUid), "User 可以修改自己的用户资料");
+  assert(!(await permission.check(user, userUid2)), "User 不可以修改其他 User 的用户资料");
+  assert(!(await permission.check(user, bannedUid)), "User 不可以修改 Banned 的用户资料");
 
-  // User
-  it("User 不可以修改 Root 的用户资料", async () =>
-    assert(!(await permission.check(user, rootUid))));
-  it("User 不可以修改 Admin 的用户资料", async () =>
-    assert(!(await permission.check(user, adminUid))));
-  it("User 可以修改自己的用户资料", async () =>
-    assert(await permission.check(user, userUid)));
-  it("User 不可以修改其他 User 的用户资料", async () =>
-    assert(!(await permission.check(user, userUid2))));
-  it("User 不可以修改 Banned 的用户资料", async () =>
-    assert(!(await permission.check(user, bannedUid))));
+  assert(!(await permission.check(banned, rootUid)), "Banned 不可以修改 Root 的用户资料");
+  assert(!(await permission.check(banned, adminUid)), "Banned 不可以修改 Admin 的用户资料");
+  assert(!(await permission.check(banned, userUid)), "Banned 不可以修改 User 的用户资料");
+  assert(!(await permission.check(banned, bannedUid)), "Banned 不可以修改自己的用户资料");
+  assert(!(await permission.check(banned, bannedUid2)), "Banned 不可以修改其他 Banned 的用户资料");
 
-  // Banned
-  it("Banned 不可以修改 Root 的用户资料", async () =>
-    assert(!(await permission.check(banned, rootUid))));
-  it("Banned 不可以修改 Admin 的用户资料", async () =>
-    assert(!(await permission.check(banned, adminUid))));
-  it("Banned 不可以修改 User 的用户资料", async () =>
-    assert(!(await permission.check(banned, userUid))));
-  it("Banned 不可以修改自己的用户资料", async () =>
-    assert(!(await permission.check(banned, bannedUid))));
-  it("Banned 不可以修改其他 Banned 的用户资料", async () =>
-    assert(!(await permission.check(banned, bannedUid2))));
-
-  // Guest
-  it("Guest 不可以修改 Root 的用户资料", async () =>
-    assert(!(await permission.check(guest, rootUid))));
-  it("Guest 不可以修改 Admin 的用户资料", async () =>
-    assert(!(await permission.check(guest, adminUid))));
-  it("Guest 不可以修改 User 的用户资料", async () =>
-    assert(!(await permission.check(guest, userUid))));
-  it("Guest 不可以修改 Banned 的用户资料", async () =>
-    assert(!(await permission.check(guest, bannedUid))));
+  assert(!(await permission.check(guest, rootUid)), "Guest 不可以修改 Root 的用户资料");
+  assert(!(await permission.check(guest, adminUid)), "Guest 不可以修改 Admin 的用户资料");
+  assert(!(await permission.check(guest, userUid)), "Guest 不可以修改 User 的用户资料");
+  assert(!(await permission.check(guest, bannedUid)), "Guest 不可以修改 Banned 的用户资料");
 });

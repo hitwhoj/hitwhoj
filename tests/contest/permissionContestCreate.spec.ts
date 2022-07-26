@@ -1,28 +1,18 @@
-import { assert } from "chai";
 import { createRequest } from "tests/tools";
 import { permissionContestCreate as permission } from "~/utils/permission/contest";
+import test from "node:test";
+import assert from "node:assert";
 
-describe("permissionContestCreate", () => {
-  let root: Request;
-  let admin: Request;
-  let user: Request;
-  let banned: Request;
-  let guest: Request;
+test("permissionContestCreate", async () => {
+  const root = await createRequest(1);
+  const admin = await createRequest(2);
+  const user = await createRequest(3);
+  const banned = await createRequest(4);
+  const guest = new Request("http://localhost:8080/");
 
-  before(async () => {
-    root = await createRequest(1);
-    admin = await createRequest(2);
-    user = await createRequest(3);
-    banned = await createRequest(4);
-    guest = new Request("http://localhost:8080/");
-  });
-
-  it("Root 可以创建比赛", async () => assert(await permission.check(root)));
-  it("Admin 可以创建比赛", async () => assert(await permission.check(admin)));
-  it("User 不可以创建比赛", async () =>
-    assert(!(await permission.check(user))));
-  it("Banned 不可以创建比赛", async () =>
-    assert(!(await permission.check(banned))));
-  it("Guest 不可以创建比赛", async () =>
-    assert(!(await permission.check(guest))));
+  assert(await permission.check(root), "Root 可以创建比赛");
+  assert(await permission.check(admin), "Admin 可以创建比赛");
+  assert(!(await permission.check(user)), "User 不可以创建比赛");
+  assert(!(await permission.check(banned)), "Banned 不可以创建比赛");
+  assert(!(await permission.check(guest)), "Guest 不可以创建比赛");
 });
