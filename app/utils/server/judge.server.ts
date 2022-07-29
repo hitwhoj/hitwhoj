@@ -1,13 +1,13 @@
 import * as io from "socket.io";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
+import { serverSubject } from "../serverEvents";
 import type {
   ClientEvent,
   JudgeRequest,
   JudgeResult,
   ServerEvent,
 } from "./judge.types";
-import type { WsServer } from "server/ws.server";
 
 /**
  * 后端服务器
@@ -40,12 +40,8 @@ export class JudgeServer {
   #timeout = new Map<number, NodeJS.Timeout>();
   // 当前评测任务队列
   #taskQueue: JudgeRequest[] = [];
-  // WebSocket 客户端
-  #wss: WsServer;
 
-  constructor(wss: WsServer) {
-    this.#wss = wss;
-
+  constructor() {
     const privateKey = process.env.JUDGE_PRIVATE_KEY;
     const port = parseInt(process.env.JUDGE_PORT || "3000");
 
@@ -176,10 +172,6 @@ export class JudgeServer {
     console.log(`Judge server listening on port ${port}`);
   }
 
-  setWss(wss: WsServer) {
-    this.#wss = wss;
-  }
-
   /**
    * 向所有评测机广播目前有待领取的任务
    */
@@ -278,27 +270,50 @@ export class JudgeServer {
     });
 
     // 发送更新通知
-    this.#wss.sendRecordUpdate({
-      id: record.id,
-      time: record.time,
-      memory: record.memory,
-      status: record.status,
-      message: record.message,
-      subtasks: record.subtasks,
+    serverSubject.next({
+      type: "RecordUpdate",
+      message: {
+        id: record.id,
+        time: record.time,
+        memory: record.memory,
+        status: record.status,
+        message: record.message,
+        subtasks: record.subtasks,
+      },
     });
 
     // 推送比赛更新通知
     if (record.contestId) {
-      this.#wss.sendContestRecordUpdate({
-        id: record.id,
-        time: record.time,
-        score: record.score,
-        memory: record.memory,
-        status: record.status,
-        contestId: record.contestId,
-        problemId: record.problemId,
-        submitterId: record.submitterId,
+      serverSubject.next({
+        type: "ContestRecordUpdate",
+        message: {
+          id: record.id,
+          time: record.time,
+          score: record.score,
+          memory: record.memory,
+          status: record.status,
+          contestId: record.contestId,
+          problemId: record.problemId,
+          submitterId: record.submitterId,
+        },
       });
     }
   }
 }
+
+let judge: JudgeServer;
+
+declare global {
+  var __judge: JudgeServer | undefined;
+}
+
+if (process.env.NODE_ENV === "production") {
+  judge = new JudgeServer();
+} else {
+  if (!global.__judge) {
+    global.__judge = new JudgeServer();
+  }
+  judge = global.__judge;
+}
+
+export { judge };

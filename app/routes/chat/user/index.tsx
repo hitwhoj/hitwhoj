@@ -5,8 +5,8 @@ import { redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { db } from "~/utils/server/db.server";
+import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import { findSessionUid } from "~/utils/sessions";
-import type { PrivateMessageWithUser } from "~/utils/ws.types";
 
 type LoaderData = {
   self: Pick<User, "id" | "username" | "nickname" | "avatar">;

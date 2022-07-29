@@ -44,13 +44,13 @@ import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
-import type { JudgeServer } from "server/judge.server";
-import { WsContext } from "~/utils/context/ws";
 import { UserInfoContext } from "~/utils/context/user";
 import {
   permissionContestProblemRead,
   permissionContestProblemSubmit,
 } from "~/utils/permission/contest";
+import type { MessageType } from "../events";
+import { judge } from "~/utils/server/judge.server";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
@@ -151,7 +151,6 @@ type ActionData = {
 export const action: ActionFunction<ActionData> = async ({
   request,
   params,
-  context,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
@@ -185,7 +184,7 @@ export const action: ActionFunction<ActionData> = async ({
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  await (context.judge as JudgeServer).push(recordId);
+  judge.push(recordId);
 
   return { recordId };
 };
@@ -242,40 +241,39 @@ export default function ContestProblemView() {
   const isEnded = now > new Date(contest.endTime);
 
   const [records, setRecords] = useState(_records);
-
-  const wsc = useContext(WsContext);
   const user = useContext(UserInfoContext);
 
   useEffect(() => {
     if (user?.id) {
-      const subscription = wsc
-        ?.subscribeContestRecordUpdate(contest.id, problem.id, user.id)
-        .subscribe(({ message }) => {
-          console.log(message);
+      const eventSource = new EventSource(`/contest/${contestId}/events`);
+      eventSource.addEventListener("message", ({ data }) => {
+        const message: MessageType = JSON.parse(data);
 
-          setRecords((records) => {
-            const found = records.find((record) => record.id === message.id);
-            if (found) {
-              found.time = message.time;
-              found.score = message.score;
-              found.memory = message.memory;
-              found.status = message.status;
-            } else {
-              records.unshift({
-                id: message.id,
-                time: message.time,
-                score: message.score,
-                memory: message.memory,
-                status: message.status,
-              });
-            }
-            return [...records];
-          });
+        setRecords((records) => {
+          const found = records.find((record) => record.id === message.id);
+          if (found) {
+            // 如果 record id 已经存在，则更新现有的记录
+            found.time = message.time;
+            found.score = message.score;
+            found.memory = message.memory;
+            found.status = message.status;
+          } else {
+            // 否则添加新的记录
+            records.unshift({
+              id: message.id,
+              time: message.time,
+              score: message.score,
+              memory: message.memory,
+              status: message.status,
+            });
+          }
+          return [...records];
         });
+      });
 
-      return () => subscription?.unsubscribe();
+      return () => eventSource.close();
     }
-  }, [wsc, user?.id]);
+  }, [user?.id]);
 
   return (
     <>
