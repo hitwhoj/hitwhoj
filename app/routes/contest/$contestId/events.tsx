@@ -12,11 +12,12 @@ import { findSessionUser } from "~/utils/sessions";
 
 export type MessageType = ContestRecordUpdateMessage;
 
+/** 订阅用户自己在某场比赛中的提交 */
 export const loader: LoaderFunction<Response> = async ({ request, params }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findSessionUser(request);
 
-  // TODO: permission check
+  // TODO: OI 赛制的话自己应该看不到结果！
 
   return createEventSource<MessageType>(
     request,

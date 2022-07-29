@@ -1,4 +1,5 @@
 import type { Observable } from "rxjs";
+import { interval, map, merge } from "rxjs";
 
 /**
  * 创建一个 Event Source 源
@@ -10,20 +11,21 @@ import type { Observable } from "rxjs";
  *   // do something with message...
  * })
  * ```
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#examples
  */
 export function createEventSource<T>(
   request: Request,
   observable: Observable<T>
 ) {
-  const body = new ReadableStream({
+  const body = new ReadableStream<string>({
     async start(c) {
-      const subscription = observable.subscribe({
-        next(item) {
-          c.enqueue(`data: ${JSON.stringify(item)}\n\n`);
-        },
-        error(error) {
-          c.error(error);
-        },
+      const subscription = merge(
+        observable.pipe(map((item) => `data: ${JSON.stringify(item)}\n\n`)),
+        interval(3000).pipe(map(() => ": kawaii is justice\n\n"))
+      ).subscribe({
+        next: (item) => c.enqueue(item),
+        error: (err) => c.error(err),
       });
       request.signal.onabort = () => {
         subscription.unsubscribe();

@@ -24,7 +24,7 @@
     "seed": "node --require esbuild-register prisma/seed.ts"
   },
   "gitHooks": {
-    "pre-commit": "yarn && yarn fmt:check && yarn lint:check && yarn tsc"
+    "pre-commit": "yarn && yarn lint:check && yarn fmt:check && yarn tsc"
   },
   "dependencies": {
     "@arco-design/web-react": "^2.33.1",
