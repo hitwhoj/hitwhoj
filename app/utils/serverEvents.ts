@@ -5,6 +5,7 @@ import type {
   User,
   UserInChatRoom,
 } from "@prisma/client";
+import { Subject } from "rxjs";
 
 export type PrivateMessageWithUser = PrivateMessage & {
   from: Pick<User, "id" | "username" | "nickname" | "avatar">;
@@ -34,7 +35,7 @@ export type ContestRecordUpdateMessage = Pick<
   | "submitterId"
 >;
 
-export type WebSocketMessage =
+export type ServerEvents =
   | {
       type: "PrivateMessage";
       message: PrivateMessageWithUser;
@@ -51,3 +52,10 @@ export type WebSocketMessage =
       type: "ContestRecordUpdate";
       message: ContestRecordUpdateMessage;
     };
+
+/**
+ * 服务器所有事件的中枢
+ *
+ * TODO: 可以考虑如何把他变得可以分布式部署
+ */
+export const serverSubject = new Subject<ServerEvents>();

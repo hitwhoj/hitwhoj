@@ -1,20 +1,12 @@
-import path from "path";
-import express from "express";
-import { createServer } from "http";
-import compression from "compression";
-import morgan from "morgan";
-import { createRequestHandler } from "@remix-run/express";
-import { WsServer } from "./ws.server";
-import { JudgeServer } from "./judge.server";
+const path = require("path");
+const express = require("express");
+const compression = require("compression");
+const morgan = require("morgan");
+const { createRequestHandler } = require("@remix-run/express");
 
 const BUILD_DIR = path.join(process.cwd(), "build");
 
 const app = express();
-const server = createServer(app);
-
-const wss = new WsServer(server);
-const judge = new JudgeServer(wss);
-
 app.use(compression());
 
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
@@ -41,22 +33,16 @@ app.all(
         return createRequestHandler({
           build: require(BUILD_DIR),
           mode: process.env.NODE_ENV,
-          getLoadContext(_req, _res) {
-            return { wss, judge };
-          },
         })(req, res, next);
       }
     : createRequestHandler({
         build: require(BUILD_DIR),
         mode: process.env.NODE_ENV,
-        getLoadContext(_req, _res) {
-          return { wss, judge };
-        },
       })
 );
 const port = process.env.PORT || 8080;
 
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Express server listening on port ${port}`);
 });
 

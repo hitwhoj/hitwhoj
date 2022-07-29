@@ -9,7 +9,7 @@
     "build:fonts": "shx mkdir -p public/build/_assets && shx cp -r node_modules/katex/dist/fonts node_modules/monaco-editor/min/vs public/build/_assets",
     "dev": "yarn build && run-p dev:*",
     "dev:sass": "sass --no-source-map --watch styles:app/styles",
-    "dev:node": "cross-env NODE_ENV=development node -r esbuild-register ./server/server.ts",
+    "dev:node": "cross-env NODE_ENV=development node ./server/server.js",
     "dev:remix": "remix watch",
     "clean": "shx rm -rf public/build build app/styles .cache",
     "fmt": "prettier --write .",
@@ -17,7 +17,7 @@
     "lint": "eslint --ext ts,tsx app -f pretty --fix",
     "lint:check": "eslint --ext ts,tsx app -f pretty",
     "postinstall": "patch-package && prisma generate",
-    "start": "cross-env NODE_ENV=production node -r esbuild-register ./server/server.ts",
+    "start": "cross-env NODE_ENV=production node ./server/server.js",
     "test": "cross-env NODE_ENV=test ./test.sh"
   },
   "prisma": {

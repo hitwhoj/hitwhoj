@@ -15,16 +15,16 @@ import {
   Space,
   Typography,
 } from "@arco-design/web-react";
-import type { SubtaskResult } from "../../../server/judge.types";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { useContext, useEffect, useState } from "react";
-import { WsContext } from "~/utils/context/ws";
+import { useEffect, useState } from "react";
 import { IconCopy, IconEyeInvisible } from "@arco-design/web-react/icon";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
+import type { MessageType } from "./events";
+import type { SubtaskResult } from "~/utils/server/judge.types";
 
 type LoaderData = {
   record: Pick<
@@ -121,7 +121,6 @@ function getExpandedKeys(subtasks: SubtaskResult[]) {
 
 export default function RecordView() {
   const { record, code } = useLoaderData<LoaderData>();
-  const wsc = useContext(WsContext);
 
   const [time, setTime] = useState(record.time);
   const [memory, setMemory] = useState(record.memory);
@@ -131,19 +130,20 @@ export default function RecordView() {
   const [keys, setKeys] = useState<string[]>(getExpandedKeys(subtasks));
 
   useEffect(() => {
-    const subscription = wsc
-      ?.subscribeRecordUpdate(record.id)
-      .subscribe(({ message }) => {
-        setTime(message.time);
-        setMemory(message.memory);
-        setStatus(message.status);
-        setSubtasks(message.subtasks as SubtaskResult[]);
-        setMessage(message.message);
-        setKeys(getExpandedKeys(message.subtasks as SubtaskResult[]));
-      });
+    const eventSource = new EventSource(`./${record.id}/events`);
+    eventSource.addEventListener("message", ({ data }) => {
+      const message: MessageType = JSON.parse(data);
 
-    return () => subscription?.unsubscribe();
-  }, [wsc]);
+      setTime(message.time);
+      setMemory(message.memory);
+      setStatus(message.status);
+      setSubtasks(message.subtasks as SubtaskResult[]);
+      setMessage(message.message);
+      setKeys(getExpandedKeys(message.subtasks as SubtaskResult[]));
+    });
+
+    return () => eventSource.close();
+  }, [record.id]);
 
   return (
     <Typography>

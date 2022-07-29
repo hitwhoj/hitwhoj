@@ -11,10 +11,10 @@ import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useState, useRef } from "react";
-import { WsContext } from "~/utils/context/ws";
-import type { WsServer } from "server/ws.server";
+import { useEffect, useState, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import { serverSubject } from "~/utils/serverEvents";
+import type { MessageType } from "./events";
 
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
@@ -69,7 +69,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   return { self, target, msgs };
 };
 
-export const action: ActionFunction = async ({ request, context }) => {
+export const action: ActionFunction = async ({ request }) => {
   const self = await findSessionUid(request);
   if (!self) {
     throw redirect("/login");
@@ -105,10 +105,10 @@ export const action: ActionFunction = async ({ request, context }) => {
     },
   });
 
-  // 获取到服务器的 WebSocket 实例
-  const ws = context.wss as WsServer;
-  // 推送私聊消息给对方
-  ws.sendPrivateMessage(message);
+  serverSubject.next({
+    type: "PrivateMessage",
+    message,
+  });
 
   return null;
 };
@@ -116,22 +116,20 @@ export const action: ActionFunction = async ({ request, context }) => {
 export default function ChatIndex() {
   const { self, target, msgs } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<PrivateMessage[]>(msgs);
-  const wsc = useContext(WsContext);
 
   useEffect(() => {
     setMessages(msgs);
   }, [msgs]);
 
   useEffect(() => {
-    const subscription = wsc?.subscribePrivateMessage().subscribe((data) => {
-      // 如果消息是当前页面，则更新消息
-      if (data.from.id === target.id) {
-        setMessages((messages) => [...messages, data]);
-      }
+    const eventSource = new EventSource(`./${target.id}/events`);
+    eventSource.addEventListener("message", ({ data }) => {
+      const message: MessageType = JSON.parse(data);
+      setMessages((messages) => [...messages, message]);
     });
 
-    return () => subscription?.unsubscribe();
-  }, [wsc, target.id]);
+    return () => eventSource.close();
+  }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);

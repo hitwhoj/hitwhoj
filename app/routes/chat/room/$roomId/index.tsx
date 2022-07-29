@@ -10,12 +10,12 @@ import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useRef, useState } from "react";
-import { WsContext } from "~/utils/context/ws";
-import type { WsServer } from "server/ws.server";
+import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "@arco-design/web-react";
-import type { ChatMessageWithUser } from "~/utils/ws.types";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import type { ChatMessageWithUser } from "~/utils/serverEvents";
+import { serverSubject } from "~/utils/serverEvents";
+import type { MessageType } from "./events";
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `聊天室: ${data?.room.name} - HITwh OJ`,
@@ -98,18 +98,19 @@ export default function ChatRoomIndex() {
   const [messages, setMessages] = useState<ChatMessageWithUser[]>(
     room.chatMessage
   );
-  const wsc = useContext(WsContext);
 
   useEffect(() => {
     setMessages(room.chatMessage);
   }, [room.chatMessage]);
 
   useEffect(() => {
-    const subscription = wsc?.subscribeRoom(room.id).subscribe((msg) => {
-      setMessages((prev) => [...prev, msg]);
+    const eventSource = new EventSource(`./${room.id}/events`);
+    eventSource.addEventListener("message", ({ data }) => {
+      const message: MessageType = JSON.parse(data);
+      setMessages((prev) => [...prev, message]);
     });
-    return () => subscription?.unsubscribe();
-  }, [wsc, room.id]);
+    return () => eventSource.close();
+  }, [room.id]);
 
   const submitRef = useRef<HTMLButtonElement>(null);
   const [content, setContent] = useState<string>("");
@@ -217,7 +218,7 @@ export default function ChatRoomIndex() {
   );
 }
 
-export const action: ActionFunction = async ({ request, context }) => {
+export const action: ActionFunction = async ({ request }) => {
   const self = await findSessionUid(request);
   if (!self) {
     throw redirect("/login");
@@ -227,10 +228,12 @@ export const action: ActionFunction = async ({ request, context }) => {
   const roomId = invariant(idScheme, form.get("roomId"));
   const content = invariant(contentScheme, form.get("content"));
 
-  const userInChatRoom = await db.userInChatRoom.findFirst({
+  const userInChatRoom = await db.userInChatRoom.findUnique({
     where: {
-      userId: self,
-      roomId: roomId,
+      roomId_userId: {
+        roomId: roomId,
+        userId: self,
+      },
     },
   });
   if (!userInChatRoom) {
@@ -260,8 +263,11 @@ export const action: ActionFunction = async ({ request, context }) => {
     },
   });
 
-  const ws = context.wss as WsServer;
-  ws.sendChatMessage(message);
+  // 推送新的消息
+  serverSubject.next({
+    type: "ChatMessage",
+    message,
+  });
 
   return null;
 };

@@ -13,8 +13,8 @@ import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
-import type { JudgeServer } from "server/judge.server";
 import { permissionProblemSubmit } from "~/utils/permission/problem";
+import { judge } from "~/utils/server/judge.server";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
@@ -44,11 +44,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交题目: ${data?.problem.title} - HITwh OJ`,
 });
 
-export const action: ActionFunction<Response> = async ({
-  request,
-  params,
-  context,
-}) => {
+export const action: ActionFunction<Response> = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   await permissionProblemSubmit.ensure(request, problemId);
 
@@ -68,7 +64,7 @@ export const action: ActionFunction<Response> = async ({
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  await (context.judge as JudgeServer).push(recordId);
+  judge.push(recordId);
 
   return redirect(`/record/${recordId}`);
 };
