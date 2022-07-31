@@ -11,6 +11,7 @@ import {
   Space,
 } from "@arco-design/web-react";
 import { permissionUserProfileRead } from "~/utils/permission/user";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   user: {
@@ -28,7 +29,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileRead.ensure(request, userId);
+  await assertPermission(permissionUserProfileRead, request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

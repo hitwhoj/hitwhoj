@@ -35,51 +35,58 @@ export function isTeamOwner(role: TeamMemberRole | undefined) {
   return role === "Owner";
 }
 
-type PermissionCondition<R> = (resource: R) => boolean | undefined | null;
+export type Target<T extends unknown[], R> = (...args: T) => R | Promise<R>;
+export type PermissionCondition<R> = (
+  resource: R
+) => boolean | undefined | null;
+export type Permission<T extends unknown[], R> = {
+  target: Target<T, R>;
+  condition: PermissionCondition<R>;
+};
 
-export class Permission<T extends any[], R> {
-  constructor(
-    private proxy: (...t: T) => Promise<R>,
-    private condition: PermissionCondition<R>
-  ) {}
-
-  async check(...t: T) {
-    try {
-      const resource = await this.proxy(...t);
-      return Boolean(this.condition(resource));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async ensure(...t: T) {
-    if (!(await this.check(...t))) {
-      throw new Response("权限不足", { status: 403 });
-    }
-  }
+/** A wrapper function */
+export function createTarget<T extends unknown[], R>(
+  fn: Target<T, R>
+): Target<T, R> {
+  return fn;
 }
 
-export const or =
-  <T>(...conditions: PermissionCondition<T>[]) =>
-  (resource: T) =>
-    conditions.some((condition) => condition(resource));
+/**
+ * 创建一个 Permission
+ *
+ * 使用 {@link assertPermission} 来断言是否具有该权限
+ *
+ * 使用 {@link createPermission} 来检查是否具有该权限
+ */
+export function createPermission<T extends unknown[], R>(
+  target: Target<T, R>,
+  condition: PermissionCondition<R>
+): Permission<T, R> {
+  return { target, condition };
+}
 
-export const and =
-  <T>(...conditions: PermissionCondition<T>[]) =>
-  (resource: T) =>
-    conditions.every((condition) => condition(resource));
+/** 断言权限，如果权限不通过，则抛出异常 */
+export async function assertPermission<T extends unknown[], R>(
+  permission: Permission<T, R>,
+  ...args: T
+) {
+  const resource = await permission.target(...args);
+  if (permission.condition(resource)) {
+    return resource;
+  }
+  throw new Response("Permission Denied", { status: 403 });
+}
 
-export const not =
-  <T>(condition: PermissionCondition<T>) =>
-  (resource: T) =>
-    !condition(resource);
-
-export const allow =
-  <T>() =>
-  (_resource: T) =>
-    true;
-
-export const deny =
-  <T>() =>
-  (_resource: T) =>
-    false;
+/** 检查是否具有权限 */
+export async function checkPermission<T extends unknown[], R>(
+  permission: Permission<T, R>,
+  ...args: T
+) {
+  try {
+    // target 可能会抛出异常，所以要捕获
+    const resource = await permission.target(...args);
+    return permission.condition(resource);
+  } catch (e) {
+    return false;
+  }
+}

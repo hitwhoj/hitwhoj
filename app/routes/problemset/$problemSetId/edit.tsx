@@ -27,6 +27,7 @@ import { selectProblemListData } from "~/utils/db/problem";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
 import { permissionProblemSetUpdate } from "~/utils/permission/problemset";
+import { assertPermission } from "~/utils/permission";
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
@@ -46,7 +47,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await permissionProblemSetUpdate.ensure(request, problemSetId);
+  await assertPermission(permissionProblemSetUpdate, request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -90,7 +91,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await permissionProblemSetUpdate.ensure(request, problemSetId);
+  await assertPermission(permissionProblemSetUpdate, request, problemSetId);
 
   const form = await request.formData();
 

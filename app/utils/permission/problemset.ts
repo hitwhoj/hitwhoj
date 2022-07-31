@@ -1,10 +1,9 @@
 import {
-  and,
+  createPermission,
+  createTarget,
   isAdmin,
   isTeamAdmin,
   isUser,
-  or,
-  Permission,
 } from "../permission";
 import { db } from "../server/db.server";
 import { findSessionUser, findSessionUserOptional } from "../sessions";
@@ -36,62 +35,64 @@ async function findProblemSetInformation(
   return problemSet;
 }
 
-/**
- * 检查题单的读权限
- */
-export const permissionProblemSetRead = new Permission(
+const targetOptional = createTarget(
   async (request: Request, problemSetId: number) => {
     const self = await findSessionUserOptional(request);
     const problemSet = await findProblemSetInformation(problemSetId, self?.id);
     return { self, problemSet };
-  },
-
-  or(
-    // 如果是系统管理员，则具有所有的查看权限
-    ({ self }) => isAdmin(self?.role),
-    and(
-      // 对于团队的题单
-      ({ problemSet }) => problemSet.team !== null,
-      or(
-        // 题单设置为公开
-        ({ problemSet }) => problemSet.private === false,
-        // 或者是团队的管理员
-        ({ problemSet }) => isTeamAdmin(problemSet.team?.members.at(0)?.role)
-      )
-    ),
-    and(
-      // 对于系统的题单
-      ({ problemSet }) => problemSet.team === null,
-      // 题单必须设置为公开
-      ({ problemSet }) => problemSet.private === false
-    )
-  )
+  }
 );
 
-/**
- * 检查题单的更新权限
- */
-export const permissionProblemSetUpdate = new Permission(
+const targetStrict = createTarget(
   async (request: Request, problemSetId: number) => {
     const self = await findSessionUser(request);
     const problemSet = await findProblemSetInformation(problemSetId, self.id);
     return { self, problemSet };
-  },
-  or(
+  }
+);
+
+/** 检查题单的读权限 */
+export const permissionProblemSetRead = createPermission(
+  targetOptional,
+  ({ self, problemSet }) => {
+    // 如果是系统管理员，则具有所有的查看权限
+    if (isAdmin(self?.role)) return true;
+
+    // 对于团队的题单
+    if (problemSet.team) {
+      // 公开题单都可以被访问
+      if (!problemSet.private) return true;
+      // 团队管理员可以访问
+      if (isTeamAdmin(problemSet.team.members.at(0)?.role)) return true;
+    }
+    // 对于系统题单
+    else {
+      // 公开题单都可以被访问
+      if (!problemSet.private) return true;
+    }
+  }
+);
+
+/** 检查题单的更新权限 */
+export const permissionProblemSetUpdate = createPermission(
+  targetStrict,
+  ({ self, problemSet }) => {
     // 系统管理员可以为所欲为
-    ({ self }) => isAdmin(self.role),
-    and(
-      // 对于团队的题单
-      ({ problemSet }) => problemSet.team !== null,
-      // 必须没有被封禁
-      ({ self }) => isUser(self.role),
-      // 并且是团队的管理员
-      ({ problemSet }) => isTeamAdmin(problemSet.team?.members.at(0)?.role)
-    )
-  )
+    if (isAdmin(self.role)) return true;
+    // 被封禁用户无法更新
+    if (!isUser(self.role)) return false;
+
+    // 对于团队的题单
+    if (problemSet.team) {
+      // 团队管理员可以更新
+      if (isTeamAdmin(problemSet.team.members.at(0)?.role)) return true;
+    }
+  }
 );
 
 /**
  * 检查创建题单的权限
+ *
+ * 只有系统管理员可以创建题单
  */
 export { permissionAdmin as permissionProblemSetCreate } from "./user";

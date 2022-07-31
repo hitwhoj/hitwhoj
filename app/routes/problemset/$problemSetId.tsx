@@ -9,6 +9,7 @@ import { Navigator } from "~/src/Navigator";
 import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
 import { permissionProblemSetRead } from "~/utils/permission/problemset";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "title" | "description" | "private"> & {
@@ -23,7 +24,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await permissionProblemSetRead.ensure(request, problemSetId);
+  await assertPermission(permissionProblemSetRead, request, problemSetId);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },

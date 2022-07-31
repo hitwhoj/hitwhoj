@@ -8,7 +8,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
-import { isAdmin, isUser } from "~/utils/permission";
+import { assertPermission, isAdmin, isUser } from "~/utils/permission";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { AvatarBadge } from "~/src/AvatarBadge";
 import { permissionUserProfileRead } from "~/utils/permission/user";
@@ -22,7 +22,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileRead.ensure(request, userId);
+  await assertPermission(permissionUserProfileRead, request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

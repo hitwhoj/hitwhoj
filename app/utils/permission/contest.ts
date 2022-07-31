@@ -1,6 +1,6 @@
-import { isAdmin, isUser, Permission, or, and } from "../permission";
+import { createPermission, createTarget, isAdmin, isUser } from "../permission";
 import { db } from "../server/db.server";
-import { findSessionUser, findSessionUserOptional } from "../sessions";
+import { findSessionUserOptional } from "../sessions";
 
 enum ContestStatus {
   PENDING,
@@ -53,150 +53,119 @@ async function fetchContestInformations(
   };
 }
 
-/**
- * 检查是否有查看比赛信息的权限
- */
-export const permissionContestInfoRead = new Permission(
-  async (request: Request, contestId: number) => {
-    const self = await findSessionUserOptional(request);
-    const contest = await fetchContestInformations(contestId, self?.id);
-    return { self, contest };
-  },
+const target = createTarget(async (request: Request, contestId: number) => {
+  const self = await findSessionUserOptional(request);
+  const contest = await fetchContestInformations(contestId, self?.id);
+  return { self, contest };
+});
 
-  or(
+/** 检查是否有查看比赛的权限 */
+export const permissionContestRead = createPermission(
+  target,
+  ({ self, contest }) => {
+    // 系统管理员可以看到比赛的信息
+    if (isAdmin(self?.role)) return true;
+
     // 如果比赛是公开的，那么所有人都可以看到比赛的信息
-    ({ contest }) => contest.isPublic,
-    // 系统管理员也可以看到比赛的信息
-    ({ self }) => isAdmin(self?.role),
+    if (contest.isPublic) return true;
+
     // 否则只有比赛管理员、比赛裁判、比赛选手可以查看比赛信息
-    ({ contest }) => contest.isAttendee || contest.isJury || contest.isMod
-  )
+    if (contest.isAttendee || contest.isJury || contest.isMod) return true;
+  }
 );
 
-/**
- * 检查是否有修改比赛信息的权限
- */
-export const permissionContestInfoWrite = new Permission(
-  async (request: Request, contestId: number) => {
-    const self = await findSessionUser(request);
-    const contest = await fetchContestInformations(contestId, self.id);
-    return { self, contest };
-  },
-
-  or(
+/** 检查是否有修改比赛信息的权限 */
+export const permissionContestWrite = createPermission(
+  target,
+  ({ self, contest }) => {
     // 系统管理员可以修改比赛信息
-    ({ self }) => isAdmin(self.role),
-    and(
-      // 用户没有被封禁
-      ({ self }) => isUser(self.role),
-      // 比赛管理员可以修改比赛信息
-      ({ contest }) => contest.isMod
-    )
-  )
+    if (isAdmin(self?.role)) return true;
+    // 封禁用户什么也做不到
+    if (!isUser(self?.role)) return false;
+
+    // 比赛的管理员也可以修改信息
+    if (contest.isMod) return true;
+  }
 );
 
-/**
- * 检查是否有查看比赛题目列表的权限
- */
-export const permissionContestProblemRead = new Permission(
-  async (request: Request, contestId: number) => {
-    const self = await findSessionUserOptional(request);
-    const contest = await fetchContestInformations(contestId, self?.id);
-    return { self, contest };
-  },
+/** 检查是否有查看比赛题目列表的权限 */
+export const permissionContestProblemRead = createPermission(
+  target,
+  ({ self, contest }) => {
+    // 系统管理员可以看到
+    if (isAdmin(self?.role)) return true;
 
-  or(
-    and(
+    switch (contest.status) {
       // 比赛还没有开始
-      ({ contest }) => contest.status === ContestStatus.PENDING,
-      // 只有系统管理员、比赛管理员、比赛裁判可以看到题目
-      or(
-        ({ self }) => isAdmin(self?.role),
-        ({ contest }) => contest.isMod || contest.isJury
-      )
-    ),
-    and(
+      case ContestStatus.PENDING:
+        // 比赛的管理员、裁判可以看到
+        return contest.isMod || contest.isJury;
+
       // 比赛正在进行
-      ({ contest }) => contest.status === ContestStatus.RUNNING,
-      // 只有系统管理员、比赛管理员、比赛裁判、比赛选手可以看到题目
-      or(
-        ({ self }) => isAdmin(self?.role),
-        ({ contest }) => contest.isMod || contest.isJury || contest.isAttendee
-      )
-    ),
-    and(
-      // 比赛已结束
-      ({ contest }) => contest.status === ContestStatus.ENDED,
-      // 只有系统管理员、比赛管理员、比赛裁判、比赛选手，或者比赛是公开的就可以查看到题目
-      or(
-        ({ contest }) => contest.isPublic,
-        ({ self }) => isAdmin(self?.role),
-        ({ contest }) => contest.isMod || contest.isJury || contest.isAttendee
-      )
-    )
-  )
+      case ContestStatus.RUNNING:
+        // 比赛的管理员、裁判、选手可以看到
+        return contest.isMod || contest.isJury || contest.isAttendee;
+
+      // 比赛已经结束
+      case ContestStatus.ENDED:
+        return (
+          // 比赛的管理员、裁判、选手可以看到
+          contest.isMod ||
+          contest.isJury ||
+          contest.isAttendee ||
+          // 或者比赛是公开的
+          contest.isPublic
+        );
+    }
+  }
 );
 
-/**
- * 检查比赛题目提交的权限
- */
-export const permissionContestProblemSubmit = new Permission(
-  async (request: Request, contestId: number) => {
-    const self = await findSessionUser(request);
-    const contest = await fetchContestInformations(contestId, self.id);
-    return { self, contest };
-  },
-
-  and(
-    // 用户没有被封禁
-    ({ self }) => isUser(self.role),
-    // 比赛正在进行
-    ({ contest }) => contest.status === ContestStatus.RUNNING,
-    // 用户是比赛选手
-    ({ contest }) => contest.isAttendee
-  )
+/** 检查比赛题目提交的权限 */
+export const permissionContestProblemSubmit = createPermission(
+  target,
+  ({ self, contest }) => {
+    return (
+      // 用户没有被封禁
+      isUser(self?.role) &&
+      // 比赛正在进行
+      contest.status === ContestStatus.RUNNING &&
+      // 用户是比赛选手
+      contest.isAttendee
+    );
+  }
 );
 
-/**
- * 检查是否有报名参加比赛的权限
- *
- * - 如果比赛未开始：必须公开并且允许公开报名
- * - 如果比赛正在进行：必须公开并且允许公开报名并且允许中途报名
- *
- * 已经报名的用户不能再报名，比赛的管理员和裁判也不能报名
- */
-export const permissionContestAttend = new Permission(
-  async (request: Request, contestId: number) => {
-    const self = await findSessionUser(request);
-    const contest = await fetchContestInformations(contestId, self.id);
-    return { self, contest };
-  },
-
-  and(
+/** 检查是否有报名参加比赛的权限 */
+export const permissionContestAttend = createPermission(
+  target,
+  ({ self, contest }) => {
     // 用户没有被封禁
-    ({ self }) => isUser(self.role),
+    if (!isUser(self?.role)) return false;
     // 用户不是比赛管理员、裁判和选手
-    ({ contest }) => !contest.isMod && !contest.isJury && !contest.isAttendee,
-    // 比赛允许报名
-    or(
-      and(
-        // 比赛还没有开始
-        ({ contest }) => contest.status === ContestStatus.PENDING,
-        ({ contest }) => contest.isPublic && contest.allowPublicRegistration
-      ),
-      and(
-        // 比赛正在进行
-        ({ contest }) => contest.status === ContestStatus.RUNNING,
-        ({ contest }) =>
-          contest.isPublic &&
-          contest.allowPublicRegistration &&
-          contest.allowAfterRegistration
-      )
-    )
-  )
+    if (contest.isMod || contest.isJury || contest.isAttendee) return false;
+
+    switch (contest.status) {
+      // 比赛还没有开始
+      case ContestStatus.PENDING:
+        // 只有公开并允许公开报名的比赛可以报名
+        return contest.isPublic && contest.allowPublicRegistration;
+
+      // 比赛正在进行
+      case ContestStatus.RUNNING:
+        // 只有公开并允许中途报名的比赛可以报名
+        return contest.isPublic && contest.allowAfterRegistration;
+
+      // 比赛已经结束
+      case ContestStatus.ENDED:
+        // 太可惜啦，完全错过比赛了
+        return false;
+    }
+  }
 );
 
 /**
- * 检查是否有创建题目的权限
+ * 检查是否有创建比赛的权限
+ *
+ * 只有系统管理员可以创建比赛
  */
 export { permissionAdmin as permissionContestCreate } from "./user";

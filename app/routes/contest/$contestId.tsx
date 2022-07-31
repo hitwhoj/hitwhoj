@@ -14,7 +14,8 @@ import {
   IconTrophy,
 } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
-import { permissionContestInfoRead } from "~/utils/permission/contest";
+import { permissionContestRead } from "~/utils/permission/contest";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   contest: ContestListData;
@@ -25,7 +26,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await permissionContestInfoRead.ensure(request, contestId);
+  await assertPermission(permissionContestRead, request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },

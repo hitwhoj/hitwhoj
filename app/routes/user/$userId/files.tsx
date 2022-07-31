@@ -16,6 +16,7 @@ import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
 import { TableList } from "~/src/TableList";
 import { permissionUserProfileWrite } from "~/utils/permission/user";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {
@@ -28,7 +29,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  await assertPermission(permissionUserProfileWrite, request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -59,7 +60,7 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  await assertPermission(permissionUserProfileWrite, request, userId);
 
   const form = await unstable_parseMultipartFormData(request, handler);
   const _action = form.get("_action");

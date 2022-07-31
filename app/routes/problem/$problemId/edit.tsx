@@ -13,6 +13,7 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
 import { invariant } from "~/utils/invariant";
+import { assertPermission } from "~/utils/permission";
 import { permissionProblemUpdate } from "~/utils/permission/problem";
 import {
   descriptionScheme,
@@ -39,7 +40,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  await assertPermission(permissionProblemUpdate, request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -73,7 +74,7 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  await assertPermission(permissionProblemUpdate, request, problemId);
 
   const form = await request.formData();
   const _action = form.get("_action");

@@ -51,6 +51,7 @@ import {
 } from "~/utils/permission/contest";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
+import { assertPermission } from "~/utils/permission";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
@@ -78,7 +79,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     0x40;
   const self = await findSessionUserOptional(request);
 
-  await permissionContestProblemRead.ensure(request, contestId);
+  await assertPermission(permissionContestProblemRead, request, contestId);
 
   const problem = await db.contestProblem.findUnique({
     where: {
@@ -156,7 +157,7 @@ export const action: ActionFunction<ActionData> = async ({
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  await permissionContestProblemSubmit.ensure(request, contestId);
+  await assertPermission(permissionContestProblemSubmit, request, contestId);
 
   const problem = await db.contestProblem.findUnique({
     where: { contestId_rank: { contestId, rank } },

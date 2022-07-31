@@ -10,17 +10,18 @@ import { invariant } from "~/utils/invariant";
 import { titleScheme } from "~/utils/scheme";
 import { Button, Input, Form, Typography } from "@arco-design/web-react";
 import { permissionProblemSetCreate } from "~/utils/permission/problemset";
+import { assertPermission } from "~/utils/permission";
 
 const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await permissionProblemSetCreate.ensure(request);
+  await assertPermission(permissionProblemSetCreate, request);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  await permissionProblemSetCreate.ensure(request);
+  await assertPermission(permissionProblemSetCreate, request);
 
   const form = await request.formData();
   const title = invariant(titleScheme, form.get("title"));

@@ -10,7 +10,7 @@ import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
-import { isAdmin, isUser } from "~/utils/permission";
+import { assertPermission, isAdmin, isUser } from "~/utils/permission";
 import { permissionProblemRead } from "~/utils/permission/problem";
 
 type LoaderData = {
@@ -24,7 +24,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemRead.ensure(request, problemId);
+  await assertPermission(permissionProblemRead, request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },

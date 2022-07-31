@@ -5,6 +5,7 @@ import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { TableList } from "~/src/TableList";
 import { invariant } from "~/utils/invariant";
+import { assertPermission } from "~/utils/permission";
 import { permissionContestProblemRead } from "~/utils/permission/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -26,7 +27,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await permissionContestProblemRead.ensure(request, contestId);
+  await assertPermission(permissionContestProblemRead, request, contestId);
   const self = await findSessionUserOptional(request);
 
   const contest = await db.contest.findUnique({

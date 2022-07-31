@@ -8,10 +8,10 @@ import { idScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 import { TeamLink } from "~/src/team/TeamLink";
-import { findSessionUserOptional } from "~/utils/sessions";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
-import { permissionContestInfoRead } from "~/utils/permission/contest";
+import { permissionContestRead } from "~/utils/permission/contest";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   contest: Pick<
@@ -38,8 +38,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await permissionContestInfoRead.ensure(request, contestId);
-  const self = await findSessionUserOptional(request);
+  const { self } = await assertPermission(
+    permissionContestRead,
+    request,
+    contestId
+  );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },

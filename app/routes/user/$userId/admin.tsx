@@ -10,7 +10,7 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
 import { invariant } from "~/utils/invariant";
-import { isAdmin } from "~/utils/permission";
+import { assertPermission, isAdmin } from "~/utils/permission";
 import { permissionAdmin, permissionSuperUser } from "~/utils/permission/user";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -24,7 +24,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionAdmin.ensure(request);
+  await assertPermission(permissionAdmin, request);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -57,7 +57,7 @@ export const action: ActionFunction = async ({ request, params }) => {
   switch (_action) {
     case ActionType.SetAdmin:
     case ActionType.UnsetAdmin: {
-      await permissionSuperUser.ensure(request);
+      await assertPermission(permissionSuperUser, request);
 
       await db.$transaction(async (db) => {
         const user = await db.user.findUnique({
@@ -86,7 +86,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     case ActionType.BanUser:
     case ActionType.UnbanUser: {
-      await permissionAdmin.ensure(request);
+      await assertPermission(permissionAdmin, request);
 
       await db.$transaction(async (db) => {
         const user = await db.user.findUnique({

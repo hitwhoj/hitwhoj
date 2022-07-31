@@ -23,6 +23,7 @@ import {
   usernameScheme,
 } from "~/utils/scheme";
 import { permissionUserProfileWrite } from "~/utils/permission/user";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
@@ -33,7 +34,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  await assertPermission(permissionUserProfileWrite, request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -59,7 +60,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  await assertPermission(permissionUserProfileWrite, request, userId);
 
   const form = await request.formData();
 

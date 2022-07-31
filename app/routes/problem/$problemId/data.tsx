@@ -20,6 +20,7 @@ import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { useEffect, useRef } from "react";
 import { TableList } from "~/src/TableList";
 import { permissionProblemUpdate } from "~/utils/permission/problem";
+import { assertPermission } from "~/utils/permission";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -33,7 +34,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  await assertPermission(permissionProblemUpdate, request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -72,7 +73,7 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  await assertPermission(permissionProblemUpdate, request, problemId);
 
   const form = await unstable_parseMultipartFormData(request, handler);
 

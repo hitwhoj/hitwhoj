@@ -15,6 +15,7 @@ import type { Problem } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { permissionProblemSubmit } from "~/utils/permission/problem";
 import { judge } from "~/utils/server/judge.server";
+import { assertPermission } from "~/utils/permission";
 const TextArea = Input.TextArea;
 
 type LoaderData = {
@@ -26,7 +27,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemSubmit.ensure(request, problemId);
+  await assertPermission(permissionProblemSubmit, request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -46,7 +47,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemSubmit.ensure(request, problemId);
+  await assertPermission(permissionProblemSubmit, request, problemId);
 
   const self = await findSessionUid(request);
 
