@@ -18,7 +18,7 @@
     "lint:check": "eslint --ext ts,tsx app -f pretty",
     "postinstall": "patch-package && prisma generate",
     "start": "cross-env NODE_ENV=production node ./server/server.js",
-    "test": "cross-env NODE_ENV=test ./test.sh"
+    "test": "cross-env NODE_ENV=test node -r esbuild-register tests"
   },
   "prisma": {
     "seed": "node --require esbuild-register prisma/seed.ts"
