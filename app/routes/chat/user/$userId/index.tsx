@@ -13,8 +13,8 @@ import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { serverSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { privateMessageSubject } from "~/utils/serverEvents";
 
 type LoaderData = {
   self: Pick<User, "id" | "nickname" | "username" | "avatar">;
@@ -105,10 +105,7 @@ export const action: ActionFunction = async ({ request }) => {
     },
   });
 
-  serverSubject.next({
-    type: "PrivateMessage",
-    message,
-  });
+  privateMessageSubject.next(message);
 
   return null;
 };

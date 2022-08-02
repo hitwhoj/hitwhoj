@@ -1,24 +1,23 @@
 import type { LoaderFunction } from "@remix-run/node";
-import { filter, map } from "rxjs";
+import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import type { ChatMessageWithUser, ServerEvents } from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
+import type { ChatMessageWithUser } from "~/utils/serverEvents";
+import { chatMessageSubject } from "~/utils/serverEvents";
 
 export type MessageType = ChatMessageWithUser;
 
 export const loader: LoaderFunction<Response> = async ({ request, params }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
+  // FIXME: 应该检查用户是否在群组里面！
+
   return createEventSource<MessageType>(
     request,
-    serverSubject.pipe(
-      filter(
-        (message): message is Extract<ServerEvents, { type: "ChatMessage" }> =>
-          message.type === "ChatMessage" && message.message.roomId === roomId
-      ),
-      map(({ message }) => message)
+    chatMessageSubject.pipe(
+      // 筛选房间
+      filter((message) => message.roomId === roomId)
     )
   );
 };

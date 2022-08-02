@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "@arco-design/web-react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { ChatMessageWithUser } from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
+import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -264,10 +264,7 @@ export const action: ActionFunction = async ({ request }) => {
   });
 
   // 推送新的消息
-  serverSubject.next({
-    type: "ChatMessage",
-    message,
-  });
+  chatMessageSubject.next(message);
 
   return null;
 };

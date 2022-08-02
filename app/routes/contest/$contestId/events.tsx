@@ -1,36 +1,29 @@
 import type { LoaderFunction } from "@remix-run/node";
-import { filter, map } from "rxjs";
+import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import type {
-  ContestRecordUpdateMessage,
-  ServerEvents,
-} from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
+import type { RecordUpdateMessage } from "~/utils/serverEvents";
+import { recordUpdateSubject } from "~/utils/serverEvents";
 import { findSessionUser } from "~/utils/sessions";
 
-export type MessageType = ContestRecordUpdateMessage;
+export type MessageType = RecordUpdateMessage;
 
-/** 订阅用户自己在某场比赛中的提交 */
+// 用户订阅自己在某场比赛中的全部提交更新信息
 export const loader: LoaderFunction<Response> = async ({ request, params }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findSessionUser(request);
 
-  // TODO: OI 赛制的话自己应该看不到结果！
+  // FIXME: 权限检查
 
-  return createEventSource<MessageType>(
+  return createEventSource(
     request,
-    serverSubject.pipe(
+    recordUpdateSubject.pipe(
       filter(
-        (
-          message
-        ): message is Extract<ServerEvents, { type: "ContestRecordUpdate" }> =>
-          message.type === "ContestRecordUpdate" &&
-          message.message.contestId === contestId &&
-          message.message.submitterId === self.id
-      ),
-      map(({ message }) => message)
+        (message) =>
+          message.contestId === contestId && message.submitterId === self.id
+      )
+      // FIXME: 应该再加一点筛选
     )
   );
 };

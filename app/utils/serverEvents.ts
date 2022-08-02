@@ -1,3 +1,7 @@
+// TODO: 这是服务器全部事件推送服务的中枢！
+// 但是目前没法做到边缘化计算，因此只能将网站部署在一台服务器上。
+// 如果采用 RabbitMQ 之类的技术，也许可以实现边缘化计算。
+
 import type {
   ChatMessage,
   PrivateMessage,
@@ -12,50 +16,27 @@ export type PrivateMessageWithUser = PrivateMessage & {
   to: Pick<User, "id" | "username" | "nickname" | "avatar">;
 };
 
+export const privateMessageSubject = new Subject<PrivateMessageWithUser>();
+
 export type ChatMessageWithUser = ChatMessage & {
   sender: Pick<User, "id" | "avatar" | "nickname" | "username"> & {
     enteredChatRoom: Pick<UserInChatRoom, "role">[];
   };
 };
 
-export type RecordUpdateMessage = Pick<
-  Record,
-  "id" | "time" | "memory" | "status" | "message" | "subtasks"
->;
+export const chatMessageSubject = new Subject<ChatMessageWithUser>();
 
-export type ContestRecordUpdateMessage = Pick<
+export type RecordUpdateMessage = Pick<
   Record,
   | "id"
   | "time"
   | "score"
   | "memory"
   | "status"
+  | "message"
+  | "subtasks"
   | "contestId"
-  | "problemId"
   | "submitterId"
 >;
 
-export type ServerEvents =
-  | {
-      type: "PrivateMessage";
-      message: PrivateMessageWithUser;
-    }
-  | {
-      type: "ChatMessage";
-      message: ChatMessageWithUser;
-    }
-  | {
-      type: "RecordUpdate";
-      message: RecordUpdateMessage;
-    }
-  | {
-      type: "ContestRecordUpdate";
-      message: ContestRecordUpdateMessage;
-    };
-
-/**
- * 服务器所有事件的中枢
- *
- * TODO: 可以考虑如何把他变得可以分布式部署
- */
-export const serverSubject = new Subject<ServerEvents>();
+export const recordUpdateSubject = new Subject<RecordUpdateMessage>();

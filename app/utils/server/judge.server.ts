@@ -1,7 +1,7 @@
 import * as io from "socket.io";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
-import { serverSubject } from "../serverEvents";
+import { recordUpdateSubject } from "../serverEvents";
 import type {
   ClientEvent,
   JudgeRequest,
@@ -269,35 +269,18 @@ export class JudgeServer {
       },
     });
 
-    // 发送更新通知
-    serverSubject.next({
-      type: "RecordUpdate",
-      message: {
-        id: record.id,
-        time: record.time,
-        memory: record.memory,
-        status: record.status,
-        message: record.message,
-        subtasks: record.subtasks,
-      },
+    // 推送更新通知
+    recordUpdateSubject.next({
+      id: record.id,
+      time: record.time,
+      score: record.score,
+      memory: record.memory,
+      status: record.status,
+      message: record.message,
+      subtasks: record.subtasks,
+      contestId: record.contestId,
+      submitterId: record.submitterId,
     });
-
-    // 推送比赛更新通知
-    if (record.contestId) {
-      serverSubject.next({
-        type: "ContestRecordUpdate",
-        message: {
-          id: record.id,
-          time: record.time,
-          score: record.score,
-          memory: record.memory,
-          status: record.status,
-          contestId: record.contestId,
-          problemId: record.problemId,
-          submitterId: record.submitterId,
-        },
-      });
-    }
   }
 }
 
