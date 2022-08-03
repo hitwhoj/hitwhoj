@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContestSystem, ReportType } from "@prisma/client";
+import { ContestSystem, ReportType, SystemUserRole } from "@prisma/client";
 
 /**
  * 数字 ID，非负整数
@@ -216,3 +216,18 @@ export const reasonScheme = z
   .string()
   .nonempty("Reason content must be nonempty")
   .min(8, "Reason must be at least 8 characters");
+
+/**
+ * 系统角色
+ *
+ * [Root, Admin, User]
+ */
+export const roleScheme = z.nativeEnum(SystemUserRole);
+
+/**
+ * 用户的权力
+ */
+export const privilegeScheme = z
+  .string()
+  .regex(/^\d+$/, "privilege must be a number")
+  .transform((x) => parseInt(x, 10));

@@ -6,11 +6,11 @@ import type {
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 import { Button, Input, Form, Typography } from "@arco-design/web-react";
+import { findRequestUser } from "~/utils/permission";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
@@ -19,15 +19,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
 
   const form = await request.formData();
   const name = invariant(teamNameScheme, form.get("name"));
@@ -45,7 +45,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
       members: {
         create: [
           {
-            userId: self,
+            userId: self.userId!,
             role: TeamMemberRole.Owner,
           },
         ],

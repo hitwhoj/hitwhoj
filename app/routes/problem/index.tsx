@@ -2,38 +2,43 @@ import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
-import { isAdmin } from "~/utils/permission";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 // TODO: 分页
 type LoaderData = {
-  problems: (Pick<ProblemListData, "id" | "title" | "private"> & {
+  problems: (ProblemListData & {
     _count: {
       relatedRecords: number;
     };
   })[];
+  hasCreatePerm: boolean;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic, hasCreatePerm] = await self
+    .team(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_PROBLEM,
+      Permissions.PERM_VIEW_PROBLEM_PUBLIC,
+      Permissions.PERM_CREATE_PROBLEM
+    );
 
   const problems = await db.problem.findMany({
-    // 只有系统管理员可以看到私有题目
-    where:
-      self && isAdmin(self.role)
-        ? { team: null }
-        : { team: null, private: false },
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
     orderBy: [{ id: "asc" }],
     select: {
-      id: true,
-      title: true,
-      private: true,
+      ...selectProblemListData,
       _count: {
         select: {
           relatedRecords: true,
@@ -42,7 +47,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { problems };
+  return { problems, hasCreatePerm };
 };
 
 export const meta: MetaFunction = () => ({
@@ -50,15 +55,14 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemIndex() {
-  const { problems } = useLoaderData<LoaderData>();
-  const user = useContext(UserInfoContext);
+  const { problems, hasCreatePerm } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
       <Typography.Title heading={3}>
         <Grid.Row justify="space-between" align="center">
           题目列表
-          {user && isAdmin(user.role) && (
+          {hasCreatePerm && (
             <Link to="/problem/new">
               <Button type="primary" icon={<IconPlus />}>
                 新建题目

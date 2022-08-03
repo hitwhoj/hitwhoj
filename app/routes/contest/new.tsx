@@ -16,7 +16,6 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { findSessionUid } from "~/utils/sessions";
 import React from "react";
 import {
   Form,
@@ -26,23 +25,28 @@ import {
   Button,
   Typography,
 } from "@arco-design/web-react";
-import { permissionContestCreate } from "~/utils/permission/contest";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await assertPermission(permissionContestCreate, request);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  await assertPermission(permissionContestCreate, request);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
 
-  const self = await findSessionUid(request);
   const form = await request.formData();
 
   const title = invariant(titleScheme, form.get("title"));
@@ -67,7 +71,12 @@ export const action: ActionFunction<Response> = async ({ request }) => {
       beginTime,
       endTime,
       system,
-      mods: { connect: [{ id: self }] },
+      participants: {
+        create: {
+          userId: self.userId!,
+          role: "Mod",
+        },
+      },
     },
   });
 

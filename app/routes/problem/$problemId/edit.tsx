@@ -12,9 +12,11 @@ import { Response } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
+import { findProblemTeam } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
-import { assertPermission } from "~/utils/permission";
-import { permissionProblemUpdate } from "~/utils/permission/problem";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 import {
   descriptionScheme,
   idScheme,
@@ -40,7 +42,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemUpdate, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -74,7 +80,11 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemUpdate, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const form = await request.formData();
   const _action = form.get("_action");
@@ -131,7 +141,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 export default function ProblemEdit() {
   const { problem } = useLoaderData<LoaderData>();
 
-  const [hide, setHide] = useState(problem.private);
+  const [pub, setPub] = useState(!problem.private);
 
   const { state, type } = useTransition();
   const isActionReload = state === "loading" && type === "actionReload";
@@ -199,13 +209,13 @@ export default function ProblemEdit() {
             />
           </FormItem>
           <FormItem>
-            <input type="hidden" name="private" value={String(hide)} />
+            <input type="hidden" name="private" value={String(!pub)} />
             <Checkbox
-              checked={hide}
-              onChange={(checked) => setHide(checked)}
+              checked={pub}
+              onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
             >
-              首页隐藏
+              公开题目
             </Checkbox>
           </FormItem>
           <FormItem layout="vertical">

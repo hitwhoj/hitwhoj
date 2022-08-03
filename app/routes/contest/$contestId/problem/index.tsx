@@ -5,11 +5,11 @@ import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { TableList } from "~/src/TableList";
 import { invariant } from "~/utils/invariant";
-import { assertPermission } from "~/utils/permission";
-import { permissionContestProblemRead } from "~/utils/permission/contest";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { findContestStatus, findContestTeam } from "~/utils/db/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
   contest: Pick<Contest, "beginTime" | "endTime"> & {
@@ -27,8 +27,18 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await assertPermission(permissionContestProblemRead, request, contestId);
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -43,9 +53,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
             select: {
               title: true,
               relatedRecords: {
-                where: self
-                  ? { contestId, submitterId: self.id }
-                  : { contestId, submitterId: -1 },
+                where: { contestId, submitterId: self.userId ?? -1 },
                 select: { status: true },
               },
             },

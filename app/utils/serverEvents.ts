@@ -36,6 +36,7 @@ export type RecordUpdateMessage = Pick<
   | "message"
   | "subtasks"
   | "contestId"
+  | "problemId"
   | "submitterId"
 >;
 

@@ -6,9 +6,9 @@ import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { Typography } from "@arco-design/web-react";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { findSessionUserOptional } from "~/utils/sessions";
-import { isAdmin } from "~/utils/permission";
 import { TableList } from "~/src/TableList";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -23,13 +23,20 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic] = await self
+    .team(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_PROBLEM_SET,
+      Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+    );
 
   const problemSets = await db.problemSet.findMany({
-    where:
-      self && isAdmin(self.role)
-        ? { team: null, tags: { some: { name: tag } } }
-        : { team: null, tags: { some: { name: tag } }, private: false },
+    where: viewAll
+      ? { team: null, tags: { some: { name: tag } } }
+      : viewPublic
+      ? { team: null, tags: { some: { name: tag } }, private: false }
+      : { id: -1 },
     orderBy: { id: "asc" },
     select: {
       id: true,

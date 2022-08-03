@@ -23,6 +23,7 @@ export type ActionData = {
   reason: string;
 };
 
+// TODO 完善注册功能
 export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
 

@@ -5,15 +5,10 @@ import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { passwordHash } from "~/utils/tools";
+import { User } from "~/utils/permission/role/user";
+import { Privileges } from "~/utils/permission/privilege";
 
-export type ActionData =
-  | {
-      success: true;
-    }
-  | {
-      success: false;
-      reason: string;
-    };
+export type ActionData = { success: true } | { success: false; reason: string };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
@@ -33,6 +28,9 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   if (user.password !== passwordHash(password)) {
     return json({ success: false, reason: "密码错误" }, 400);
   }
+
+  const self = new User(user.id);
+  await self.checkPrivilege(Privileges.PRIV_LOGIN);
 
   return json(
     { success: true },

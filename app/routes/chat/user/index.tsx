@@ -1,32 +1,27 @@
 import { Empty } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import { UserContext } from "~/utils/context/user";
+import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
 import type { PrivateMessageWithUser } from "~/utils/serverEvents";
-import { findSessionUid } from "~/utils/sessions";
 
 type LoaderData = {
-  self: Pick<User, "id" | "username" | "nickname" | "avatar">;
   messages: PrivateMessageWithUser[];
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
 
-  const self = (await db.user.findUnique({
-    where: { id: selfId },
-    select: { id: true, nickname: true, username: true, avatar: true },
-  }))!;
-
   const messages = await db.privateMessage.findMany({
     where: {
-      OR: [{ fromId: selfId }, { toId: selfId }],
+      OR: [{ fromId: self.userId }, { toId: self.userId }],
     },
     orderBy: {
       sentAt: "desc",
@@ -46,12 +41,13 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
 };
 
 export default function UserChatIndex() {
-  const { self, messages } = useLoaderData<LoaderData>();
+  const { messages } = useLoaderData<LoaderData>();
+  const self = useContext(UserContext);
 
   const set = new Set<number>();
   const users = messages
     .map((message) => ({
-      user: message.fromId === self.id ? message.to : message.from,
+      user: message.from.id === self ? message.to : message.from,
       message,
     }))
     .filter(({ user }) => {

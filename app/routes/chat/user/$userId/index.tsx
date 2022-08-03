@@ -5,21 +5,23 @@ import type {
 } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
 import { Button, Empty, Input } from "@arco-design/web-react";
-import type { User, PrivateMessage } from "@prisma/client";
-import { findSessionUid } from "~/utils/sessions";
+import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
+import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import { privateMessageSubject } from "~/utils/serverEvents";
+import { findRequestUser } from "~/utils/permission";
+import { selectUserData } from "~/utils/db/user";
+import { UserContext } from "~/utils/context/user";
 
 type LoaderData = {
-  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  target: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  msgs: PrivateMessage[];
+  target: Pick<User, "username" | "nickname" | "id">;
+  msgs: PrivateMessageWithUser[];
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -30,48 +32,43 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
+  const userId = invariant(idScheme, params.userId, { status: 404 });
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
-  const self = await db.user.findUnique({
-    where: { id: selfId },
-    select: { id: true, nickname: true, username: true, avatar: true },
-  });
-  if (!self) {
-    throw redirect("/register");
-  }
 
-  const toUserId = invariant(idScheme, params.userId, {
-    status: 404,
-  });
   const target = await db.user.findUnique({
-    where: { id: toUserId },
-    select: { id: true, nickname: true, avatar: true, username: true },
+    where: { id: userId },
+    select: { nickname: true, username: true, id: true },
   });
 
   if (!target) {
-    throw new Response("User not found", { status: 404 });
+    throw new Response("User not exists", { status: 404 });
   }
 
   const msgs = await db.privateMessage.findMany({
     where: {
       OR: [
-        { fromId: self?.id, toId: target.id },
-        { fromId: target.id, toId: self?.id },
+        { fromId: self.userId, toId: userId },
+        { fromId: userId, toId: self.userId },
       ],
     },
     orderBy: {
       sentAt: "asc",
     },
+    include: {
+      from: { select: selectUserData },
+      to: { select: selectUserData },
+    },
   });
 
-  return { self, target, msgs };
+  return { target, msgs };
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
 
@@ -81,7 +78,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   const message = await db.privateMessage.create({
     data: {
-      from: { connect: { id: self } },
+      from: { connect: { id: self.userId } },
       to: { connect: { id: to } },
       content: content,
     },
@@ -111,8 +108,8 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function ChatIndex() {
-  const { self, target, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<PrivateMessage[]>(msgs);
+  const { target, msgs } = useLoaderData<LoaderData>();
+  const [messages, setMessages] = useState<PrivateMessageWithUser[]>(msgs);
 
   useEffect(() => {
     setMessages(msgs);
@@ -140,6 +137,8 @@ export default function ChatIndex() {
     }
   }, [isFetching]);
 
+  const self = useContext(UserContext);
+
   return (
     <div className="chat-content-container">
       <header style={{ fontSize: "1.5em" }}>
@@ -148,7 +147,6 @@ export default function ChatIndex() {
       <div className="chat-content-main">
         {messages.length > 0 ? (
           messages.map((message, index, array) => {
-            const user = message.fromId === self.id ? self : target;
             const date = new Date(message.sentAt);
             const time = [
               date.getHours().toString().padStart(2, "0"),
@@ -165,11 +163,11 @@ export default function ChatIndex() {
               <div
                 key={message.id}
                 className={`chat-content-message ${
-                  user === self ? "right" : "left"
+                  message.from.id === self ? "right" : "left"
                 }`}
               >
                 <div className="chat-content-message-avatar">
-                  {isLast && <UserAvatar user={user} />}
+                  {isLast && <UserAvatar user={message.from} />}
                 </div>
                 <div className="chat-content-message-bubble">
                   <span>{message.content}</span>

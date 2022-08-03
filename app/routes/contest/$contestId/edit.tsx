@@ -34,8 +34,10 @@ import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
-import { permissionContestWrite } from "~/utils/permission/contest";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findContestTeam } from "~/utils/db/contest";
 
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
@@ -67,8 +69,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-
-  await assertPermission(permissionContestWrite, request, contestId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(Permissions.PERM_EDIT_CONTEST);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -115,7 +121,12 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ params, request }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await assertPermission(permissionContestWrite, request, contestId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(Permissions.PERM_EDIT_CONTEST);
 
   const form = await request.formData();
   const _action = form.get("_action");

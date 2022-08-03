@@ -12,10 +12,12 @@ import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
 import type { Problem } from "@prisma/client";
-import { findSessionUid } from "~/utils/sessions";
-import { permissionProblemSubmit } from "~/utils/permission/problem";
 import { judge } from "~/utils/server/judge.server";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
+
 const TextArea = Input.TextArea;
 
 type LoaderData = {
@@ -23,19 +25,31 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
-  params,
   request,
+  params,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemSubmit, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(
+      (await findProblemPrivacy(problemId))
+        ? Permissions.PERM_VIEW_PROBLEM
+        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+    );
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
-    select: { title: true },
+    select: { title: true, allowSubmit: true },
   });
 
   if (!problem) {
     throw new Response("Problem not found", { status: 404 });
+  }
+
+  if (!problem.allowSubmit) {
+    throw new Response("Problem not allow submit", { status: 403 });
   }
 
   return { problem };
@@ -47,9 +61,28 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemSubmit, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(
+      (await findProblemPrivacy(problemId))
+        ? Permissions.PERM_VIEW_PROBLEM
+        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+    );
 
-  const self = await findSessionUid(request);
+  const problem = await db.problem.findUnique({
+    where: { id: problemId },
+    select: { allowSubmit: true },
+  });
+
+  if (!problem) {
+    throw new Response("Problem not found", { status: 404 });
+  }
+
+  if (!problem.allowSubmit) {
+    throw new Response("Problem not allow submit", { status: 403 });
+  }
 
   const form = await request.formData();
   const code = invariant(codeScheme, form.get("code"));
@@ -58,8 +91,8 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   const { id: recordId } = await db.record.create({
     data: {
       language,
-      submitter: { connect: { id: self } },
-      problem: { connect: { id: problemId } },
+      problemId,
+      submitterId: self.userId!,
     },
     select: { id: true },
   });
@@ -72,6 +105,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");
+
   return (
     <Form method="post" style={{ marginTop: "25px" }}>
       <Space

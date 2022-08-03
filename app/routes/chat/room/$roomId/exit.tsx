@@ -5,9 +5,9 @@ import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUser } from "~/utils/sessions";
 
 type LoaderData = {
   room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
@@ -18,13 +18,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
 
   const userInChatRoom = await db.userInChatRoom.findUnique({
     where: {
       roomId_userId: {
         roomId: roomId,
-        userId: self.id,
+        userId: self.userId,
       },
     },
     select: {
@@ -72,13 +73,14 @@ export default function ExitRoom() {
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
 
   await db.userInChatRoom.delete({
     where: {
       roomId_userId: {
         roomId: roomId,
-        userId: self.id,
+        userId: self.userId,
       },
     },
   });

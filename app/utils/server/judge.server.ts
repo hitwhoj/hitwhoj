@@ -263,24 +263,14 @@ export class JudgeServer {
         status: true,
         message: true,
         subtasks: true,
-        submitterId: true,
         contestId: true,
         problemId: true,
+        submitterId: true,
       },
     });
 
     // 推送更新通知
-    recordUpdateSubject.next({
-      id: record.id,
-      time: record.time,
-      score: record.score,
-      memory: record.memory,
-      status: record.status,
-      message: record.message,
-      subtasks: record.subtasks,
-      contestId: record.contestId,
-      submitterId: record.submitterId,
-    });
+    recordUpdateSubject.next(record);
   }
 }
 

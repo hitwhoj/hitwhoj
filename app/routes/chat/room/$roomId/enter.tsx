@@ -5,9 +5,9 @@ import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
 import { idScheme, roomPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUser } from "~/utils/sessions";
 
 type LoaderData = {
   room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
@@ -18,7 +18,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
 
   const room = await db.chatRoom.findUnique({
     where: { id: roomId },
@@ -28,7 +29,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       description: true,
       private: true,
       userInChatRoom: {
-        where: { userId: self.id },
+        where: { userId: self.userId },
         select: { role: true },
       },
     },
@@ -91,7 +92,8 @@ export default function EnterRoom() {
 
 export const action: ActionFunction<Response> = async ({ request, params }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
 
   await db.$transaction(async (db) => {
     const room = await db.chatRoom.findUnique({
@@ -101,7 +103,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
         private: true,
         password: true,
         userInChatRoom: {
-          where: { userId: self.id },
+          where: { userId: self.userId! },
           select: { role: true },
         },
       },
@@ -126,7 +128,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 
     await db.userInChatRoom.create({
       data: {
-        userId: self.id,
+        userId: self.userId!,
         roomId: room.id,
       },
     });

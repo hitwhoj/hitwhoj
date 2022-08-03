@@ -19,8 +19,10 @@ import { Button, Space, Typography } from "@arco-design/web-react";
 import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
 import { useEffect, useRef } from "react";
 import { TableList } from "~/src/TableList";
-import { permissionProblemUpdate } from "~/utils/permission/problem";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemTeam } from "~/utils/db/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "title"> & {
@@ -34,22 +36,18 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemUpdate, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
     select: {
       title: true,
-      files: {
-        orderBy: {
-          filename: "asc",
-        },
-      },
-      data: {
-        orderBy: {
-          filename: "asc",
-        },
-      },
+      files: { orderBy: { filename: "asc" } },
+      data: { orderBy: { filename: "asc" } },
     },
   });
 
@@ -73,7 +71,11 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemUpdate, request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const form = await unstable_parseMultipartFormData(request, handler);
 

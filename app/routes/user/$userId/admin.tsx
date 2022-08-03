@@ -1,22 +1,24 @@
-import { Button, Typography } from "@arco-design/web-react";
+import { Button, Select, Typography } from "@arco-design/web-react";
 import {
+  IconCheck,
   IconClose,
   IconThumbDown,
-  IconThumbUp,
 } from "@arco-design/web-react/icon";
 import type { User } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
+import { useState } from "react";
 import { invariant } from "~/utils/invariant";
-import { assertPermission, isAdmin } from "~/utils/permission";
-import { permissionAdmin, permissionSuperUser } from "~/utils/permission/user";
-import { idScheme } from "~/utils/scheme";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { idScheme, privilegeScheme, roleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 type LoaderData = {
-  user: Pick<User, "id" | "role">;
+  user: Pick<User, "id" | "role" | "privilege">;
+  hasEditPrivPerm: boolean;
+  hasEditRolePerm: boolean;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -24,13 +26,20 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await assertPermission(permissionAdmin, request);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_VIEW_USER_PROFILE_SELF
+      : Permissions.PERM_VIEW_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       role: true,
+      privilege: true,
     },
   });
 
@@ -38,26 +47,32 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
+  const [hasEditPrivPerm, hasEditRolePerm] = await self.hasPermission(
+    Permissions.PERM_EDIT_USER_PRIVILEGE,
+    Permissions.PERM_EDIT_USER_ROLE
+  );
+
+  return { user, hasEditPrivPerm, hasEditRolePerm };
 };
 
 enum ActionType {
-  SetAdmin = "setAdmin",
-  UnsetAdmin = "unsetAdmin",
-  BanUser = "banUser",
-  UnbanUser = "unbanUser",
+  SetRole = "setRole",
+  SetPrivilege = "setPrivilege",
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
 
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+
   const form = await request.formData();
   const _action = form.get("_action");
 
   switch (_action) {
-    case ActionType.SetAdmin:
-    case ActionType.UnsetAdmin: {
-      await assertPermission(permissionSuperUser, request);
+    case ActionType.SetRole: {
+      await self.checkPermission(Permissions.PERM_EDIT_USER_ROLE);
+      const role = invariant(roleScheme, form.get("role"));
 
       await db.$transaction(async (db) => {
         const user = await db.user.findUnique({
@@ -69,42 +84,32 @@ export const action: ActionFunction = async ({ request, params }) => {
           throw new Response("User not found", { status: 404 });
         }
 
-        if (user.role === "Su") {
-          throw new Response("Cannot change super user's role", {
-            status: 400,
-          });
-        }
-
         await db.user.update({
           where: { id: userId },
-          data: { role: _action === ActionType.SetAdmin ? "Admin" : "User" },
+          data: { role },
         });
       });
 
       return null;
     }
 
-    case ActionType.BanUser:
-    case ActionType.UnbanUser: {
-      await assertPermission(permissionAdmin, request);
+    case ActionType.SetPrivilege: {
+      await self.checkPermission(Permissions.PERM_EDIT_USER_PRIVILEGE);
+      const privilege = invariant(privilegeScheme, form.get("privilege"));
 
       await db.$transaction(async (db) => {
         const user = await db.user.findUnique({
           where: { id: userId },
-          select: { id: true, role: true },
+          select: { id: true, privilege: true },
         });
 
         if (!user) {
           throw new Response("User not found", { status: 404 });
         }
 
-        if (isAdmin(user.role)) {
-          throw new Response("Cannot ban admin", { status: 400 });
-        }
-
         await db.user.update({
           where: { id: userId },
-          data: { role: _action === ActionType.BanUser ? "Banned" : "User" },
+          data: { privilege },
         });
       });
 
@@ -112,80 +117,76 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
   }
 
-  return null;
+  throw new Response("Invalid action", { status: 400 });
 };
 
 export default function UserManage() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user, hasEditPrivPerm, hasEditRolePerm } =
+    useLoaderData<LoaderData>();
   const { state } = useTransition();
   const isUpdating = state !== "idle";
 
-  const self = useContext(UserInfoContext);
+  const isUserBanned = !(user.privilege & Privileges.PRIV_OPERATE);
+  const [role, setRole] = useState(user.role);
 
   return (
     <Typography>
-      <Typography.Title heading={4}>
-        因为是管理员所以可以滥权！
-      </Typography.Title>
-      <Typography.Paragraph>
-        <Form method="post">
-          {user.role === "Banned" ? (
-            <Button
-              icon={<IconClose />}
-              htmlType="submit"
-              name="_action"
-              value={ActionType.UnbanUser}
-              loading={isUpdating}
-            >
-              取消封禁
-            </Button>
-          ) : user.role === "User" ? (
-            <Button
-              icon={<IconThumbDown />}
-              htmlType="submit"
-              name="_action"
-              value={ActionType.BanUser}
-              loading={isUpdating}
-            >
-              封禁用户
-            </Button>
-          ) : (
-            <Typography.Text>但是你什么都做不到</Typography.Text>
-          )}
-        </Form>
-      </Typography.Paragraph>
+      {hasEditPrivPerm && (
+        <>
+          <Typography.Title heading={4}>
+            因为是管理员所以可以滥权！
+          </Typography.Title>
+          <Typography.Paragraph>
+            <Form method="post">
+              <input
+                type="hidden"
+                name="privilege"
+                value={user.privilege ^ Privileges.PRIV_OPERATE}
+              />
+              <Button
+                icon={isUserBanned ? <IconClose /> : <IconThumbDown />}
+                htmlType="submit"
+                name="_action"
+                value={ActionType.SetPrivilege}
+                loading={isUpdating}
+              >
+                {isUserBanned ? "取消封禁" : "封禁用户"}
+              </Button>
+            </Form>
+          </Typography.Paragraph>
+        </>
+      )}
 
-      {self && self.role === "Su" && (
+      {hasEditRolePerm && (
         <>
           <Typography.Title heading={4}>
             因为是超级管理员所以可以更加滥权！
           </Typography.Title>
           <Typography.Paragraph>
             <Form method="post">
-              {user.role === "Admin" ? (
-                <Button
-                  icon={<IconClose />}
-                  htmlType="submit"
-                  name="_action"
-                  value={ActionType.UnsetAdmin}
-                  loading={isUpdating}
-                >
-                  取消管理员
-                </Button>
-              ) : (
-                <Button
-                  icon={<IconThumbUp />}
-                  htmlType="submit"
-                  name="_action"
-                  value={ActionType.SetAdmin}
-                  loading={isUpdating}
-                >
-                  设置为管理员
-                </Button>
-              )}
+              <input type="hidden" name="role" value={role} />
+              <Select onChange={(value) => setRole(value)} value={role}>
+                <Select.Option value="Root">超级管理员</Select.Option>
+                <Select.Option value="Admin">系统管理员</Select.Option>
+                <Select.Option value="User">普通用户</Select.Option>
+              </Select>
+
+              <Button
+                icon={<IconCheck />}
+                htmlType="submit"
+                name="_action"
+                value={ActionType.SetRole}
+                loading={isUpdating}
+              >
+                确认修改
+              </Button>
             </Form>
           </Typography.Paragraph>
         </>
+      )}
+
+      {!hasEditPrivPerm && !hasEditRolePerm && (
+        <Typography.Paragraph>你什么也做不到</Typography.Paragraph>
       )}
     </Typography>
   );

@@ -12,18 +12,21 @@ import {
 } from "@arco-design/web-react";
 import { IconSun, IconMoon, IconMenu } from "@arco-design/web-react/icon";
 import { ThemeContext } from "~/utils/context/theme";
-import { UserInfoContext } from "~/utils/context/user";
 import { LoginModalContext } from "~/utils/context/modal";
 import { NavbarMenu } from "./NavbarMenu";
 import type { ActionData as LogoutActionData } from "~/routes/logout";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import type { UserData } from "~/utils/db/user";
 
 const Row = Grid.Row;
 const MenuItem = Menu.Item;
 
-export default function NavbarTop() {
+type NavbarTopProps = {
+  user: UserData | null;
+};
+
+export default function NavbarTop({ user }: NavbarTopProps) {
   const { theme, setTheme } = useContext(ThemeContext);
-  const user = useContext(UserInfoContext);
 
   const setLoginVisible = useContext(LoginModalContext);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -60,7 +63,7 @@ export default function NavbarTop() {
         <IconMenu />
       </div>
 
-      {/* logo placeholder */}
+      {/* TODO: logo placeholder */}
       <div style={{ fontSize: "1.5rem" }}>
         <NavLink to="/">HITwh OJ</NavLink>
       </div>

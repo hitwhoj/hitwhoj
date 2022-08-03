@@ -19,15 +19,16 @@ import {
 
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
 import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
-import type { UserInfo } from "./utils/context/user";
-import { UserInfoContext } from "./utils/context/user";
 import type { MessageType } from "./routes/chat/events";
+import { findRequestUser } from "./utils/permission";
+import type { UserData } from "./utils/db/user";
+import { selectUserData } from "./utils/db/user";
+import { UserContext } from "./utils/context/user";
 
 export const links: LinksFunction = () => [
   {
@@ -46,26 +47,19 @@ export const links: LinksFunction = () => [
 
 type LoaderData = {
   theme: Theme;
-  user: UserInfo | null;
+  user: UserData | null;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
-  const self = await findSessionUserOptional(request);
-
-  if (!self) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     return { theme, user: null };
   }
 
   const user = await db.user.findUnique({
-    where: { id: self.id },
-    select: {
-      id: true,
-      username: true,
-      nickname: true,
-      role: true,
-      avatar: true,
-    },
+    where: { id: self.userId! },
+    select: selectUserData,
   });
 
   return { theme, user };
@@ -148,13 +142,13 @@ export default function App() {
 
   return (
     <Document theme={theme}>
-      <UserInfoContext.Provider value={user}>
+      <UserContext.Provider value={user && user.id}>
         <ThemeContext.Provider value={{ theme, setTheme }}>
-          <Layout>
+          <Layout user={user}>
             <Outlet />
           </Layout>
         </ThemeContext.Provider>
-      </UserInfoContext.Provider>
+      </UserContext.Provider>
     </Document>
   );
 }

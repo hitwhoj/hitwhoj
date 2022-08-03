@@ -26,8 +26,10 @@ import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
-import { permissionProblemSetUpdate } from "~/utils/permission/problemset";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemSetTeam } from "~/utils/db/problemset";
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
@@ -47,7 +49,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await assertPermission(permissionProblemSetUpdate, request, problemSetId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -91,10 +97,12 @@ export const action: ActionFunction = async ({ request, params }) => {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await assertPermission(permissionProblemSetUpdate, request, problemSetId);
+  const self = await findRequestUser(request);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
 
   const form = await request.formData();
-
   const _action = form.get("_action");
 
   switch (_action) {

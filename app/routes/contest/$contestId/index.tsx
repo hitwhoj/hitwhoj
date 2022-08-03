@@ -1,5 +1,10 @@
 import { Button, Descriptions, Typography } from "@arco-design/web-react";
-import type { Contest, ContestTag, Team, User } from "@prisma/client";
+import type {
+  Contest,
+  ContestParticipantRole,
+  ContestTag,
+  Team,
+} from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -8,10 +13,15 @@ import { idScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 import { TeamLink } from "~/src/team/TeamLink";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
-import { permissionContestRead } from "~/utils/permission/contest";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import type { ContestStatus } from "~/utils/db/contest";
+import {
+  findContestParticipantRole,
+  findContestPrivacy,
+  findContestStatus,
+  findContestTeam,
+} from "~/utils/db/contest";
 
 type LoaderData = {
   contest: Pick<
@@ -27,10 +37,9 @@ type LoaderData = {
   > & {
     tags: Pick<ContestTag, "name">[];
     team: Pick<Team, "id" | "name"> | null;
-    mods: Pick<User, "id">[];
-    juries: Pick<User, "id">[];
-    attendees: Pick<User, "id">[];
   };
+  registered: ContestParticipantRole | null;
+  status: ContestStatus;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -38,11 +47,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const { self } = await assertPermission(
-    permissionContestRead,
-    request,
-    contestId
-  );
+  const self = await findRequestUser(request);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      (await findContestPrivacy(contestId))
+        ? Permissions.PERM_VIEW_CONTEST
+        : Permissions.PERM_VIEW_CONTEST_PUBLIC
+    );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -66,9 +79,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
           name: true,
         },
       },
-      mods: { where: { id: self ? self.id : -1 }, select: { id: true } },
-      juries: { where: { id: self ? self.id : -1 }, select: { id: true } },
-      attendees: { where: { id: self ? self.id : -1 }, select: { id: true } },
     },
   });
 
@@ -76,9 +86,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return {
-    contest,
-  };
+  const registered = self.userId
+    ? await findContestParticipantRole(contestId, self.userId)
+    : null;
+  const status = await findContestStatus(contestId);
+
+  return { contest, registered, status };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -87,26 +100,20 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export default function ContestIndex() {
-  const { contest } = useLoaderData<LoaderData>();
+  const { contest, registered, status } = useLoaderData<LoaderData>();
 
-  const isPending = new Date() < new Date(contest.beginTime);
-  const isRunning =
-    new Date() > new Date(contest.beginTime) &&
-    new Date() < new Date(contest.endTime);
+  const isMod = registered === "Mod";
+  const isJury = registered === "Jury";
+  const isAttendee = registered === "Contestant";
 
-  const isMod = contest.mods.length > 0;
-  const isJury = contest.juries.length > 0;
-  const isAttendee = contest.attendees.length > 0;
-
-  const user = useContext(UserInfoContext);
-
-  const allowRegister = isPending
-    ? !contest.private && contest.allowPublicRegistration
-    : isRunning
-    ? !contest.private &&
-      contest.allowPublicRegistration &&
-      contest.allowAfterRegistration
-    : false;
+  const allowRegister =
+    status === "Pending"
+      ? !contest.private && contest.allowPublicRegistration
+      : status === "Running"
+      ? !contest.private &&
+        contest.allowPublicRegistration &&
+        contest.allowAfterRegistration
+      : false;
 
   return (
     <Typography>
@@ -142,7 +149,7 @@ export default function ContestIndex() {
         labelStyle={{ paddingRight: 36 }}
       />
       <Markdown>{contest.description}</Markdown>
-      {user && (
+      {registered && (
         <Typography.Paragraph>
           {isMod ? (
             <i>您已经是比赛的管理员</i>

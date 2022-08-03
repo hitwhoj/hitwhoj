@@ -2,19 +2,19 @@ import type { ActionFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 import { Alert, Button, Checkbox, Typography } from "@arco-design/web-react";
 import { useState } from "react";
+import { findRequestUser } from "~/utils/permission";
 
 export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme, params.teamId);
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
 
   const teamMember = await db.teamMember.findUnique({
-    where: { userId_teamId: { teamId, userId: self } },
+    where: { userId_teamId: { teamId, userId: self.userId! } },
     select: { role: true },
   });
 

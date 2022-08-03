@@ -23,16 +23,14 @@ import {
   // IconStarFill,
   // IconThumbUp,
 } from "@arco-design/web-react/icon";
-import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
 import { Like } from "~/src/comment/Like";
 import { ReportType } from "@prisma/client";
 import { CommentTag } from "~/src/comment/CommentTag";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
 
 enum ActionType {
   None = "none",
@@ -41,9 +39,9 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
 
-  if (!self) {
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -61,7 +59,7 @@ export const action: ActionFunction = async ({ request }) => {
         data: {
           heartees: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -75,7 +73,7 @@ export const action: ActionFunction = async ({ request }) => {
         data: {
           heartees: {
             disconnect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -135,14 +133,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
       },
     },
   });
-  const self = await findSessionUid(request);
-  if (!self) {
-    return {
-      comments,
-      self: -1,
-    };
-  }
-  return { comments, self };
+  const self = await findRequestUser(request);
+  return { comments, self: self.userId ?? -1 };
 };
 
 export const meta: MetaFunction = () => ({
@@ -269,20 +261,21 @@ export function CommentList({
 
 export default function CommentListIndex() {
   const { comments, self } = useLoaderData<LoaderData>();
-  const user = useContext(UserInfoContext);
 
   return (
     <Typography>
       <Typography.Title heading={3}>
         <Grid.Row justify="space-between" align="center">
           讨论列表
-          {user && (
-            <Link to="new">
-              <Button type="primary" icon={<IconPlus />}>
-                新建讨论
-              </Button>
-            </Link>
-          )}
+          {
+            /* TODO 完善权限检查 */ true && (
+              <Link to="new">
+                <Button type="primary" icon={<IconPlus />}>
+                  新建讨论
+                </Button>
+              </Link>
+            )
+          }
         </Grid.Row>
       </Typography.Title>
       <Typography.Paragraph>

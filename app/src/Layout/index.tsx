@@ -16,6 +16,7 @@ import { LoginModalContext } from "~/utils/context/modal";
 import type { ActionData as LoginActionData } from "~/routes/login";
 import { version } from "../../../package.json";
 import { passwordHash } from "~/utils/tools";
+import type { UserData } from "~/utils/db/user";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -23,10 +24,11 @@ const Content = Layout.Content;
 const Footer = Layout.Footer;
 
 type LayoutProps = {
+  user: UserData | null;
   children: React.ReactNode;
 };
 
-export default function MainLayout({ children }: LayoutProps) {
+export default function MainLayout({ user, children }: LayoutProps) {
   const [visible, setVisible] = useState(false);
   const fetcher = useFetcher<LoginActionData>();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -57,7 +59,7 @@ export default function MainLayout({ children }: LayoutProps) {
         className="header-context-footer-layout"
       >
         <Header>
-          <NavbarTop />
+          <NavbarTop user={user} />
         </Header>
 
         <Layout

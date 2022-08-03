@@ -6,6 +6,7 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
 import type { ContestListData } from "~/utils/db/contest";
+import { findContestPrivacy, findContestTeam } from "~/utils/db/contest";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import {
@@ -14,11 +15,12 @@ import {
   IconTrophy,
 } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
-import { permissionContestRead } from "~/utils/permission/contest";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 type LoaderData = {
   contest: ContestListData;
+  hasEditPerm: boolean;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -26,7 +28,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await assertPermission(permissionContestRead, request, contestId);
+  const self = await findRequestUser(request);
+  const perm = self.team(await findContestTeam(contestId)).contest(contestId);
+  await perm.checkPermission(
+    (await findContestPrivacy(contestId))
+      ? Permissions.PERM_VIEW_CONTEST
+      : Permissions.PERM_VIEW_CONTEST_PUBLIC
+  );
+  const [hasEditPerm] = await perm.hasPermission(Permissions.PERM_EDIT_CONTEST);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -49,7 +58,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest };
+  return { contest, hasEditPerm };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -57,7 +66,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest } = useLoaderData<LoaderData>();
+  const { contest, hasEditPerm } = useLoaderData<LoaderData>();
 
   return (
     <Typography className="contest-problem-container">
@@ -93,7 +102,7 @@ export default function ContestView() {
           routes={[
             { title: "详情", key: "." },
             { title: "题目", key: "problem" },
-            { title: "编辑", key: "edit" },
+            ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
           ]}
         />
       </Typography.Paragraph>

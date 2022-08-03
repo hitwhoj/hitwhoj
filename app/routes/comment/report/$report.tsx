@@ -5,16 +5,16 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { Button, Form, Input, Modal, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { ReportType } from "@prisma/client";
-import { findSessionUid } from "~/utils/sessions";
 import { redirect } from "@remix-run/node";
 import { useEffect, useState } from "react";
+import { findRequestUser } from "~/utils/permission";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
 export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -32,7 +32,7 @@ export const action: ActionFunction = async ({ request }) => {
         where: {
           type: ReportType.C,
           reason,
-          creatorId: self,
+          creatorId: self.userId,
         },
       });
       if (lastReport) {
@@ -45,7 +45,7 @@ export const action: ActionFunction = async ({ request }) => {
           reason,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -62,7 +62,7 @@ export const action: ActionFunction = async ({ request }) => {
         where: {
           type: ReportType.R,
           reason,
-          creatorId: self,
+          creatorId: self.userId,
         },
       });
       if (lastReport) {
@@ -75,7 +75,7 @@ export const action: ActionFunction = async ({ request }) => {
           reason,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           reply: {

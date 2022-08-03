@@ -15,8 +15,9 @@ import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
 import { TableList } from "~/src/TableList";
-import { permissionUserProfileWrite } from "~/utils/permission/user";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username"> & {
@@ -29,7 +30,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await assertPermission(permissionUserProfileWrite, request, userId);
+
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_EDIT_USER_PROFILE_SELF
+      : Permissions.PERM_EDIT_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -60,7 +68,13 @@ enum ActionType {
 
 export const action: ActionFunction = async ({ request, params }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await assertPermission(permissionUserProfileWrite, request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_EDIT_USER_PROFILE_SELF
+      : Permissions.PERM_EDIT_USER_PROFILE
+  );
 
   const form = await unstable_parseMultipartFormData(request, handler);
   const _action = form.get("_action");

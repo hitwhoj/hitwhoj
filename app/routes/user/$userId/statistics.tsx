@@ -10,12 +10,12 @@ import {
   Statistic,
   Space,
 } from "@arco-design/web-react";
-import { permissionUserProfileRead } from "~/utils/permission/user";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 type LoaderData = {
   user: {
-    attendedContests: Pick<Contest, "id" | "title">[];
+    participatedContests: { contest: Pick<Contest, "id" | "title"> }[];
     _count: {
       createdRecords: number;
       createdComments: number;
@@ -29,15 +29,24 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await assertPermission(permissionUserProfileRead, request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_VIEW_USER_PROFILE_SELF
+      : Permissions.PERM_VIEW_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
-      attendedContests: {
+      participatedContests: {
         select: {
-          id: true,
-          title: true,
+          contest: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
         },
       },
       _count: {
@@ -72,9 +81,9 @@ export default function UserStatistics() {
 
       <Typography.Title heading={4}>参与的比赛</Typography.Title>
       <Typography.Paragraph>
-        {user.attendedContests.length ? (
+        {user.participatedContests.length ? (
           <ul>
-            {user.attendedContests.map((contest) => (
+            {user.participatedContests.map(({ contest }) => (
               <li key={contest.id}>
                 <ArcoLink>
                   <Link to={`/contest/${contest.id}`}>{contest.title}</Link>

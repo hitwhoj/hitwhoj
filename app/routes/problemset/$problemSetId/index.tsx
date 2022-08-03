@@ -14,8 +14,12 @@ import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
-import { permissionProblemSetRead } from "~/utils/permission/problemset";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import {
+  findProblemSetPrivacy,
+  findProblemSetTeam,
+} from "~/utils/db/problemset";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
@@ -38,7 +42,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await assertPermission(permissionProblemSetRead, request, problemSetId);
+  const self = await findRequestUser(request);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(
+      (await findProblemSetPrivacy(problemSetId))
+        ? Permissions.PERM_VIEW_PROBLEM_SET
+        : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+    );
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -65,9 +76,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return {
-    problemSet,
-  };
+  return { problemSet };
 };
 
 export default function ProblemSetIndex() {

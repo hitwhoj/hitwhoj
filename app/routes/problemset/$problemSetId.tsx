@@ -8,8 +8,12 @@ import { Tag, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
-import { permissionProblemSetRead } from "~/utils/permission/problemset";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import {
+  findProblemSetPrivacy,
+  findProblemSetTeam,
+} from "~/utils/db/problemset";
 
 type LoaderData = {
   problemSet: Pick<ProblemSet, "title" | "description" | "private"> & {
@@ -24,7 +28,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await assertPermission(permissionProblemSetRead, request, problemSetId);
+  const self = await findRequestUser(request);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(
+      (await findProblemSetPrivacy(problemSetId))
+        ? Permissions.PERM_VIEW_PROBLEM_SET
+        : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+    );
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -40,9 +51,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return {
-    problemSet,
-  };
+  return { problemSet };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({

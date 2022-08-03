@@ -4,25 +4,25 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import type { User, ChatRoom } from "@prisma/client";
+import type { ChatRoom } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Button, Input } from "@arco-design/web-react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { ChatMessageWithUser } from "~/utils/serverEvents";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { findRequestUser } from "~/utils/permission";
+import { UserContext } from "~/utils/context/user";
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `聊天室: ${data?.room.name} - HITwh OJ`,
 });
 
 type LoaderData = {
-  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
   room: Pick<ChatRoom, "id" | "name"> & {
     chatMessage: ChatMessageWithUser[];
   };
@@ -36,21 +36,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     status: 404,
   });
 
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
-
-  const self = (await db.user.findUnique({
-    where: { id: selfId },
-    select: { id: true, nickname: true, username: true, avatar: true },
-  }))!;
 
   const userInChatRoom = await db.userInChatRoom.findUnique({
     where: {
       roomId_userId: {
         roomId: roomId,
-        userId: selfId,
+        userId: self.userId,
       },
     },
     select: { role: true },
@@ -94,7 +89,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
 };
 
 export default function ChatRoomIndex() {
-  const { self, room } = useLoaderData<LoaderData>();
+  const { room } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<ChatMessageWithUser[]>(
     room.chatMessage
   );
@@ -123,6 +118,8 @@ export default function ChatRoomIndex() {
     }
   }, [isFetching]);
 
+  const self = useContext(UserContext);
+
   return (
     <div className="chat-content-container">
       <header style={{ fontSize: "1.5em" }}>{room.name}</header>
@@ -147,7 +144,7 @@ export default function ChatRoomIndex() {
             <div
               key={message.id}
               className={`chat-content-message ${
-                message.sender.id === self.id ? "right" : "left"
+                message.sender.id === self ? "right" : "left"
               }`}
             >
               <div className="chat-content-message-avatar">
@@ -219,8 +216,8 @@ export default function ChatRoomIndex() {
 }
 
 export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect("/login");
   }
 
@@ -232,7 +229,7 @@ export const action: ActionFunction = async ({ request }) => {
     where: {
       roomId_userId: {
         roomId: roomId,
-        userId: self,
+        userId: self.userId,
       },
     },
   });
@@ -243,7 +240,7 @@ export const action: ActionFunction = async ({ request }) => {
   const message = await db.chatMessage.create({
     data: {
       roomId: roomId,
-      senderId: self,
+      senderId: self.userId,
       content,
     },
     include: {

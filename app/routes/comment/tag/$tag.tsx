@@ -6,8 +6,8 @@ import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { Divider } from "@arco-design/web-react";
 import { CommentList } from "~/routes/comment";
-import { findSessionUid } from "~/utils/sessions";
 import type { CommentTag } from "@prisma/client";
+import { findRequestUser } from "~/utils/permission";
 
 export { action } from "~/routes/comment";
 
@@ -79,14 +79,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Comment Tag not found", { status: 404 });
   }
 
-  const self = await findSessionUid(request);
-  if (!self) {
-    return {
-      comments,
-      self: -1,
-    };
-  }
-  return { comments, self };
+  const self = await findRequestUser(request);
+  return { comments, self: self.userId ?? -1 };
 };
 
 export const meta: MetaFunction = ({ params }) => ({

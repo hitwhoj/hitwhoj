@@ -24,7 +24,6 @@ import {
   IconMessage,
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
-import { findSessionUid } from "~/utils/sessions";
 import { Like } from "~/src/comment/Like";
 import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
@@ -32,6 +31,7 @@ import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
 import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -48,10 +48,10 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
   const commentId = invariant(idScheme, params.commentId);
 
-  if (!self) {
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -70,7 +70,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -84,7 +84,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             disconnect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -98,7 +98,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -112,7 +112,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             disconnect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -126,7 +126,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -146,7 +146,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -172,7 +172,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -290,18 +290,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
   if (!comment) {
     throw "comment not found";
   }
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
 
   // 过滤二级回复
   comment.replies = comment.replies.filter((reply) => reply.domId === null);
 
-  if (!self) {
-    return {
-      comment,
-      self: -1,
-    };
-  }
-  return { comment, self };
+  return { comment, self: self.userId ?? -1 };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({

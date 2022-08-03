@@ -38,20 +38,22 @@ import {
 import { db } from "~/utils/server/db.server";
 import contestStyle from "~/styles/contest.css";
 import { IconHistory, IconSend } from "@arco-design/web-react/icon";
-import { findSessionUid, findSessionUserOptional } from "~/utils/sessions";
 import { s3 } from "~/utils/server/s3.server";
 import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
-import { UserInfoContext } from "~/utils/context/user";
-import {
-  permissionContestProblemRead,
-  permissionContestProblemSubmit,
-} from "~/utils/permission/contest";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import {
+  findContestProblemIdByRank,
+  findContestStatus,
+  findContestTeam,
+} from "~/utils/db/contest";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { filter, fromEvent, map } from "rxjs";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
@@ -77,9 +79,18 @@ export const loader: LoaderFunction<LoaderData> = async ({
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  const self = await findSessionUserOptional(request);
-
-  await assertPermission(permissionContestProblemRead, request, contestId);
+  const self = await findRequestUser(request);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
   const problem = await db.contestProblem.findUnique({
     where: {
@@ -118,12 +129,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  const records = self
+  const records = self.userId
     ? await db.record.findMany({
         where: {
           contestId,
           problemId: problem.problem.id,
-          submitterId: self.id,
+          submitterId: self.userId,
         },
         orderBy: {
           submittedAt: "desc",
@@ -157,18 +168,21 @@ export const action: ActionFunction<ActionData> = async ({
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  await assertPermission(permissionContestProblemSubmit, request, contestId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
-  const problem = await db.contestProblem.findUnique({
-    where: { contestId_rank: { contestId, rank } },
-    select: { problemId: true },
-  });
-
-  if (!problem) {
-    throw new Response("Problem not found", { status: 404 });
-  }
-
-  const self = await findSessionUid(request);
+  const problemId = await findContestProblemIdByRank(contestId, rank);
 
   const form = await request.formData();
   const code = invariant(codeScheme, form.get("code"));
@@ -177,9 +191,9 @@ export const action: ActionFunction<ActionData> = async ({
   const { id: recordId } = await db.record.create({
     data: {
       language,
-      submitter: { connect: { id: self } },
-      problem: { connect: { id: problem.problemId } },
-      contest: { connect: { id: contestId } },
+      problemId,
+      contestId,
+      submitterId: self.userId!,
     },
     select: { id: true },
   });
@@ -242,14 +256,15 @@ export default function ContestProblemView() {
   const isEnded = now > new Date(contest.endTime);
 
   const [records, setRecords] = useState(_records);
-  const user = useContext(UserInfoContext);
 
   useEffect(() => {
-    if (user?.id) {
-      const eventSource = new EventSource(`/contest/${contestId}/events`);
-      eventSource.addEventListener("message", ({ data }) => {
-        const message: MessageType = JSON.parse(data);
-
+    const eventSource = new EventSource(`/contest/${contestId}/events`);
+    const subscription = fromEvent(eventSource, "message")
+      .pipe(
+        map((event: any): MessageType => JSON.parse(event.data)),
+        filter((message) => message.problemId === problem.id)
+      )
+      .subscribe((message) => {
         setRecords((records) => {
           const found = records.find((record) => record.id === message.id);
           if (found) {
@@ -258,23 +273,28 @@ export default function ContestProblemView() {
             found.score = message.score;
             found.memory = message.memory;
             found.status = message.status;
+            return records;
           } else {
             // 否则添加新的记录
-            records.unshift({
-              id: message.id,
-              time: message.time,
-              score: message.score,
-              memory: message.memory,
-              status: message.status,
-            });
+            return [
+              {
+                id: message.id,
+                time: message.time,
+                score: message.score,
+                memory: message.memory,
+                status: message.status,
+              },
+              ...records,
+            ];
           }
-          return [...records];
         });
       });
 
-      return () => eventSource.close();
-    }
-  }, [user?.id]);
+    return () => {
+      subscription.unsubscribe();
+      eventSource.close();
+    };
+  }, []);
 
   return (
     <>

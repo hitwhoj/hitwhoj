@@ -8,23 +8,33 @@ import { Typography, Tag } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
-import { assertPermission, isAdmin, isUser } from "~/utils/permission";
-import { permissionProblemRead } from "~/utils/permission/problem";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 
 type LoaderData = {
-  problem: Pick<Problem, "id" | "title" | "description" | "private"> & {
+  problem: Pick<
+    Problem,
+    "id" | "title" | "description" | "private" | "allowSubmit"
+  > & {
     tags: Pick<ProblemTag, "name">[];
   };
+  hasEditPerm: boolean;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
-  params,
   request,
+  params,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemRead, request, problemId);
+  const self = await findRequestUser(request);
+  const team = self.team(await findProblemTeam(problemId));
+  await team.checkPermission(
+    (await findProblemPrivacy(problemId))
+      ? Permissions.PERM_VIEW_PROBLEM
+      : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+  );
+  const [hasEditPerm] = await team.hasPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -33,6 +43,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       title: true,
       description: true,
       private: true,
+      allowSubmit: true,
       tags: {
         select: {
           name: true,
@@ -45,7 +56,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return { problem };
+  return { problem, hasEditPerm };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -54,8 +65,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
 });
 
 export default function ProblemView() {
-  const { problem } = useLoaderData<LoaderData>();
-  const self = useContext(UserInfoContext);
+  const { problem, hasEditPerm } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
@@ -81,15 +91,9 @@ export default function ProblemView() {
       <Navigator
         routes={[
           { title: "题面", key: "." },
-          ...(self && isUser(self.role)
-            ? [{ title: "提交", key: "submit" }]
-            : [{ title: "登录后提交", key: "submit" }]),
-          ...(self && isAdmin(self.role)
-            ? [
-                { title: "数据", key: "data" },
-                { title: "编辑", key: "edit" },
-              ]
-            : []),
+          ...(problem.allowSubmit ? [{ title: "提交", key: "submit" }] : []),
+          ...(hasEditPerm ? [{ title: "数据", key: "data" }] : []),
+          ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
         ]}
       />
 

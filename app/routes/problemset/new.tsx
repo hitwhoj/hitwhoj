@@ -9,27 +9,30 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { titleScheme } from "~/utils/scheme";
 import { Button, Input, Form, Typography } from "@arco-design/web-react";
-import { permissionProblemSetCreate } from "~/utils/permission/problemset";
-import { assertPermission } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 const FormItem = Form.Item;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await assertPermission(permissionProblemSetCreate, request);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
 
   return null;
 };
 
 export const action: ActionFunction<Response> = async ({ request }) => {
-  await assertPermission(permissionProblemSetCreate, request);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
 
   const form = await request.formData();
   const title = invariant(titleScheme, form.get("title"));
 
   const { id: problemSetId } = await db.problemSet.create({
-    data: {
-      title,
-    },
+    data: { title },
   });
 
   return redirect(`/problemset/${problemSetId}/edit`);

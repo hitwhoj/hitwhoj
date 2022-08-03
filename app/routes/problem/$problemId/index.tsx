@@ -6,8 +6,9 @@ import { Link as ArcoLink, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { permissionProblemRead } from "~/utils/permission/problem";
-import { assertPermission } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 
 type LoaderData = {
   problem: Pick<Problem, "id" | "title" | "description"> & {
@@ -16,11 +17,18 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
-  params,
   request,
+  params,
 }) => {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await assertPermission(permissionProblemRead, request, problemId);
+  const self = await findRequestUser(request);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(
+      (await findProblemPrivacy(problemId))
+        ? Permissions.PERM_VIEW_PROBLEM
+        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+    );
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -29,11 +37,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       title: true,
       description: true,
       private: true,
-      files: {
-        orderBy: {
-          filename: "asc",
-        },
-      },
+      files: { orderBy: { filename: "asc" } },
     },
   });
 
