@@ -329,7 +329,7 @@ export default function ContestEdit() {
   );
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
-  const [priv, setPriv] = useState(contest.private);
+  const [pub, setPub] = useState(!contest.private);
   const [allowPublicRegisteration, setAllowPublicRegistration] = useState(
     contest.allowPublicRegistration
   );
@@ -432,17 +432,17 @@ export default function ContestEdit() {
           </FormItem>
 
           <FormItem disabled={isUpdating}>
-            <input type="hidden" name="private" value={String(priv)} />
+            <input type="hidden" name="private" value={String(!pub)} />
             <Checkbox
-              checked={priv}
-              onChange={(checked) => setPriv(checked)}
+              checked={pub}
+              onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
             >
-              不公开比赛
+              公开比赛
             </Checkbox>
           </FormItem>
 
-          <FormItem disabled={isUpdating || priv}>
+          <FormItem disabled={isUpdating || !pub}>
             <input
               type="hidden"
               name="allowPublicRegistration"
@@ -457,7 +457,7 @@ export default function ContestEdit() {
             </Checkbox>
           </FormItem>
 
-          <FormItem disabled={isUpdating || priv || !allowPublicRegisteration}>
+          <FormItem disabled={isUpdating || !pub || !allowPublicRegisteration}>
             <input
               type="hidden"
               name="allowAfterRegistration"

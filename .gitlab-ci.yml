@@ -36,7 +36,7 @@ test_build:
     - yarn prisma db push
 
     # test
-    - node -r esbuild-register tests/seed.ts
+    - yarn prisma db seed
     - yarn test
 
     # build

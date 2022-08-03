@@ -1,6 +1,6 @@
-import { ContestPermission } from "./role/contest";
-import { TeamPermission } from "./role/team";
-import { UserPermission } from "./role/user";
+import { UserPermission } from "./permission/user";
+import { TeamPermission } from "./permission/team";
+import { ContestPermission } from "./permission/contest";
 
 export const Permissions = {
   /** 查看任意用户的资料 */
