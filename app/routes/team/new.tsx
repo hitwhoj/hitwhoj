@@ -12,7 +12,7 @@ import {
   teamNameScheme,
   descriptionScheme,
   teamInvitationScheme,
-  teanInvitationCodeScheme,
+  teamInvitationCodeScheme,
 } from "~/utils/scheme";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import {
@@ -51,7 +51,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   );
   const invitationCode =
     invitationType === InvitationType.CODE
-      ? invariant(teanInvitationCodeScheme, form.get("code"))
+      ? invariant(teamInvitationCodeScheme, form.get("code"))
       : "";
 
   if (!name) {

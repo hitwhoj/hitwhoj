@@ -183,7 +183,7 @@ export const teamInvitationScheme = z.nativeEnum(InvitationType);
 /**
  * 团队邀请码（非空）
  */
-export const teanInvitationCodeScheme = z
+export const teamInvitationCodeScheme = z
   .string()
   .nonempty("InvitationCode must be nonempty");
 

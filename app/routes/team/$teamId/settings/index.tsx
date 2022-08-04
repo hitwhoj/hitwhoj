@@ -6,7 +6,7 @@ import {
   idScheme,
   teamNameScheme,
   teamInvitationScheme,
-  teanInvitationCodeScheme,
+  teamInvitationCodeScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
@@ -145,7 +145,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       );
       const invitationCode =
         invitationType === InvitationType.CODE
-          ? invariant(teanInvitationCodeScheme, form.get("code"))
+          ? invariant(teamInvitationCodeScheme, form.get("code"))
           : "";
 
       await db.team.update({
@@ -264,7 +264,12 @@ function EditInvitation({
 
       {invitationType === InvitationType.CODE && (
         <FormItem label="邀请码" required layout="vertical">
-          <Input name="code" defaultValue={code || ""} disabled={isUpdating} />
+          <Input
+            name="code"
+            defaultValue={code || ""}
+            required
+            disabled={isUpdating}
+          />
         </FormItem>
       )}
 
