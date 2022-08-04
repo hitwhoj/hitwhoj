@@ -63,6 +63,7 @@ enum ActionType {
   EditProfile = "EditProfile",
   DissolveTeam = "DissolveTeam",
   ModifyInvitation = "ModifyInvitation",
+  ExitTeam = "ExitTeam",
 }
 
 export const action: ActionFunction<Response> = async ({ params, request }) => {
@@ -123,20 +124,6 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       return new Response("Team profile updated", { status: 200 });
     }
 
-    // 解散团队
-    case ActionType.DissolveTeam: {
-      if (teamMember.role !== TeamMemberRole.Owner) {
-        throw new Response("Permisson denied: Only owner can dissolve team.", {
-          status: 403,
-        });
-      }
-
-      await db.teamMember.deleteMany({ where: { teamId } });
-      await db.team.delete({ where: { id: teamId } });
-
-      return redirect(`/team`);
-    }
-
     // 修改邀请制
     case ActionType.ModifyInvitation: {
       const invitationType = invariant(
@@ -157,6 +144,46 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       });
 
       return new Response("Team invitation updated", { status: 200 });
+    }
+
+    // 退出团队
+    case ActionType.ExitTeam: {
+      if (teamMember.role === TeamMemberRole.Owner) {
+        throw new Response(
+          "Owner can't exit team, please transfer ownership first or dissolve team.",
+          {
+            status: 403,
+          }
+        );
+      }
+
+      await db.teamMember.delete({
+        where: {
+          userId_teamId: {
+            teamId,
+            userId: self,
+          },
+        },
+      });
+
+      return redirect(`/team/${teamId}`);
+    }
+
+    // 解散团队
+    case ActionType.DissolveTeam: {
+      if (teamMember.role !== TeamMemberRole.Owner) {
+        throw new Response(
+          "Permisson denied: Only owner can dissolve team directly.",
+          {
+            status: 403,
+          }
+        );
+      }
+
+      await db.teamMember.deleteMany({ where: { teamId } });
+      await db.team.delete({ where: { id: teamId } });
+
+      return redirect(`/team`);
     }
   }
 
@@ -289,12 +316,46 @@ function EditInvitation({
   );
 }
 
+function ExitTeam() {
+  const fetcher = useFetcher();
+  const isExisting = fetcher.state === "submitting";
+  const [confirm, setConfirm] = useState(false);
+
+  return (
+    <Typography>
+      <Typography.Title heading={5}>退出团队</Typography.Title>
+      <Typography.Paragraph>
+        <Checkbox
+          onChange={() => setConfirm((confirm) => !confirm)}
+          checked={confirm}
+        >
+          我知道我在干什么
+        </Checkbox>
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        <fetcher.Form method="post">
+          <Button
+            htmlType="submit"
+            type="primary"
+            status="danger"
+            loading={isExisting}
+            disabled={!confirm}
+            name="_action"
+            value={ActionType.ExitTeam}
+          >
+            退出团队
+          </Button>
+        </fetcher.Form>
+      </Typography.Paragraph>
+    </Typography>
+  );
+}
+
 function DissolveTeam() {
   const [confirm, setConfirm] = useState(false);
 
   return (
     <Typography>
-      {/* TODO: 在这里加个返回按钮 */}
       <Typography.Title heading={5}>解散团队</Typography.Title>
       <Typography.Paragraph>
         <Alert
@@ -340,6 +401,9 @@ export default function TeamSettings() {
         <EditInvitation {...invitation} />
       </Typography.Paragraph>
       <Typography.Title heading={4}>危险区域</Typography.Title>
+      <Typography.Paragraph>
+        <ExitTeam />
+      </Typography.Paragraph>
       <Typography.Paragraph>
         <DissolveTeam />
       </Typography.Paragraph>
