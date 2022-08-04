@@ -8,11 +8,24 @@ import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
-import { teamNameScheme, descriptionScheme } from "~/utils/scheme";
-import { TeamMemberRole } from "@prisma/client";
-import { Button, Input, Form, Typography } from "@arco-design/web-react";
+import {
+  teamNameScheme,
+  descriptionScheme,
+  teamInvitationScheme,
+  teanInvitationCodeScheme,
+} from "~/utils/scheme";
+import { InvitationType, TeamMemberRole } from "@prisma/client";
+import {
+  Button,
+  Input,
+  Form,
+  Typography,
+  Select,
+} from "@arco-design/web-react";
+import { useState } from "react";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
+const Option = Select.Option;
 
 export const meta: MetaFunction = () => ({
   title: "新建团队 - HITwh OJ",
@@ -32,6 +45,14 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   const form = await request.formData();
   const name = invariant(teamNameScheme, form.get("name"));
   const description = invariant(descriptionScheme, form.get("description"));
+  const invitationType = invariant(
+    teamInvitationScheme,
+    form.get("invitation")
+  );
+  const invitationCode =
+    invitationType === InvitationType.CODE
+      ? invariant(teanInvitationCodeScheme, form.get("code"))
+      : "";
 
   if (!name) {
     throw new Response("team name is missing", { status: 400 });
@@ -41,7 +62,8 @@ export const action: ActionFunction<Response> = async ({ request }) => {
     data: {
       name: name,
       description: description,
-      createdAt: new Date(Date.now()),
+      invitationType: invitationType,
+      invitationCode: invitationCode,
       members: {
         create: [
           {
@@ -59,6 +81,22 @@ export const action: ActionFunction<Response> = async ({ request }) => {
 export default function NewTeam() {
   const fetcher = useFetcher();
   const isCreating = fetcher.state !== "idle";
+  const [invitationType, setInvitationType] = useState<InvitationType>(
+    InvitationType.FREE
+  );
+
+  const invitationType2Description = {
+    [InvitationType.FREE]: "所有人均可加入",
+    [InvitationType.CODE]: "需要填写邀请码",
+    [InvitationType.NONE]: "禁止任何人加入",
+  };
+  const description2InvitationType: {
+    [description: string]: InvitationType;
+  } = {
+    所有人均可加入: InvitationType.FREE,
+    需要填写邀请码: InvitationType.CODE,
+    禁止任何人加入: InvitationType.NONE,
+  };
 
   return (
     <Typography>
@@ -79,6 +117,31 @@ export default function NewTeam() {
             placeholder="介绍信息"
           />
         </FormItem>
+        <FormItem label="邀请制" required layout="vertical">
+          <input
+            type="hidden"
+            name="invitation"
+            value={invitationType}
+            required
+          />
+          <Select
+            value={invitationType2Description[invitationType]}
+            onChange={(value: string) =>
+              setInvitationType(description2InvitationType[value])
+            }
+            style={{ width: 150 }}
+            disabled={isCreating}
+          >
+            {Object.values(InvitationType).map((type) => (
+              <Option key={type} value={invitationType2Description[type]} />
+            ))}
+          </Select>
+        </FormItem>
+        {invitationType === InvitationType.CODE && (
+          <FormItem label="邀请码" required layout="vertical">
+            <Input name="code" defaultValue="" disabled={isCreating} />
+          </FormItem>
+        )}
         <FormItem>
           <Button type="primary" htmlType="submit" loading={isCreating}>
             创建团队
