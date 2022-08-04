@@ -1,4 +1,4 @@
-import { Button, Select, Typography } from "@arco-design/web-react";
+import { Button, Select, Space, Typography } from "@arco-design/web-react";
 import {
   IconCheck,
   IconClose,
@@ -145,6 +145,8 @@ export default function UserManage() {
               />
               <Button
                 icon={isUserBanned ? <IconClose /> : <IconThumbDown />}
+                type="primary"
+                status="danger"
                 htmlType="submit"
                 name="_action"
                 value={ActionType.SetPrivilege}
@@ -165,21 +167,25 @@ export default function UserManage() {
           <Typography.Paragraph>
             <Form method="post">
               <input type="hidden" name="role" value={role} />
-              <Select onChange={(value) => setRole(value)} value={role}>
-                <Select.Option value="Root">超级管理员</Select.Option>
-                <Select.Option value="Admin">系统管理员</Select.Option>
-                <Select.Option value="User">普通用户</Select.Option>
-              </Select>
+              <Space>
+                <Select onChange={(value) => setRole(value)} value={role}>
+                  <Select.Option value="Root">超级管理员</Select.Option>
+                  <Select.Option value="Admin">系统管理员</Select.Option>
+                  <Select.Option value="User">普通用户</Select.Option>
+                </Select>
 
-              <Button
-                icon={<IconCheck />}
-                htmlType="submit"
-                name="_action"
-                value={ActionType.SetRole}
-                loading={isUpdating}
-              >
-                确认修改
-              </Button>
+                <Button
+                  icon={<IconCheck />}
+                  type="primary"
+                  status="danger"
+                  htmlType="submit"
+                  name="_action"
+                  value={ActionType.SetRole}
+                  loading={isUpdating}
+                >
+                  确认修改
+                </Button>
+              </Space>
             </Form>
           </Typography.Paragraph>
         </>

@@ -57,7 +57,7 @@ export default function RecordList() {
       <Typography.Title heading={3}>评测记录</Typography.Title>
 
       <Typography.Paragraph>
-        您只能查询到最近的 100 条评测记录。
+        您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。
       </Typography.Paragraph>
 
       <Typography.Paragraph>

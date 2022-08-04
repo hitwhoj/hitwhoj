@@ -31,7 +31,13 @@ const FormItem = ArcoForm.Item;
 type LoaderData = {
   problem: Pick<
     Problem,
-    "id" | "title" | "description" | "timeLimit" | "memoryLimit" | "private"
+    | "id"
+    | "title"
+    | "description"
+    | "timeLimit"
+    | "memoryLimit"
+    | "private"
+    | "allowSubmit"
   > & {
     tags: Pick<ProblemTag, "name">[];
   };
@@ -57,6 +63,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       timeLimit: true,
       memoryLimit: true,
       private: true,
+      allowSubmit: true,
       tags: {
         select: {
           name: true,
@@ -96,10 +103,18 @@ export const action: ActionFunction = async ({ request, params }) => {
       const timeLimit = invariant(limitScheme, form.get("timeLimit"));
       const memoryLimit = invariant(limitScheme, form.get("memoryLimit"));
       const priv = form.get("private") === "true";
+      const submit = form.get("allowSubmit") === "true";
 
       await db.problem.update({
         where: { id: problemId },
-        data: { title, description, timeLimit, memoryLimit, private: priv },
+        data: {
+          title,
+          description,
+          timeLimit,
+          memoryLimit,
+          private: priv,
+          allowSubmit: submit,
+        },
       });
 
       return null;
@@ -142,10 +157,12 @@ export default function ProblemEdit() {
   const { problem } = useLoaderData<LoaderData>();
 
   const [pub, setPub] = useState(!problem.private);
+  const [submit, setSubmit] = useState(problem.allowSubmit);
 
   const { state, type } = useTransition();
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = state === "submitting" || isActionReload;
+
   useEffect(() => {
     if (isActionReload) {
       Message.success("更新成功");
@@ -216,6 +233,16 @@ export default function ProblemEdit() {
               disabled={isUpdating}
             >
               公开题目
+            </Checkbox>
+          </FormItem>
+          <FormItem>
+            <input type="hidden" name="allowSubmit" value={String(submit)} />
+            <Checkbox
+              checked={submit}
+              onChange={(checked) => setSubmit(checked)}
+              disabled={isUpdating}
+            >
+              允许提交
             </Checkbox>
           </FormItem>
           <FormItem layout="vertical">

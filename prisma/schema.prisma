@@ -98,7 +98,7 @@ model Problem {
   description String @default("")
 
   private     Boolean @default(true)
-  allowSubmit Boolean @default(false)
+  allowSubmit Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

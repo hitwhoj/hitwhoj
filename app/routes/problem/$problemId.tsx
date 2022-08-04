@@ -6,7 +6,11 @@ import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Typography, Tag } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
-import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
+import {
+  IconClose,
+  IconEyeInvisible,
+  IconTag,
+} from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -77,6 +81,11 @@ export default function ProblemView() {
             {problem.private && (
               <Tag icon={<IconEyeInvisible />} color="gold">
                 隐藏
+              </Tag>
+            )}
+            {!problem.allowSubmit && (
+              <Tag icon={<IconClose />} color="red">
+                禁止提交
               </Tag>
             )}
             {problem.tags.map((tag) => (

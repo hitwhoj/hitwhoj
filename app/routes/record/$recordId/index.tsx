@@ -1,6 +1,6 @@
-import type { Contest, Problem, Record } from "@prisma/client";
+import type { Record } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
@@ -18,13 +18,18 @@ import {
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { useEffect, useState } from "react";
-import { IconCopy, IconEyeInvisible } from "@arco-design/web-react/icon";
+import { IconCopy } from "@arco-design/web-react/icon";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
 import type { MessageType } from "./events";
 import type { SubtaskResult } from "~/utils/server/judge.types";
+import type { ContestListData } from "~/utils/db/contest";
+import { selectContestListData } from "~/utils/db/contest";
+import type { ProblemListData } from "~/utils/db/problem";
+import { selectProblemListData } from "~/utils/db/problem";
+import { ProblemLink } from "~/src/problem/ProblemLink";
 
 type LoaderData = {
   record: Pick<
@@ -39,19 +44,14 @@ type LoaderData = {
     | "subtasks"
   > & {
     submitter: UserData;
-    problem: Pick<Problem, "id" | "title" | "private">;
-    contest: Pick<
-      Contest,
-      "id" | "title" | "private" | "beginTime" | "endTime"
-    > | null;
+    problem: ProblemListData;
+    contest: ContestListData | null;
   };
   code: string;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const recordId = invariant(idScheme, params.recordId, {
-    status: 404,
-  });
+  const recordId = invariant(idScheme, params.recordId, { status: 404 });
 
   const record = await db.record.findUnique({
     where: { id: recordId },
@@ -64,27 +64,9 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       time: true,
       memory: true,
       subtasks: true,
-      submitter: {
-        select: {
-          ...selectUserData,
-        },
-      },
-      problem: {
-        select: {
-          id: true,
-          title: true,
-          private: true,
-        },
-      },
-      contest: {
-        select: {
-          id: true,
-          title: true,
-          private: true,
-          beginTime: true,
-          endTime: true,
-        },
-      },
+      submitter: { select: selectUserData },
+      problem: { select: selectProblemListData },
+      contest: { select: selectContestListData },
     },
   });
 
@@ -165,14 +147,7 @@ export default function RecordView() {
           },
           {
             label: "题目",
-            value: (
-              <Link to={`/problem/${record.problem.id}`}>
-                <Space>
-                  {record.problem.title}
-                  {record.problem.private && <IconEyeInvisible />}
-                </Space>
-              </Link>
-            ),
+            value: <ProblemLink problem={record.problem} />,
           },
           ...(record.contest
             ? [
@@ -261,6 +236,7 @@ export default function RecordView() {
           />
         </Space>
       </Typography.Title>
+
       <Typography.Paragraph>
         <Highlighter language={record.language} children={code} />
       </Typography.Paragraph>
