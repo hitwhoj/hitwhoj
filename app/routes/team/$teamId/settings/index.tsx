@@ -1,10 +1,16 @@
 import { redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
-import { descriptionScheme, idScheme, teamNameScheme } from "~/utils/scheme";
+import {
+  descriptionScheme,
+  idScheme,
+  teamNameScheme,
+  teamInvitationScheme,
+  teanInvitationCodeScheme,
+} from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
-import { TeamMemberRole } from "@prisma/client";
+import { TeamMemberRole, InvitationType } from "@prisma/client";
 import type { Team } from "@prisma/client";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
@@ -16,13 +22,19 @@ import {
   Form as arcoForm,
   Input,
   Message,
+  Select,
 } from "@arco-design/web-react";
 import { IconCheck } from "@arco-design/web-react/icon";
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
+const Option = Select.Option;
 
 type LoaderData = {
   profile: Pick<Team, "name" | "description">;
+  invitation: {
+    type: InvitationType;
+    code: string | null;
+  };
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
@@ -39,6 +51,10 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     profile: {
       name: team.name,
       description: team.description,
+    },
+    invitation: {
+      type: team.invitationType,
+      code: team.invitationCode,
     },
   };
 };
@@ -123,6 +139,24 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 修改邀请制
     case ActionType.ModifyInvitation: {
+      const invitationType = invariant(
+        teamInvitationScheme,
+        form.get("invitation")
+      );
+      const invitationCode =
+        invitationType === InvitationType.CODE
+          ? invariant(teanInvitationCodeScheme, form.get("code"))
+          : "";
+
+      await db.team.update({
+        where: { id: teamId },
+        data: {
+          invitationType,
+          invitationCode,
+        },
+      });
+
+      return new Response("Team invitation updated", { status: 200 });
     }
   }
 
@@ -177,6 +211,79 @@ function EditProfile({
   );
 }
 
+function EditInvitation({
+  type,
+  code,
+}: {
+  type: InvitationType;
+  code: string | null;
+}) {
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state === "submitting";
+  const [invitationType, setInvitationType] = useState(type);
+
+  if (fetcher.state === "loading") {
+    Message.success("更新邀请信息成功");
+  }
+
+  const invitationType2Description = {
+    [InvitationType.FREE]: "所有人均可加入",
+    [InvitationType.CODE]: "需要填写邀请码",
+    [InvitationType.NONE]: "禁止任何人加入",
+  };
+  const description2InvitationType: {
+    [description: string]: InvitationType;
+  } = {
+    所有人均可加入: InvitationType.FREE,
+    需要填写邀请码: InvitationType.CODE,
+    禁止任何人加入: InvitationType.NONE,
+  };
+
+  return (
+    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
+      <FormItem label="邀请制" required layout="vertical">
+        <input
+          type="hidden"
+          name="invitation"
+          value={invitationType}
+          required
+        />
+        <Select
+          value={invitationType2Description[invitationType]}
+          onChange={(value: string) =>
+            setInvitationType(description2InvitationType[value])
+          }
+          style={{ width: 150 }}
+          disabled={isUpdating}
+        >
+          {Object.values(InvitationType).map((type) => (
+            <Option key={type} value={invitationType2Description[type]} />
+          ))}
+        </Select>
+      </FormItem>
+
+      {invitationType === InvitationType.CODE && (
+        <FormItem label="邀请码" required layout="vertical">
+          <Input name="code" defaultValue={code || ""} disabled={isUpdating} />
+        </FormItem>
+      )}
+
+      <FormItem>
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<IconCheck />}
+          loading={isUpdating}
+          name="_action"
+          value={ActionType.ModifyInvitation}
+        >
+          确认更新
+        </Button>
+      </FormItem>
+    </fetcher.Form>
+  );
+}
+
 function DissolveTeam() {
   const [confirm, setConfirm] = useState(false);
 
@@ -215,7 +322,7 @@ function DissolveTeam() {
 }
 
 export default function TeamSettings() {
-  const { profile } = useLoaderData<LoaderData>();
+  const { profile, invitation } = useLoaderData<LoaderData>();
 
   return (
     <Typography>
@@ -224,7 +331,9 @@ export default function TeamSettings() {
         <EditProfile {...profile} />
       </Typography.Paragraph>
       <Typography.Title heading={4}>邀请设置</Typography.Title>
-      <Typography.Paragraph></Typography.Paragraph>
+      <Typography.Paragraph>
+        <EditInvitation {...invitation} />
+      </Typography.Paragraph>
       <Typography.Title heading={4}>危险区域</Typography.Title>
       <Typography.Paragraph>
         <DissolveTeam />

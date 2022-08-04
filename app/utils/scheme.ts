@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContestSystem } from "@prisma/client";
+import { ContestSystem, InvitationType } from "@prisma/client";
 
 /**
  * 数字 ID，非负整数
@@ -168,7 +168,24 @@ export const replyScheme = z
   .nonempty("Reply must be nonempty")
   .min(5, "Reply must be at least 5 characters");
 
+/**
+ * 团队名称（非空）
+ */
 export const teamNameScheme = z.string().nonempty("TeamName must be nonempty");
+
+/**
+ * 团队邀请制
+ *
+ * @example "FREE"
+ */
+export const teamInvitationScheme = z.nativeEnum(InvitationType);
+
+/**
+ * 团队邀请码（非空）
+ */
+export const teanInvitationCodeScheme = z
+  .string()
+  .nonempty("InvitationCode must be nonempty");
 
 /**
  *
