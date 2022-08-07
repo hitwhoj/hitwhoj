@@ -30,6 +30,13 @@ import { selectContestListData } from "~/utils/db/contest";
 import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import {
+  findRecordContest,
+  findRecordTeam,
+  findRecordUser,
+} from "~/utils/db/record";
 
 type LoaderData = {
   record: Pick<
@@ -50,8 +57,21 @@ type LoaderData = {
   code: string;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
+  const self = await findRequestUser(request);
+  const user = await findRecordUser(recordId);
+  const [allowCode] = await self
+    .team(await findRecordTeam(recordId))
+    .contest(await findRecordContest(recordId))
+    .hasPermission(
+      user === self.userId
+        ? Permissions.PERM_VIEW_RECORD_SELF
+        : Permissions.PERM_VIEW_RECORD
+    );
 
   const record = await db.record.findUnique({
     where: { id: recordId },
@@ -74,12 +94,11 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     throw new Response("Record not found", { status: 404 });
   }
 
-  const code = (await s3.readFile(`/record/${record.id}`)).toString();
+  const code = allowCode
+    ? (await s3.readFile(`/record/${record.id}`)).toString()
+    : "";
 
-  return {
-    record,
-    code,
-  };
+  return { record, code };
 };
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
@@ -161,16 +180,16 @@ export default function RecordView() {
       />
 
       {message && (
-        <>
+        <Typography>
           <Typography.Title heading={4}>输出信息</Typography.Title>
           <Typography.Paragraph>
             <Highlighter language="text" children={message} />
           </Typography.Paragraph>
-        </>
+        </Typography>
       )}
 
       {subtasks.length > 0 && (
-        <>
+        <Typography>
           <Typography.Title heading={4}>测试点结果</Typography.Title>
           <Typography.Paragraph>
             <Collapse
@@ -217,29 +236,33 @@ export default function RecordView() {
               ))}
             </Collapse>
           </Typography.Paragraph>
-        </>
+        </Typography>
       )}
 
-      <Typography.Title heading={4}>
-        <Space>
-          源代码
-          <Button
-            icon={<IconCopy />}
-            iconOnly
-            type="text"
-            onClick={() =>
-              navigator.clipboard.writeText(code).then(
-                () => Message.success("复制成功"),
-                () => Message.error("权限不足")
-              )
-            }
-          />
-        </Space>
-      </Typography.Title>
+      {code && (
+        <Typography>
+          <Typography.Title heading={4}>
+            <Space>
+              源代码
+              <Button
+                icon={<IconCopy />}
+                iconOnly
+                type="text"
+                onClick={() =>
+                  navigator.clipboard.writeText(code).then(
+                    () => Message.success("复制成功"),
+                    () => Message.error("权限不足")
+                  )
+                }
+              />
+            </Space>
+          </Typography.Title>
 
-      <Typography.Paragraph>
-        <Highlighter language={record.language} children={code} />
-      </Typography.Paragraph>
+          <Typography.Paragraph>
+            <Highlighter language={record.language} children={code} />
+          </Typography.Paragraph>
+        </Typography>
+      )}
     </Typography>
   );
 }

@@ -65,6 +65,15 @@ export const Permissions = {
     TeamPermission.Admins.with(UserPermission.Admins)
   ),
 
+  /** 查看任意提交的代码 */
+  PERM_VIEW_RECORD: ContestPermission.Juries.with(
+    TeamPermission.Admins.with(UserPermission.Admins)
+  ),
+  /** 查看自己提交的代码 */
+  PERM_VIEW_RECORD_SELF: ContestPermission.Everyone.with(
+    TeamPermission.Everyone.with(UserPermission.Everyone)
+  ),
+
   /** 团队修改任意成员的角色 */
   PERM_TEAM_EDIT_MEMBER_ROLE: TeamPermission.Owners.with(UserPermission.Admins),
 };
