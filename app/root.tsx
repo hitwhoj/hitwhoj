@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import style from "./styles/global.css";
-import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import { Button, Notification } from "@arco-design/web-react";
-import katexStyle from "katex/dist/katex.css";
 import type { LinksFunction, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
@@ -30,19 +27,16 @@ import { findRequestUser } from "./utils/permission";
 import { selectUserData } from "./utils/db/user";
 import { UserContext } from "./utils/context/user";
 
+import style from "./styles/global.css";
+import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import katexStyle from "katex/dist/katex.css";
+import tailwindStyle from "./styles/app.css";
+
 export const links: LinksFunction = () => [
-  {
-    rel: "stylesheet",
-    href: katexStyle,
-  },
-  {
-    rel: "stylesheet",
-    href: arcoStyle,
-  },
-  {
-    rel: "stylesheet",
-    href: style,
-  },
+  { rel: "stylesheet", href: tailwindStyle },
+  { rel: "stylesheet", href: katexStyle },
+  { rel: "stylesheet", href: arcoStyle },
+  { rel: "stylesheet", href: style },
 ];
 
 export async function loader({ request }: LoaderArgs) {
