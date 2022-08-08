@@ -3,7 +3,7 @@ import type {
   LoaderFunction,
   MetaFunction,
 } from "@remix-run/node";
-import { redirect, Response } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { Button, Empty, Input } from "@arco-design/web-react";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
@@ -140,7 +140,7 @@ export default function ChatIndex() {
   const self = useContext(UserContext);
 
   return (
-    <div className="chat-content-container">
+    <div>
       <header style={{ fontSize: "1.5em" }}>
         用户：{target.nickname || target.username}
       </header>
