@@ -4,8 +4,8 @@ import {
   IconClose,
   IconThumbDown,
 } from "@arco-design/web-react/icon";
-import type { User } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useState } from "react";
 import { invariant } from "~/utils/invariant";
@@ -15,16 +15,7 @@ import { Privileges } from "~/utils/permission/privilege";
 import { idScheme, privilegeScheme, roleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
-type LoaderData = {
-  user: Pick<User, "id" | "role" | "privilege">;
-  hasEditPrivPerm: boolean;
-  hasEditRolePerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -52,15 +43,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
     Permissions.PERM_EDIT_USER_ROLE
   );
 
-  return { user, hasEditPrivPerm, hasEditRolePerm };
-};
+  return json({ user, hasEditPrivPerm, hasEditRolePerm });
+}
 
 enum ActionType {
   SetRole = "setRole",
   SetPrivilege = "setPrivilege",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
 
   const self = await findRequestUser(request);
@@ -90,7 +81,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         });
       });
 
-      return null;
+      return;
     }
 
     case ActionType.SetPrivilege: {
@@ -113,16 +104,16 @@ export const action: ActionFunction = async ({ request, params }) => {
         });
       });
 
-      return null;
+      return;
     }
   }
 
   throw new Response("Invalid action", { status: 400 });
-};
+}
 
 export default function UserManage() {
   const { user, hasEditPrivPerm, hasEditRolePerm } =
-    useLoaderData<LoaderData>();
+    useLoaderData<typeof loader>();
   const { state } = useTransition();
   const isUpdating = state !== "idle";
 

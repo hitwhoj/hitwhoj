@@ -6,8 +6,8 @@ import {
 } from "@prisma/client";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
-import { File } from "@remix-run/node/fetch";
 import { passwordHash } from "~/utils/tools";
+import { File } from "@remix-run/node/dist/fetch";
 
 const prisma = new PrismaClient();
 

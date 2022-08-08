@@ -1,5 +1,5 @@
-import type { Record } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
@@ -21,13 +21,10 @@ import { useEffect, useState } from "react";
 import { IconCopy } from "@arco-design/web-react/icon";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
-import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
 import type { MessageType } from "./events";
 import type { SubtaskResult } from "~/utils/server/judge.types";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
@@ -38,29 +35,7 @@ import {
   findRecordUser,
 } from "~/utils/db/record";
 
-type LoaderData = {
-  record: Pick<
-    Record,
-    | "id"
-    | "status"
-    | "message"
-    | "language"
-    | "score"
-    | "time"
-    | "memory"
-    | "subtasks"
-  > & {
-    submitter: UserData;
-    problem: ProblemListData;
-    contest: ContestListData | null;
-  };
-  code: string;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
   const self = await findRequestUser(request);
   const user = await findRecordUser(recordId);
@@ -98,10 +73,10 @@ export const loader: LoaderFunction<LoaderData> = async ({
     ? (await s3.readFile(`/record/${record.id}`)).toString()
     : "";
 
-  return { record, code };
-};
+  return json({ record, code });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `提交记录: ${data?.record.status} - HITwh OJ`,
 });
 
@@ -121,7 +96,7 @@ function getExpandedKeys(subtasks: SubtaskResult[]) {
 }
 
 export default function RecordView() {
-  const { record, code } = useLoaderData<LoaderData>();
+  const { record, code } = useLoaderData<typeof loader>();
 
   const [time, setTime] = useState(record.time);
   const [memory, setMemory] = useState(record.memory);

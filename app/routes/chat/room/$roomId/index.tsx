@@ -1,10 +1,6 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import type { ChatRoom } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
@@ -12,29 +8,14 @@ import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Button, Input } from "@arco-design/web-react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import type { ChatMessageWithUser } from "~/utils/serverEvents";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { UserContext } from "~/utils/context/user";
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: `聊天室: ${data?.room.name} - HITwh OJ`,
-});
-
-type LoaderData = {
-  room: Pick<ChatRoom, "id" | "name"> & {
-    chatMessage: ChatMessageWithUser[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const roomId = invariant(idScheme, params.roomId, {
-    status: 404,
-  });
+export async function loader({ request, params }: LoaderArgs) {
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
   const self = await findRequestUser(request);
   if (!self.userId) {
@@ -85,26 +66,28 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Room not found", { status: 404 });
   }
 
-  return { self, room };
-};
+  return json({ room });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `聊天室: ${data?.room.name} - HITwh OJ`,
+});
 
 export default function ChatRoomIndex() {
-  const { room } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<ChatMessageWithUser[]>(
-    room.chatMessage
-  );
+  const { room } = useLoaderData<typeof loader>();
+  const [messages, setMessages] = useState(room.chatMessage);
 
   useEffect(() => {
     setMessages(room.chatMessage);
   }, [room.chatMessage]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${room.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
+    const subscription = fromEventSource<MessageType>(
+      `./${room.id}/events`
+    ).subscribe((message) => {
       setMessages((prev) => [...prev, message]);
     });
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [room.id]);
 
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -215,7 +198,7 @@ export default function ChatRoomIndex() {
   );
 }
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
     throw redirect("/login");
@@ -262,9 +245,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   // 推送新的消息
   chatMessageSubject.next(message);
-
-  return null;
-};
+}
 
 export { CatchBoundary } from "~/src/CatchBoundary";
 export { ErrorBoundary } from "~/src/ErrorBoundary";

@@ -1,8 +1,4 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form as RemixForm, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -15,15 +11,13 @@ import { Permissions } from "~/utils/permission/permission";
 
 const FormItem = Form.Item;
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
+}
 
-  return null;
-};
-
-export const action: ActionFunction<Response> = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
@@ -36,7 +30,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/problemset/${problemSetId}/edit`);
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "创建题单 - HITwh OJ",

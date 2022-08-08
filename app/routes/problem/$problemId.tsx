@@ -1,5 +1,5 @@
-import type { Problem, ProblemTag } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -16,20 +16,7 @@ import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 
-type LoaderData = {
-  problem: Pick<
-    Problem,
-    "id" | "title" | "description" | "private" | "allowSubmit"
-  > & {
-    tags: Pick<ProblemTag, "name">[];
-  };
-  hasEditPerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   const team = self.team(await findProblemTeam(problemId));
@@ -60,16 +47,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return { problem, hasEditPerm };
-};
+  return json({ problem, hasEditPerm });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `题目: ${data?.problem.title} - HITwh OJ`,
   description: data?.problem.description,
 });
 
 export default function ProblemView() {
-  const { problem, hasEditPerm } = useLoaderData<LoaderData>();
+  const { problem, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

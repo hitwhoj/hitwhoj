@@ -1,5 +1,5 @@
-import type { Contest } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -13,21 +13,7 @@ import {
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  user: {
-    participatedContests: { contest: Pick<Contest, "id" | "title"> }[];
-    _count: {
-      createdRecords: number;
-      createdComments: number;
-      createdReplies: number;
-    };
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPermission(
@@ -63,11 +49,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
-};
+  return json({ user });
+}
 
 export default function UserStatistics() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

@@ -13,12 +13,8 @@ import {
   Link as ArcoLink,
 } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { Contest, File, Problem, Record } from "@prisma/client";
-import type {
-  ActionFunction,
-  LinksFunction,
-  LoaderFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LinksFunction, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -60,21 +56,7 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
 ];
 
-type LoaderData = {
-  problem: Pick<
-    Problem,
-    "id" | "title" | "description" | "timeLimit" | "memoryLimit"
-  > & {
-    files: Pick<File, "id" | "filename">[];
-  };
-  records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
-  contest: Pick<Contest, "id" | "beginTime" | "endTime">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
@@ -149,21 +131,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
       })
     : [];
 
-  return {
+  return json({
     records,
     problem: problem.problem,
     contest: problem.contest,
-  };
-};
+  });
+}
 
-type ActionData = {
-  recordId: number;
-};
-
-export const action: ActionFunction<ActionData> = async ({
-  request,
-  params,
-}) => {
+export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
@@ -201,15 +176,19 @@ export const action: ActionFunction<ActionData> = async ({
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
   judge.push(recordId);
 
-  return { recordId };
-};
+  return json({ recordId });
+}
 
 // override monaco loader
 monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
 
 export default function ContestProblemView() {
-  const { problem, records: _records, contest } = useLoaderData<LoaderData>();
-  const actionData = useActionData<ActionData>();
+  const {
+    problem,
+    records: _records,
+    contest,
+  } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
 

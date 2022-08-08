@@ -1,11 +1,7 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { redirect, Response } from "@remix-run/node";
 import { Button, Empty, Input } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -13,31 +9,23 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState, useRef, useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
-import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import { privateMessageSubject } from "~/utils/serverEvents";
 import { findRequestUser } from "~/utils/permission";
 import { selectUserData } from "~/utils/db/user";
 import { UserContext } from "~/utils/context/user";
+import { fromEventSource } from "~/utils/eventSource";
 
-type LoaderData = {
-  target: Pick<User, "username" | "nickname" | "id">;
-  msgs: PrivateMessageWithUser[];
-};
-
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const userId = invariant(idScheme, params.userId, { status: 404 });
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
-    throw redirect("/login");
+    throw new Response("Unauthorized", { status: 401 });
   }
 
+  const userId = invariant(idScheme, params.userId, { status: 404 });
   const target = await db.user.findUnique({
     where: { id: userId },
     select: { nickname: true, username: true, id: true },
@@ -63,10 +51,10 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
   });
 
-  return { target, msgs };
-};
+  return json({ target, msgs });
+}
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
     throw redirect("/login");
@@ -83,46 +71,30 @@ export const action: ActionFunction = async ({ request }) => {
       content: content,
     },
     include: {
-      from: {
-        select: {
-          id: true,
-          username: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
-      to: {
-        select: {
-          id: true,
-          username: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
+      from: { select: selectUserData },
+      to: { select: selectUserData },
     },
   });
 
   privateMessageSubject.next(message);
-
-  return null;
-};
+}
 
 export default function ChatIndex() {
-  const { target, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<PrivateMessageWithUser[]>(msgs);
+  const { target, msgs } = useLoaderData<typeof loader>();
+  const [messages, setMessages] = useState(msgs);
 
   useEffect(() => {
     setMessages(msgs);
   }, [msgs]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${target.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
+    const subscription = fromEventSource<MessageType>(
+      `./${target.id}/events`
+    ).subscribe((message) => {
       setMessages((messages) => [...messages, message]);
     });
 
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);

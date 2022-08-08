@@ -1,5 +1,4 @@
-import type { Comment, Reply, User, Report } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, Form, Link } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme, replyContentScheme } from "~/utils/scheme";
@@ -27,11 +26,12 @@ import { Markdown } from "~/src/Markdown";
 import { Like } from "~/src/comment/Like";
 import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
-import type { ActionFunction } from "@remix-run/node";
+import type { ActionFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { useState } from "react";
 import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
+import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -197,34 +197,8 @@ export const action: ActionFunction = async ({ request, params }) => {
   return null;
 };
 
-type LoaderData = {
-  comment: Comment & {
-    creator: Pick<User, "id" | "nickname" | "avatar">;
-    heartees: Pick<User, "id">[];
-    reports: Pick<Report, "creatorId">[];
-    replies: (Reply & {
-      creator: Pick<User, "id" | "nickname" | "avatar">;
-      subReplies: (Reply & {
-        replyTo:
-          | (Pick<Reply, "content"> & {
-              creator: Pick<User, "id" | "nickname">;
-            })
-          | null;
-      })[];
-      heartees: Pick<User, "id">[];
-      reports: Pick<Report, "creatorId">[];
-    })[];
-  };
-  self: number;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  params,
-  request,
-}) => {
-  const commentId = invariant(idScheme, params.commentId, {
-    status: 404,
-  });
+export async function loader({ params, request }: LoaderArgs) {
+  const commentId = invariant(idScheme, params.commentId, { status: 404 });
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
@@ -295,10 +269,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
   // 过滤二级回复
   comment.replies = comment.replies.filter((reply) => reply.domId === null);
 
-  return { comment, self: self.userId ?? -1 };
-};
+  return json({ comment, self: self.userId ?? -1 });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+type LoaderData = UseDataFunctionReturn<typeof loader>;
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,
 });
 

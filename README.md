@@ -12,4 +12,4 @@ TODO
 
 详情请查看[帮助/文档][docs]。
 
-[docs]: https://hitwh.moe/docs
+[docs]: ./docs/index.md

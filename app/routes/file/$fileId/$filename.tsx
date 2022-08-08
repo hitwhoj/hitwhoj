@@ -1,8 +1,8 @@
-import type { LoaderFunction } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { s3 } from "~/utils/server/s3.server";
 import { uuidScheme } from "~/utils/scheme";
+import type { LoaderArgs } from "@remix-run/node";
 
 const WHITELIST = [
   // 所有视频
@@ -57,10 +57,8 @@ function parseRange(range: string, filesize: number): [number, number] | false {
   return [start, end];
 }
 
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
-  const fileId = invariant(uuidScheme, params.fileId, {
-    status: 404,
-  });
+export async function loader({ request, params }: LoaderArgs) {
+  const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
 
   const file = await db.file.findUnique({
     where: { id: fileId },
@@ -101,10 +99,7 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
 
     return new Response(
       await s3.readFilePartial(filepath, start, end - start + 1),
-      {
-        status: 206,
-        headers,
-      }
+      { status: 206, headers }
     );
   }
 
@@ -114,9 +109,6 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
     headers.set("Cache-Control", "public, max-age=31536000");
     headers.set("Content-Disposition", "inline");
 
-    return new Response(await s3.readFile(filepath), {
-      status: 200,
-      headers,
-    });
+    return new Response(await s3.readFile(filepath), { headers });
   }
-};
+}

@@ -1,5 +1,5 @@
-import type { ProblemSet } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -10,18 +10,7 @@ import { TableList } from "~/src/TableList";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
-    _count: {
-      problems: number;
-    };
-  })[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
   const self = await findRequestUser(request);
   const [viewAll, viewPublic] = await self
@@ -54,8 +43,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set Tag not found", { status: 404 });
   }
 
-  return { problemSets };
-};
+  return json({ problemSets });
+}
 
 export const meta: MetaFunction = ({ params }) => ({
   title: `题单标签: ${params.tag} - HITwh OJ`,
@@ -63,7 +52,7 @@ export const meta: MetaFunction = ({ params }) => ({
 
 export default function ProblemSetTag() {
   const { tag } = useParams();
-  const { problemSets } = useLoaderData<LoaderData>();
+  const { problemSets } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

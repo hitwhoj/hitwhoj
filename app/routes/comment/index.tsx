@@ -1,15 +1,5 @@
-import type {
-  Comment,
-  User,
-  Reply,
-  CommentTag as CommentTagType,
-  Report,
-} from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { Table, Grid, Button, Space, Typography } from "@arco-design/web-react";
@@ -31,6 +21,9 @@ import { ReportType } from "@prisma/client";
 import { CommentTag } from "~/src/comment/CommentTag";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
+import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
+import { useContext } from "react";
+import { UserContext } from "~/utils/context/user";
 
 enum ActionType {
   None = "none",
@@ -38,7 +31,7 @@ enum ActionType {
   UnHeart = "unheart",
 }
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
 
   if (!self.userId) {
@@ -50,7 +43,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   switch (_action) {
     case ActionType.None: {
-      return null;
+      return;
     }
     case ActionType.Heart: {
       const id = invariant(idScheme, form.get("id"));
@@ -64,7 +57,7 @@ export const action: ActionFunction = async ({ request }) => {
           },
         },
       });
-      return null;
+      return;
     }
     case ActionType.UnHeart: {
       const id = invariant(idScheme, form.get("id"));
@@ -78,24 +71,14 @@ export const action: ActionFunction = async ({ request }) => {
           },
         },
       });
-      return null;
+      return;
     }
   }
-  return null;
-};
 
-type LoaderData = {
-  comments: (Pick<Comment, "id" | "title" | "createdAt" | "updatedAt"> & {
-    creator: Pick<User, "id" | "nickname">;
-    tags: Pick<CommentTagType, "id" | "name">[];
-    heartees: Pick<User, "id" | "nickname">[];
-    replies: Pick<Reply, "id" | "creatorId">[];
-    reports: Pick<Report, "creatorId">[];
-  })[];
-  self: number;
-};
+  return;
+}
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader(_: LoaderArgs) {
   const comments = await db.comment.findMany({
     orderBy: {
       updatedAt: "desc",
@@ -133,20 +116,20 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
       },
     },
   });
-  const self = await findRequestUser(request);
-  return { comments, self: self.userId ?? -1 };
-};
+
+  return json({ comments });
+}
 
 export const meta: MetaFunction = () => ({
   title: "讨论列表 - HITwh OJ",
 });
 
+type LoaderData = UseDataFunctionReturn<typeof loader>;
+
 export function CommentList({
   comments,
-  self,
 }: {
   comments: LoaderData["comments"];
-  self: LoaderData["self"];
 }) {
   const likeStyles = {
     fontSize: "1rem",
@@ -154,6 +137,9 @@ export function CommentList({
     padding: "0 0.3rem",
   };
   type CommentDetails = typeof comments[number];
+
+  const self = useContext(UserContext);
+
   const tableColumns = [
     {
       title: "Title",
@@ -184,7 +170,7 @@ export function CommentList({
           <Like
             props={{
               id: comment.id,
-              like: comment.heartees.map((u) => u.id).includes(self),
+              like: comment.heartees.map((u) => u.id).includes(self ?? -1),
               count: comment.heartees.length,
               likeAction: ActionType.Heart,
               dislikeAction: ActionType.UnHeart,
@@ -197,7 +183,9 @@ export function CommentList({
             <Like
               props={{
                 id: comment.id,
-                like: comment.replies.map((u) => u.creatorId).includes(self),
+                like: comment.replies
+                  .map((u) => u.creatorId)
+                  .includes(self ?? -1),
                 count: comment.replies.length,
                 likeAction: ActionType.None,
                 dislikeAction: ActionType.None,
@@ -211,7 +199,9 @@ export function CommentList({
             <Like
               props={{
                 id: comment.id,
-                like: comment.reports.map((r) => r.creatorId).includes(self),
+                like: comment.reports
+                  .map((r) => r.creatorId)
+                  .includes(self ?? -1),
                 count: comment.reports.length,
                 likeAction: ActionType.None,
                 dislikeAction: ActionType.None,
@@ -260,7 +250,7 @@ export function CommentList({
 }
 
 export default function CommentListIndex() {
-  const { comments, self } = useLoaderData<LoaderData>();
+  const { comments } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -279,7 +269,7 @@ export default function CommentListIndex() {
         </Grid.Row>
       </Typography.Title>
       <Typography.Paragraph>
-        <CommentList comments={comments} self={self} />
+        <CommentList comments={comments} />
       </Typography.Paragraph>
     </Typography>
   );

@@ -1,34 +1,19 @@
-import { Button, Typography } from "@arco-design/web-react";
-import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import type { File as UserFile, User } from "@prisma/client";
-import { useEffect, useRef } from "react";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import { Typography } from "@arco-design/web-react";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { TableList } from "~/src/TableList";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
+import { FileUploader } from "~/src/file/FileUploader";
+import { FileList } from "~/src/file/FileList";
 
-type LoaderData = {
-  user: Pick<User, "nickname" | "username"> & {
-    createdFiles: UserFile[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
 
   const self = await findRequestUser(request);
@@ -55,9 +40,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
   }
 
   return { user };
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `用户文件: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
@@ -66,7 +51,7 @@ enum ActionType {
   RemoveFile = "removeFile",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -91,7 +76,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
       await Promise.all(files.map((file) => createUserFile(file, userId)));
 
-      return null;
+      return;
     }
 
     case ActionType.RemoveFile: {
@@ -109,113 +94,17 @@ export const action: ActionFunction = async ({ request, params }) => {
 
       await removeFile(fid);
 
-      return null;
+      return;
     }
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
-
-function UserFileUploader() {
-  const fetcher = useFetcher();
-  const isUploading = fetcher.state === "submitting";
-  const formRef = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!isUploading) {
-      formRef.current?.reset();
-    }
-  }, [isUploading]);
-
-  return (
-    <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
-      <input
-        type="file"
-        name="file"
-        multiple
-        hidden
-        ref={inputRef}
-        onInput={() => fetcher.submit(formRef.current)}
-      />
-      <input type="hidden" name="_action" value={ActionType.UploadFile} />
-      <Button
-        type="primary"
-        icon={<IconUpload />}
-        onClick={() => inputRef.current?.click()}
-        loading={isUploading}
-      >
-        上传文件捏
-      </Button>
-    </fetcher.Form>
-  );
-}
-
-function UserFileRemoveButton({ file }: { file: UserFile }) {
-  const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
-
-  return (
-    <fetcher.Form method="post">
-      <input type="hidden" name="fid" value={file.id} />
-      <Button
-        type="primary"
-        status="danger"
-        htmlType="submit"
-        name="_action"
-        size="mini"
-        value={ActionType.RemoveFile}
-        loading={isDeleting}
-        icon={<IconDelete />}
-      />
-    </fetcher.Form>
-  );
-}
-
-function UserFileList({ files }: { files: UserFile[] }) {
-  return (
-    <TableList
-      data={files}
-      columns={[
-        {
-          title: "文件名",
-          render: ({ id, filename }) => (
-            <Link to={`/file/${id}`} target="_blank">
-              {filename}
-            </Link>
-          ),
-          sorter: (a, b) =>
-            a.filename > b.filename ? 1 : a.filename < b.filename ? -1 : 0,
-        },
-        {
-          title: "文件类型",
-          render: ({ mimetype }) => mimetype,
-          align: "center",
-          minimize: true,
-        },
-        {
-          title: "文件大小",
-          render: ({ filesize }) => `${filesize} bytes`,
-          align: "center",
-          minimize: true,
-          sorter: (a, b) =>
-            a.filesize > b.filesize ? 1 : a.filesize < b.filesize ? -1 : 0,
-        },
-        {
-          title: "操作",
-          render: (file) => <UserFileRemoveButton file={file} />,
-          align: "center",
-          minimize: true,
-        },
-      ]}
-    />
-  );
 }
 
 export default function UserFilePage() {
   const {
     user: { createdFiles: files },
-  } = useLoaderData<LoaderData>();
+  } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -224,10 +113,10 @@ export default function UserFilePage() {
         上传即代表同意我们的用户手册（虽然没有这个东西）
       </Typography.Paragraph>
       <Typography.Paragraph>
-        <UserFileUploader />
+        <FileUploader uploadAction={ActionType.UploadFile} />
       </Typography.Paragraph>
       <Typography.Paragraph>
-        <UserFileList files={files} />
+        <FileList files={files} deleteAction={ActionType.RemoveFile} />
       </Typography.Paragraph>
     </Typography>
   );

@@ -1,8 +1,5 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -11,7 +8,6 @@ import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
-import type { Problem } from "@prisma/client";
 import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -20,14 +16,7 @@ import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 
 const TextArea = Input.TextArea;
 
-type LoaderData = {
-  problem: Pick<Problem, "title">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -52,14 +41,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not allow submit", { status: 403 });
   }
 
-  return { problem };
-};
+  return json({ problem });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `提交题目: ${data?.problem.title} - HITwh OJ`,
 });
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -101,7 +90,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   judge.push(recordId);
 
   return redirect(`/record/${recordId}`);
-};
+}
 
 export default function ProblemSubmit() {
   const [language, setLanguage] = useState("");

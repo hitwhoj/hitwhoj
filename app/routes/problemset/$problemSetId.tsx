@@ -1,5 +1,5 @@
-import type { ProblemSet, ProblemSetTag } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -15,16 +15,7 @@ import {
   findProblemSetTeam,
 } from "~/utils/db/problemset";
 
-type LoaderData = {
-  problemSet: Pick<ProblemSet, "title" | "description" | "private"> & {
-    tags: Pick<ProblemSetTag, "name">[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
@@ -51,16 +42,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return { problemSet };
-};
+  return json({ problemSet });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `题单: ${data?.problemSet.title} - HITwh OJ`,
   description: data?.problemSet.description,
 });
 
 export default function Problemset() {
-  const { problemSet } = useLoaderData<LoaderData>();
+  const { problemSet } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

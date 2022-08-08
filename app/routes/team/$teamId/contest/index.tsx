@@ -1,9 +1,9 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 import { Button, Grid, Typography } from "@arco-design/web-react";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { db } from "~/utils/server/db.server";
@@ -12,16 +12,8 @@ import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
 
-type LoaderData = {
-  contests: ContestListData[];
-};
-
-export const meta: MetaFunction<LoaderData> = () => ({
-  title: `团队比赛列表 - HITwh OJ`,
-});
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme, params.teamId);
+export async function loader({ params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
 
   const contests = await db.contest.findMany({
     where: { team: { id: teamId } },
@@ -31,11 +23,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     },
   });
 
-  return { contests };
-};
+  return json({ contests });
+}
+
+export const meta: MetaFunction = () => ({
+  title: `团队比赛列表 - HITwh OJ`,
+});
 
 export default function HomeworkList() {
-  const { contests } = useLoaderData<LoaderData>();
+  const { contests } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

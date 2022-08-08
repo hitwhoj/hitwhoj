@@ -3,7 +3,8 @@ import style from "./styles/global.css";
 import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import { Button, Notification } from "@arco-design/web-react";
 import katexStyle from "katex/dist/katex.css";
-import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import {
   Links,
@@ -26,9 +27,13 @@ import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
 import type { MessageType } from "./routes/chat/events";
 import { findRequestUser } from "./utils/permission";
-import type { UserData } from "./utils/db/user";
 import { selectUserData } from "./utils/db/user";
 import { UserContext } from "./utils/context/user";
+
+import install from "@twind/with-remix";
+import config from "../twind.config";
+
+install(config);
 
 export const links: LinksFunction = () => [
   {
@@ -45,16 +50,11 @@ export const links: LinksFunction = () => [
   },
 ];
 
-type LoaderData = {
-  theme: Theme;
-  user: UserData | null;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
   const self = await findRequestUser(request);
   if (!self.userId) {
-    return { theme, user: null };
+    return json({ theme, user: null });
   }
 
   const user = await db.user.findUnique({
@@ -62,8 +62,8 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     select: selectUserData,
   });
 
-  return { theme, user };
-};
+  return json({ theme, user });
+}
 
 interface DocumentProps {
   children: React.ReactNode;
@@ -95,8 +95,8 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
-  const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const { user, theme: defaultTheme } = useLoaderData<typeof loader>();
+  const [theme, setTheme] = useState<Theme>(defaultTheme as Theme);
   const navigate = useNavigate();
 
   useEffect(() => {

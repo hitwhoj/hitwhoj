@@ -1,6 +1,5 @@
 import { Space, Typography } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -11,19 +10,7 @@ import { AvatarBadge } from "~/src/AvatarBadge";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  user: Pick<
-    User,
-    "nickname" | "username" | "avatar" | "bio" | "id" | "role" | "premium"
-  >;
-  hasEditPerm: boolean;
-  hasAdminPerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPermission(
@@ -62,14 +49,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
     hasEditPerm,
     hasAdminPerm: hasEditPrivPerm || hasEditRolePerm,
   };
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
 export default function UserProfile() {
-  const { user, hasEditPerm, hasAdminPerm } = useLoaderData<LoaderData>();
+  const { user, hasEditPerm, hasAdminPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

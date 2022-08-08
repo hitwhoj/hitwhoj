@@ -1,16 +1,11 @@
-import type {
-  ProblemSet,
-  ProblemSetProblem,
-  ProblemSetTag,
-} from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -21,24 +16,7 @@ import {
   findProblemSetTeam,
 } from "~/utils/db/problemset";
 
-type LoaderData = {
-  problemSet: Pick<ProblemSet, "id" | "title" | "description"> & {
-    tags: ProblemSetTag[];
-    problems: (Pick<ProblemSetProblem, "rank"> & {
-      problem: ProblemListData;
-    })[];
-  };
-};
-
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: `题单: ${data?.problemSet.title} - HITwh OJ`,
-  description: data?.problemSet.description,
-});
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
@@ -76,11 +54,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return { problemSet };
-};
+  return json({ problemSet });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `题单: ${data?.problemSet.title} - HITwh OJ`,
+  description: data?.problemSet.description,
+});
 
 export default function ProblemSetIndex() {
-  const { problemSet } = useLoaderData<LoaderData>();
+  const { problemSet } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

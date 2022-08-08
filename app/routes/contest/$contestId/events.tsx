@@ -1,4 +1,4 @@
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
 import { filter, map } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
@@ -12,8 +12,8 @@ export type MessageType = Pick<
   "id" | "status" | "problemId" | "time" | "score" | "memory"
 >;
 
-// 用户订阅自己在某场比赛中的全部提交更新信息
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+/** 订阅用户自己在某场比赛中的提交，只保留最基础的信息 */
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
 
@@ -40,4 +40,4 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
       }))
     )
   );
-};
+}

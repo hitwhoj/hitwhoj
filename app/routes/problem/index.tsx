@@ -1,7 +1,7 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button, Grid, Typography } from "@arco-design/web-react";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
 import { IconPlus } from "@arco-design/web-react/icon";
@@ -10,17 +10,7 @@ import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
-// TODO: 分页
-type LoaderData = {
-  problems: (ProblemListData & {
-    _count: {
-      relatedRecords: number;
-    };
-  })[];
-  hasCreatePerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   const [viewAll, viewPublic, hasCreatePerm] = await self
     .team(null)
@@ -47,15 +37,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { problems, hasCreatePerm };
-};
+  return json({ problems, hasCreatePerm });
+}
 
 export const meta: MetaFunction = () => ({
   title: "题目列表 - HITwh OJ",
 });
 
 export default function ProblemIndex() {
-  const { problems, hasCreatePerm } = useLoaderData<LoaderData>();
+  const { problems, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

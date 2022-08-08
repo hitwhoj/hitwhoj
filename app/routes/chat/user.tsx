@@ -1,20 +1,16 @@
 import { Empty, Layout, List } from "@arco-design/web-react";
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { UserContext } from "~/utils/context/user";
+import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
-import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
 
-type LoaderData = {
-  messages: PrivateMessageWithUser[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
     throw redirect("/login");
@@ -36,11 +32,11 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { self, messages };
-};
+  return { messages };
+}
 
 export default function UserChatIndex() {
-  const { messages } = useLoaderData<LoaderData>();
+  const { messages } = useLoaderData<typeof loader>();
   const self = useContext(UserContext);
 
   const [msgs, setMsgs] = useState(messages);
@@ -61,11 +57,12 @@ export default function UserChatIndex() {
 
   useEffect(() => {
     if (self) {
-      const eventSource = new EventSource("/chat/events");
-      eventSource.addEventListener("message", (event) => {
-        const message: MessageType = JSON.parse(event.data);
+      const subscription = fromEventSource<MessageType>(
+        "/chat/events"
+      ).subscribe((message) => {
         setMsgs((msgs) => [message, ...msgs]);
       });
+      return () => subscription.unsubscribe();
     }
   }, [self]);
 

@@ -1,10 +1,6 @@
-import type { Contest, ContestTag } from "@prisma/client";
 import { ContestSystem } from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -32,7 +28,6 @@ import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -44,30 +39,7 @@ const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-type LoaderData = {
-  contest: Pick<
-    Contest,
-    | "id"
-    | "title"
-    | "description"
-    | "beginTime"
-    | "endTime"
-    | "system"
-    | "private"
-    | "allowPublicRegistration"
-    | "allowAfterRegistration"
-  > & {
-    tags: Pick<ContestTag, "name">[];
-    problems: {
-      problem: ProblemListData;
-    }[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -106,8 +78,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest };
-};
+  return json({ contest });
+}
 
 enum ActionType {
   CreateTag = "CreateTag",
@@ -119,7 +91,7 @@ enum ActionType {
   MoveProblemDown = "MoveProblemDown",
 }
 
-export const action: ActionFunction = async ({ params, request }) => {
+export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -153,7 +125,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         });
       });
 
-      return null;
+      return;
     }
 
     // 删除题目
@@ -176,7 +148,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         });
       });
 
-      return null;
+      return;
     }
 
     // 移动题目
@@ -232,7 +204,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         });
       });
 
-      return null;
+      return;
     }
 
     // 创建标签
@@ -251,7 +223,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return;
     }
 
     // 删除标签
@@ -269,7 +241,7 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return;
     }
 
     // 更新比赛信息
@@ -310,19 +282,19 @@ export const action: ActionFunction = async ({ params, request }) => {
         },
       });
 
-      return null;
+      return;
     }
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑比赛: ${data?.contest.title} - HITwh OJ`,
 });
 
 export default function ContestEdit() {
-  const { contest } = useLoaderData<LoaderData>();
+  const { contest } = useLoaderData<typeof loader>();
 
   const [beginTime, setBeginTime] = useState(
     new Date(contest.beginTime).getTime()

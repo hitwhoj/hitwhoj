@@ -1,24 +1,19 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { teamNameScheme } from "~/utils/scheme";
-import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { Button, Grid, Input, Space, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
-import { TeamLink } from "~/src/team/TeamLink";
 import { TableList } from "~/src/TableList";
+import { TeamLink } from "~/src/team/TeamLink";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
 });
 
-export const action: ActionFunction<Response> = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const form = await request.formData();
   const teamName = invariant(teamNameScheme, form.get("teamName"));
 
@@ -34,13 +29,9 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   }
 
   return redirect(`/team/${team.id}`);
-};
+}
 
-type LoaderData = {
-  teams: Team[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async () => {
+export async function loader(_: LoaderArgs) {
   const teams = await db.team.findMany({
     take: 20,
     orderBy: {
@@ -49,10 +40,10 @@ export const loader: LoaderFunction<LoaderData> = async () => {
   });
 
   return { teams };
-};
+}
 
 export default function TeamList() {
-  const { teams } = useLoaderData<LoaderData>();
+  const { teams } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

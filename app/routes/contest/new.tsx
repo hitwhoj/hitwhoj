@@ -1,8 +1,4 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -34,15 +30,13 @@ const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
+}
 
-  return null;
-};
-
-export const action: ActionFunction<Response> = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
@@ -81,7 +75,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/contest/${contestId}`);
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "创建比赛 - HITwh OJ",

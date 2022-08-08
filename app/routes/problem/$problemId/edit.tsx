@@ -6,8 +6,8 @@ import {
   Checkbox,
   Message,
 } from "@arco-design/web-react";
-import type { Problem, ProblemTag } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
@@ -27,25 +27,7 @@ import { db } from "~/utils/server/db.server";
 
 const FormItem = ArcoForm.Item;
 
-type LoaderData = {
-  problem: Pick<
-    Problem,
-    | "id"
-    | "title"
-    | "description"
-    | "timeLimit"
-    | "memoryLimit"
-    | "private"
-    | "allowSubmit"
-  > & {
-    tags: Pick<ProblemTag, "name">[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -75,8 +57,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("题目未找到", { status: 404 });
   }
 
-  return { problem };
-};
+  return json({ problem });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `编辑题目: ${data?.problem.title} - HITwh OJ`,
+});
 
 enum ActionType {
   CreateTag = "createTag",
@@ -84,7 +70,7 @@ enum ActionType {
   UpdateInformation = "updateInformation",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -116,7 +102,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         },
       });
 
-      return null;
+      return;
     }
 
     case ActionType.CreateTag: {
@@ -134,7 +120,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         },
       });
 
-      return null;
+      return;
     }
 
     case ActionType.DeleteTag: {
@@ -145,15 +131,15 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: { tags: { disconnect: { name } } },
       });
 
-      return null;
+      return;
     }
   }
 
   throw new Response("无效的操作", { status: 400 });
-};
+}
 
 export default function ProblemEdit() {
-  const { problem } = useLoaderData<LoaderData>();
+  const { problem } = useLoaderData<typeof loader>();
 
   const [pub, setPub] = useState(!problem.private);
   const [submit, setSubmit] = useState(problem.allowSubmit);

@@ -1,23 +1,18 @@
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { TableList } from "~/src/TableList";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
 
-type LoaderData = {
-  contests: ContestListData[];
-  hasCreatePerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   const [hasCreatePerm] = await self
     .team(null)
@@ -42,15 +37,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { contests, hasCreatePerm };
-};
+  return json({ contests, hasCreatePerm });
+}
 
 export const meta: MetaFunction = () => ({
   title: "比赛列表 - HITwh OJ",
 });
 
 export default function ContestListIndex() {
-  const { contests, hasCreatePerm } = useLoaderData<LoaderData>();
+  const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

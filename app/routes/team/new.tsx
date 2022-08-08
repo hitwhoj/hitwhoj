@@ -1,8 +1,4 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -14,19 +10,18 @@ import { findRequestUser } from "~/utils/permission";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 
-export const meta: MetaFunction = () => ({
-  title: "新建团队 - HITwh OJ",
-});
-
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
     throw redirect("/login");
   }
-  return null;
-};
+}
 
-export const action: ActionFunction<Response> = async ({ request }) => {
+export const meta: MetaFunction = () => ({
+  title: "新建团队 - HITwh OJ",
+});
+
+export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
 
   const form = await request.formData();
@@ -54,7 +49,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/team/${teamId}`);
-};
+}
 
 export default function NewTeam() {
   const fetcher = useFetcher();

@@ -1,5 +1,5 @@
-import type { ProblemSet } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { Grid, Button, Typography } from "@arco-design/web-react";
@@ -9,16 +9,7 @@ import { TableList } from "~/src/TableList";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
-    _count: {
-      problems: number;
-    };
-  })[];
-  hasEditPerm: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   const [viewAll, viewPublic, hasEditPerm] = await self
     .team(null)
@@ -47,15 +38,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { problemSets, hasEditPerm };
-};
+  return json({ problemSets, hasEditPerm });
+}
 
-export const meta: MetaFunction<LoaderData> = () => ({
+export const meta: MetaFunction = () => ({
   title: "题单列表 - HITwh OJ",
 });
 
 export default function ProblemsetList() {
-  const { problemSets, hasEditPerm } = useLoaderData<LoaderData>();
+  const { problemSets, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

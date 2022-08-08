@@ -1,6 +1,6 @@
 import { Alert, Button, Message, Typography } from "@arco-design/web-react";
 import { ContestParticipantRole } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useTransition } from "@remix-run/react";
 import { useEffect } from "react";
@@ -14,7 +14,7 @@ import { Privileges } from "~/utils/permission/privilege";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -24,11 +24,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       status: 400,
     });
   }
+}
 
-  return null;
-};
-
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
@@ -81,7 +79,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   });
 
   return redirect(`/contest/${contestId}/problem`);
-};
+}
 
 export default function ContestRegisteration() {
   const { state, type } = useTransition();

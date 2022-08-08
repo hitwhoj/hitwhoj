@@ -1,7 +1,7 @@
 import { Button, Typography } from "@arco-design/web-react";
 import { IconCloud } from "@arco-design/web-react/icon";
-import type { ChatRoom } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -9,14 +9,7 @@ import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
-type LoaderData = {
-  room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
@@ -45,11 +38,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw redirect(`/chat/room/${roomId}/enter`);
   }
 
-  return { room: userInChatRoom.room };
-};
+  return json({ room: userInChatRoom.room });
+}
 
 export default function ExitRoom() {
-  const { room } = useLoaderData<LoaderData>();
+  const { room } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -71,7 +64,7 @@ export default function ExitRoom() {
   );
 }
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
@@ -86,7 +79,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
   });
 
   return redirect(`/chat/room/${roomId}`);
-};
+}
 
 export { CatchBoundary } from "~/src/CatchBoundary";
 export { ErrorBoundary } from "~/src/ErrorBoundary";

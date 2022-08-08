@@ -1,7 +1,7 @@
 import { Button, Input, Space, Typography } from "@arco-design/web-react";
 import { IconLock, IconUnlock } from "@arco-design/web-react/icon";
-import type { ChatRoom } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
@@ -9,14 +9,7 @@ import { findRequestUser } from "~/utils/permission";
 import { idScheme, roomPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
-type LoaderData = {
-  room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
@@ -44,11 +37,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw redirect(`/chat/room/${room.id}`);
   }
 
-  return { room };
-};
+  return json({ room });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `加入聊天室: ${data?.room.name} - HITwh OJ`,
+  description: data?.room.description,
+});
 
 export default function EnterRoom() {
-  const { room } = useLoaderData<LoaderData>();
+  const { room } = useLoaderData<typeof loader>();
   const { state } = useTransition();
   const isSubmitting = state !== "idle";
 
@@ -90,7 +88,7 @@ export default function EnterRoom() {
   );
 }
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
@@ -136,7 +134,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 
   // 加入成功，跳转到聊天室
   return redirect(`/chat/room/${roomId}`);
-};
+}
 
 export { CatchBoundary } from "~/src/CatchBoundary";
 export { ErrorBoundary } from "~/src/ErrorBoundary";

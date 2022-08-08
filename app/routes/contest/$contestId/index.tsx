@@ -1,11 +1,6 @@
 import { Button, Descriptions, Typography } from "@arco-design/web-react";
-import type {
-  Contest,
-  ContestParticipantRole,
-  ContestTag,
-  Team,
-} from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -15,7 +10,6 @@ import { formatDateTime } from "~/utils/tools";
 import { TeamLink } from "~/src/team/TeamLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import type { ContestStatus } from "~/utils/db/contest";
 import {
   findContestParticipantRole,
   findContestPrivacy,
@@ -23,29 +17,7 @@ import {
   findContestTeam,
 } from "~/utils/db/contest";
 
-type LoaderData = {
-  contest: Pick<
-    Contest,
-    | "id"
-    | "title"
-    | "description"
-    | "beginTime"
-    | "endTime"
-    | "private"
-    | "allowPublicRegistration"
-    | "allowAfterRegistration"
-  > & {
-    tags: Pick<ContestTag, "name">[];
-    team: Pick<Team, "id" | "name"> | null;
-  };
-  registered: ContestParticipantRole | null;
-  status: ContestStatus;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self
@@ -91,16 +63,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     : null;
   const status = await findContestStatus(contestId);
 
-  return { contest, registered, status };
-};
+  return json({ contest, registered, status });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `比赛: ${data?.contest.title} - HITwh OJ`,
   description: data?.contest.description,
 });
 
 export default function ContestIndex() {
-  const { contest, registered, status } = useLoaderData<LoaderData>();
+  const { contest, registered, status } = useLoaderData<typeof loader>();
 
   const isMod = registered === "Mod";
   const isJury = registered === "Jury";

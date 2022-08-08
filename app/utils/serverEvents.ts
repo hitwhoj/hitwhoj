@@ -10,10 +10,11 @@ import type {
   UserInChatRoom,
 } from "@prisma/client";
 import { Subject } from "rxjs";
+import type { UserData } from "./db/user";
 
 export type PrivateMessageWithUser = PrivateMessage & {
-  from: Pick<User, "id" | "username" | "nickname" | "avatar">;
-  to: Pick<User, "id" | "username" | "nickname" | "avatar">;
+  from: UserData;
+  to: UserData;
 };
 
 export const privateMessageSubject = new Subject<PrivateMessageWithUser>();

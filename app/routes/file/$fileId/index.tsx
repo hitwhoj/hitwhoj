@@ -1,20 +1,14 @@
 import { Button, Image, Typography } from "@arco-design/web-react";
-import type { File } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
 import { IconDownload } from "@arco-design/web-react/icon";
 
-type LoaderData = {
-  file: Pick<File, "id" | "mimetype" | "filename">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const fileId = invariant(uuidScheme, params.fileId, {
-    status: 404,
-  });
+export async function loader({ params }: LoaderArgs) {
+  const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
 
   const file = await db.file.findUnique({
     where: { id: fileId },
@@ -29,15 +23,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     throw new Response("File not found", { status: 404 });
   }
 
-  return { file };
-};
+  return json({ file });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `文件: ${data?.file.filename} - HITwh OJ`,
 });
 
 export default function FileIndex() {
-  const { file } = useLoaderData<LoaderData>();
+  const { file } = useLoaderData<typeof loader>();
 
   const filelink = `/file/${file.id}/${file.filename}`;
 
