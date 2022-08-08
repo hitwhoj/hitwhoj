@@ -30,11 +30,6 @@ import { findRequestUser } from "./utils/permission";
 import { selectUserData } from "./utils/db/user";
 import { UserContext } from "./utils/context/user";
 
-import install from "@twind/with-remix";
-import config from "../twind.config";
-
-install(config);
-
 export const links: LinksFunction = () => [
   {
     rel: "stylesheet",

@@ -30,9 +30,5 @@ module.exports = {
     /^decode-named-character-reference.*/,
     /^fault.*/,
     /^character-entities.*/,
-    "@twind/with-remix",
-    "twind",
-    "@twind/preset-autoprefix",
-    "@twind/preset-tailwind",
   ],
 };

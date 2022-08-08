@@ -1842,28 +1842,6 @@
     lz-string "^1.4.4"
     pretty-format "^27.0.2"
 
-"@twind/preset-autoprefix@^1.0.0-next.38":
-  version "1.0.0-next.38"
-  resolved "https://registry.yarnpkg.com/@twind/preset-autoprefix/-/preset-autoprefix-1.0.0-next.38.tgz#797f4eef9699d897c538b6a76c861462a52e8d13"
-  integrity sha512-Qn6H7A1/L+EZMWQcqvTMc5EFsSiVcwsAKP6vPxBULOR0mLcFZbRnr13huttRqxkCf60Mfrb7AQbBr1Lq0+Ko3Q==
-  dependencies:
-    "@swc/helpers" "^0.3.3"
-    style-vendorizer "^2.1.1"
-
-"@twind/preset-tailwind@^1.0.0-next.38":
-  version "1.0.0-next.38"
-  resolved "https://registry.yarnpkg.com/@twind/preset-tailwind/-/preset-tailwind-1.0.0-next.38.tgz#14d8e5fd29256a7015ce7aea16258404789e3b45"
-  integrity sha512-zo5LDQ/lSaq9tXoh7pWabOeb/QzOW5zHURtcI/jWCrSR3tHgadXNeYg3O1lFljtHOakhFSZ0mmzsNOCbZpRptA==
-  dependencies:
-    "@swc/helpers" "^0.3.3"
-
-"@twind/with-remix@^1.0.0-next.38":
-  version "1.0.0-next.38"
-  resolved "https://registry.yarnpkg.com/@twind/with-remix/-/with-remix-1.0.0-next.38.tgz#b5351d72a03f1eeab24322cb8ad9053f358d38ca"
-  integrity sha512-IHUSgfU7pMiPz9E3uFySNnOt2UTHvpCE6+W7m3J8TImrQlx9XAyKbT2K6+/3D+oeSx8GPqW0JRDBy0yaT0Lw3Q==
-  dependencies:
-    "@swc/helpers" "^0.3.3"
-
 "@types/acorn@^4.0.0":
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/@types/acorn/-/acorn-4.0.6.tgz#d61ca5480300ac41a7d973dd5b84d0a591154a22"
@@ -8521,11 +8499,6 @@ style-to-object@^0.3.0:
   integrity sha512-CzFnRRXhzWIdItT3OmF8SQfWyahHhjq3HwcMNCNLn+N7klOOqPjMeG/4JSu77D7ypZdGvSzvkrbyeTMizz2VrA==
   dependencies:
     inline-style-parser "0.1.1"
-
-style-vendorizer@^2.1.1:
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/style-vendorizer/-/style-vendorizer-2.2.3.tgz#e18098fd981c5884c58ff939475fbba74aaf080c"
-  integrity sha512-/VDRsWvQAgspVy9eATN3z6itKTuyg+jW1q6UoTCQCFRqPDw8bi3E1hXIKnGw5LvXS2AQPuJ7Af4auTLYeBOLEg==
 
 supports-color@^5.3.0:
   version "5.5.0"

@@ -69,12 +69,10 @@ export default function UserChatIndex() {
   useEffect(() => setMsgs(messages), [messages]);
 
   return (
-    <Layout
-      style={{ overflow: "hidden", height: "100%", flexDirection: "row" }}
-    >
+    <Layout className="overflow-hidden h-full flex-row">
       <Layout.Sider
         resizeDirections={["right"]}
-        style={{ minWidth: "20%", maxWidth: "50%" }}
+        className="min-w-[20%] max-w-[50%]"
       >
         <List
           bordered={false}
