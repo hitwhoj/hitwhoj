@@ -14,7 +14,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: data?.title,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const path = params["*"];
   if (!path) {
     throw redirect(`/docs/index.md`);
@@ -45,7 +45,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   } catch (e) {
     throw new Response("读取文件失败", { status: 500 });
   }
-};
+}
 
 export default function DocsPage() {
   const { markdown } = useLoaderData<LoaderData>();

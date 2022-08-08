@@ -12,7 +12,7 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const commentId = invariant(idScheme, params.commentId, {
     status: 404,
   });
@@ -33,7 +33,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   return {
     comment,
   };
-};
+}
 
 export default function CommentView() {
   const { comment } = useLoaderData<LoaderData>();

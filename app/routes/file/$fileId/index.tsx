@@ -11,7 +11,7 @@ type LoaderData = {
   file: Pick<File, "id" | "mimetype" | "filename">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
@@ -30,7 +30,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   }
 
   return { file };
-};
+}
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `文件: ${data?.file.filename} - HITwh OJ`,

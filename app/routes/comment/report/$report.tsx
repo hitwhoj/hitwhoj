@@ -98,7 +98,7 @@ export type LoaderData = {
   reportContent: string;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const report = params.report;
   if (!report) {
     throw new Response("cannot report to a teapot", { status: 400 });
@@ -157,7 +157,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     reportTo,
     reportContent,
   };
-};
+}
 
 export default function Report() {
   const { type, id, reportTo, reportContent } = useLoaderData<LoaderData>();

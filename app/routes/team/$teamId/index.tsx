@@ -23,7 +23,7 @@ export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `团队: ${data?.team.name} - HITwh OJ`,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -48,7 +48,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   }
 
   return { team };
-};
+}
 
 export default function TeamDetail() {
   const { team } = useLoaderData<LoaderData>();

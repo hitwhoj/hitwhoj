@@ -9,7 +9,7 @@ type LoaderData = {
   filename: string;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
@@ -30,7 +30,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   }
 
   return { filename: file.filename };
-};
+}
 
 export default function FileIndex() {
   const { filename } = useLoaderData<LoaderData>();

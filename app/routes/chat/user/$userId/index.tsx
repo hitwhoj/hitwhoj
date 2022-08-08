@@ -1,11 +1,6 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import { ActionFunction, json, LoaderArgs } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
 import { Button, Empty, Input } from "@arco-design/web-react";
-import type { User, PrivateMessage } from "@prisma/client";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
@@ -15,21 +10,16 @@ import { useEffect, useState, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { serverSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { MetaArgs } from "@remix-run/react/dist/routeModules";
+import { fromEventSource } from "~/utils/eventSource";
 
-type LoaderData = {
-  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  target: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  msgs: PrivateMessage[];
-};
+export function meta({ data }: MetaArgs<typeof loader>) {
+  return {
+    title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
+  };
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
-});
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const selfId = await findSessionUid(request);
   if (!selfId) {
     throw redirect("/login");
@@ -42,9 +32,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw redirect("/register");
   }
 
-  const toUserId = invariant(idScheme, params.userId, {
-    status: 404,
-  });
+  const toUserId = invariant(idScheme, params.userId, { status: 404 });
   const target = await db.user.findUnique({
     where: { id: toUserId },
     select: { id: true, nickname: true, avatar: true, username: true },
@@ -66,8 +54,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
   });
 
-  return { self, target, msgs };
-};
+  return json({ self, target, msgs });
+}
 
 export const action: ActionFunction = async ({ request }) => {
   const self = await findSessionUid(request);
@@ -109,26 +97,24 @@ export const action: ActionFunction = async ({ request }) => {
     type: "PrivateMessage",
     message,
   });
-
-  return null;
 };
 
 export default function ChatIndex() {
-  const { self, target, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<PrivateMessage[]>(msgs);
+  const { self, target, msgs } = useLoaderData<typeof loader>();
+  const [messages, setMessages] = useState(msgs);
 
   useEffect(() => {
     setMessages(msgs);
   }, [msgs]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${target.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
+    const subscription = fromEventSource<MessageType>(
+      `./${target.id}/events`
+    ).subscribe((message) => {
       setMessages((messages) => [...messages, message]);
     });
 
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);

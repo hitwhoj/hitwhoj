@@ -19,7 +19,7 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export function loader({ request }: LoaderArgs) {
   const self = await findSessionUserOptional(request);
 
   const problemSets = await db.problemSet.findMany({
@@ -41,7 +41,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   });
 
   return { problemSets };
-};
+}
 
 export const meta: MetaFunction<LoaderData> = () => ({
   title: "题单列表 - HITwh OJ",

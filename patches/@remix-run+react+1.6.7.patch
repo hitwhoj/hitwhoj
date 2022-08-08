@@ -1,0 +1,51 @@
+diff --git a/node_modules/@remix-run/react/dist/components.d.ts b/node_modules/@remix-run/react/dist/components.d.ts
+index 637cfbe..72bb073 100644
+--- a/node_modules/@remix-run/react/dist/components.d.ts
++++ b/node_modules/@remix-run/react/dist/components.d.ts
+@@ -275,7 +275,7 @@ declare type DataFunction = (...args: any[]) => unknown;
+ declare type DataOrFunction = AppData | DataFunction;
+ declare type JsonPrimitives = string | number | boolean | String | Number | Boolean | null;
+ declare type NonJsonPrimitives = undefined | Function | symbol;
+-declare type SerializeType<T> = T extends JsonPrimitives ? T : T extends NonJsonPrimitives ? never : T extends {
++export declare type SerializeType<T> = T extends JsonPrimitives ? T : T extends NonJsonPrimitives ? never : T extends {
+     toJSON(): infer U;
+ } ? U : T extends [] ? [] : T extends [unknown, ...unknown[]] ? {
+     [k in keyof T]: T[k] extends NonJsonPrimitives ? null : SerializeType<T[k]>;
+diff --git a/node_modules/@remix-run/react/dist/esm/transition.js b/node_modules/@remix-run/react/dist/esm/transition.js
+index 9923a7c..32d2396 100644
+--- a/node_modules/@remix-run/react/dist/esm/transition.js
++++ b/node_modules/@remix-run/react/dist/esm/transition.js
+@@ -1162,11 +1162,10 @@ function findNearestBoundary(matchWithError, matches) {
+ function makeLoaderData(state, results, matches) {
+   let newData = {};
+ 
+-  for (let {
+-    match,
+-    value
+-  } of results) {
+-    newData[match.route.id] = value;
++  for (let result of results) {
++    if (!isCatchResult(result) && !isErrorResult(result)) {
++      newData[result.match.route.id] = result.value;
++    }
+   }
+ 
+   let loaderData = {};
+diff --git a/node_modules/@remix-run/react/dist/routeModules.d.ts b/node_modules/@remix-run/react/dist/routeModules.d.ts
+index c84409c..4b13820 100644
+--- a/node_modules/@remix-run/react/dist/routeModules.d.ts
++++ b/node_modules/@remix-run/react/dist/routeModules.d.ts
+@@ -56,6 +56,13 @@ export interface MetaFunction {
+         location: Location;
+     }): HtmlMetaDescriptor | undefined;
+ }
++import { UseDataFunctionReturn } from "@remix-run/react/dist/components";
++export type MetaArgs<T = AppData> = {
++    data?: UseDataFunctionReturn<T> | null;
++    parentsData: RouteData;
++    params: Params;
++    location: Location;
++}
+ /**
+  * A name/content pair used to render `<meta>` tags in a meta function for a
+  * route. The value can be either a string, which will render a single `<meta>`

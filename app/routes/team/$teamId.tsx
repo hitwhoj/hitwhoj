@@ -12,7 +12,7 @@ type LoaderData = {
   team: Pick<Team, "name">;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -24,7 +24,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   }
 
   return { team };
-};
+}
 
 export default function Record() {
   const { team } = useLoaderData<LoaderData>();

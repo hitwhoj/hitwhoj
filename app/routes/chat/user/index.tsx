@@ -1,19 +1,11 @@
 import { Empty } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import { json, LoaderArgs, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { db } from "~/utils/server/db.server";
-import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import { findSessionUid } from "~/utils/sessions";
 
-type LoaderData = {
-  self: Pick<User, "id" | "username" | "nickname" | "avatar">;
-  messages: PrivateMessageWithUser[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const selfId = await findSessionUid(request);
   if (!selfId) {
     throw redirect("/login");
@@ -42,11 +34,11 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { self, messages };
-};
+  return json({ self, messages });
+}
 
 export default function UserChatIndex() {
-  const { self, messages } = useLoaderData<LoaderData>();
+  const { self, messages } = useLoaderData<typeof loader>();
 
   const set = new Set<number>();
   const users = messages

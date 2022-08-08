@@ -57,7 +57,7 @@ function parseRange(range: string, filesize: number): [number, number] | false {
   return [start, end];
 }
 
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+export function loader({ request, params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, {
     status: 404,
   });
@@ -119,4 +119,4 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
       headers,
     });
   }
-};
+}

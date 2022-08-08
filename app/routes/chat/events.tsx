@@ -1,4 +1,4 @@
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
 import { filter, map } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import type {
@@ -13,7 +13,7 @@ export type MessageType = PrivateMessageWithUser;
 /**
  * 订阅用户收到的私信
  */
-export const loader: LoaderFunction<Response> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const self = await findSessionUser(request);
 
   return createEventSource<MessageType>(
@@ -28,4 +28,4 @@ export const loader: LoaderFunction<Response> = async ({ request }) => {
       map(({ message }) => message)
     )
   );
-};
+}

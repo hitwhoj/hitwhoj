@@ -8,7 +8,7 @@ import { serverSubject } from "~/utils/serverEvents";
 
 export type MessageType = RecordUpdateMessage;
 
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+export function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
 
   return createEventSource<MessageType>(
@@ -21,4 +21,4 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
       map(({ message }) => message)
     )
   );
-};
+}

@@ -30,7 +30,7 @@ enum ActionType {
   DeleteMember = "deleteMember",
 }
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
   const result = await db.teamMember.findMany({
     where: { teamId },
@@ -47,7 +47,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   return {
     members: result.map(({ user }) => user),
   };
-};
+}
 
 export const action: ActionFunction = async ({ params, request }) => {
   const teamId = invariant(idScheme, params.teamId);

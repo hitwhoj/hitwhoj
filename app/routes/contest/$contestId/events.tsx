@@ -13,7 +13,7 @@ import { findSessionUser } from "~/utils/sessions";
 export type MessageType = ContestRecordUpdateMessage;
 
 /** 订阅用户自己在某场比赛中的提交 */
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+export function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findSessionUser(request);
 
@@ -33,4 +33,4 @@ export const loader: LoaderFunction<Response> = async ({ request, params }) => {
       map(({ message }) => message)
     )
   );
-};
+}

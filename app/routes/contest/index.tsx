@@ -18,7 +18,7 @@ type LoaderData = {
   contests: ContestListData[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export function loader({ request }: LoaderArgs) {
   const self = await findSessionUserOptional(request);
 
   const contests = await db.contest.findMany({
@@ -34,7 +34,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   });
 
   return { contests };
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "比赛列表 - HITwh OJ",

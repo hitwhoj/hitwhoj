@@ -20,7 +20,7 @@ export const meta: MetaFunction<LoaderData> = () => ({
   title: `团队比赛列表 - HITwh OJ`,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
 
   const contests = await db.contest.findMany({
@@ -32,7 +32,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   });
 
   return { contests };
-};
+}
 
 export default function HomeworkList() {
   const { contests } = useLoaderData<LoaderData>();

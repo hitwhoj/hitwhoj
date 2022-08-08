@@ -48,7 +48,7 @@ type LoaderData = {
   code: string;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export function loader({ params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, {
     status: 404,
   });
@@ -98,7 +98,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     record,
     code,
   };
-};
+}
 
 export const meta: MetaFunction<LoaderData> = ({ data }) => ({
   title: `提交记录: ${data?.record.status} - HITwh OJ`,

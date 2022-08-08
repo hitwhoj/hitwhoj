@@ -1,10 +1,5 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import type { User, ChatRoom } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
@@ -16,25 +11,11 @@ import { UserAvatar } from "~/src/user/UserAvatar";
 import type { ChatMessageWithUser } from "~/utils/serverEvents";
 import { serverSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { MetaArgs } from "@remix-run/react/dist/routeModules";
+import { fromEventSource } from "~/utils/eventSource";
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: `聊天室: ${data?.room.name} - HITwh OJ`,
-});
-
-type LoaderData = {
-  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  room: Pick<ChatRoom, "id" | "name"> & {
-    chatMessage: ChatMessageWithUser[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const roomId = invariant(idScheme, params.roomId, {
-    status: 404,
-  });
+export async function loader({ request, params }: LoaderArgs) {
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
 
   const selfId = await findSessionUid(request);
   if (!selfId) {
@@ -90,26 +71,30 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Room not found", { status: 404 });
   }
 
-  return { self, room };
-};
+  return json({ self, room });
+}
+
+export function meta({ data }: MetaArgs<typeof loader>) {
+  return {
+    title: `聊天室: ${data?.room.name} - HITwh OJ`,
+  };
+}
 
 export default function ChatRoomIndex() {
-  const { self, room } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<ChatMessageWithUser[]>(
-    room.chatMessage
-  );
+  const { self, room } = useLoaderData<typeof loader>();
+  const [messages, setMessages] = useState(room.chatMessage);
 
   useEffect(() => {
     setMessages(room.chatMessage);
   }, [room.chatMessage]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${room.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
+    const subscription = fromEventSource<MessageType>(
+      `./${room.id}/events`
+    ).subscribe((message) => {
       setMessages((prev) => [...prev, message]);
     });
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [room.id]);
 
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -218,7 +203,7 @@ export default function ChatRoomIndex() {
   );
 }
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: ActionArgs) {
   const self = await findSessionUid(request);
   if (!self) {
     throw redirect("/login");
@@ -268,9 +253,7 @@ export const action: ActionFunction = async ({ request }) => {
     type: "ChatMessage",
     message,
   });
-
-  return null;
-};
+}
 
 export { CatchBoundary } from "~/src/CatchBoundary";
 export { ErrorBoundary } from "~/src/ErrorBoundary";

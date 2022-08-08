@@ -97,7 +97,7 @@ type LoaderData = {
   self: number;
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export function loader({ request }: LoaderArgs) {
   const comments = await db.comment.findMany({
     orderBy: {
       updatedAt: "desc",
@@ -143,7 +143,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     };
   }
   return { comments, self };
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "讨论列表 - HITwh OJ",
