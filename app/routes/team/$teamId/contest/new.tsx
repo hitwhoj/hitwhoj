@@ -35,6 +35,8 @@ export async function loader({ request }: LoaderArgs) {
   if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
+
+  return null;
 }
 
 export async function action({ request, params }: ActionArgs) {

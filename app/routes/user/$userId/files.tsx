@@ -1,5 +1,6 @@
 import { Typography } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -39,7 +40,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
+  return json({ user });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -76,7 +77,7 @@ export async function action({ request, params }: ActionArgs) {
 
       await Promise.all(files.map((file) => createUserFile(file, userId)));
 
-      return;
+      return null;
     }
 
     case ActionType.RemoveFile: {
@@ -94,7 +95,7 @@ export async function action({ request, params }: ActionArgs) {
 
       await removeFile(fid);
 
-      return;
+      return null;
     }
   }
 

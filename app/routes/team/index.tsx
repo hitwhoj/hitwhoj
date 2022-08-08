@@ -1,4 +1,5 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -39,7 +40,7 @@ export async function loader(_: LoaderArgs) {
     },
   });
 
-  return { teams };
+  return json({ teams });
 }
 
 export default function TeamList() {

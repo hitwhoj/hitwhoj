@@ -1,4 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
@@ -32,7 +33,7 @@ export async function loader({ params }: LoaderArgs) {
       : "";
     const title = _title ? `帮助: ${_title} - HITwhOJ` : "帮助 - HITwh OJ";
 
-    return { markdown, title };
+    return json({ markdown, title });
   } catch (e) {
     throw new Response("读取文件失败", { status: 500 });
   }

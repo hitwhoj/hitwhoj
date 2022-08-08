@@ -86,7 +86,7 @@ export async function action({ request, params }: ActionArgs) {
         })
       );
 
-      return;
+      return null;
     }
 
     case ActionType.RemoveData:
@@ -96,7 +96,7 @@ export async function action({ request, params }: ActionArgs) {
       // 删除文件
       await removeFile(fid);
 
-      return;
+      return null;
     }
   }
 

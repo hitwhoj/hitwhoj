@@ -15,6 +15,8 @@ export async function loader({ request }: LoaderArgs) {
   if (!self.userId) {
     throw redirect("/login");
   }
+
+  return null;
 }
 
 export const meta: MetaFunction = () => ({

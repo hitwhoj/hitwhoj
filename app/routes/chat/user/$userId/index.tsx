@@ -77,6 +77,8 @@ export async function action({ request }: ActionArgs) {
   });
 
   privateMessageSubject.next(message);
+
+  return null;
 }
 
 export default function ChatIndex() {

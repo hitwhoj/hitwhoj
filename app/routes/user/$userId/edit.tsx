@@ -5,6 +5,7 @@ import {
   Typography,
 } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/server/db.server";
@@ -46,7 +47,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
+  return json({ user });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({

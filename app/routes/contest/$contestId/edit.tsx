@@ -125,7 +125,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     // 删除题目
@@ -148,7 +148,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     // 移动题目
@@ -204,7 +204,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     // 创建标签
@@ -223,7 +223,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     // 删除标签
@@ -241,7 +241,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     // 更新比赛信息
@@ -282,7 +282,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
   }
 

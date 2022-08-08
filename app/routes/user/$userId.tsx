@@ -1,5 +1,6 @@
 import { Space, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -44,11 +45,11 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("User not found", { status: 404 });
   }
 
-  return {
+  return json({
     user,
     hasEditPerm,
     hasAdminPerm: hasEditPrivPerm || hasEditRolePerm,
-  };
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({

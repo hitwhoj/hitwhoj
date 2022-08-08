@@ -245,6 +245,8 @@ export async function action({ request }: ActionArgs) {
 
   // 推送新的消息
   chatMessageSubject.next(message);
+
+  return null;
 }
 
 export { CatchBoundary } from "~/src/CatchBoundary";

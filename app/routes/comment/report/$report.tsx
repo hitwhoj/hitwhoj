@@ -56,7 +56,7 @@ export async function action({ request }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
     case ReportType.R: {
       const lastReport = await db.report.findFirst({
@@ -87,7 +87,7 @@ export async function action({ request }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
   }
 }

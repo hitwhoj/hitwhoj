@@ -43,7 +43,7 @@ export async function action({ request }: ActionArgs) {
 
   switch (_action) {
     case ActionType.None: {
-      return;
+      return null;
     }
     case ActionType.Heart: {
       const id = invariant(idScheme, form.get("id"));
@@ -57,7 +57,7 @@ export async function action({ request }: ActionArgs) {
           },
         },
       });
-      return;
+      return null;
     }
     case ActionType.UnHeart: {
       const id = invariant(idScheme, form.get("id"));
@@ -71,11 +71,11 @@ export async function action({ request }: ActionArgs) {
           },
         },
       });
-      return;
+      return null;
     }
   }
 
-  return;
+  return null;
 }
 
 export async function loader(_: LoaderArgs) {

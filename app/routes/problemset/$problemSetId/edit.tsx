@@ -110,7 +110,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     case ActionType.DeleteProblem: {
@@ -132,7 +132,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     case ActionType.MoveProblemUp:
@@ -203,7 +203,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     case ActionType.CreateTag: {
@@ -221,7 +221,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     case ActionType.DeleteTag: {
@@ -238,7 +238,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     case ActionType.UpdateInformation: {
@@ -255,7 +255,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
   }
 

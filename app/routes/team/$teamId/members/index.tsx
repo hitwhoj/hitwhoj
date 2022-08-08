@@ -43,9 +43,7 @@ export async function loader({ params }: LoaderArgs) {
     },
   });
 
-  return json({
-    members: result.map(({ user }) => user),
-  });
+  return json({ members: result.map(({ user }) => user) });
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -63,7 +61,7 @@ export async function action({ request, params }: ActionArgs) {
           userId: member,
         },
       });
-      return;
+      return null;
     }
     case ActionType.DeleteMember: {
       await db.teamMember.delete({
@@ -74,7 +72,7 @@ export async function action({ request, params }: ActionArgs) {
           },
         },
       });
-      return;
+      return null;
     }
   }
 

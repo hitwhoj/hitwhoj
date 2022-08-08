@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     case ActionType.CreateTag: {
@@ -120,7 +120,7 @@ export async function action({ request, params }: ActionArgs) {
         },
       });
 
-      return;
+      return null;
     }
 
     case ActionType.DeleteTag: {
@@ -131,7 +131,7 @@ export async function action({ request, params }: ActionArgs) {
         data: { tags: { disconnect: { name } } },
       });
 
-      return;
+      return null;
     }
   }
 

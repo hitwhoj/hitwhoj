@@ -34,6 +34,8 @@ export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
+
+  return null;
 }
 
 export async function action({ request }: ActionArgs) {

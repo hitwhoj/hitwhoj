@@ -24,6 +24,8 @@ export async function loader({ request, params }: LoaderArgs) {
       status: 400,
     });
   }
+
+  return null;
 }
 
 export async function action({ request, params }: ActionArgs) {

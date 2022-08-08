@@ -81,7 +81,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
 
     case ActionType.SetPrivilege: {
@@ -104,7 +104,7 @@ export async function action({ request, params }: ActionArgs) {
         });
       });
 
-      return;
+      return null;
     }
   }
 
