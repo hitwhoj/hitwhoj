@@ -34,6 +34,7 @@ import {
   findRecordTeam,
   findRecordUser,
 } from "~/utils/db/record";
+import { fromEventSource } from "~/utils/eventSource";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -106,10 +107,9 @@ export default function RecordView() {
   const [keys, setKeys] = useState<string[]>(getExpandedKeys(subtasks));
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${record.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
-
+    const subscription = fromEventSource<MessageType>(
+      `./${record.id}/events`
+    ).subscribe((message) => {
       setTime(message.time);
       setMemory(message.memory);
       setStatus(message.status);
@@ -118,7 +118,7 @@ export default function RecordView() {
       setKeys(getExpandedKeys(message.subtasks as SubtaskResult[]));
     });
 
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [record.id]);
 
   return (

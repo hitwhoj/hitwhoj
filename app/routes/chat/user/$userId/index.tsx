@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect, Response } from "@remix-run/node";
-import { Button, Empty, Input } from "@arco-design/web-react";
+import { Button, Empty, Input, Typography } from "@arco-design/web-react";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -14,6 +14,10 @@ import { findRequestUser } from "~/utils/permission";
 import { selectUserData } from "~/utils/db/user";
 import { UserContext } from "~/utils/context/user";
 import { fromEventSource } from "~/utils/eventSource";
+import ChatBubble from "~/src/chat/ChatBubble";
+import ChatTime from "~/src/chat/ChatTime";
+import { ChatAvatar } from "~/src/chat/ChatAvatar";
+import { ChatMessage } from "~/src/chat/ChatMessage";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -114,84 +118,67 @@ export default function ChatIndex() {
   const self = useContext(UserContext);
 
   return (
-    <div>
-      <header style={{ fontSize: "1.5em" }}>
+    <Typography className="px-4 flex flex-col h-full gap-2">
+      <Typography.Title heading={4}>
         用户：{target.nickname || target.username}
-      </header>
-      <div className="chat-content-main">
+      </Typography.Title>
+
+      <div className="flex-1 overflow-auto">
         {messages.length > 0 ? (
           messages.map((message, index, array) => {
-            const date = new Date(message.sentAt);
-            const time = [
-              date.getHours().toString().padStart(2, "0"),
-              date.getMinutes().toString().padStart(2, "0"),
-              date.getSeconds().toString().padStart(2, "0"),
-            ].join(":");
-
             // 是否是连续同一个人发送的最后一条消息
             const isLast =
               index === array.length - 1 ||
               array[index + 1].fromId !== message.fromId;
+            const isSelf = message.fromId === self;
 
             return (
-              <div
-                key={message.id}
-                className={`chat-content-message ${
-                  message.from.id === self ? "right" : "left"
-                }`}
-              >
-                <div className="chat-content-message-avatar">
-                  {isLast && <UserAvatar user={message.from} />}
-                </div>
-                <div className="chat-content-message-bubble">
-                  <span>{message.content}</span>
-                  <time title={date.toLocaleString()}>{time}</time>
-                </div>
-              </div>
+              <ChatMessage self={isSelf} key={message.id}>
+                <ChatAvatar visible={isLast}>
+                  <UserAvatar user={message.from} size={35} />
+                </ChatAvatar>
+                <ChatBubble self={isSelf}>{message.content}</ChatBubble>
+                <ChatTime time={message.sentAt} />
+              </ChatMessage>
             );
           })
         ) : (
           <Empty description="快来跟 TA 打个招呼吧" />
         )}
       </div>
-      <footer>
-        <Form
-          method="post"
-          ref={formRef}
-          style={{ display: "flex", gap: "10px", alignItems: "end" }}
+
+      <Form method="post" ref={formRef} className="flex gap-2 items-end">
+        <input type="hidden" name="to" value={target.id} />
+        <Input.TextArea
+          placeholder="输入消息..."
+          name="content"
+          maxLength={255}
+          showWordLimit
+          autoSize={{ minRows: 1, maxRows: 5 }}
+          value={message}
+          onChange={(msg) => setMessage(msg)}
+          style={{ flex: 1, height: "32px" }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (!e.ctrlKey) submitRef.current?.click();
+              else setMessage((message) => message + "\n");
+            }
+          }}
+          disabled={isFetching}
+          required
+        />
+        <Button
+          type="primary"
+          htmlType="submit"
+          size="large"
+          ref={submitRef}
+          style={{ height: "32px" }}
+          loading={isFetching}
         >
-          <input type="hidden" name="to" value={target.id} />
-          <Input.TextArea
-            placeholder="输入消息..."
-            name="content"
-            maxLength={255}
-            showWordLimit
-            autoSize={{ minRows: 1, maxRows: 5 }}
-            value={message}
-            onChange={(msg) => setMessage(msg)}
-            style={{ flex: 1, height: "32px" }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (!e.ctrlKey) submitRef.current?.click();
-                else setMessage((message) => message + "\n");
-              }
-            }}
-            disabled={isFetching}
-            required
-          />
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            ref={submitRef}
-            style={{ height: "32px" }}
-            loading={isFetching}
-          >
-            发送
-          </Button>
-        </Form>
-      </footer>
-    </div>
+          发送
+        </Button>
+      </Form>
+    </Typography>
   );
 }
 

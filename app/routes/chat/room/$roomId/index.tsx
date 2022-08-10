@@ -1,4 +1,9 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import type {
+  ActionArgs,
+  LinksFunction,
+  LoaderArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
@@ -6,13 +11,21 @@ import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Button, Input } from "@arco-design/web-react";
+import { Button, Input, Typography } from "@arco-design/web-react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
 import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { UserContext } from "~/utils/context/user";
+import { ChatMessage } from "~/src/chat/ChatMessage";
+import { ChatAvatar } from "~/src/chat/ChatAvatar";
+import ChatBubble from "~/src/chat/ChatBubble";
+import ChatTime from "~/src/chat/ChatTime";
+
+import style from "~/styles/simplify.css";
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
@@ -104,17 +117,11 @@ export default function ChatRoomIndex() {
   const self = useContext(UserContext);
 
   return (
-    <div className="chat-content-container">
-      <header style={{ fontSize: "1.5em" }}>{room.name}</header>
-      <div className="chat-content-main">
+    <Typography className="flex flex-col h-full gap-2">
+      <Typography.Title heading={4}>{room.name}</Typography.Title>
+      <div className="flex-1 overflow-auto min-h-0">
         {messages.map((message, index, array) => {
           const role = message.sender.enteredChatRoom.at(0)?.role;
-          const date = new Date(message.sentAt);
-          const time = [
-            date.getHours().toString().padStart(2, "0"),
-            date.getMinutes().toString().padStart(2, "0"),
-            date.getSeconds().toString().padStart(2, "0"),
-          ].join(":");
           // 是同一个人的连续第一次发言
           const isFirst =
             index === 0 || message.sender.id !== array[index - 1].sender.id;
@@ -122,79 +129,69 @@ export default function ChatRoomIndex() {
           const isLast =
             index === array.length - 1 ||
             message.sender.id !== array[index + 1].sender.id;
+          const isSelf = message.sender.id === self;
 
           return (
-            <div
-              key={message.id}
-              className={`chat-content-message ${
-                message.sender.id === self ? "right" : "left"
-              }`}
-            >
-              <div className="chat-content-message-avatar">
-                {isLast && (
-                  <Link to={`/user/${message.sender.id}`}>
-                    <UserAvatar user={message.sender} />
-                  </Link>
-                )}
-              </div>
-              <div className="chat-content-message-bubble">
+            <ChatMessage self={isSelf} key={message.id}>
+              <ChatAvatar visible={isLast}>
+                <Link to={`/user/${message.sender.id}`}>
+                  <UserAvatar user={message.sender} size={35} />
+                </Link>
+              </ChatAvatar>
+              <ChatBubble self={isSelf}>
                 {isFirst && (
-                  <header>
+                  <header className="flex gap-2 justify-between">
                     <Link
                       to={`/user/${message.sender.id}`}
-                      className="member-name"
+                      className="font-bold"
                     >
                       {message.sender.nickname || message.sender.username}
                     </Link>
                     {(role === "Owner" || role === "Admin") && (
-                      <span className="member-role">{role}</span>
+                      <span>{role}</span>
                     )}
                   </header>
                 )}
                 <span>{message.content}</span>
-                <time title={date.toLocaleString()}>{time}</time>
-              </div>
-            </div>
+              </ChatBubble>
+              <ChatTime time={message.sentAt} />
+            </ChatMessage>
           );
         })}
       </div>
-      <footer>
-        <Form
-          method="post"
-          style={{ display: "flex", gap: "10px", alignItems: "end" }}
+
+      <Form method="post" className="flex gap-2 items-end">
+        <input type="hidden" name="roomId" value={room.id} />
+        <Input.TextArea
+          placeholder="输入消息..."
+          name="content"
+          maxLength={255}
+          showWordLimit
+          autoSize={{ minRows: 1, maxRows: 5 }}
+          style={{ flex: 1, height: "32px" }}
+          value={content}
+          onChange={(v) => setContent(v)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (!e.ctrlKey) submitRef.current?.click();
+              else setContent((content) => content + "\n");
+            }
+          }}
+          disabled={isFetching}
+          required
+        />
+        <Button
+          type="primary"
+          htmlType="submit"
+          size="large"
+          ref={submitRef}
+          style={{ height: "32px" }}
+          loading={isFetching}
         >
-          <input type="hidden" name="roomId" value={room.id} />
-          <Input.TextArea
-            placeholder="输入消息..."
-            name="content"
-            maxLength={255}
-            showWordLimit
-            autoSize={{ minRows: 1, maxRows: 5 }}
-            style={{ flex: 1, height: "32px" }}
-            value={content}
-            onChange={(v) => setContent(v)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (!e.ctrlKey) submitRef.current?.click();
-                else setContent((content) => content + "\n");
-              }
-            }}
-            disabled={isFetching}
-            required
-          />
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            ref={submitRef}
-            style={{ height: "32px" }}
-            loading={isFetching}
-          >
-            发送
-          </Button>
-        </Form>
-      </footer>
-    </div>
+          发送
+        </Button>
+      </Form>
+    </Typography>
   );
 }
 

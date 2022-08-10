@@ -54,10 +54,7 @@ export default function MainLayout({ user, children }: LayoutProps) {
 
   return (
     <LoginModalContext.Provider value={setVisible}>
-      <Layout
-        style={{ minHeight: "100vh", gap: 20 }}
-        className="header-context-footer-layout"
-      >
+      <Layout className="header-context-footer-layout min-h-[100vh] gap-4">
         <Header>
           <NavbarTop user={user} />
         </Header>

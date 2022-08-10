@@ -47,7 +47,14 @@ export function fromEventSource<T>(url: string) {
     eventSource.addEventListener("message", ({ data }) =>
       observer.next(JSON.parse(data))
     );
-    eventSource.addEventListener("error", (event) => observer.error(event));
+    eventSource.addEventListener("error", (event) => {
+      observer.error(event);
+      console.error(event);
+    });
     observer.add(() => eventSource.close());
+
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=833462
+    // FIXME seems not fix
+    window.addEventListener("beforeunload", () => eventSource.close());
   });
 }

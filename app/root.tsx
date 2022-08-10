@@ -33,9 +33,9 @@ import katexStyle from "katex/dist/katex.css";
 import tailwindStyle from "./styles/app.css";
 
 export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: tailwindStyle },
-  { rel: "stylesheet", href: katexStyle },
   { rel: "stylesheet", href: arcoStyle },
+  { rel: "stylesheet", href: katexStyle },
+  { rel: "stylesheet", href: tailwindStyle },
   { rel: "stylesheet", href: style },
 ];
 
@@ -62,7 +62,7 @@ interface DocumentProps {
 
 const Document = ({ children, title, theme }: DocumentProps) => {
   return (
-    <html lang="zh-Hans">
+    <html lang="zh-Hans" {...(theme === "dark" ? { className: "dark" } : {})}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />

@@ -1,5 +1,5 @@
-import { Empty, Layout, List } from "@arco-design/web-react";
-import type { LoaderArgs } from "@remix-run/node";
+import { Empty, List } from "@arco-design/web-react";
+import type { LinksFunction, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
@@ -9,6 +9,10 @@ import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
 import type { MessageType } from "./events";
+
+import style from "~/styles/simplify.css";
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -69,30 +73,20 @@ export default function UserChatIndex() {
   useEffect(() => setMsgs(messages), [messages]);
 
   return (
-    <Layout className="overflow-hidden h-full flex-row">
-      <Layout.Sider
-        resizeDirections={["right"]}
-        className="min-w-[20%] max-w-[50%]"
-      >
+    <div className="flex overflow-hidden h-full flex-row">
+      <div className="basis-[30%]">
         <List
           bordered={false}
           dataSource={users}
           render={({ user, message }) => (
-            <List.Item>
+            <div key={user.id} className="py-2 px-0">
               <Link
                 key={user.id}
                 to={`/chat/user/${user.id}`}
                 prefetch="intent"
-                style={{ display: "block" }}
+                className="block"
               >
-                <div
-                  style={{
-                    display: "flex",
-                    width: "100%",
-                    gap: "10px",
-                    alignItems: "center",
-                  }}
-                >
+                <div className="flex w-full gap-3 items-center">
                   <UserAvatar user={user} style={{ flexShrink: 0 }} />
                   <div style={{ overflow: "hidden" }}>
                     <div
@@ -117,15 +111,15 @@ export default function UserChatIndex() {
                   </div>
                 </div>
               </Link>
-            </List.Item>
+            </div>
           )}
           noDataElement={<Empty description="没有对话" />}
         />
-      </Layout.Sider>
-      <Layout.Content>
+      </div>
+      <div className="basis-[70%]">
         <Outlet />
-      </Layout.Content>
-    </Layout>
+      </div>
+    </div>
   );
 }
 

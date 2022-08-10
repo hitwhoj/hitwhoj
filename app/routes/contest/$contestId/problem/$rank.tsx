@@ -49,7 +49,8 @@ import {
 } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { filter, fromEvent, map } from "rxjs";
+import { filter } from "rxjs";
+import { fromEventSource } from "~/utils/eventSource";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
@@ -237,12 +238,10 @@ export default function ContestProblemView() {
   const [records, setRecords] = useState(_records);
 
   useEffect(() => {
-    const eventSource = new EventSource(`/contest/${contestId}/events`);
-    const subscription = fromEvent(eventSource, "message")
-      .pipe(
-        map((event: any): MessageType => JSON.parse(event.data)),
-        filter((message) => message.problemId === problem.id)
-      )
+    const subscription = fromEventSource<MessageType>(
+      `/contest/${contestId}/events`
+    )
+      .pipe(filter((message) => message.problemId === problem.id))
       .subscribe((message) => {
         setRecords((records) => {
           const found = records.find((record) => record.id === message.id);
@@ -269,10 +268,7 @@ export default function ContestProblemView() {
         });
       });
 
-    return () => {
-      subscription.unsubscribe();
-      eventSource.close();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
