@@ -4,8 +4,11 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import { Empty, Table, Typography } from "@arco-design/web-react";
+import { Typography } from "@arco-design/web-react";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
+import { findSessionUserOptional } from "~/utils/sessions";
+import { isAdmin } from "~/utils/permission";
+import { TableList } from "~/src/TableList";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -15,13 +18,18 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const tag = invariant(tagScheme, params.tag, {
-    status: 404,
-  });
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
+  const tag = invariant(tagScheme, params.tag, { status: 404 });
+  const self = await findSessionUserOptional(request);
 
   const problemSets = await db.problemSet.findMany({
-    where: { tags: { some: { name: tag } }, team: null },
+    where:
+      self && isAdmin(self.role)
+        ? { team: null, tags: { some: { name: tag } } }
+        : { team: null, tags: { some: { name: tag } }, private: false },
     orderBy: { id: "asc" },
     select: {
       id: true,
@@ -55,32 +63,27 @@ export default function ProblemSetTag() {
       <Typography.Title heading={3}>题单标签：{tag}</Typography.Title>
 
       <Typography.Paragraph>
-        <Table
+        <TableList
+          data={problemSets}
           columns={[
             {
               title: "#",
-              dataIndex: "id",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              render: ({ id }) => id,
+              minimize: true,
             },
             {
               title: "题单",
-              render: (_, problemset) => (
+              render: (problemset) => (
                 <ProblemSetLink problemset={problemset} />
               ),
             },
             {
               title: "题目数",
-              dataIndex: "_count.problems",
+              render: ({ _count: { problems } }) => problems,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
           ]}
-          data={problemSets}
-          rowKey="id"
-          noDataElement={<Empty description="没有题单" />}
-          hover={false}
-          border={false}
-          pagination={false}
         />
       </Typography.Paragraph>
     </Typography>

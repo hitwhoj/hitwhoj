@@ -20,7 +20,6 @@ import {
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
-import { findSession } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
@@ -28,8 +27,7 @@ import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
 import type { UserInfo } from "./utils/context/user";
 import { UserInfoContext } from "./utils/context/user";
-import { WsContext } from "./utils/context/ws";
-import { WsClient } from "./utils/ws.client";
+import type { MessageType } from "./routes/chat/events";
 
 export const links: LinksFunction = () => [
   {
@@ -49,7 +47,6 @@ export const links: LinksFunction = () => [
 type LoaderData = {
   theme: Theme;
   user: UserInfo | null;
-  session?: string | null;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
@@ -59,6 +56,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
   if (!self) {
     return { theme, user: null };
   }
+
   const user = await db.user.findUnique({
     where: { id: self.id },
     select: {
@@ -70,9 +68,7 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  let session = await findSession(request);
-
-  return { theme, user, session };
+  return { theme, user };
 };
 
 interface DocumentProps {
@@ -107,34 +103,32 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 export default function App() {
   const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [wsc, setWsc] = useState<WsClient | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const wsc = new WsClient(user?.id);
-    setWsc(wsc);
-
     if (user?.id) {
       // 新私聊消息
-      const subscription = wsc.subscribePrivateMessage().subscribe((data) => {
+      const eventSource = new EventSource("/chat/events");
+      eventSource.addEventListener("message", ({ data }) => {
+        const message: MessageType = JSON.parse(data);
+
         // 生成一个随机 id 给 Notification
         const id = Date.now().toString(16) + Math.random().toString(16);
-
         Notification.info({
           id,
           title: "新私聊消息",
           content: (
             <span>
-              <b>{data.from.nickname || data.from.username}</b>
+              <b>{message.from.nickname || message.from.username}</b>
               {": "}
-              {data.content}
+              {message.content}
             </span>
           ),
           btn: (
             <Button
               type="primary"
               onClick={() => {
-                navigate(`/chat/user/${data.from.id}`);
+                navigate(`/chat/user/${message.from.id}`);
                 Notification.remove(id);
               }}
             >
@@ -144,10 +138,7 @@ export default function App() {
         });
       });
 
-      return () => {
-        subscription.unsubscribe();
-        wsc.close();
-      };
+      return () => eventSource.close();
     }
   }, [user?.id]);
 
@@ -158,13 +149,11 @@ export default function App() {
   return (
     <Document theme={theme}>
       <UserInfoContext.Provider value={user}>
-        <WsContext.Provider value={wsc}>
-          <ThemeContext.Provider value={{ theme, setTheme }}>
-            <Layout>
-              <Outlet />
-            </Layout>
-          </ThemeContext.Provider>
-        </WsContext.Provider>
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+          <Layout>
+            <Outlet />
+          </Layout>
+        </ThemeContext.Provider>
       </UserInfoContext.Provider>
     </Document>
   );

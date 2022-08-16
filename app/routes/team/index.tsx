@@ -9,16 +9,10 @@ import { db } from "~/utils/server/db.server";
 import { teamNameScheme } from "~/utils/scheme";
 import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
-import {
-  Button,
-  Grid,
-  Input,
-  Space,
-  Table,
-  Typography,
-} from "@arco-design/web-react";
+import { Button, Grid, Input, Space, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { TeamLink } from "~/src/team/TeamLink";
+import { TableList } from "~/src/TableList";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
@@ -90,23 +84,19 @@ export default function TeamList() {
       </Typography.Paragraph>
 
       <Typography.Paragraph>
-        <Table
+        <TableList
+          data={teams}
           columns={[
             {
               title: "#",
-              dataIndex: "id",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              render: ({ id }) => id,
+              minimize: true,
             },
             {
               title: "团队",
-              render: (_, team) => <TeamLink team={team} />,
+              render: (team) => <TeamLink team={team} />,
             },
           ]}
-          data={teams}
-          rowKey="id"
-          hover={false}
-          border={false}
-          pagination={false}
         />
       </Typography.Paragraph>
     </Typography>

@@ -1,29 +1,31 @@
-import { isAdmin, isTeamAdmin, isUser } from "../permission";
+import {
+  and,
+  isAdmin,
+  isTeamAdmin,
+  isUser,
+  or,
+  Permission,
+} from "../permission";
 import { db } from "../server/db.server";
 import { findSessionUser, findSessionUserOptional } from "../sessions";
 
-/**
- * 检查题单的读权限
- *
- * - 是系统管理员
- * - 或者题单是公开的
- * - 或者是题单的所属团队的管理员
- */
-export async function checkProblemSetReadPermission(
-  request: Request,
-  problemSetId: number
+async function findProblemSetInformation(
+  problemSetId: number,
+  self: number | undefined
 ) {
-  const self = await findSessionUserOptional(request);
-
-  if (self && isAdmin(self.role)) {
-    return;
-  }
-
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
     select: {
       private: true,
-      team: { select: { id: true } },
+      team: {
+        select: {
+          id: true,
+          members: {
+            where: { userId: self ?? -1 },
+            select: { role: true },
+          },
+        },
+      },
     },
   });
 
@@ -31,94 +33,65 @@ export async function checkProblemSetReadPermission(
     throw new Response("题单不存在", { status: 404 });
   }
 
-  if (!problemSet.private) {
-    return;
-  }
-
-  if (problemSet.team && self) {
-    const member = await db.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: self.id,
-          teamId: problemSet.team.id,
-        },
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    if (member && isTeamAdmin(member.role)) {
-      return;
-    }
-  }
-
-  throw new Response("您没有权限查看此题单", { status: 403 });
+  return problemSet;
 }
 
 /**
- * 检查题单的写权限
- *
- * - 是系统管理员
- * - 或者是题单的所属团队的管理员
+ * 检查题单的读权限
  */
-export async function checkProblemSetWritePermission(
-  request: Request,
-  problemSetId: number
-) {
-  const self = await findSessionUser(request);
+export const permissionProblemSetRead = new Permission(
+  async (request: Request, problemSetId: number) => {
+    const self = await findSessionUserOptional(request);
+    const problemSet = await findProblemSetInformation(problemSetId, self?.id);
+    return { self, problemSet };
+  },
 
-  if (isAdmin(self.role)) {
-    return;
-  }
+  or(
+    // 如果是系统管理员，则具有所有的查看权限
+    ({ self }) => isAdmin(self?.role),
+    and(
+      // 对于团队的题单
+      ({ problemSet }) => problemSet.team !== null,
+      or(
+        // 题单设置为公开
+        ({ problemSet }) => problemSet.private === false,
+        // 或者是团队的管理员
+        ({ problemSet }) => isTeamAdmin(problemSet.team?.members.at(0)?.role)
+      )
+    ),
+    and(
+      // 对于系统的题单
+      ({ problemSet }) => problemSet.team === null,
+      // 题单必须设置为公开
+      ({ problemSet }) => problemSet.private === false
+    )
+  )
+);
 
-  if (!isUser(self.role)) {
-    throw new Response("您已被封禁", { status: 403 });
-  }
-
-  const problemSet = await db.problemSet.findUnique({
-    where: { id: problemSetId },
-    select: {
-      team: { select: { id: true } },
-    },
-  });
-
-  if (!problemSet) {
-    throw new Response("题单不存在", { status: 404 });
-  }
-
-  if (problemSet.team) {
-    const member = await db.teamMember.findUnique({
-      where: {
-        userId_teamId: {
-          userId: self.id,
-          teamId: problemSet.team.id,
-        },
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    if (member && isTeamAdmin(member.role)) {
-      return;
-    }
-  }
-
-  throw new Response("您没有权限修改此题单", { status: 403 });
-}
+/**
+ * 检查题单的更新权限
+ */
+export const permissionProblemSetUpdate = new Permission(
+  async (request: Request, problemSetId: number) => {
+    const self = await findSessionUser(request);
+    const problemSet = await findProblemSetInformation(problemSetId, self.id);
+    return { self, problemSet };
+  },
+  or(
+    // 系统管理员可以为所欲为
+    ({ self }) => isAdmin(self.role),
+    and(
+      // 对于团队的题单
+      ({ problemSet }) => problemSet.team !== null,
+      // 必须没有被封禁
+      ({ self }) => isUser(self.role),
+      // 并且是团队的管理员
+      ({ problemSet }) => isTeamAdmin(problemSet.team?.members.at(0)?.role)
+    )
+  )
+);
 
 /**
  * 检查创建题单的权限
- *
- * - 必须是系统管理员
  */
-export async function checkProblemSetCreatePermission(request: Request) {
-  const self = await findSessionUser(request);
-
-  if (isAdmin(self.role)) {
-    return;
-  }
-
-  throw new Response("您没有权限创建题单", { status: 403 });
-}
+export { permissionAdmin as permissionProblemSetCreate } from "./user";

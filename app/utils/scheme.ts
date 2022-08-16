@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContestSystem, InvitationType } from "@prisma/client";
+import { ContestSystem, InvitationType, ReportType } from "@prisma/client";
 
 /**
  * 数字 ID，非负整数
@@ -33,11 +33,23 @@ export const usernameScheme = z
   .regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric");
 
 /**
- * 用户密码
+ * 用户密码，是 sha256 哈希过后的字符串
  *
- * @example "我就是用中文密码你能拿我怎么样"
+ * @example "9107c989b1db02af062647dc602e33238a6efaf57cf2febfe5e12e09ea4610db"
  */
-export const passwordScheme = z.string().nonempty("Password must be nonempty");
+export const passwordScheme = z
+  .string()
+  .nonempty("Password must be nonempty")
+  .regex(/^[0-9a-f]{64}$/, "Password must be a sha256 hash");
+
+/**
+ * 聊天组的密码，随意的非空字符串即可
+ *
+ * @example "123456"
+ */
+export const roomPasswordScheme = z
+  .string()
+  .nonempty("Password must be nonempty");
 
 /**
  * 用户昵称
@@ -203,3 +215,21 @@ export const contentScheme = z
 export const problemRankScheme = z
   .string()
   .regex(/^[A-Z]$/, "contest problem id must be a single uppercase letter");
+
+export const limitScheme = z
+  .string()
+  .regex(/^\d+$/, "limit must be a number")
+  .transform((x) => parseInt(x, 10));
+
+/**
+ * 举办的类型捏
+ */
+export const reportTypeScheme = z.nativeEnum(ReportType);
+
+/**
+ * 举办的理由捏
+ */
+export const reasonScheme = z
+  .string()
+  .nonempty("Reason content must be nonempty")
+  .min(8, "Reason must be at least 8 characters");

@@ -7,11 +7,11 @@ import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { checkUserReadPermission } from "~/utils/permission/user";
 import { Navigator } from "~/src/Navigator";
 import { isAdmin, isUser } from "~/utils/permission";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { AvatarBadge } from "~/src/AvatarBadge";
+import { permissionUserProfileRead } from "~/utils/permission/user";
 
 type LoaderData = {
   user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id" | "role">;
@@ -22,8 +22,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-
-  await checkUserReadPermission(request, userId);
+  await permissionUserProfileRead.ensure(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -60,14 +59,25 @@ export default function UserProfile() {
             <AvatarBadge icon="大" color="magenta">
               <UserAvatar user={user} size={60} />
             </AvatarBadge>
-          ) : (
+          ) : isUser(user.role) ? (
             <UserAvatar user={user} size={60} />
+          ) : (
+            <AvatarBadge icon="封" color="gray">
+              <UserAvatar user={user} size={60} />
+            </AvatarBadge>
           )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>
-              {user.nickname
-                ? `${user.nickname} (${user.username})`
-                : user.username}
+              {user.nickname ? (
+                <Space>
+                  {user.nickname}
+                  <span style={{ color: "rgb(var(--gray-5))" }}>
+                    ({user.username})
+                  </span>
+                </Space>
+              ) : (
+                user.username
+              )}
             </span>
             {user.bio || (
               <i style={{ color: "rgb(var(--gray-6))" }}>没有签名</i>
@@ -87,6 +97,9 @@ export default function UserProfile() {
                   { title: "文件", key: "files" },
                   { title: "编辑", key: "edit" },
                 ]
+              : []),
+            ...(self && isAdmin(self.role)
+              ? [{ title: "滥权", key: "admin" }]
               : []),
           ]}
         />

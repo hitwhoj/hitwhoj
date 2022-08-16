@@ -1,6 +1,6 @@
-import type { Comment, Reply, User } from "@prisma/client";
+import type { Comment, Reply, User, Report } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Form } from "@remix-run/react";
+import { useLoaderData, Form, Link } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme, replyContentScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -25,11 +25,13 @@ import {
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { findSessionUid } from "~/utils/sessions";
-import { Like } from "~/src/comment/like";
-import { Avatar } from "~/src/comment/avatar";
+import { Like } from "~/src/comment/Like";
+import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction } from "@remix-run/node";
 import { useState } from "react";
+import { ReportType } from "@prisma/client";
+import { formatDateTime } from "~/utils/tools";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -199,7 +201,7 @@ type LoaderData = {
   comment: Comment & {
     creator: Pick<User, "id" | "nickname" | "avatar">;
     heartees: Pick<User, "id">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
     replies: (Reply & {
       creator: Pick<User, "id" | "nickname" | "avatar">;
       subReplies: (Reply & {
@@ -210,7 +212,7 @@ type LoaderData = {
           | null;
       })[];
       heartees: Pick<User, "id">[];
-      reportees: Pick<User, "id">[];
+      reports: Pick<Report, "creatorId">[];
     })[];
   };
   self: number;
@@ -238,9 +240,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
           id: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
       replies: {
@@ -272,9 +274,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
               id: true,
             },
           },
-          reportees: {
+          reports: {
             select: {
-              id: true,
+              creatorId: true,
             },
           },
         },
@@ -316,7 +318,6 @@ function CommentTitle({
   const author = comment.creator;
 
   const likeStyle = { fontSize: "0.9rem" };
-  const likeButtonStyle = { width: "6.5rem", padding: "0.1rem" };
 
   const [visible, setVisible] = useState(false);
 
@@ -346,70 +347,58 @@ function CommentTitle({
       <span style={{ display: "flex", alignItems: "center" }}>
         <Avatar src={author.avatar} name={author.nickname} size={32} />
         <Typography.Text>{author.nickname}</Typography.Text>
-        <Typography.Text>
-          &emsp;@{comment.createdAt.toLocaleString().slice(0, 16)}
-        </Typography.Text>
+        <Typography.Text>@{formatDateTime(comment.createdAt)}</Typography.Text>
       </span>
       <Space size={8}>
-        {/* TODO : 套一层 Button 会导致多一次 None 的提交请求 */}
-        <Button type="text" size="small" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: comment.id,
-              like: comment.heartees.map((u) => u.id).includes(self),
-              count: comment.heartees.length,
-              likeAction: ActionType.CommentHeart,
-              dislikeAction: ActionType.CommentUnHeart,
-              likeElement: (
-                <>
-                  <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
-                </>
-              ),
-              dislikeElement: (
-                <>
-                  <IconHeart /> Star{" "}
-                </>
-              ),
-              style: likeStyle,
-            }}
-          />
-        </Button>
-        <Button
-          type="text"
-          size="small"
-          onClick={() => {
-            setVisible(true);
+        <Like
+          props={{
+            id: comment.id,
+            like: comment.heartees.map((u) => u.id).includes(self),
+            count: comment.heartees.length,
+            likeAction: ActionType.CommentHeart,
+            dislikeAction: ActionType.CommentUnHeart,
+            likeElement: (
+              <>
+                <IconHeartFill style={{ color: "#f53f3f" }} /> Star{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconHeart /> Star{" "}
+              </>
+            ),
+            style: likeStyle,
           }}
-          style={likeButtonStyle}
-        >
+        />
+        <Like
+          props={{
+            id: comment.id,
+            like: comment.replies.map((u) => u.creatorId).includes(self),
+            count: comment.replies.length,
+            likeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconMessage style={{ color: "#00B42A" }} /> Reply{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                <IconMessage /> Reply{" "}
+              </>
+            ),
+            style: likeStyle,
+            preload: false,
+            onClick: () => {
+              setVisible(true);
+            },
+          }}
+        />
+        <Link to={`/comment/report/${ReportType.C + comment.id}`}>
           <Like
             props={{
               id: comment.id,
-              like: comment.replies.map((u) => u.creatorId).includes(self),
-              count: comment.replies.length,
-              likeAction: ActionType.None,
-              likeElement: (
-                <>
-                  <IconMessage style={{ color: "#00B42A" }} /> Reply{" "}
-                </>
-              ),
-              dislikeElement: (
-                <>
-                  <IconMessage /> Reply{" "}
-                </>
-              ),
-              style: likeStyle,
-              preload: false,
-            }}
-          />
-        </Button>
-        {/* TODO : 举办机制与页面没做 */}
-        <Button type="text" size="small" style={likeButtonStyle}>
-          <Like
-            props={{
-              id: comment.id,
-              like: comment.reportees.map((u) => u.id).includes(self),
-              count: comment.reportees.length,
+              like: comment.reports.map((r) => r.creatorId).includes(self),
+              count: comment.reports.length,
               likeAction: ActionType.None,
               dislikeAction: ActionType.None,
               likeElement: (
@@ -420,7 +409,7 @@ function CommentTitle({
               ),
               dislikeElement: (
                 <>
-                  {comment.reportees.length > 0 ? (
+                  {comment.reports.length > 0 ? (
                     <IconExclamationCircle style={{ color: "#F53F3F" }} />
                   ) : (
                     <IconExclamationCircle />
@@ -432,7 +421,7 @@ function CommentTitle({
               preload: false,
             }}
           />
-        </Button>
+        </Link>
       </Space>
     </div>
   );
@@ -464,11 +453,11 @@ function ReplyCard({
 }) {
   const author = reply.creator;
 
-  const likeStyle = { fontSize: "0.9rem" };
-  const likeButtonStyle = {
+  const likeStyles = {
+    fontSize: "0.9rem",
     width: "2.5rem",
-    height: "1.3rem",
-    padding: "0.1rem",
+    height: "1.5rem",
+    padding: "0 0.3rem",
   };
 
   const [visible, setVisible] = useState(false);
@@ -476,7 +465,7 @@ function ReplyCard({
   const actions = (
     <Space size={2}>
       <Modal
-        title="New Reply"
+        title={`New Reply To #${reply.id}`}
         visible={visible}
         footer={null}
         onCancel={() => {
@@ -494,64 +483,55 @@ function ReplyCard({
           action={ActionType.ReplyTo}
         />
       </Modal>
-      <Button type="text" size="mini" style={likeButtonStyle}>
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.heartees.map((u) => u.id).includes(self),
-            count: reply.heartees.length,
-            likeAction: ActionType.Heart,
-            dislikeAction: ActionType.UnHeart,
-            likeElement: (
-              <>
-                <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
-              </>
-            ),
-            dislikeElement: (
-              <>
-                <IconHeart />{" "}
-              </>
-            ),
-            style: likeStyle,
-          }}
-        />
-      </Button>
-      <Button
-        type="text"
-        size="mini"
-        onClick={() => {
-          setVisible(true);
+      <Like
+        props={{
+          id: reply.id,
+          like: reply.heartees.map((u) => u.id).includes(self),
+          count: reply.heartees.length,
+          likeAction: ActionType.Heart,
+          dislikeAction: ActionType.UnHeart,
+          likeElement: (
+            <>
+              <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
+            </>
+          ),
+          dislikeElement: (
+            <>
+              <IconHeart />{" "}
+            </>
+          ),
+          style: likeStyles,
         }}
-        style={likeButtonStyle}
-      >
+      />
+      <Like
+        props={{
+          id: reply.id,
+          like: reply.subReplies.map((u) => u.creatorId).includes(self),
+          count: reply.subReplies.length,
+          likeAction: ActionType.None,
+          likeElement: (
+            <>
+              <IconMessage style={{ color: "#00B42A" }} />{" "}
+            </>
+          ),
+          dislikeElement: (
+            <>
+              <IconMessage />{" "}
+            </>
+          ),
+          style: likeStyles,
+          preload: false,
+          onClick: () => {
+            setVisible(true);
+          },
+        }}
+      />
+      <Link to={`/comment/report/${ReportType.R + reply.id}`}>
         <Like
           props={{
             id: reply.id,
-            like: reply.subReplies.map((u) => u.creatorId).includes(self),
-            count: reply.subReplies.length,
-            likeAction: ActionType.None,
-            likeElement: (
-              <>
-                <IconMessage style={{ color: "#00B42A" }} />{" "}
-              </>
-            ),
-            dislikeElement: (
-              <>
-                <IconMessage />{" "}
-              </>
-            ),
-            style: likeStyle,
-            preload: false,
-          }}
-        />
-      </Button>
-      {/* TODO : 举办机制与页面没做 */}
-      <Button type="text" size="mini" style={likeButtonStyle}>
-        <Like
-          props={{
-            id: reply.id,
-            like: reply.reportees.map((u) => u.id).includes(self),
-            count: reply.reportees.length,
+            like: reply.reports.map((r) => r.creatorId).includes(self),
+            count: reply.reports.length,
             likeAction: ActionType.None,
             dislikeAction: ActionType.None,
             likeElement: (
@@ -561,18 +541,18 @@ function ReplyCard({
             ),
             dislikeElement: (
               <>
-                {reply.reportees.length > 0 ? (
+                {reply.reports.length > 0 ? (
                   <IconExclamationCircle style={{ color: "#F53F3F" }} />
                 ) : (
                   <IconExclamationCircle />
                 )}{" "}
               </>
             ),
-            style: likeStyle,
+            style: likeStyles,
             preload: false,
           }}
         />
-      </Button>
+      </Link>
     </Space>
   );
 
@@ -582,11 +562,10 @@ function ReplyCard({
     <ArcoComment
       actions={actions}
       author={author.nickname}
-      // align="right"
       key={"reply" + reply.id}
       avatar={<Avatar src={author.avatar} name={author.nickname} />}
       content={<div>{reply.content}</div>}
-      datetime={reply.createdAt.toLocaleString().slice(0, 16)}
+      datetime={formatDateTime(reply.createdAt)}
     />
   );
 }

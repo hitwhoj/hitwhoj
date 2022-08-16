@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
 }
 
 datasource db {
@@ -32,26 +33,22 @@ model User {
   createdReplies  Reply[]
   createdRecords  Record[]
 
-  heartedComments  Comment[] @relation(name: "heartedComments")
-  heartedReplies   Reply[]   @relation(name: "heartedReplies")
-  starredComments  Comment[] @relation(name: "starredComments")
-  starredReplies   Reply[]   @relation(name: "starredReplies")
-  reportedComments Comment[] @relation(name: "reportedComments")
-  reportedReplies  Reply[]   @relation(name: "reportedReplies")
+  heartedComments Comment[] @relation("heartedComments")
+  heartedReplies  Reply[]   @relation("heartedReplies")
+  starredComments Comment[] @relation("starredComments")
+  starredReplies  Reply[]   @relation("starredReplies")
 
-
-  // TODO: reference?
-  attendedContests Contest[] @relation("attendee", references: [id])
-  moddedContests   Contest[] @relation("mod", references: [id])
-  juriedContests   Contest[] @relation("jury", references: [id])
+  attendedContests Contest[] @relation("attendee")
+  moddedContests   Contest[] @relation("mod")
+  juriedContests   Contest[] @relation("jury")
 
   attendedTeams TeamMember[]
 
   sentMessages     PrivateMessage[] @relation("send")
   receivedMessages PrivateMessage[] @relation("receive")
-  chatRoom         ChatRoom[]
   chatMessage      ChatMessage[]
   enteredChatRoom  UserInChatRoom[]
+  reports          Report[]         @relation("reports")
 }
 
 enum SystemUserRole {
@@ -110,14 +107,14 @@ model Problem {
   updatedAt DateTime @updatedAt
 
   timeLimit   Int @default(1000)
-  memoryLimit Int @default(128)
+  memoryLimit Int @default(134217728)
 
-  tags ProblemTag[] @relation(references: [id])
+  tags ProblemTag[]
 
-  data                File[]           @relation("data")
-  files               File[]           @relation("file")
+  data                File[]              @relation("data")
+  files               File[]              @relation("file")
   includedContests    ContestProblem[]
-  includedProblemSets ProblemSet[]     @relation(references: [id])
+  includedProblemSets ProblemSetProblem[]
   relatedRecords      Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
@@ -128,7 +125,7 @@ model ProblemTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problems Problem[] @relation(references: [id])
+  problems Problem[]
 }
 
 model ProblemSet {
@@ -142,18 +139,31 @@ model ProblemSet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tags     ProblemSetTag[] @relation(references: [id])
-  problems Problem[]       @relation(references: [id])
+  tags     ProblemSetTag[]
+  problems ProblemSetProblem[]
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
+}
+
+model ProblemSetProblem {
+  problem   Problem @relation(fields: [problemId], references: [id])
+  problemId Int
+
+  problemSet   ProblemSet @relation(fields: [problemSetId], references: [id])
+  problemSetId Int
+
+  rank Int
+
+  @@id([problemSetId, problemId])
+  @@unique([problemSetId, rank])
 }
 
 model ProblemSetTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  problemSets ProblemSet[] @relation(references: [id])
+  problemSets ProblemSet[]
 }
 
 model Contest {
@@ -162,8 +172,13 @@ model Contest {
   title       String
   description String @default("")
 
-  system  ContestSystem
-  private Boolean       @default(true)
+  system                  ContestSystem
+  /// 比赛是否公开（不公开的比赛不会展示在首页，而且用户无法查看）
+  private                 Boolean       @default(true)
+  /// 是否允许公开报名（首先必须公开比赛）
+  allowPublicRegistration Boolean       @default(true)
+  /// 是否允许用户在比赛进行中时报名（必须首先允许公开报名）
+  allowAfterRegistration  Boolean       @default(true)
 
   beginTime DateTime
   endTime   DateTime
@@ -171,13 +186,13 @@ model Contest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tags ContestTag[] @relation(references: [id])
+  tags ContestTag[]
 
   problems ContestProblem[]
 
-  mods      User[] @relation("mod", references: [id])
-  juries    User[] @relation("jury", references: [id])
-  attendees User[] @relation("attendee", references: [id])
+  mods      User[] @relation("mod")
+  juries    User[] @relation("jury")
+  attendees User[] @relation("attendee")
 
   relatedRecords Record[]
 
@@ -189,7 +204,7 @@ model ContestTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  contests Contest[] @relation(references: [id])
+  contests Contest[]
 }
 
 enum ContestSystem {
@@ -295,7 +310,7 @@ model CommentTag {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  comments Comment[] @relation(references: [id])
+  comments Comment[]
 }
 
 model Comment {
@@ -309,16 +324,16 @@ model Comment {
 
   // === relations ===
 
-  heartees  User[] @relation("heartedComments", references: [id])
-  starrees  User[] @relation("starredComments", references: [id])
-  reportees User[] @relation("reportedComments", references: [id])
+  heartees User[] @relation("heartedComments")
+  starrees User[] @relation("starredComments")
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
-  tags CommentTag[] @relation(references: [id])
+  tags CommentTag[]
 
   replies Reply[]
+  reports Report[] @relation("reportedComments")
 }
 
 model Reply {
@@ -339,15 +354,41 @@ model Reply {
   domId      Int?
   subReplies Reply[] @relation("dsReplies")
 
-  heartees  User[] @relation("heartedReplies", references: [id])
-  starrees  User[] @relation("starredReplies", references: [id])
-  reportees User[] @relation("reportedReplies", references: [id])
+  heartees User[] @relation("heartedReplies")
+  starrees User[] @relation("starredReplies")
 
   comment   Comment @relation(fields: [commentId], references: [id])
   commentId Int
 
-  creator   User @relation(fields: [creatorId], references: [id])
+  creator   User     @relation(fields: [creatorId], references: [id])
   creatorId Int
+  reports   Report[] @relation("reportedReplies")
+}
+
+enum ReportType {
+  C // Comment
+  R // Reply
+}
+
+model Report {
+  id Int @id @default(autoincrement())
+
+  type ReportType
+
+  reason String
+
+  createdAt DateTime @default(now())
+
+  // ==== relations ====
+
+  creator   User @relation("reports", fields: [creatorId], references: [id])
+  creatorId Int
+
+  comment   Comment? @relation("reportedComments", fields: [commentId], references: [id])
+  commentId Int?
+
+  reply   Reply? @relation("reportedReplies", fields: [replyId], references: [id])
+  replyId Int?
 }
 
 model PrivateMessage {
@@ -373,14 +414,11 @@ model ChatRoom {
   id Int @id @default(autoincrement())
 
   name        String
-  description String
+  description String   @default("")
   createdAt   DateTime @default(now())
 
-  isPrivate Boolean @default(false)
-  password  String?
-
-  creator   User @relation(fields: [creatorId], references: [id])
-  creatorId Int
+  private  Boolean @default(false)
+  password String  @default("")
 
   chatMessage    ChatMessage[]
   userInChatRoom UserInChatRoom[]

@@ -2,12 +2,14 @@ import type { ProblemSet } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Table, Grid, Button, Typography, Empty } from "@arco-design/web-react";
+import { Grid, Button, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
 import { isAdmin } from "~/utils/permission";
+import { TableList } from "~/src/TableList";
+import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
   problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
@@ -17,9 +19,14 @@ type LoaderData = {
   })[];
 };
 
-export const loader: LoaderFunction<LoaderData> = async () => {
+export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+  const self = await findSessionUserOptional(request);
+
   const problemSets = await db.problemSet.findMany({
-    where: { team: null },
+    where:
+      self && isAdmin(self.role)
+        ? { team: null }
+        : { team: null, private: false },
     orderBy: [{ id: "asc" }],
     select: {
       id: true,
@@ -61,32 +68,27 @@ export default function ProblemsetList() {
       </Typography.Title>
 
       <Typography.Paragraph>
-        <Table
+        <TableList
+          data={problemSets}
           columns={[
             {
               title: "#",
-              dataIndex: "id",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              render: ({ id }) => id,
+              minimize: true,
             },
             {
               title: "题单",
-              render: (_, problemset) => (
+              render: (problemset) => (
                 <ProblemSetLink problemset={problemset} />
               ),
             },
             {
               title: "题目数",
-              dataIndex: "_count.problems",
+              render: ({ _count: { problems } }) => problems,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
           ]}
-          data={problemSets}
-          rowKey="id"
-          noDataElement={<Empty description="没有题单" />}
-          hover={false}
-          border={false}
-          pagination={false}
         />
       </Typography.Paragraph>
     </Typography>

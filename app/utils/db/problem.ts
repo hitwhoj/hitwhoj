@@ -19,15 +19,4 @@ export const selectProblemListData = {
   id: true,
   title: true,
   private: true,
-  tags: {
-    select: {
-      name: true,
-    },
-  },
-  team: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
 } as const;

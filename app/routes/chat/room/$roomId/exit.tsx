@@ -1,17 +1,16 @@
-import { Button } from "@arco-design/web-react";
-import type { ChatRoom, UserInChatRoom } from "@prisma/client";
+import { Button, Typography } from "@arco-design/web-react";
+import { IconCloud } from "@arco-design/web-react/icon";
+import type { ChatRoom } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
+import { findSessionUser } from "~/utils/sessions";
 
 type LoaderData = {
-  userInChatRoom: Pick<UserInChatRoom, "role"> & {
-    room: Pick<ChatRoom, "id" | "name" | "isPrivate" | "description">;
-  };
+  room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -19,17 +18,13 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
-    throw redirect("/login");
-  }
+  const self = await findSessionUser(request);
 
   const userInChatRoom = await db.userInChatRoom.findUnique({
     where: {
       roomId_userId: {
         roomId: roomId,
-        userId: selfId,
+        userId: self.id,
       },
     },
     select: {
@@ -39,49 +34,47 @@ export const loader: LoaderFunction<LoaderData> = async ({
           id: true,
           name: true,
           description: true,
-          isPrivate: true,
+          private: true,
         },
       },
     },
   });
 
   if (!userInChatRoom) {
-    throw new Response("You are not in the certain room", { status: 400 });
+    throw redirect(`/chat/room/${roomId}/enter`);
   }
 
-  return { userInChatRoom };
+  return { room: userInChatRoom.room };
 };
 
 export default function ExitRoom() {
-  const {
-    userInChatRoom: { room },
-  } = useLoaderData<LoaderData>();
+  const { room } = useLoaderData<LoaderData>();
+
   return (
-    <div>
-      <h1>{room.name}</h1>
-      <p>{room.description}</p>
-      <Form method="post">
-        <Button type="primary" status="danger" htmlType="submit">
-          退出房间
-        </Button>
-      </Form>
-    </div>
+    <Typography>
+      <Typography.Title heading={3}>{room.name}</Typography.Title>
+      <Typography.Paragraph>{room.description}</Typography.Paragraph>
+      <Typography.Paragraph>
+        <Form method="post">
+          <Button
+            type="primary"
+            status="danger"
+            htmlType="submit"
+            icon={<IconCloud />}
+          >
+            退出房间
+          </Button>
+        </Form>
+      </Typography.Paragraph>
+    </Typography>
   );
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction<Response> = async ({ request, params }) => {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
+  const self = await findSessionUser(request);
 
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
-    throw redirect("/login");
-  }
-  const self = (await db.user.findUnique({
-    where: { id: selfId },
-    select: { id: true, nickname: true, username: true, avatar: true },
-  }))!;
-
-  const result = await db.userInChatRoom.delete({
+  await db.userInChatRoom.delete({
     where: {
       roomId_userId: {
         roomId: roomId,
@@ -90,11 +83,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     },
   });
 
-  if (!result) {
-    throw new Response("You are not in this room", { status: 400 });
-  }
-
-  return null;
+  return redirect(`/chat/room/${roomId}`);
 };
 
 export { CatchBoundary } from "~/src/CatchBoundary";

@@ -5,16 +5,16 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Typography, Tag } from "@arco-design/web-react";
-import { checkProblemReadPermission } from "~/utils/permission/problem";
 import { Navigator } from "~/src/Navigator";
-import { IconTag } from "@arco-design/web-react/icon";
+import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
 import { useContext } from "react";
 import { UserInfoContext } from "~/utils/context/user";
-import { isAdmin } from "~/utils/permission";
+import { isAdmin, isUser } from "~/utils/permission";
+import { permissionProblemRead } from "~/utils/permission/problem";
 
 type LoaderData = {
-  problem: Pick<Problem, "id" | "title" | "description"> & {
+  problem: Pick<Problem, "id" | "title" | "description" | "private"> & {
     tags: Pick<ProblemTag, "name">[];
   };
 };
@@ -23,11 +23,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
   request,
 }) => {
-  const problemId = invariant(idScheme, params.problemId, {
-    status: 404,
-  });
-
-  await checkProblemReadPermission(request, problemId);
+  const problemId = invariant(idScheme, params.problemId, { status: 404 });
+  await permissionProblemRead.ensure(request, problemId);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -35,7 +32,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       id: true,
       title: true,
       description: true,
-      teamId: true,
+      private: true,
       tags: {
         select: {
           name: true,
@@ -64,9 +61,14 @@ export default function ProblemView() {
     <Typography>
       <Typography.Title heading={3}>{problem.title}</Typography.Title>
 
-      {problem.tags.length > 0 && (
+      {(problem.tags.length > 0 || problem.private) && (
         <Typography.Paragraph>
           <TagSpace>
+            {problem.private && (
+              <Tag icon={<IconEyeInvisible />} color="gold">
+                隐藏
+              </Tag>
+            )}
             {problem.tags.map((tag) => (
               <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
                 <Tag icon={<IconTag />}>{tag.name}</Tag>
@@ -79,9 +81,14 @@ export default function ProblemView() {
       <Navigator
         routes={[
           { title: "题面", key: "." },
-          { title: "提交", key: "submit" },
-          ...(self && isAdmin(self?.role)
-            ? [{ title: "数据", key: "data" }]
+          ...(self && isUser(self.role)
+            ? [{ title: "提交", key: "submit" }]
+            : [{ title: "登录后提交", key: "submit" }]),
+          ...(self && isAdmin(self.role)
+            ? [
+                { title: "数据", key: "data" },
+                { title: "编辑", key: "edit" },
+              ]
             : []),
         ]}
       />

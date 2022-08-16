@@ -5,7 +5,6 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
-import { checkContestReadPermission } from "~/utils/permission/contest";
 import type { ContestListData } from "~/utils/db/contest";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
@@ -15,6 +14,7 @@ import {
   IconTrophy,
 } from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
+import { permissionContestInfoRead } from "~/utils/permission/contest";
 
 type LoaderData = {
   contest: ContestListData;
@@ -24,11 +24,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
   request,
   params,
 }) => {
-  const contestId = invariant(idScheme, params.contestId, {
-    status: 404,
-  });
-
-  await checkContestReadPermission(request, contestId);
+  const contestId = invariant(idScheme, params.contestId, { status: 404 });
+  await permissionContestInfoRead.ensure(request, contestId);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -77,7 +74,11 @@ export default function ContestView() {
             endTime={contest.endTime}
           />
           <ContestSystemTag system={contest.system} />
-          {contest.private && <Tag icon={<IconEyeInvisible />}>隐藏</Tag>}
+          {contest.private && (
+            <Tag icon={<IconEyeInvisible />} color="gold">
+              隐藏
+            </Tag>
+          )}
           {contest.tags.map(({ name }) => (
             <Link to={`/contest/tag/${name}`} key={name}>
               <Tag icon={<IconTag />}>{name}</Tag>

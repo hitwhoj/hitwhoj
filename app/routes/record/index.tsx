@@ -1,9 +1,10 @@
-import { Table, Typography } from "@arco-design/web-react";
+import { Typography } from "@arco-design/web-react";
 import type { Problem, Record } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
+import { TableList } from "~/src/TableList";
 import { UserLink } from "~/src/user/UserLink";
 import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
@@ -21,6 +22,7 @@ export const loader: LoaderFunction<LoaderData> = async () => {
   const records = await db.record.findMany({
     where: { contest: null },
     orderBy: [{ id: "desc" }],
+    take: 100,
     select: {
       id: true,
       status: true,
@@ -44,7 +46,7 @@ export const loader: LoaderFunction<LoaderData> = async () => {
 };
 
 export const meta: MetaFunction = () => ({
-  title: "提交记录 - HITwh OJ",
+  title: "评测记录 - HITwh OJ",
 });
 
 export default function RecordList() {
@@ -55,47 +57,45 @@ export default function RecordList() {
       <Typography.Title heading={3}>评测记录</Typography.Title>
 
       <Typography.Paragraph>
-        <Table
+        您只能查询到最近的 100 条评测记录。
+      </Typography.Paragraph>
+
+      <Typography.Paragraph>
+        <TableList
+          data={records}
           columns={[
             {
               title: "#",
-              dataIndex: "id",
+              render: ({ id }) => id,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
             {
               title: "状态",
-              dataIndex: "status",
-              render: (status, record) => (
+              render: (record) => (
                 <Link to={`/record/${record.id}`}>
-                  <RecordStatus status={status} />
+                  <RecordStatus status={record.status} />
                 </Link>
               ),
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
             {
               title: "题目",
-              render: (_, record) => <ProblemLink problem={record.problem} />,
+              render: ({ problem }) => <ProblemLink problem={problem} />,
             },
             {
               title: "用户",
-              render: (_, record) => <UserLink user={record.submitter} />,
+              render: ({ submitter }) => <UserLink user={submitter} />,
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
             {
               title: "提交时间",
-              dataIndex: "submittedAt",
-              render: (time) => formatDateTime(time),
+              render: ({ submittedAt }) => formatDateTime(submittedAt),
               align: "center",
-              cellStyle: { width: "5%", whiteSpace: "nowrap" },
+              minimize: true,
             },
           ]}
-          data={records}
-          rowKey="id"
-          hover={false}
-          border={false}
-          pagination={false}
         />
       </Typography.Paragraph>
     </Typography>

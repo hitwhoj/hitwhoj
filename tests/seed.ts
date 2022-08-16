@@ -1,25 +1,27 @@
-import {
-  ContestSystem,
-  PrismaClient,
-  SystemUserRole,
-  TeamMemberRole,
-} from "@prisma/client";
+import { ContestSystem, PrismaClient, SystemUserRole, TeamMemberRole } from "@prisma/client";
+import { passwordHash } from "~/utils/tools";
 
 const prisma = new PrismaClient();
 
+function hash(password: string): string {
+  return passwordHash(passwordHash(password));
+}
+
 async function seed() {
+  const { Su, Admin, User, Banned } = SystemUserRole;
+
   await prisma.user.createMany({
     data: [
       // common roles
-      { username: "Alice", password: "alice", role: SystemUserRole.Su },
-      { username: "Bob", password: "bob", role: SystemUserRole.Admin },
-      { username: "Cherry", password: "cherry", role: SystemUserRole.User },
-      { username: "David", password: "david", role: SystemUserRole.Banned },
+      { username: "Alice", password: hash("alice"), role: Su },
+      { username: "Bob", password: hash("bob"), role: Admin },
+      { username: "Cherry", password: hash("cherry"), role: User },
+      { username: "David", password: hash("david"), role: Banned },
       // copy of those roles
-      { username: "Alice2", password: "alice2", role: SystemUserRole.Su },
-      { username: "Bob2", password: "bob2", role: SystemUserRole.Admin },
-      { username: "Cherry2", password: "cherry2", role: SystemUserRole.User },
-      { username: "David2", password: "david2", role: SystemUserRole.Banned },
+      { username: "Alice2", password: hash("alice2"), role: Su },
+      { username: "Bob2", password: hash("bob2"), role: Admin },
+      { username: "Cherry2", password: hash("cherry2"), role: User },
+      { username: "David2", password: hash("david2"), role: Banned },
     ],
   });
 
@@ -31,12 +33,7 @@ async function seed() {
   });
 
   await prisma.team.createMany({
-    data: [
-      { name: "Team A" },
-      { name: "Team B" },
-      { name: "Team C" },
-      { name: "Team D" },
-    ],
+    data: [{ name: "Team A" }, { name: "Team B" }, { name: "Team C" }, { name: "Team D" }],
   });
 
   await prisma.teamMember.createMany({
@@ -79,42 +76,32 @@ async function seed() {
   const oneYearLater = new Date(Date.now() + year);
   const twoYearsLater = new Date(Date.now() + year * 2);
 
-  // 枚举比赛类型
-  for (const system of [
-    ContestSystem.ACM,
-    // ContestSystem.IOI,
-    // ContestSystem.OI,
-    // ContestSystem.Homework,
-  ]) {
-    // 枚举比赛状态
-    for (const [status, beginTime, endTime] of [
-      ["Running", oneYearAgo, oneYearLater],
-      ["Not Started", oneYearLater, twoYearsLater],
-      ["Ended", twoYearsAgo, oneYearAgo],
+  // 枚举比赛状态
+  for (const [status, beginTime, endTime] of [
+    ["Running", oneYearAgo, oneYearLater],
+    ["Not Started", oneYearLater, twoYearsLater],
+    ["Ended", twoYearsAgo, oneYearAgo],
+  ] as const) {
+    // 枚举用户的身份
+    const connect = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+    for (const [type, addon] of [
+      ["Mods", { mods: { connect } }],
+      ["Juries", { juries: { connect } }],
+      ["Attendees", { attendees: { connect } }],
+      ["Guests", {}],
     ] as const) {
-      // 枚举用户的身份
-      const connect = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
-      for (const [type, addon] of [
-        ["Mods", { mods: { connect } }],
-        ["Juries", { juries: { connect } }],
-        ["Attendees", { attendees: { connect } }],
-        ["Guests", {}],
-      ] as const) {
-        // 枚举比赛是否公开
-        for (const priv of [false, true]) {
-          await prisma.contest.create({
-            data: {
-              title: `${status} ${system} Contest ${type} ${
-                priv ? "Private" : "Public"
-              }`,
-              system,
-              beginTime,
-              endTime,
-              private: priv,
-              ...addon,
-            },
-          });
-        }
+      // 枚举比赛是否公开
+      for (const priv of [false, true]) {
+        await prisma.contest.create({
+          data: {
+            title: `${status} Contest ${type} ${priv ? "Private" : "Public"}`,
+            system: ContestSystem.ACM,
+            beginTime,
+            endTime,
+            private: priv,
+            ...addon,
+          },
+        });
       }
     }
   }

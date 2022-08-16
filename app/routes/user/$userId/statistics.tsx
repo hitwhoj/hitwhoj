@@ -4,13 +4,13 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { checkUserReadPermission } from "~/utils/permission/user";
 import {
   Typography,
   Link as ArcoLink,
   Statistic,
   Space,
 } from "@arco-design/web-react";
+import { permissionUserProfileRead } from "~/utils/permission/user";
 
 type LoaderData = {
   user: {
@@ -28,7 +28,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await checkUserReadPermission(request, userId);
+  await permissionUserProfileRead.ensure(request, userId);
 
   const user = await db.user.findUnique({
     where: { id: userId },

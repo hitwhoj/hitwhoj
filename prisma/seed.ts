@@ -8,8 +8,13 @@ import {
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
 import { File } from "@remix-run/node/fetch";
+import { passwordHash } from "~/utils/tools";
 
 const prisma = new PrismaClient();
+
+function hash(password: string): string {
+  return passwordHash(passwordHash(password));
+}
 
 async function seed() {
   await prisma.problemTag.createMany({
@@ -26,7 +31,7 @@ async function seed() {
     data: {
       email: "alice@hit.edu.cn",
       username: "Alice",
-      password: "alice",
+      password: hash("alice"),
       nickname: "嘉然今天吃什么",
       bio: "这里是嘉然！别看我小小的，我超能吃还超可爱的哦~",
       role: SystemUserRole.Su,
@@ -47,7 +52,7 @@ async function seed() {
     data: {
       email: "bob@hit.edu.cn",
       username: "Bob",
-      password: "bob",
+      password: hash("bob"),
       nickname: "嘉然小姐的狗",
       bio: "好想做嘉然小姐的狗啊",
       role: SystemUserRole.Admin,
@@ -58,7 +63,7 @@ async function seed() {
     data: {
       email: "cherry@hit.edu.cn",
       username: "Cherry",
-      password: "cherry",
+      password: hash("cherry"),
       nickname: "陈睿",
       bio: "喜欢的话就坚持吧",
     },
@@ -78,7 +83,7 @@ async function seed() {
     data: {
       email: "david@hit.edu.cn",
       username: "David",
-      password: "david",
+      password: hash("david"),
       nickname: "蒙古上单",
       role: SystemUserRole.Banned,
     },
@@ -86,10 +91,18 @@ async function seed() {
 
   await prisma.user.createMany({
     data: [
-      { username: "Alice2", password: "alice2", role: SystemUserRole.Su },
-      { username: "Bob2", password: "bob2", role: SystemUserRole.Admin },
-      { username: "Cherry2", password: "cherry2", role: SystemUserRole.User },
-      { username: "David2", password: "david2", role: SystemUserRole.Banned },
+      { username: "Alice2", password: hash("alice2"), role: SystemUserRole.Su },
+      { username: "Bob2", password: hash("bob2"), role: SystemUserRole.Admin },
+      {
+        username: "Cherry2",
+        password: hash("cherry2"),
+        role: SystemUserRole.User,
+      },
+      {
+        username: "David2",
+        password: hash("david2"),
+        role: SystemUserRole.Banned,
+      },
     ],
   });
 
@@ -268,7 +281,12 @@ this is language whatthefuck
       description: "## Description\n\nThe example problem list",
 
       tags: { create: [{ name: "example" }, { name: "math" }] },
-      problems: { connect: [{ id: p1 }, { id: p2 }] },
+      problems: {
+        create: [
+          { problemId: p1, rank: 1 },
+          { problemId: p2, rank: 2 },
+        ],
+      },
     },
   });
 
@@ -278,7 +296,12 @@ this is language whatthefuck
       description: "b 站关注嘉然今天吃什么",
 
       tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
-      problems: { connect: [{ id: p2 }, { id: p1 }] },
+      problems: {
+        create: [
+          { problemId: p2, rank: 1 },
+          { problemId: p1, rank: 2 },
+        ],
+      },
     },
   });
 
@@ -288,7 +311,21 @@ this is language whatthefuck
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
       tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
-      problems: { connect: [{ id: p2 }, { id: p1 }] },
+      problems: {
+        create: [{ problemId: p2, rank: 1 }],
+      },
+    },
+  });
+
+  const { id: commentTag1 } = await prisma.commentTag.create({
+    data: {
+      name: "P1001",
+    },
+  });
+
+  const { id: commentTag2 } = await prisma.commentTag.create({
+    data: {
+      name: "C1001",
     },
   });
 
@@ -317,7 +354,7 @@ this is language whatthefuck
         "\n\r" +
         "我的灵魂透过窗户向里面看去，挂着的铃铛在轻轻鸣响，嘉然小姐慵懒地靠在沙发上，表演得非常温顺的橘猫坐在她的肩膀。壁炉的火光照在她的脸庞，我冻僵的心脏在风里微微发烫。",
       creator: { connect: { id: alice } },
-      tags: { create: [{ name: "P1001" }] },
+      tags: { connect: [{ id: commentTag1 }, { id: commentTag2 }] },
     },
   });
 
@@ -326,7 +363,7 @@ this is language whatthefuck
       title: "一条来自乃淇淋的评论",
       content: "## 嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
       creator: { connect: { id: alice } },
-      tags: { create: [{ name: "C1001" }] },
+      tags: { connect: [{ id: commentTag2 }] },
     },
   });
 
@@ -538,9 +575,16 @@ this is language whatthefuck
     data: {
       name: "TestChatRoom",
       description: "Test ChatRoom",
-      isPrivate: true,
+      private: true,
       password: "123456",
-      creatorId: alice,
+    },
+  });
+
+  await prisma.chatRoom.create({
+    data: {
+      name: "Public Room",
+      description: "Another Test ChatRoom",
+      private: false,
     },
   });
 

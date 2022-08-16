@@ -1,4 +1,4 @@
-image: node:lts-gallium
+image: node:18
 
 services:
   - postgres:latest

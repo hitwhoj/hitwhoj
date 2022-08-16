@@ -7,7 +7,8 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import { Link } from "@remix-run/react";
-import { Link as AcroLink, Typography } from "@arco-design/web-react";
+import { Link as AcroLink, Space, Typography } from "@arco-design/web-react";
+import { IconShareExternal } from "@arco-design/web-react/icon";
 
 /** @see https://www.npmjs.com/package/rehype-sanitize */
 const sanitizeOptions = {
@@ -42,14 +43,19 @@ export function Markdown({ children }: Props) {
 
           if (isExternalLink) {
             return (
-              <AcroLink {...props} target="_blank" rel="noreferrer noopener">
-                {children}
+              <AcroLink>
+                <Space size="mini">
+                  <a {...props} target="_blank" rel="noreferrer noopener">
+                    {children}
+                  </a>
+                  <IconShareExternal />
+                </Space>
               </AcroLink>
             );
           } else {
             return (
               <AcroLink>
-                <Link to={props.href ?? "#"}>{children}</Link>;
+                <Link to={props.href ?? "#"}>{children}</Link>
               </AcroLink>
             );
           }

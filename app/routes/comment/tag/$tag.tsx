@@ -1,4 +1,4 @@
-import type { Comment, Reply, User } from "@prisma/client";
+import type { Comment, Reply, User, Report } from "@prisma/client";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -7,15 +7,17 @@ import { tagScheme } from "~/utils/scheme";
 import { Divider } from "@arco-design/web-react";
 import { CommentList } from "~/routes/comment";
 import { findSessionUid } from "~/utils/sessions";
+import type { CommentTag } from "@prisma/client";
 
 export { action } from "~/routes/comment";
 
 type LoaderData = {
   comments: (Pick<Comment, "id" | "title" | "createdAt" | "updatedAt"> & {
     creator: Pick<User, "id" | "nickname">;
+    tags: Pick<CommentTag, "id" | "name">[];
     heartees: Pick<User, "id" | "nickname">[];
     replies: Pick<Reply, "id" | "creatorId">[];
-    reportees: Pick<User, "id">[];
+    reports: Pick<Report, "creatorId">[];
   })[];
   self: number;
 };
@@ -47,6 +49,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
           nickname: true,
         },
       },
+      tags: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       heartees: {
         select: {
           id: true,
@@ -59,9 +67,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
           creatorId: true,
         },
       },
-      reportees: {
+      reports: {
         select: {
-          id: true,
+          creatorId: true,
         },
       },
     },

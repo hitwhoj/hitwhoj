@@ -1,18 +1,24 @@
-import { Space, Statistic, Table } from "@arco-design/web-react";
+import { Space, Statistic } from "@arco-design/web-react";
 import { IconCheck, IconClose } from "@arco-design/web-react/icon";
 import type { Contest, Problem, Record } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { TableList } from "~/src/TableList";
 import { invariant } from "~/utils/invariant";
-import { checkContestProblemReadPermission } from "~/utils/permission/contest";
+import { permissionContestProblemRead } from "~/utils/permission/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findSessionUserOptional } from "~/utils/sessions";
 
 type LoaderData = {
-  problems: { rank: number; problem: Pick<Problem, "title"> }[];
-  records: { rank: number; records: Pick<Record, "status">[] }[];
-  contest: Pick<Contest, "beginTime" | "endTime">;
+  contest: Pick<Contest, "beginTime" | "endTime"> & {
+    problems: {
+      rank: number;
+      problem: Pick<Problem, "title"> & {
+        relatedRecords: Pick<Record, "status">[];
+      };
+    }[];
+  };
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -20,62 +26,43 @@ export const loader: LoaderFunction<LoaderData> = async ({
   params,
 }) => {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
+  await permissionContestProblemRead.ensure(request, contestId);
   const self = await findSessionUserOptional(request);
-  await checkContestProblemReadPermission(request, contestId);
 
-  const problems = await db.contestProblem.findMany({
-    where: { contestId },
-    orderBy: {
-      rank: "asc",
-    },
+  const contest = await db.contest.findUnique({
+    where: { id: contestId },
     select: {
-      rank: true,
-      problem: {
-        select: {
-          title: true,
-        },
-      },
-    },
-  });
-
-  // 已经登录用户的提交记录
-  const records = self
-    ? await db.contestProblem.findMany({
-        where: { contestId },
+      beginTime: true,
+      endTime: true,
+      problems: {
+        orderBy: { rank: "asc" },
         select: {
           rank: true,
           problem: {
             select: {
+              title: true,
               relatedRecords: {
-                where: { submitterId: self.id, contestId },
+                where: self
+                  ? { contestId, submitterId: self.id }
+                  : { contestId, submitterId: -1 },
                 select: { status: true },
               },
             },
           },
         },
-      })
-    : [];
-
-  const contest = (await db.contest.findUnique({
-    where: { id: contestId },
-    select: {
-      beginTime: true,
-      endTime: true,
+      },
     },
-  }))!;
+  });
 
-  return {
-    problems,
-    records: records.map(({ rank, problem: { relatedRecords: records } }) => ({
-      rank,
-      records,
-    })),
-    contest,
-  };
+  if (!contest) {
+    throw new Response("Contest not found", { status: 404 });
+  }
+
+  return { contest };
 };
 
 export default function ContestProblemIndex() {
-  const { problems, records, contest } = useLoaderData<LoaderData>();
+  const { contest } = useLoaderData<LoaderData>();
 
   const started = new Date() > new Date(contest.beginTime);
   const navigate = useNavigate();
@@ -94,40 +81,33 @@ export default function ContestProblemIndex() {
   }
 
   return (
-    <Table
+    <TableList
+      data={contest.problems.map(({ rank, problem }) => ({
+        id: rank,
+        ...problem,
+      }))}
       columns={[
         {
           title: "#",
-          dataIndex: "rank",
+          render: ({ id: rank }) => String.fromCharCode(0x40 + rank),
           align: "center",
-          cellStyle: { width: "5%", whiteSpace: "nowrap" },
-          render(rank) {
-            return String.fromCharCode(0x40 + rank);
-          },
+          minimize: true,
         },
         {
           title: "题目",
-          render(_, { rank, problem }) {
+          render({ id: rank, title, relatedRecords: records }) {
             const problemId = String.fromCharCode(0x40 + rank);
             // 是否已经通过这道题目
-            const accepted =
-              records.findIndex(
-                (rec) =>
-                  rec.rank === rank &&
-                  rec.records.findIndex(
-                    ({ status }) => status === "Accepted"
-                  ) !== -1
-              ) > -1;
+            const accepted = records.some(
+              ({ status }) => status === "Accepted"
+            );
             // 是否有失败的提交记录
-            const failed =
-              records.findIndex(
-                (rec) => rec.rank === rank && rec.records.length > 0
-              ) !== -1 && !accepted;
+            const failed = records.length > 0 && !accepted;
 
             return (
               <Link to={problemId} target="_blank">
                 <Space>
-                  {problem.title}
+                  {title}
                   {accepted ? (
                     <IconCheck style={{ color: "rgb(var(--green-6))" }} />
                   ) : failed ? (
@@ -139,10 +119,6 @@ export default function ContestProblemIndex() {
           },
         },
       ]}
-      data={problems}
-      hover={false}
-      border={false}
-      pagination={false}
     />
   );
 }

@@ -15,6 +15,7 @@ import { useFetcher } from "@remix-run/react";
 import { LoginModalContext } from "~/utils/context/modal";
 import type { ActionData as LoginActionData } from "~/routes/login";
 import { version } from "../../../package.json";
+import { passwordHash } from "~/utils/tools";
 
 const Sider = Layout.Sider;
 const Header = Layout.Header;
@@ -112,12 +113,16 @@ export default function MainLayout({ children }: LayoutProps) {
             />
           </Form.Item>
           <Form.Item label="密码" required>
-            <Input.Password
+            <input
+              type="hidden"
               name="password"
-              required
+              value={passwordHash(password)}
+            />
+            <Input.Password
               disabled={isFetching}
               value={password}
               onChange={(value) => setPassword(value)}
+              required
             />
           </Form.Item>
           {fetcher.data?.success === false && (
