@@ -23,6 +23,7 @@ import {
   Input,
   Message,
   Select,
+  Space,
 } from "@arco-design/web-react";
 import { IconCheck } from "@arco-design/web-react/icon";
 const FormItem = arcoForm.Item;
@@ -64,6 +65,7 @@ enum ActionType {
   DissolveTeam = "DissolveTeam",
   ModifyInvitation = "ModifyInvitation",
   ExitTeam = "ExitTeam",
+  TransferTeam = "TransferTeam",
 }
 
 export const action: ActionFunction<Response> = async ({ params, request }) => {
@@ -184,6 +186,48 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       await db.team.delete({ where: { id: teamId } });
 
       return redirect(`/team`);
+    }
+
+    // 转让团队
+    case ActionType.TransferTeam: {
+      if (teamMember.role !== TeamMemberRole.Owner) {
+        throw new Response("Permisson denied: Only owner can transfer team.", {
+          status: 403,
+        });
+      }
+
+      const newId = invariant(idScheme, form.get("new_id"));
+
+      if (newId === self) {
+        throw new Response("You can't transfer to yourself.", { status: 400 });
+      }
+
+      const member = await db.teamMember.findUnique({
+        where: { userId_teamId: { teamId, userId: newId } },
+      });
+
+      if (!member) {
+        throw new Response("Member not exists or not in this team", {
+          status: 404,
+        });
+      }
+
+      await db.$transaction([
+        db.teamMember.update({
+          where: { userId_teamId: { teamId, userId: newId } },
+          data: {
+            role: TeamMemberRole.Owner,
+          },
+        }),
+        db.teamMember.update({
+          where: { userId_teamId: { teamId, userId: self } },
+          data: {
+            role: TeamMemberRole.Admin,
+          },
+        }),
+      ]);
+
+      return new Response("Team transferred", { status: 200 });
     }
   }
 
@@ -351,6 +395,47 @@ function ExitTeam() {
   );
 }
 
+function TransferTeam() {
+  const [confirm, setConfirm] = useState(false);
+  const fetcher = useFetcher();
+  const isUpdating = fetcher.state === "submitting";
+
+  if (fetcher.state === "loading") {
+    Message.success("转让团队成功");
+  }
+
+  return (
+    <Typography>
+      <Typography.Title heading={5}>转让团队</Typography.Title>
+      <Typography.Paragraph>
+        <Checkbox
+          onChange={() => setConfirm((confirm) => !confirm)}
+          checked={confirm}
+        >
+          我知道我在干什么
+        </Checkbox>
+      </Typography.Paragraph>
+      <fetcher.Form method="post">
+        <FormItem label="新的团队拥有者id" required layout="vertical">
+          <Space>
+            <Input name="new_id" required disabled={isUpdating} />
+          </Space>
+        </FormItem>
+        <Button
+          htmlType="submit"
+          type="primary"
+          status="danger"
+          disabled={!confirm}
+          name="_action"
+          value={ActionType.TransferTeam}
+        >
+          转让团队
+        </Button>
+      </fetcher.Form>
+    </Typography>
+  );
+}
+
 function DissolveTeam() {
   const [confirm, setConfirm] = useState(false);
 
@@ -403,6 +488,9 @@ export default function TeamSettings() {
       <Typography.Title heading={4}>危险区域</Typography.Title>
       <Typography.Paragraph>
         <ExitTeam />
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        <TransferTeam />
       </Typography.Paragraph>
       <Typography.Paragraph>
         <DissolveTeam />
