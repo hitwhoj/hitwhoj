@@ -111,7 +111,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
         },
       });
 
-      if (team) {
+      if (team.length > 0) {
         throw new Response("Team name already exists.", { status: 400 });
       }
 
