@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { ContestSystem, InvitationType, ReportType } from "@prisma/client";
+import {
+  ContestSystem,
+  InvitationType,
+  ReportType,
+  TeamMemberRole,
+} from "@prisma/client";
 
 /**
  * 数字 ID，非负整数
@@ -184,6 +189,13 @@ export const replyScheme = z
  * 团队名称（非空）
  */
 export const teamNameScheme = z.string().nonempty("TeamName must be nonempty");
+
+/**
+ * 团队成员角色
+ *
+ * @example "Member"
+ */
+export const teamMemberRoleScheme = z.nativeEnum(TeamMemberRole);
 
 /**
  * 团队邀请制

@@ -553,6 +553,13 @@ this is language whatthefuck
     data: {
       userId: bob,
       teamId: team1,
+      role: TeamMemberRole.Admin,
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: cherry,
+      teamId: team1,
       role: TeamMemberRole.Member,
     },
   });

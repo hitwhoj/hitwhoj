@@ -1,33 +1,49 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import type { FormMethod } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
+import { TeamMemberRole } from "@prisma/client";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
-import { idScheme } from "~/utils/scheme";
+import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
 import {
   Button,
   Card,
+  Dropdown,
   Grid,
   Input,
+  Menu,
+  Message,
   Modal,
   Space,
+  Tooltip,
   Typography,
 } from "@arco-design/web-react";
-import { IconDelete, IconPlus } from "@arco-design/web-react/icon";
+import {
+  IconDelete,
+  IconPlus,
+  IconSettings,
+} from "@arco-design/web-react/icon";
 import { useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import { findSessionUid } from "~/utils/sessions";
+import { TeamMemberRoleTag } from "~/src/team/TeamMemberRoleTag";
 const Row = Grid.Row;
 const Col = Grid.Col;
+const MenuItem = Menu.Item;
 
-type Member = Pick<User, "id" | "username" | "avatar">;
+type Member = Pick<User, "id" | "username" | "avatar"> & {
+  role: TeamMemberRole;
+};
 
 type LoaderData = {
   members: Member[];
 };
 
 enum ActionType {
-  AddMember = "addMember",
-  DeleteMember = "deleteMember",
+  AddMember = "AddMember",
+  DeleteMember = "DeleteMember",
+  ChangeRole = "ChangeRole",
 }
 
 export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
@@ -42,78 +58,192 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
           avatar: true,
         },
       },
+      role: true,
     },
   });
   return {
-    members: result.map(({ user }) => user),
+    members: result.map((member) => ({ ...member.user, role: member.role })),
   };
 };
 
-export const action: ActionFunction = async ({ params, request }) => {
+export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme, params.teamId);
   const form = await request.formData();
 
-  const member = invariant(idScheme, form.get("member"));
+  const memberId = invariant(idScheme, form.get("member"));
   const _action = form.get("_action");
 
-  try {
-    switch (_action) {
-      case ActionType.AddMember: {
-        await db.teamMember.create({
-          data: {
-            teamId,
-            userId: member,
-          },
-        });
-        return null;
-      }
-      case ActionType.DeleteMember: {
-        await db.teamMember.delete({
-          where: {
-            userId_teamId: {
-              userId: member,
-              teamId,
-            },
-          },
-        });
-        return null;
-      }
-    }
-  } catch (error) {
-    throw new Response("Invalid action", { status: 400 });
+  const self = await findSessionUid(request);
+  const teamMember = await db.teamMember.findUnique({
+    where: { userId_teamId: { teamId, userId: self } },
+    select: { role: true },
+  });
+
+  if (!teamMember) {
+    throw new Response("You are not in this team", { status: 403 });
   }
-  return null;
+
+  switch (_action) {
+    case ActionType.AddMember: {
+      await db.teamMember.create({
+        data: {
+          teamId,
+          userId: memberId,
+        },
+      });
+      return new Response("add member success", { status: 200 });
+    }
+    case ActionType.DeleteMember: {
+      if (memberId === self) {
+        throw new Response("You can't delete yourself", { status: 403 });
+      }
+
+      if (
+        teamMember.role != TeamMemberRole.Owner &&
+        teamMember.role != TeamMemberRole.Admin
+      ) {
+        throw new Response("Only owner or admin can delete member", {
+          status: 403,
+        });
+      }
+
+      await db.teamMember.delete({
+        where: {
+          userId_teamId: {
+            userId: memberId,
+            teamId,
+          },
+        },
+      });
+
+      return new Response("delete member success", { status: 200 });
+    }
+    case ActionType.ChangeRole: {
+      const role = invariant(teamMemberRoleScheme, form.get("role"));
+
+      await db.teamMember.update({
+        where: {
+          userId_teamId: {
+            userId: memberId,
+            teamId,
+          },
+        },
+        data: {
+          role,
+        },
+      });
+
+      return new Response("change role success", { status: 200 });
+    }
+  }
+
+  throw new Response("I'm a teapot", { status: 418 });
 };
 
-const MemberCard = ({ id, username, avatar }: Member) => {
+const DeleteMember = ({ id }: { id: number }) => {
   const fetcher = useFetcher();
+  if (fetcher.state === "loading") {
+    Message.success("删除成员成功");
+  }
+
+  return (
+    <fetcher.Form method="post">
+      <input name="member" type="hidden" value={id} />
+      <Tooltip content="踢出团队">
+        <Button
+          type="primary"
+          status="danger"
+          icon={<IconDelete />}
+          htmlType="submit"
+          name="_action"
+          value={ActionType.DeleteMember}
+          loading={
+            fetcher.state === "submitting" || fetcher.state === "loading"
+          }
+        />
+      </Tooltip>
+    </fetcher.Form>
+  );
+};
+
+const SetMemberRole = ({ id, role }: { id: number; role: TeamMemberRole }) => {
+  const fetcher = useFetcher();
+  if (fetcher.state === "loading") {
+    Message.success("设定成员角色成功");
+  }
+
+  const renderDropdown = (role: TeamMemberRole) => {
+    const formData = new FormData();
+    formData.append("_action", ActionType.ChangeRole);
+    formData.append("member", String(id));
+    const formOptions: { method: FormMethod } = {
+      method: "post",
+    };
+
+    return (
+      <Menu>
+        {role == TeamMemberRole.Member && (
+          <MenuItem
+            key={TeamMemberRole.Member}
+            onClick={() => {
+              formData.append("role", String(TeamMemberRole.Admin));
+              fetcher.submit(formData, formOptions);
+            }}
+          >
+            设为管理员
+          </MenuItem>
+        )}
+        {role == TeamMemberRole.Admin && (
+          <MenuItem
+            key={TeamMemberRole.Admin}
+            onClick={() => {
+              formData.append("role", String(TeamMemberRole.Member));
+              fetcher.submit(formData, formOptions);
+            }}
+          >
+            设为普通成员
+          </MenuItem>
+        )}
+      </Menu>
+    );
+  };
+
+  return (
+    <fetcher.Form method="post">
+      <Dropdown droplist={renderDropdown(role)}>
+        <Button
+          type="primary"
+          icon={<IconSettings />}
+          loading={
+            fetcher.state === "submitting" || fetcher.state === "loading"
+          }
+        />
+      </Dropdown>
+    </fetcher.Form>
+  );
+};
+
+const MemberCard = ({ id, username, avatar, role }: Member) => {
   return (
     <Card hoverable>
       <Row justify="space-between" align="center">
         <Link to={`/user/${id}`}>
-          <span style={{ display: "flex", alignItems: "center" }}>
+          <Space>
             <UserAvatar
               user={{ username, avatar, nickname: username }}
               style={{ marginRight: 10, backgroundColor: "#165DFF" }}
               size={32}
             />
             <Typography.Text>{username}</Typography.Text>
-          </span>
+            <Typography.Text>
+              <TeamMemberRoleTag role={role} />
+            </Typography.Text>
+          </Space>
         </Link>
-        <fetcher.Form method="post">
-          <input name="member" type="hidden" value={id} />
-          <Button
-            type="primary"
-            status="danger"
-            icon={<IconDelete />}
-            htmlType="submit"
-            name="_action"
-            value={ActionType.DeleteMember}
-            loading={
-              fetcher.state === "submitting" || fetcher.state === "loading"
-            }
-          />
-        </fetcher.Form>
+        <Space>
+          <SetMemberRole id={id} role={role} />
+          <DeleteMember id={id} />
+        </Space>
       </Row>
     </Card>
   );
@@ -128,6 +258,7 @@ const Members = ({ members }: { members: Member[] }) => {
             id={member.id}
             username={member.username}
             avatar={member.avatar}
+            role={member.role}
           />
         </Col>
       ))}
