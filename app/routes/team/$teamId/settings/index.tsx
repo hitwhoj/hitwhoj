@@ -12,6 +12,7 @@ import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { TeamMemberRole, InvitationType } from "@prisma/client";
 import type { Team } from "@prisma/client";
+import { permissionTeamRead } from "~/utils/permission/team";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import {
@@ -38,8 +39,14 @@ type LoaderData = {
   };
 };
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const teamId = invariant(idScheme, params.teamId);
+
+  await permissionTeamRead.ensure(request, teamId);
+
   const team = await db.team.findUnique({
     where: { id: teamId },
   });

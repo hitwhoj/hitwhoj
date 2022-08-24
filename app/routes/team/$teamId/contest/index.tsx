@@ -7,6 +7,7 @@ import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { db } from "~/utils/server/db.server";
+import { permissionTeamRead } from "~/utils/permission/team";
 import { TableList } from "~/src/TableList";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
@@ -20,8 +21,13 @@ export const meta: MetaFunction<LoaderData> = () => ({
   title: `团队比赛列表 - HITwh OJ`,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const teamId = invariant(idScheme, params.teamId);
+
+  await permissionTeamRead.ensure(request, teamId);
 
   const contests = await db.contest.findMany({
     where: { team: { id: teamId } },

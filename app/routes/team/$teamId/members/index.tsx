@@ -6,6 +6,7 @@ import { TeamMemberRole } from "@prisma/client";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
+import { permissionTeamRead } from "~/utils/permission/team";
 import {
   Button,
   Card,
@@ -46,8 +47,14 @@ enum ActionType {
   ChangeRole = "ChangeRole",
 }
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export const loader: LoaderFunction<LoaderData> = async ({
+  request,
+  params,
+}) => {
   const teamId = invariant(idScheme, params.teamId);
+
+  await permissionTeamRead.ensure(request, teamId);
+
   const result = await db.teamMember.findMany({
     where: { teamId },
     select: {

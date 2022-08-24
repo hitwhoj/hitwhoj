@@ -18,6 +18,7 @@ import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { findSessionUid } from "~/utils/sessions";
 import { idScheme } from "~/utils/scheme";
+import { permissionTeamRead } from "~/utils/permission/team";
 import {
   Form,
   Input,
@@ -32,12 +33,10 @@ const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const teamId = invariant(idScheme, params.teamId);
 
-  if (!self) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
+  await permissionTeamRead.ensure(request, teamId);
 
   return null;
 };
