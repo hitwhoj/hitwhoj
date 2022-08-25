@@ -12,7 +12,11 @@ import { db } from "~/utils/server/db.server";
 import { findSessionUid } from "~/utils/sessions";
 import { TeamMemberRole, InvitationType } from "@prisma/client";
 import type { Team } from "@prisma/client";
-import { permissionTeamRead } from "~/utils/permission/team";
+import {
+  permissionTeamRead,
+  permissionTeamSettings,
+  permissionTeamDissolve,
+} from "~/utils/permission/team";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import {
@@ -37,6 +41,7 @@ type LoaderData = {
     type: InvitationType;
     code: string | null;
   };
+  role: TeamMemberRole;
 };
 
 export const loader: LoaderFunction<LoaderData> = async ({
@@ -47,12 +52,31 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   await permissionTeamRead.ensure(request, teamId);
 
+  const self = await findSessionUid(request);
+
   const team = await db.team.findUnique({
     where: { id: teamId },
+    select: {
+      name: true,
+      description: true,
+      invitationType: true,
+      invitationCode: true,
+      members: {
+        where: { userId: self },
+        select: {
+          userId: true,
+          role: true,
+        },
+      },
+    },
   });
 
   if (!team) {
     throw new Response("Team not exists", { status: 404 });
+  }
+
+  if (team.members.length != 1) {
+    throw new Response("You are not a member of this team", { status: 403 });
   }
 
   return {
@@ -64,6 +88,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       type: team.invitationType,
       code: team.invitationCode,
     },
+    role: team.members[0].role,
   };
 };
 
@@ -94,17 +119,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
   switch (_action) {
     // 编辑基本信息
     case ActionType.EditProfile: {
-      if (
-        teamMember.role !== TeamMemberRole.Admin &&
-        teamMember.role !== TeamMemberRole.Owner
-      ) {
-        throw new Response(
-          "Permisson denied: Only owner or admin can modify team profile.",
-          {
-            status: 403,
-          }
-        );
-      }
+      await permissionTeamSettings.ensure(request, teamId);
 
       const name = invariant(teamNameScheme, form.get("name"));
       const description = invariant(descriptionScheme, form.get("description"));
@@ -135,6 +150,8 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 修改邀请制
     case ActionType.ModifyInvitation: {
+      await permissionTeamSettings.ensure(request, teamId);
+
       const invitationType = invariant(
         teamInvitationScheme,
         form.get("invitation")
@@ -180,14 +197,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 解散团队
     case ActionType.DissolveTeam: {
-      if (teamMember.role !== TeamMemberRole.Owner) {
-        throw new Response(
-          "Permisson denied: Only owner can dissolve team directly.",
-          {
-            status: 403,
-          }
-        );
-      }
+      await permissionTeamDissolve.ensure(request, teamId);
 
       await db.teamMember.deleteMany({ where: { teamId } });
       await db.team.delete({ where: { id: teamId } });
@@ -197,11 +207,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 转让团队
     case ActionType.TransferTeam: {
-      if (teamMember.role !== TeamMemberRole.Owner) {
-        throw new Response("Permisson denied: Only owner can transfer team.", {
-          status: 403,
-        });
-      }
+      await permissionTeamSettings.ensure(request, teamId);
 
       const newId = invariant(idScheme, form.get("new_id"));
 
@@ -480,28 +486,39 @@ function DissolveTeam() {
 }
 
 export default function TeamSettings() {
-  const { profile, invitation } = useLoaderData<LoaderData>();
+  const { profile, invitation, role } = useLoaderData<LoaderData>();
+  const isOwner = role === TeamMemberRole.Owner;
+  const isAdmin =
+    role === TeamMemberRole.Admin || role === TeamMemberRole.Owner;
 
   return (
     <Typography>
-      <Typography.Title heading={4}>团队资料</Typography.Title>
-      <Typography.Paragraph>
-        <EditProfile {...profile} />
-      </Typography.Paragraph>
-      <Typography.Title heading={4}>邀请设置</Typography.Title>
-      <Typography.Paragraph>
-        <EditInvitation {...invitation} />
-      </Typography.Paragraph>
+      {isAdmin && (
+        <>
+          <Typography.Title heading={4}>团队资料</Typography.Title>
+          <Typography.Paragraph>
+            <EditProfile {...profile} />
+          </Typography.Paragraph>
+          <Typography.Title heading={4}>邀请设置</Typography.Title>
+          <Typography.Paragraph>
+            <EditInvitation {...invitation} />
+          </Typography.Paragraph>
+        </>
+      )}
       <Typography.Title heading={4}>危险区域</Typography.Title>
       <Typography.Paragraph>
         <ExitTeam />
       </Typography.Paragraph>
-      <Typography.Paragraph>
-        <TransferTeam />
-      </Typography.Paragraph>
-      <Typography.Paragraph>
-        <DissolveTeam />
-      </Typography.Paragraph>
+      {isOwner && (
+        <>
+          <Typography.Paragraph>
+            <TransferTeam />
+          </Typography.Paragraph>
+          <Typography.Paragraph>
+            <DissolveTeam />
+          </Typography.Paragraph>
+        </>
+      )}
     </Typography>
   );
 }
