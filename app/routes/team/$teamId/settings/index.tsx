@@ -100,6 +100,7 @@ enum ActionType {
   TransferTeam = "TransferTeam",
 }
 
+// TODO: 系统超管好像没这么大权力qwq
 export const action: ActionFunction<Response> = async ({ params, request }) => {
   const teamId = invariant(idScheme, params.teamId);
   const self = await findSessionUid(request);

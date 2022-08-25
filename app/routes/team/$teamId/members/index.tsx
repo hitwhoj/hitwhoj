@@ -6,7 +6,12 @@ import { TeamMemberRole } from "@prisma/client";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import { permissionTeamRead } from "~/utils/permission/team";
+import {
+  permissionTeamRead,
+  permissionTeamMemberRole,
+  permissionTeamMemberKick,
+  permissionTeamSettings,
+} from "~/utils/permission/team";
 import {
   Button,
   Card,
@@ -39,6 +44,7 @@ type Member = Pick<User, "id" | "username" | "avatar"> & {
 
 type LoaderData = {
   members: Member[];
+  selfRole: TeamMemberRole;
 };
 
 enum ActionType {
@@ -55,6 +61,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
 
   await permissionTeamRead.ensure(request, teamId);
 
+  const self = await findSessionUid(request);
+  const teamMemberSelf = await db.teamMember.findUnique({
+    where: { userId_teamId: { teamId, userId: self } },
+    select: { role: true },
+  });
+  if (!teamMemberSelf) {
+    throw new Response("You are not a member of this team", { status: 403 });
+  }
+
   const result = await db.teamMember.findMany({
     where: { teamId },
     select: {
@@ -70,6 +85,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
   });
   return {
     members: result.map((member) => ({ ...member.user, role: member.role })),
+    selfRole: teamMemberSelf.role,
   };
 };
 
@@ -92,6 +108,15 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
   switch (_action) {
     case ActionType.AddMember: {
+      await permissionTeamSettings.ensure(request, teamId);
+      if (
+        await db.teamMember.findUnique({
+          where: { userId_teamId: { teamId, userId: memberId } },
+        })
+      ) {
+        throw new Response("User is already in this team", { status: 400 });
+      }
+
       await db.teamMember.create({
         data: {
           teamId,
@@ -101,18 +126,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       return new Response("add member success", { status: 200 });
     }
     case ActionType.DeleteMember: {
-      if (memberId === self) {
-        throw new Response("You can't delete yourself", { status: 403 });
-      }
-
-      if (
-        teamMember.role != TeamMemberRole.Owner &&
-        teamMember.role != TeamMemberRole.Admin
-      ) {
-        throw new Response("Only owner or admin can delete member", {
-          status: 403,
-        });
-      }
+      await permissionTeamMemberKick.ensure(request, teamId, memberId);
 
       await db.teamMember.delete({
         where: {
@@ -126,6 +140,8 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       return new Response("delete member success", { status: 200 });
     }
     case ActionType.ChangeRole: {
+      await permissionTeamMemberRole.ensure(request, teamId);
+
       const role = invariant(teamMemberRoleScheme, form.get("role"));
 
       await db.teamMember.update({
@@ -230,7 +246,13 @@ const SetMemberRole = ({ id, role }: { id: number; role: TeamMemberRole }) => {
   );
 };
 
-const MemberCard = ({ id, username, avatar, role }: Member) => {
+const MemberCard = ({
+  id,
+  username,
+  avatar,
+  role,
+  showButton,
+}: Member & { showButton: boolean }) => {
   return (
     <Card hoverable>
       <Row justify="space-between" align="center">
@@ -247,16 +269,24 @@ const MemberCard = ({ id, username, avatar, role }: Member) => {
             </Typography.Text>
           </Space>
         </Link>
-        <Space>
-          <SetMemberRole id={id} role={role} />
-          <DeleteMember id={id} />
-        </Space>
+        {showButton && (
+          <Space>
+            <SetMemberRole id={id} role={role} />
+            <DeleteMember id={id} />
+          </Space>
+        )}
       </Row>
     </Card>
   );
 };
 
-const Members = ({ members }: { members: Member[] }) => {
+const Members = ({
+  members,
+  role,
+}: {
+  members: Member[];
+  role: TeamMemberRole;
+}) => {
   return (
     <Row justify="space-between" gutter={20}>
       {members.map((member) => (
@@ -266,6 +296,9 @@ const Members = ({ members }: { members: Member[] }) => {
             username={member.username}
             avatar={member.avatar}
             role={member.role}
+            showButton={
+              role === TeamMemberRole.Admin || role === TeamMemberRole.Owner
+            }
           />
         </Col>
       ))}
@@ -274,7 +307,7 @@ const Members = ({ members }: { members: Member[] }) => {
 };
 
 export default function MemberList() {
-  const { members } = useLoaderData<LoaderData>();
+  const { members, selfRole } = useLoaderData<LoaderData>();
   const fetcher = useFetcher();
   const [modalVisible, setModalVisible] = useState(false);
   const [userIdInput, setUserIdInput] = useState("");
@@ -286,22 +319,25 @@ export default function MemberList() {
   }, [fetcher]);
   return (
     <Typography>
-      <Typography.Title heading={4}>
-        <Row justify="space-between" align="center">
-          <span>团队成员</span>
-          <Button
-            onClick={() => setModalVisible(true)}
-            type="primary"
-            icon={<IconPlus />}
-            loading={fetcher.state === "submitting"}
-          >
-            添加成员
-          </Button>
-        </Row>
-      </Typography.Title>
+      {(selfRole === TeamMemberRole.Admin ||
+        selfRole === TeamMemberRole.Owner) && (
+        <Typography.Title heading={4}>
+          <Row justify="space-between" align="center">
+            <span>团队成员</span>
+            <Button
+              onClick={() => setModalVisible(true)}
+              type="primary"
+              icon={<IconPlus />}
+              loading={fetcher.state === "submitting"}
+            >
+              添加成员
+            </Button>
+          </Row>
+        </Typography.Title>
+      )}
 
       <Typography.Paragraph>
-        <Members members={members} />
+        <Members members={members} role={selfRole} />
       </Typography.Paragraph>
 
       <Modal
