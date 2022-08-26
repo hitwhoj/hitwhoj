@@ -1,6 +1,5 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { redirect, Response } from "@remix-run/node";
 import { Button, Empty, Input, Typography } from "@arco-design/web-react";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
@@ -18,6 +17,8 @@ import ChatBubble from "~/src/chat/ChatBubble";
 import ChatTime from "~/src/chat/ChatTime";
 import { ChatAvatar } from "~/src/chat/ChatAvatar";
 import { ChatMessage } from "~/src/chat/ChatMessage";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -25,9 +26,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  if (!self.userId) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const target = await db.user.findUnique({
@@ -60,9 +60,9 @@ export async function loader({ request, params }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
-  if (!self.userId) {
-    throw redirect("/login");
-  }
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const form = await request.formData();
   const to = invariant(idScheme, form.get("to"));

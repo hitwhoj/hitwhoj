@@ -6,6 +6,7 @@ import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 import { idScheme, roomPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
@@ -13,6 +14,9 @@ export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self
+    .room(roomId)
+    .checkPermission(Permissions.PERM_JOIN_CHATROOM_MESSAGE);
 
   const room = await db.chatRoom.findUnique({
     where: { id: roomId },
@@ -21,20 +25,11 @@ export async function loader({ request, params }: LoaderArgs) {
       name: true,
       description: true,
       private: true,
-      userInChatRoom: {
-        where: { userId: self.userId },
-        select: { role: true },
-      },
     },
   });
 
   if (!room) {
     throw new Response("Room not found", { status: 404 });
-  }
-
-  // 如果已经加入，则跳转到聊天室
-  if (room.userInChatRoom.length > 0) {
-    throw redirect(`/chat/room/${room.id}`);
   }
 
   return json({ room });
@@ -92,6 +87,9 @@ export async function action({ request, params }: ActionArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self
+    .room(roomId)
+    .checkPermission(Permissions.PERM_JOIN_CHATROOM_MESSAGE);
 
   await db.$transaction(async (db) => {
     const room = await db.chatRoom.findUnique({
@@ -100,19 +98,11 @@ export async function action({ request, params }: ActionArgs) {
         id: true,
         private: true,
         password: true,
-        userInChatRoom: {
-          where: { userId: self.userId! },
-          select: { role: true },
-        },
       },
     });
 
     if (!room) {
       throw new Response("讨论组不存在", { status: 404 });
-    }
-
-    if (room.userInChatRoom.length > 0) {
-      throw new Response("您已经在讨论组中", { status: 400 });
     }
 
     if (room.private) {
@@ -124,7 +114,7 @@ export async function action({ request, params }: ActionArgs) {
       }
     }
 
-    await db.userInChatRoom.create({
+    await db.chatRoomUser.create({
       data: {
         userId: self.userId!,
         roomId: room.id,

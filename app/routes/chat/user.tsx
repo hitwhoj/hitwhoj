@@ -1,6 +1,5 @@
 import { Empty, List } from "@arco-design/web-react";
 import type { LinksFunction, LoaderArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
@@ -11,14 +10,14 @@ import { db } from "~/utils/server/db.server";
 import type { MessageType } from "./events";
 
 import style from "~/styles/simplify.css";
+import { Permissions } from "~/utils/permission/permission";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
-  if (!self.userId) {
-    throw redirect("/login");
-  }
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const messages = await db.privateMessage.findMany({
     where: {
@@ -87,25 +86,12 @@ export default function UserChatIndex() {
                 className="block"
               >
                 <div className="flex w-full gap-3 items-center">
-                  <UserAvatar user={user} style={{ flexShrink: 0 }} />
-                  <div style={{ overflow: "hidden" }}>
-                    <div
-                      style={{
-                        fontWeight: "bold",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                      }}
-                    >
+                  <UserAvatar user={user} className="shrink-0" />
+                  <div className="overflow-hidden">
+                    <div className="bold text-ellipsis whitespace-nowrap overflow-hidden">
                       {user.nickname || user.username}
                     </div>
-                    <div
-                      style={{
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div className="text-ellipsis whitespace-nowrap overflow-hidden">
                       {message.content}
                     </div>
                   </div>

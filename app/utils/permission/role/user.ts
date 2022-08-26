@@ -2,6 +2,7 @@ import type { SystemUserRole } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
 import type { UserPermission } from "../permission/user";
 import type { Privilege } from "../privilege";
+import { ChatRoomUser } from "./room";
 import { TeamUser } from "./team";
 
 /**
@@ -72,5 +73,9 @@ export class User {
 
   team(teamId: number | null) {
     return new TeamUser(this, teamId);
+  }
+
+  room(roomId: number | null) {
+    return new ChatRoomUser(this, roomId);
   }
 }

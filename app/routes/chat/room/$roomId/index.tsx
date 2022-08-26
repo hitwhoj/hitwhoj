@@ -24,29 +24,18 @@ import ChatBubble from "~/src/chat/ChatBubble";
 import ChatTime from "~/src/chat/ChatTime";
 
 import style from "~/styles/simplify.css";
+import { Permissions } from "~/utils/permission/permission";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-
   const self = await findRequestUser(request);
-  if (!self.userId) {
-    throw redirect("/login");
-  }
-
-  const userInChatRoom = await db.userInChatRoom.findUnique({
-    where: {
-      roomId_userId: {
-        roomId: roomId,
-        userId: self.userId,
-      },
-    },
-    select: { role: true },
-  });
-
-  // 如果用户还没有加入聊天室，则跳转到加入聊天室页面
-  if (!userInChatRoom) {
+  const _room = self.room(roomId);
+  const [hasReadPerm] = await _room.hasPermission(
+    Permissions.PERM_VIEW_CHATROOM_MESSAGE
+  );
+  if (!hasReadPerm) {
     throw redirect(`/chat/room/${roomId}/enter`);
   }
 
@@ -205,7 +194,7 @@ export async function action({ request }: ActionArgs) {
   const roomId = invariant(idScheme, form.get("roomId"));
   const content = invariant(contentScheme, form.get("content"));
 
-  const userInChatRoom = await db.userInChatRoom.findUnique({
+  const chatRoomUser = await db.chatRoomUser.findUnique({
     where: {
       roomId_userId: {
         roomId: roomId,
@@ -213,7 +202,7 @@ export async function action({ request }: ActionArgs) {
       },
     },
   });
-  if (!userInChatRoom) {
+  if (!chatRoomUser) {
     throw new Response("You are not in this room", { status: 403 });
   }
 

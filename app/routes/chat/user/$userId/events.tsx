@@ -3,6 +3,7 @@ import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 import { idScheme } from "~/utils/scheme";
 import type { PrivateMessageWithUser } from "~/utils/serverEvents";
 import { privateMessageSubject } from "~/utils/serverEvents";
@@ -16,6 +17,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   return createEventSource<MessageType>(
     request,

@@ -46,7 +46,7 @@ model User {
   sentMessages     PrivateMessage[] @relation("send")
   receivedMessages PrivateMessage[] @relation("receive")
   chatMessage      ChatMessage[]
-  enteredChatRoom  UserInChatRoom[]
+  enteredChatRoom  ChatRoomUser[]
   reports          Report[]         @relation("reports")
 }
 
@@ -422,7 +422,7 @@ model ChatRoom {
   password String  @default("")
 
   chatMessage    ChatMessage[]
-  userInChatRoom UserInChatRoom[]
+  userInChatRoom ChatRoomUser[]
 }
 
 enum ChatRoomRole {
@@ -431,7 +431,7 @@ enum ChatRoomRole {
   Member
 }
 
-model UserInChatRoom {
+model ChatRoomUser {
   role     ChatRoomRole @default(Member)
   joinedAt DateTime     @default(now())
 

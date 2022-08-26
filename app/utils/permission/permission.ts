@@ -1,6 +1,7 @@
 import { UserPermission } from "./permission/user";
 import { TeamPermission } from "./permission/team";
 import { ContestPermission } from "./permission/contest";
+import { ChatRoomPermission } from "./permission/room";
 
 export const Permissions = {
   /** 查看任意用户的资料 */
@@ -15,6 +16,24 @@ export const Permissions = {
   PERM_EDIT_USER_PRIVILEGE: UserPermission.Admins,
   /** 修改任意用户的角色 */
   PERM_EDIT_USER_ROLE: UserPermission.Roots,
+
+  /** 查看用户自己的私信 */
+  PERM_VIEW_USER_PM_SELF: UserPermission.Everyone,
+  /** 用户发送私信 */
+  PERM_SEND_USER_PM: UserPermission.Users,
+
+  /** 查看讨论组消息 */
+  PERM_VIEW_CHATROOM_MESSAGE: ChatRoomPermission.Members.with(
+    UserPermission.Admins
+  ),
+  /** 加入讨论组 */
+  PERM_JOIN_CHATROOM_MESSAGE: ChatRoomPermission.GuestOnly.with(
+    UserPermission.Nobody
+  ),
+  /** 退出讨论组 */
+  PERM_QUIT_CHATROOM_MESSAGE: ChatRoomPermission.Members.with(
+    UserPermission.Nobody
+  ),
 
   /** 添加题目 */
   PERM_CREATE_PROBLEM: TeamPermission.Admins.with(UserPermission.Admins),

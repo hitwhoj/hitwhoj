@@ -577,7 +577,7 @@ this is language whatthefuck
     },
   });
 
-  await prisma.userInChatRoom.create({
+  await prisma.chatRoomUser.create({
     data: {
       roomId: room1,
       userId: alice,
