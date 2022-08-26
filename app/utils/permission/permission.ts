@@ -26,6 +26,10 @@ export const Permissions = {
   PERM_VIEW_CHATROOM_MESSAGE: ChatRoomPermission.Members.with(
     UserPermission.Admins
   ),
+  /** 发送讨论组消息 */
+  PERM_SEND_CHATROOM_MESSAGE: ChatRoomPermission.Members.with(
+    UserPermission.Admins
+  ),
   /** 加入讨论组 */
   PERM_JOIN_CHATROOM_MESSAGE: ChatRoomPermission.GuestOnly.with(
     UserPermission.Nobody

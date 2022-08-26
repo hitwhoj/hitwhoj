@@ -25,6 +25,7 @@ import ChatTime from "~/src/chat/ChatTime";
 
 import style from "~/styles/simplify.css";
 import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
@@ -184,32 +185,21 @@ export default function ChatRoomIndex() {
   );
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
+  const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
-  if (!self.userId) {
-    throw redirect("/login");
-  }
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .room(roomId)
+    .checkPermission(Permissions.PERM_SEND_CHATROOM_MESSAGE);
 
   const form = await request.formData();
-  const roomId = invariant(idScheme, form.get("roomId"));
   const content = invariant(contentScheme, form.get("content"));
-
-  const chatRoomUser = await db.chatRoomUser.findUnique({
-    where: {
-      roomId_userId: {
-        roomId: roomId,
-        userId: self.userId,
-      },
-    },
-  });
-  if (!chatRoomUser) {
-    throw new Response("You are not in this room", { status: 403 });
-  }
 
   const message = await db.chatMessage.create({
     data: {
       roomId: roomId,
-      senderId: self.userId,
+      senderId: self.userId!,
       content,
     },
     include: {
