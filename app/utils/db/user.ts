@@ -22,4 +22,5 @@ export const selectUserData = {
   role: true,
   avatar: true,
   bio: true,
+  premium: true,
 } as const;

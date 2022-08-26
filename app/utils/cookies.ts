@@ -1,4 +1,4 @@
-function createCookie(cookie: string) {
+function parseCookie(cookie: string) {
   const map = new Map<string, string>();
   const list = cookie.split(";");
   for (const item of list) {
@@ -9,7 +9,7 @@ function createCookie(cookie: string) {
 }
 
 export function getCookie(request: Request, name: string) {
-  const cookie = createCookie(request.headers.get("Cookie") ?? "");
+  const cookie = parseCookie(request.headers.get("Cookie") ?? "");
   return cookie.get(name);
 }
 

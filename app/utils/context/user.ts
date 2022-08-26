@@ -1,9 +1,3 @@
-import type { User } from "@prisma/client";
-import React from "react";
+import { createContext } from "react";
 
-export type UserInfo = Pick<
-  User,
-  "id" | "avatar" | "nickname" | "username" | "role"
->;
-
-export const UserInfoContext = React.createContext<UserInfo | null>(null);
+export const UserContext = createContext<number | null>(null);

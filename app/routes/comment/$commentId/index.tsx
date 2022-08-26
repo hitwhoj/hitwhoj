@@ -1,5 +1,4 @@
-import type { Comment, Reply, User, Report } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, Form, Link } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme, replyContentScheme } from "~/utils/scheme";
@@ -24,14 +23,15 @@ import {
   IconMessage,
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
-import { findSessionUid } from "~/utils/sessions";
 import { Like } from "~/src/comment/Like";
 import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
-import type { ActionFunction } from "@remix-run/node";
+import type { ActionFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { useState } from "react";
 import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
+import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -48,10 +48,10 @@ enum ActionType {
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
   const commentId = invariant(idScheme, params.commentId);
 
-  if (!self) {
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -70,7 +70,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -84,7 +84,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             disconnect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -98,7 +98,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -112,7 +112,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         data: {
           heartees: {
             disconnect: {
-              id: self,
+              id: self.userId,
             },
           },
         },
@@ -126,7 +126,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -146,7 +146,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -172,7 +172,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           content,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -197,34 +197,8 @@ export const action: ActionFunction = async ({ request, params }) => {
   return null;
 };
 
-type LoaderData = {
-  comment: Comment & {
-    creator: Pick<User, "id" | "nickname" | "avatar">;
-    heartees: Pick<User, "id">[];
-    reports: Pick<Report, "creatorId">[];
-    replies: (Reply & {
-      creator: Pick<User, "id" | "nickname" | "avatar">;
-      subReplies: (Reply & {
-        replyTo:
-          | (Pick<Reply, "content"> & {
-              creator: Pick<User, "id" | "nickname">;
-            })
-          | null;
-      })[];
-      heartees: Pick<User, "id">[];
-      reports: Pick<Report, "creatorId">[];
-    })[];
-  };
-  self: number;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  params,
-  request,
-}) => {
-  const commentId = invariant(idScheme, params.commentId, {
-    status: 404,
-  });
+export async function loader({ params, request }: LoaderArgs) {
+  const commentId = invariant(idScheme, params.commentId, { status: 404 });
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
@@ -290,21 +264,17 @@ export const loader: LoaderFunction<LoaderData> = async ({
   if (!comment) {
     throw "comment not found";
   }
-  const self = await findSessionUid(request);
+  const self = await findRequestUser(request);
 
   // 过滤二级回复
   comment.replies = comment.replies.filter((reply) => reply.domId === null);
 
-  if (!self) {
-    return {
-      comment,
-      self: -1,
-    };
-  }
-  return { comment, self };
-};
+  return json({ comment, self: self.userId ?? -1 });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+type LoaderData = UseDataFunctionReturn<typeof loader>;
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,
 });
 

@@ -1,19 +1,15 @@
-import type { LoaderFunction } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Space, Typography } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { IconUserGroup } from "@arco-design/web-react/icon";
+import type { LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
-type LoaderData = {
-  team: Pick<Team, "name">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme, params.teamId);
+export async function loader({ params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: { name: true },
@@ -23,11 +19,11 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     throw new Response("团队不存在", { status: 404 });
   }
 
-  return { team };
-};
+  return json({ team });
+}
 
 export default function Record() {
-  const { team } = useLoaderData<LoaderData>();
+  const { team } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

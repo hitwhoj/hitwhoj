@@ -1,12 +1,11 @@
 import { Tag } from "@arco-design/web-react";
 
 type Props = {
-  beginTime: Date;
-  endTime: Date;
+  beginTime: string;
+  endTime: string;
 };
 
 export function ContestStateTag({ beginTime, endTime }: Props) {
-  // in fact they are only strings
   const begin = new Date(beginTime);
   const end = new Date(endTime);
 

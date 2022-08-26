@@ -1,4 +1,3 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import type { User } from "@prisma/client";
@@ -16,22 +15,21 @@ import {
 import { IconDelete, IconPlus } from "@arco-design/web-react/icon";
 import { useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+
 const Row = Grid.Row;
 const Col = Grid.Col;
 
 type Member = Pick<User, "id" | "username" | "avatar">;
-
-type LoaderData = {
-  members: Member[];
-};
 
 enum ActionType {
   AddMember = "addMember",
   DeleteMember = "deleteMember",
 }
 
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme, params.teamId);
+export async function loader({ params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const result = await db.teamMember.findMany({
     where: { teamId },
     select: {
@@ -44,46 +42,42 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       },
     },
   });
-  return {
-    members: result.map(({ user }) => user),
-  };
-};
 
-export const action: ActionFunction = async ({ params, request }) => {
-  const teamId = invariant(idScheme, params.teamId);
+  return json({ members: result.map(({ user }) => user) });
+}
+
+export async function action({ request, params }: ActionArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const form = await request.formData();
 
   const member = invariant(idScheme, form.get("member"));
   const _action = form.get("_action");
 
-  try {
-    switch (_action) {
-      case ActionType.AddMember: {
-        await db.teamMember.create({
-          data: {
-            teamId,
-            userId: member,
-          },
-        });
-        return null;
-      }
-      case ActionType.DeleteMember: {
-        await db.teamMember.delete({
-          where: {
-            userId_teamId: {
-              userId: member,
-              teamId,
-            },
-          },
-        });
-        return null;
-      }
+  switch (_action) {
+    case ActionType.AddMember: {
+      await db.teamMember.create({
+        data: {
+          teamId,
+          userId: member,
+        },
+      });
+      return null;
     }
-  } catch (error) {
-    throw new Response("Invalid action", { status: 400 });
+    case ActionType.DeleteMember: {
+      await db.teamMember.delete({
+        where: {
+          userId_teamId: {
+            userId: member,
+            teamId,
+          },
+        },
+      });
+      return null;
+    }
   }
-  return null;
-};
+
+  throw new Response("Invalid action", { status: 400 });
+}
 
 const MemberCard = ({ id, username, avatar }: Member) => {
   const fetcher = useFetcher();
@@ -136,7 +130,7 @@ const Members = ({ members }: { members: Member[] }) => {
 };
 
 export default function MemberList() {
-  const { members } = useLoaderData<LoaderData>();
+  const { members } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const [modalVisible, setModalVisible] = useState(false);
   const [userIdInput, setUserIdInput] = useState("");

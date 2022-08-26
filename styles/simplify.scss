@@ -1,0 +1,21 @@
+// 隐藏默认自带的侧边栏和底部说明
+
+body > section.arco-layout {
+  height: 100vh;
+  max-height: 100vh;
+  gap: 0;
+
+  section.arco-layout {
+    min-height: 0;
+    padding-top: 1em;
+    padding-bottom: 1em;
+
+    & > aside.arco-layout-sider {
+      display: none;
+    }
+  }
+
+  & > footer.arco-layout-footer {
+    display: none;
+  }
+}

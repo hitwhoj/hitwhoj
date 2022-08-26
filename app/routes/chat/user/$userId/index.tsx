@@ -1,79 +1,68 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
-import { redirect, Response } from "@remix-run/node";
-import { Button, Empty, Input } from "@arco-design/web-react";
-import type { User, PrivateMessage } from "@prisma/client";
-import { findSessionUid } from "~/utils/sessions";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Button, Empty, Input, Typography } from "@arco-design/web-react";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { serverSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
+import { privateMessageSubject } from "~/utils/serverEvents";
+import { findRequestUser } from "~/utils/permission";
+import { selectUserData } from "~/utils/db/user";
+import { UserContext } from "~/utils/context/user";
+import { fromEventSource } from "~/utils/eventSource";
+import ChatBubble from "~/src/chat/ChatBubble";
+import ChatTime from "~/src/chat/ChatTime";
+import { ChatAvatar } from "~/src/chat/ChatAvatar";
+import { ChatMessage } from "~/src/chat/ChatMessage";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
-type LoaderData = {
-  self: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  target: Pick<User, "id" | "nickname" | "username" | "avatar">;
-  msgs: PrivateMessage[];
-};
-
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
 });
 
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const selfId = await findSessionUid(request);
-  if (!selfId) {
-    throw redirect("/login");
-  }
-  const self = await db.user.findUnique({
-    where: { id: selfId },
-    select: { id: true, nickname: true, username: true, avatar: true },
-  });
-  if (!self) {
-    throw redirect("/register");
-  }
+export async function loader({ request, params }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
-  const toUserId = invariant(idScheme, params.userId, {
-    status: 404,
-  });
+  const userId = invariant(idScheme, params.userId, { status: 404 });
   const target = await db.user.findUnique({
-    where: { id: toUserId },
-    select: { id: true, nickname: true, avatar: true, username: true },
+    where: { id: userId },
+    select: { nickname: true, username: true, id: true },
   });
 
   if (!target) {
-    throw new Response("User not found", { status: 404 });
+    throw new Response("User not exists", { status: 404 });
   }
 
   const msgs = await db.privateMessage.findMany({
     where: {
       OR: [
-        { fromId: self?.id, toId: target.id },
-        { fromId: target.id, toId: self?.id },
+        { fromId: self.userId, toId: userId },
+        { fromId: userId, toId: self.userId },
       ],
     },
     orderBy: {
       sentAt: "asc",
     },
+    include: {
+      from: { select: selectUserData },
+      to: { select: selectUserData },
+    },
   });
 
-  return { self, target, msgs };
-};
+  return json({ target, msgs });
+}
 
-export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect("/login");
-  }
+export async function action({ request }: ActionArgs) {
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const form = await request.formData();
   const to = invariant(idScheme, form.get("to"));
@@ -81,54 +70,37 @@ export const action: ActionFunction = async ({ request }) => {
 
   const message = await db.privateMessage.create({
     data: {
-      from: { connect: { id: self } },
+      from: { connect: { id: self.userId } },
       to: { connect: { id: to } },
       content: content,
     },
     include: {
-      from: {
-        select: {
-          id: true,
-          username: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
-      to: {
-        select: {
-          id: true,
-          username: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
+      from: { select: selectUserData },
+      to: { select: selectUserData },
     },
   });
 
-  serverSubject.next({
-    type: "PrivateMessage",
-    message,
-  });
+  privateMessageSubject.next(message);
 
   return null;
-};
+}
 
 export default function ChatIndex() {
-  const { self, target, msgs } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<PrivateMessage[]>(msgs);
+  const { target, msgs } = useLoaderData<typeof loader>();
+  const [messages, setMessages] = useState(msgs);
 
   useEffect(() => {
     setMessages(msgs);
   }, [msgs]);
 
   useEffect(() => {
-    const eventSource = new EventSource(`./${target.id}/events`);
-    eventSource.addEventListener("message", ({ data }) => {
-      const message: MessageType = JSON.parse(data);
+    const subscription = fromEventSource<MessageType>(
+      `./${target.id}/events`
+    ).subscribe((message) => {
       setMessages((messages) => [...messages, message]);
     });
 
-    return () => eventSource.close();
+    return () => subscription.unsubscribe();
   }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -143,86 +115,70 @@ export default function ChatIndex() {
     }
   }, [isFetching]);
 
+  const self = useContext(UserContext);
+
   return (
-    <div className="chat-content-container">
-      <header style={{ fontSize: "1.5em" }}>
+    <Typography className="px-4 flex flex-col h-full gap-2">
+      <Typography.Title heading={4}>
         用户：{target.nickname || target.username}
-      </header>
-      <div className="chat-content-main">
+      </Typography.Title>
+
+      <div className="flex-1 overflow-auto">
         {messages.length > 0 ? (
           messages.map((message, index, array) => {
-            const user = message.fromId === self.id ? self : target;
-            const date = new Date(message.sentAt);
-            const time = [
-              date.getHours().toString().padStart(2, "0"),
-              date.getMinutes().toString().padStart(2, "0"),
-              date.getSeconds().toString().padStart(2, "0"),
-            ].join(":");
-
             // 是否是连续同一个人发送的最后一条消息
             const isLast =
               index === array.length - 1 ||
               array[index + 1].fromId !== message.fromId;
+            const isSelf = message.fromId === self;
 
             return (
-              <div
-                key={message.id}
-                className={`chat-content-message ${
-                  user === self ? "right" : "left"
-                }`}
-              >
-                <div className="chat-content-message-avatar">
-                  {isLast && <UserAvatar user={user} />}
-                </div>
-                <div className="chat-content-message-bubble">
-                  <span>{message.content}</span>
-                  <time title={date.toLocaleString()}>{time}</time>
-                </div>
-              </div>
+              <ChatMessage self={isSelf} key={message.id}>
+                <ChatAvatar visible={isLast}>
+                  <UserAvatar user={message.from} size={35} />
+                </ChatAvatar>
+                <ChatBubble self={isSelf}>{message.content}</ChatBubble>
+                <ChatTime time={message.sentAt} />
+              </ChatMessage>
             );
           })
         ) : (
           <Empty description="快来跟 TA 打个招呼吧" />
         )}
       </div>
-      <footer>
-        <Form
-          method="post"
-          ref={formRef}
-          style={{ display: "flex", gap: "10px", alignItems: "end" }}
+
+      <Form method="post" ref={formRef} className="flex gap-2 items-end">
+        <input type="hidden" name="to" value={target.id} />
+        <Input.TextArea
+          placeholder="输入消息..."
+          name="content"
+          maxLength={255}
+          showWordLimit
+          autoSize={{ minRows: 1, maxRows: 5 }}
+          value={message}
+          onChange={(msg) => setMessage(msg)}
+          style={{ flex: 1, height: "32px" }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (!e.ctrlKey) submitRef.current?.click();
+              else setMessage((message) => message + "\n");
+            }
+          }}
+          disabled={isFetching}
+          required
+        />
+        <Button
+          type="primary"
+          htmlType="submit"
+          size="large"
+          ref={submitRef}
+          style={{ height: "32px" }}
+          loading={isFetching}
         >
-          <input type="hidden" name="to" value={target.id} />
-          <Input.TextArea
-            placeholder="输入消息..."
-            name="content"
-            maxLength={255}
-            showWordLimit
-            autoSize={{ minRows: 1, maxRows: 5 }}
-            value={message}
-            onChange={(msg) => setMessage(msg)}
-            style={{ flex: 1, height: "32px" }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (!e.ctrlKey) submitRef.current?.click();
-                else setMessage((message) => message + "\n");
-              }
-            }}
-            disabled={isFetching}
-            required
-          />
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            ref={submitRef}
-            style={{ height: "32px" }}
-            loading={isFetching}
-          >
-            发送
-          </Button>
-        </Form>
-      </footer>
-    </div>
+          发送
+        </Button>
+      </Form>
+    </Typography>
   );
 }
 

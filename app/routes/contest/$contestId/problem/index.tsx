@@ -1,33 +1,30 @@
 import { Space, Statistic } from "@arco-design/web-react";
 import { IconCheck, IconClose } from "@arco-design/web-react/icon";
-import type { Contest, Problem, Record } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { TableList } from "~/src/TableList";
 import { invariant } from "~/utils/invariant";
-import { permissionContestProblemRead } from "~/utils/permission/contest";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { findContestStatus, findContestTeam } from "~/utils/db/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
 
-type LoaderData = {
-  contest: Pick<Contest, "beginTime" | "endTime"> & {
-    problems: {
-      rank: number;
-      problem: Pick<Problem, "title"> & {
-        relatedRecords: Pick<Record, "status">[];
-      };
-    }[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await permissionContestProblemRead.ensure(request, contestId);
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -42,9 +39,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
             select: {
               title: true,
               relatedRecords: {
-                where: self
-                  ? { contestId, submitterId: self.id }
-                  : { contestId, submitterId: -1 },
+                where: { contestId, submitterId: self.userId ?? -1 },
                 select: { status: true },
               },
             },
@@ -58,11 +53,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest };
-};
+  return json({ contest });
+}
 
 export default function ContestProblemIndex() {
-  const { contest } = useLoaderData<LoaderData>();
+  const { contest } = useLoaderData<typeof loader>();
 
   const started = new Date() > new Date(contest.beginTime);
   const navigate = useNavigate();

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import style from "./styles/global.css";
-import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
 import { Button, Notification } from "@arco-design/web-react";
-import katexStyle from "katex/dist/katex.css";
-import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import {
   Links,
@@ -19,57 +17,42 @@ import {
 
 import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
 import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
 import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
 import { getCookie } from "./utils/cookies";
 import type { Theme } from "./utils/context/theme";
 import { ThemeContext } from "./utils/context/theme";
-import type { UserInfo } from "./utils/context/user";
-import { UserInfoContext } from "./utils/context/user";
 import type { MessageType } from "./routes/chat/events";
+import { findRequestUser } from "./utils/permission";
+import { selectUserData } from "./utils/db/user";
+import { UserContext } from "./utils/context/user";
+
+import style from "./styles/global.css";
+import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import katexStyle from "katex/dist/katex.css";
+import tailwindStyle from "./styles/app.css";
 
 export const links: LinksFunction = () => [
-  {
-    rel: "stylesheet",
-    href: katexStyle,
-  },
-  {
-    rel: "stylesheet",
-    href: arcoStyle,
-  },
-  {
-    rel: "stylesheet",
-    href: style,
-  },
+  { rel: "stylesheet", href: arcoStyle },
+  { rel: "stylesheet", href: katexStyle },
+  { rel: "stylesheet", href: tailwindStyle },
+  { rel: "stylesheet", href: style },
 ];
 
-type LoaderData = {
-  theme: Theme;
-  user: UserInfo | null;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
   const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
-  const self = await findSessionUserOptional(request);
-
-  if (!self) {
-    return { theme, user: null };
+  const self = await findRequestUser(request);
+  if (!self.userId) {
+    return json({ theme, user: null });
   }
 
   const user = await db.user.findUnique({
-    where: { id: self.id },
-    select: {
-      id: true,
-      username: true,
-      nickname: true,
-      role: true,
-      avatar: true,
-    },
+    where: { id: self.userId! },
+    select: selectUserData,
   });
 
-  return { theme, user };
-};
+  return json({ theme, user });
+}
 
 interface DocumentProps {
   children: React.ReactNode;
@@ -79,7 +62,7 @@ interface DocumentProps {
 
 const Document = ({ children, title, theme }: DocumentProps) => {
   return (
-    <html lang="zh-Hans">
+    <html lang="zh-Hans" {...(theme === "dark" ? { className: "dark" } : {})}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -101,8 +84,8 @@ const Document = ({ children, title, theme }: DocumentProps) => {
 // https://remix.run/api/conventions#default-export
 // https://remix.run/api/conventions#route-filenames
 export default function App() {
-  const { user, theme: defaultTheme } = useLoaderData<LoaderData>();
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const { user, theme: defaultTheme } = useLoaderData<typeof loader>();
+  const [theme, setTheme] = useState<Theme>(defaultTheme as Theme);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -148,13 +131,13 @@ export default function App() {
 
   return (
     <Document theme={theme}>
-      <UserInfoContext.Provider value={user}>
+      <UserContext.Provider value={user && user.id}>
         <ThemeContext.Provider value={{ theme, setTheme }}>
-          <Layout>
+          <Layout user={user}>
             <Outlet />
           </Layout>
         </ThemeContext.Provider>
-      </UserInfoContext.Provider>
+      </UserContext.Provider>
     </Document>
   );
 }

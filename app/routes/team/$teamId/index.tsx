@@ -1,30 +1,15 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import type { Team } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Descriptions, Typography } from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 
-type LoaderData = {
-  team: Pick<Team, "id" | "name" | "description" | "createdAt"> & {
-    _count: {
-      members: number;
-      contests: number;
-      problems: number;
-      problemSets: number;
-    };
-  };
-};
-
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: `团队: ${data?.team.name} - HITwh OJ`,
-});
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const teamId = invariant(idScheme, params.teamId);
+export async function loader({ params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: {
@@ -47,11 +32,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
     throw new Response("Team not found", { status: 404 });
   }
 
-  return { team };
-};
+  return json({ team });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `团队: ${data?.team.name} - HITwh OJ`,
+});
 
 export default function TeamDetail() {
-  const { team } = useLoaderData<LoaderData>();
+  const { team } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

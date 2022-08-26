@@ -1,9 +1,5 @@
-import type { ProblemSet, ProblemSetTag } from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -22,31 +18,26 @@ import {
   Message,
 } from "@arco-design/web-react";
 import { useEffect, useState } from "react";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
-import { permissionProblemSetUpdate } from "~/utils/permission/problemset";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemSetTeam } from "~/utils/db/problemset";
+
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
-type LoaderData = {
-  problemSet: Pick<ProblemSet, "id" | "title" | "description" | "private"> & {
-    tags: ProblemSetTag[];
-    problems: {
-      problem: ProblemListData;
-    }[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await permissionProblemSetUpdate.ensure(request, problemSetId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -73,8 +64,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return { problemSet };
-};
+  return json({ problemSet });
+}
 
 enum ActionType {
   CreateTag = "createTag",
@@ -86,14 +77,16 @@ enum ActionType {
   MoveProblemDown = "moveProblemDown",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
-  await permissionProblemSetUpdate.ensure(request, problemSetId);
+  const self = await findRequestUser(request);
+  await self
+    .team(await findProblemSetTeam(problemSetId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
 
   const form = await request.formData();
-
   const _action = form.get("_action");
 
   switch (_action) {
@@ -267,14 +260,14 @@ export const action: ActionFunction = async ({ request, params }) => {
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
 
 export default function ProblemSetEdit() {
-  const { problemSet } = useLoaderData<LoaderData>();
+  const { problemSet } = useLoaderData<typeof loader>();
 
   const [priv, setPriv] = useState(problemSet.private);
 

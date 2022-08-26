@@ -1,24 +1,24 @@
-import type { LoaderFunction } from "@remix-run/node";
-import { filter, map } from "rxjs";
+import type { LoaderArgs } from "@remix-run/node";
+import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import type { RecordUpdateMessage, ServerEvents } from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
+import type { RecordUpdateMessage } from "~/utils/serverEvents";
+import { recordUpdateSubject } from "~/utils/serverEvents";
 
 export type MessageType = RecordUpdateMessage;
 
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+export function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
+
+  // FIXME: 权限检查
 
   return createEventSource<MessageType>(
     request,
-    serverSubject.pipe(
-      filter(
-        (message): message is Extract<ServerEvents, { type: "RecordUpdate" }> =>
-          message.type === "RecordUpdate" && message.message.id === recordId
-      ),
-      map(({ message }) => message)
+    recordUpdateSubject.pipe(
+      // 过滤掉不是该 Record 的消息
+      filter((message) => message.id === recordId)
+      // FIXME: 应该再按照权限筛选一遍字段
     )
   );
-};
+}

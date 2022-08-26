@@ -1,28 +1,32 @@
 import { Space, Typography } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
-import { isAdmin, isUser } from "~/utils/permission";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { AvatarBadge } from "~/src/AvatarBadge";
-import { permissionUserProfileRead } from "~/utils/permission/user";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  user: Pick<User, "nickname" | "username" | "avatar" | "bio" | "id" | "role">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileRead.ensure(request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_VIEW_USER_PROFILE_SELF
+      : Permissions.PERM_VIEW_USER_PROFILE
+  );
+  const [hasEditPerm, hasEditPrivPerm, hasEditRolePerm] =
+    await self.hasPermission(
+      self.userId === userId
+        ? Permissions.PERM_EDIT_USER_PROFILE_SELF
+        : Permissions.PERM_EDIT_USER_PROFILE,
+      Permissions.PERM_EDIT_USER_PRIVILEGE,
+      Permissions.PERM_EDIT_USER_ROLE
+    );
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -33,6 +37,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       bio: true,
       id: true,
       role: true,
+      premium: true,
     },
   });
 
@@ -40,31 +45,30 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
-};
+  return json({
+    user,
+    hasEditPerm,
+    hasAdminPerm: hasEditPrivPerm || hasEditRolePerm,
+  });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
 export default function UserProfile() {
-  const { user } = useLoaderData<LoaderData>();
-  const self = useContext(UserInfoContext);
+  const { user, hasEditPerm, hasAdminPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
       <Typography.Paragraph>
         <Space size="large" align="start">
-          {isAdmin(user.role) ? (
+          {user.premium ? (
             <AvatarBadge icon="大" color="magenta">
               <UserAvatar user={user} size={60} />
             </AvatarBadge>
-          ) : isUser(user.role) ? (
-            <UserAvatar user={user} size={60} />
           ) : (
-            <AvatarBadge icon="封" color="gray">
-              <UserAvatar user={user} size={60} />
-            </AvatarBadge>
+            <UserAvatar user={user} size={60} />
           )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>
@@ -91,16 +95,9 @@ export default function UserProfile() {
           routes={[
             { title: "资料", key: "." },
             { title: "统计", key: "statistics" },
-            ...(self &&
-            (isAdmin(self.role) || (isUser(self.role) && self.id === user.id))
-              ? [
-                  { title: "文件", key: "files" },
-                  { title: "编辑", key: "edit" },
-                ]
-              : []),
-            ...(self && isAdmin(self.role)
-              ? [{ title: "滥权", key: "admin" }]
-              : []),
+            ...(hasEditPerm ? [{ title: "文件", key: "files" }] : []),
+            ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
+            ...(hasAdminPerm ? [{ title: "滥权", key: "admin" }] : []),
           ]}
         />
       </Typography.Paragraph>

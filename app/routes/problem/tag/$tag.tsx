@@ -1,37 +1,32 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { Grid, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
-import { isAdmin } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
 import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  problems: (ProblemListData & {
-    _count: {
-      relatedRecords: number;
-    };
-  })[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic] = await self
+    .team(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_PROBLEM,
+      Permissions.PERM_VIEW_PROBLEM_PUBLIC
+    );
 
   const problems = await db.problem.findMany({
-    // 只有系统管理员可以看到私有题目
-    where:
-      self && isAdmin(self.role)
-        ? { team: null, tags: { some: { name: tag } } }
-        : { team: null, tags: { some: { name: tag } }, private: false },
+    where: viewAll
+      ? { team: null, tags: { some: { name: tag } } }
+      : viewPublic
+      ? { team: null, tags: { some: { name: tag } }, private: false }
+      : { id: -1 },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectProblemListData,
@@ -43,15 +38,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
   });
 
-  return { problems };
-};
+  return json({ problems });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ params }) => ({
+export const meta: MetaFunction<typeof loader> = ({ params }) => ({
   title: `题目标签: ${params.tag} - HITwh OJ`,
 });
 
 export default function ProblemIndex() {
-  const { problems } = useLoaderData<LoaderData>();
+  const { problems } = useLoaderData<typeof loader>();
   const params = useParams();
 
   return (

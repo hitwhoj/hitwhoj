@@ -1,20 +1,12 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { constants, fs } from "~/utils/fs";
 import { resolve } from "path";
 
-type LoaderData = {
-  title: string;
-  markdown: string;
-};
-
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
-  title: data?.title,
-});
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export async function loader({ params }: LoaderArgs) {
   const path = params["*"];
   if (!path) {
     throw redirect(`/docs/index.md`);
@@ -39,16 +31,20 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
           : markdown
         ).slice(2)
       : "";
-    const title = _title ? `帮助：${_title} - HITwhOJ` : "帮助 - HITwh OJ";
+    const title = _title ? `帮助: ${_title} - HITwhOJ` : "帮助 - HITwh OJ";
 
-    return { markdown, title };
+    return json({ markdown, title });
   } catch (e) {
     throw new Response("读取文件失败", { status: 500 });
   }
-};
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: data?.title,
+});
 
 export default function DocsPage() {
-  const { markdown } = useLoaderData<LoaderData>();
+  const { markdown } = useLoaderData<typeof loader>();
 
   return <Markdown>{markdown}</Markdown>;
 }

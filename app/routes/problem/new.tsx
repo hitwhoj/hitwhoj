@@ -4,24 +4,30 @@ import {
   Input,
   Button,
 } from "@arco-design/web-react";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
-import { permissionProblemCreate } from "~/utils/permission/problem";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 import { titleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 const FormItem = ArcoForm.Item;
 
-export const loader: LoaderFunction = async ({ request }) => {
-  await permissionProblemCreate.ensure(request);
+export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM);
 
   return null;
-};
+}
 
-export const action: ActionFunction<Response> = async ({ request }) => {
-  await permissionProblemCreate.ensure(request);
+export async function action({ request }: ActionArgs) {
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM);
 
   const form = await request.formData();
 
@@ -32,7 +38,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/problem/${id}`);
-};
+}
 
 export default function ProblemNew() {
   const { state } = useTransition();

@@ -1,10 +1,6 @@
-import type { Contest, ContestTag } from "@prisma/client";
 import { ContestSystem } from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -32,44 +28,25 @@ import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
 import { ProblemEditor } from "~/src/ProblemEditor";
-import type { ProblemListData } from "~/utils/db/problem";
 import { selectProblemListData } from "~/utils/db/problem";
-import { permissionContestInfoWrite } from "~/utils/permission/contest";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findContestTeam } from "~/utils/db/contest";
 
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-type LoaderData = {
-  contest: Pick<
-    Contest,
-    | "id"
-    | "title"
-    | "description"
-    | "beginTime"
-    | "endTime"
-    | "system"
-    | "private"
-    | "allowPublicRegistration"
-    | "allowAfterRegistration"
-  > & {
-    tags: Pick<ContestTag, "name">[];
-    problems: {
-      problem: ProblemListData;
-    }[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const contestId = invariant(idScheme, params.contestId, {
-    status: 404,
-  });
-
-  await permissionContestInfoWrite.ensure(request, contestId);
+export async function loader({ request, params }: LoaderArgs) {
+  const contestId = invariant(idScheme, params.contestId, { status: 404 });
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(Permissions.PERM_EDIT_CONTEST);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -101,8 +78,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest };
-};
+  return json({ contest });
+}
 
 enum ActionType {
   CreateTag = "CreateTag",
@@ -114,9 +91,14 @@ enum ActionType {
   MoveProblemDown = "MoveProblemDown",
 }
 
-export const action: ActionFunction = async ({ params, request }) => {
+export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  await permissionContestInfoWrite.ensure(request, contestId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(Permissions.PERM_EDIT_CONTEST);
 
   const form = await request.formData();
   const _action = form.get("_action");
@@ -305,21 +287,21 @@ export const action: ActionFunction = async ({ params, request }) => {
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑比赛: ${data?.contest.title} - HITwh OJ`,
 });
 
 export default function ContestEdit() {
-  const { contest } = useLoaderData<LoaderData>();
+  const { contest } = useLoaderData<typeof loader>();
 
   const [beginTime, setBeginTime] = useState(
     new Date(contest.beginTime).getTime()
   );
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
-  const [priv, setPriv] = useState(contest.private);
+  const [pub, setPub] = useState(!contest.private);
   const [allowPublicRegisteration, setAllowPublicRegistration] = useState(
     contest.allowPublicRegistration
   );
@@ -422,17 +404,17 @@ export default function ContestEdit() {
           </FormItem>
 
           <FormItem disabled={isUpdating}>
-            <input type="hidden" name="private" value={String(priv)} />
+            <input type="hidden" name="private" value={String(!pub)} />
             <Checkbox
-              checked={priv}
-              onChange={(checked) => setPriv(checked)}
+              checked={pub}
+              onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
             >
-              不公开比赛
+              公开比赛
             </Checkbox>
           </FormItem>
 
-          <FormItem disabled={isUpdating || priv}>
+          <FormItem disabled={isUpdating || !pub}>
             <input
               type="hidden"
               name="allowPublicRegistration"
@@ -447,7 +429,7 @@ export default function ContestEdit() {
             </Checkbox>
           </FormItem>
 
-          <FormItem disabled={isUpdating || priv || !allowPublicRegisteration}>
+          <FormItem disabled={isUpdating || !pub || !allowPublicRegisteration}>
             <input
               type="hidden"
               name="allowAfterRegistration"

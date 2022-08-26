@@ -1,4 +1,5 @@
-import type { Observable } from "rxjs";
+import type { SerializeType } from "@remix-run/react/dist/components";
+import { Observable } from "rxjs";
 import { interval, map, merge } from "rxjs";
 
 /**
@@ -38,4 +39,22 @@ export function createEventSource<T>(
   headers.set("Cache-Control", "no-store, no-transform");
   headers.set("Content-Type", "text/event-stream");
   return new Response(body, { headers, status: 200 });
+}
+
+export function fromEventSource<T>(url: string) {
+  return new Observable<SerializeType<T>>((observer) => {
+    const eventSource = new EventSource(url);
+    eventSource.addEventListener("message", ({ data }) =>
+      observer.next(JSON.parse(data))
+    );
+    eventSource.addEventListener("error", (event) => {
+      observer.error(event);
+      console.error(event);
+    });
+    observer.add(() => eventSource.close());
+
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=833462
+    // FIXME seems not fix
+    window.addEventListener("beforeunload", () => eventSource.close());
+  });
 }

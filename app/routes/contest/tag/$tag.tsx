@@ -1,34 +1,34 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
-import { isAdmin } from "~/utils/permission";
 import { TableList } from "~/src/TableList";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  contests: ContestListData[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  params,
-  request,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic] = await self
+    .team(null)
+    .contest(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_CONTEST,
+      Permissions.PERM_VIEW_CONTEST_PUBLIC
+    );
 
   const contests = await db.contest.findMany({
-    where:
-      self && isAdmin(self.role)
-        ? { team: null, tags: { some: { name: tag } } }
-        : { team: null, tags: { some: { name: tag } }, private: false },
+    where: viewAll
+      ? { team: null, tags: { some: { name: tag } } }
+      : viewPublic
+      ? { team: null, tags: { some: { name: tag } }, private: false }
+      : { id: -1 },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectContestListData,
@@ -36,15 +36,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
   });
 
   return { contests };
-};
+}
 
-export const meta: MetaFunction<LoaderData> = ({ params }) => ({
+export const meta: MetaFunction<typeof loader> = ({ params }) => ({
   title: `比赛标签: ${params.tag} - HITwh OJ`,
 });
 
 export default function ContestTag() {
   const { tag } = useParams();
-  const { contests } = useLoaderData<LoaderData>();
+  const { contests } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

@@ -1,11 +1,7 @@
-import type { File as ProblemFile, Problem } from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
   createProblemData,
@@ -15,40 +11,28 @@ import {
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { Button, Space, Typography } from "@arco-design/web-react";
-import { IconDelete, IconUpload } from "@arco-design/web-react/icon";
-import { useEffect, useRef } from "react";
-import { TableList } from "~/src/TableList";
-import { permissionProblemUpdate } from "~/utils/permission/problem";
+import { Space, Typography } from "@arco-design/web-react";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemTeam } from "~/utils/db/problem";
+import { FileList } from "~/src/file/FileList";
+import { FileUploader } from "~/src/file/FileUploader";
 
-type LoaderData = {
-  problem: Pick<Problem, "title"> & {
-    files: ProblemFile[];
-    data: ProblemFile[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  params,
-  request,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
     select: {
       title: true,
-      files: {
-        orderBy: {
-          filename: "asc",
-        },
-      },
-      data: {
-        orderBy: {
-          filename: "asc",
-        },
-      },
+      files: { orderBy: { filename: "asc" } },
+      data: { orderBy: { filename: "asc" } },
     },
   });
 
@@ -56,10 +40,10 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return { problem };
-};
+  return json({ problem });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑数据: ${data?.problem.title} - HITwh OJ`,
 });
 
@@ -70,9 +54,13 @@ enum ActionType {
   RemoveFile = "removeFile",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const form = await unstable_parseMultipartFormData(request, handler);
 
@@ -113,117 +101,20 @@ export const action: ActionFunction = async ({ request, params }) => {
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
-
-function ProblemFileUploader({
-  action,
-  uploadText,
-}: {
-  action: ActionType;
-  uploadText: string;
-}) {
-  const fetcher = useFetcher();
-  const isUploading = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!isUploading) {
-      formRef.current?.reset();
-    }
-  }, [isUploading]);
-
-  return (
-    <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
-      <input
-        type="file"
-        name="file"
-        multiple
-        hidden
-        ref={inputRef}
-        onInput={() => fetcher.submit(formRef.current)}
-      />
-      <input type="hidden" name="_action" value={action} />
-      <Button
-        type="primary"
-        icon={<IconUpload />}
-        onClick={() => inputRef.current?.click()}
-        loading={isUploading}
-      >
-        {uploadText}
-      </Button>
-    </fetcher.Form>
-  );
-}
-
-function ProblemFileRemoveButton({ file }: { file: ProblemFile }) {
-  const fetcher = useFetcher();
-  const isDeleting = fetcher.state !== "idle";
-
-  return (
-    <fetcher.Form method="post" encType="multipart/form-data">
-      <input type="hidden" name="fid" value={file.id} />
-      <Button
-        type="primary"
-        status="danger"
-        htmlType="submit"
-        name="_action"
-        value={ActionType.RemoveFile}
-        loading={isDeleting}
-        icon={<IconDelete />}
-        size="mini"
-      />
-    </fetcher.Form>
-  );
-}
-
-function ProblemFileList({ files }: { files: ProblemFile[] }) {
-  return (
-    <TableList
-      data={files}
-      columns={[
-        {
-          title: "文件名",
-          render: ({ id, filename }) => (
-            <Link to={`/file/${id}`} target="_blank">
-              {filename}
-            </Link>
-          ),
-        },
-        {
-          title: "文件大小",
-          render: ({ filesize }) => filesize,
-        },
-        {
-          title: "文件类型",
-          render: ({ mimetype }) => mimetype,
-        },
-        {
-          title: "操作",
-          render: (file) => <ProblemFileRemoveButton file={file} />,
-          align: "center",
-          minimize: true,
-        },
-      ]}
-    />
-  );
 }
 
 export default function ProblemData() {
   const {
     problem: { files, data },
-  } = useLoaderData<LoaderData>();
+  } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
       <Typography.Title heading={4}>测试数据</Typography.Title>
       <Typography.Paragraph>用于评测的数据文件</Typography.Paragraph>
       <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <ProblemFileUploader
-          action={ActionType.UploadData}
-          uploadText="上传数据"
-        />
-        <ProblemFileList files={data} />
+        <FileUploader uploadAction={ActionType.UploadData} />
+        <FileList files={data} deleteAction={ActionType.RemoveData} />
       </Space>
 
       <Typography.Title heading={4}>附加文件</Typography.Title>
@@ -231,11 +122,8 @@ export default function ProblemData() {
         题目的附加资料，例如样例数据、PDF 题面等
       </Typography.Paragraph>
       <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <ProblemFileUploader
-          action={ActionType.UploadFile}
-          uploadText="上传文件"
-        />
-        <ProblemFileList files={files} />
+        <FileUploader uploadAction={ActionType.UploadFile} />
+        <FileList files={files} deleteAction={ActionType.RemoveFile} />
       </Space>
     </Typography>
   );
