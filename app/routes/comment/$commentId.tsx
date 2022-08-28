@@ -1,5 +1,5 @@
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
-import { Space, Tag } from "@arco-design/web-react";
+import { Space, Tag, Typography } from "@arco-design/web-react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -31,8 +31,8 @@ export default function CommentView() {
 
   return (
     <>
-      <h1>Comment: {comment.title}</h1>
-      <h2>标签</h2>
+      <Typography.Title>Comment: {comment.title}</Typography.Title>
+      <Typography.Title heading={4}>标签</Typography.Title>
       <Space size="medium">
         {comment.tags.map((tag) => (
           <Link to={`/comment/tag/${tag.name}`} key={tag.id}>
