@@ -21,6 +21,9 @@ model User {
   avatar   String @default("")
   nickname String @default("")
 
+  department String @default("")
+  studentId  String @default("")
+
   password String
 
   joinedAt  DateTime       @default(now())
