@@ -38,8 +38,7 @@ export async function loader({ request, params }: LoaderArgs) {
       beginTime: true,
       endTime: true,
       private: true,
-      allowPublicRegistration: true,
-      allowAfterRegistration: true,
+      registrationType: true,
       tags: {
         select: {
           name: true,
@@ -78,15 +77,6 @@ export default function ContestIndex() {
   const isJury = registered === "Jury";
   const isAttendee = registered === "Contestant";
 
-  const allowRegister =
-    status === "Pending"
-      ? !contest.private && contest.allowPublicRegistration
-      : status === "Running"
-      ? !contest.private &&
-        contest.allowPublicRegistration &&
-        contest.allowAfterRegistration
-      : false;
-
   return (
     <Typography>
       <Descriptions
@@ -120,24 +110,30 @@ export default function ContestIndex() {
         ]}
         labelStyle={{ paddingRight: 36 }}
       />
+
       <Markdown>{contest.description}</Markdown>
-      {registered && (
-        <Typography.Paragraph>
-          {isMod ? (
-            <i>您已经是比赛的管理员</i>
-          ) : isJury ? (
-            <i>您已经是比赛的裁判</i>
-          ) : isAttendee ? (
-            <i>您已经报名了该比赛</i>
-          ) : allowRegister ? (
-            <Link to="register">
-              <Button type="primary">报名比赛</Button>
-            </Link>
-          ) : (
-            <i>报名已经关闭</i>
-          )}
-        </Typography.Paragraph>
-      )}
+
+      <Typography.Paragraph>
+        {isMod ? (
+          <i>您已经是比赛的管理员</i>
+        ) : isJury ? (
+          <i>您已经是比赛的裁判</i>
+        ) : isAttendee ? (
+          <i>您已经报名了该比赛</i>
+        ) : contest.private ? (
+          <i>无法报名私有比赛</i>
+        ) : status === "Running" ? (
+          <i>比赛已经开始</i>
+        ) : status === "Ended" ? (
+          <i>比赛已经结束</i>
+        ) : contest.registrationType === "Disallow" ? (
+          <i>报名已经关闭</i>
+        ) : (
+          <Link to="register">
+            <Button type="primary">报名比赛</Button>
+          </Link>
+        )}
+      </Typography.Paragraph>
     </Typography>
   );
 }

@@ -7,7 +7,7 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import { idScheme, roomPasswordScheme } from "~/utils/scheme";
+import { idScheme, weakPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionArgs) {
 
     if (room.private) {
       const form = await request.formData();
-      const password = invariant(roomPasswordScheme, form.get("password"));
+      const password = invariant(weakPasswordScheme, form.get("password"));
 
       if (password !== room.password) {
         throw new Response("密码错误", { status: 400 });
