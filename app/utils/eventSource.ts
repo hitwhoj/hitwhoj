@@ -38,6 +38,9 @@ export function createEventSource<T>(
   const headers = new Headers();
   headers.set("Cache-Control", "no-store, no-transform");
   headers.set("Content-Type", "text/event-stream");
+  // `X-Accel-Buffering` header disables nginx buffering
+  // @see https://stackoverflow.com/a/33414096
+  headers.set("X-Accel-Buffering", "no");
   return new Response(body, { headers, status: 200 });
 }
 
