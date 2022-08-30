@@ -17,7 +17,7 @@ export function FileRemoveButton({
   const isDeleting = fetcher.state === "submitting";
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <Button
         type="primary"
