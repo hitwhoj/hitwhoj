@@ -154,7 +154,7 @@ export function CommentList({
             >
               {col}
             </Link>
-            {comment.tags.slice(0, 3).map((tag) => (
+            {comment.tags.map((tag) => (
               <Link to={`/comment/tag/${tag.name}`} key={tag.id}>
                 <CommentTag name={tag.name} />
               </Link>

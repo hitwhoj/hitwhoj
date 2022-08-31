@@ -6,7 +6,7 @@ import { Button } from "@arco-design/web-react";
 export type likeProps = {
   id: number;
   like?: boolean | undefined;
-  count: number;
+  count?: number | undefined;
   likeAction: string;
   dislikeAction?: string;
   likeElement: JSX.Element;
@@ -43,12 +43,12 @@ export function Like({ props }: { props: likeProps }) {
         {isFetching && preload ? (
           <div>
             {!props.like ? props.likeElement : props.dislikeElement}{" "}
-            {props.count + (props.like ? -1 : 1)}
+            {props.count ? props.count + (props.like ? -1 : 1) : ""}
           </div>
         ) : (
           <div>
             {props.like ? props.likeElement : props.dislikeElement}{" "}
-            {props.count}
+            {props.count ? props.count : ""}
           </div>
         )}
       </Button>

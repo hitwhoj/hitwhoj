@@ -24,7 +24,6 @@ import {
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { Like } from "~/src/comment/Like";
-import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { useState } from "react";
@@ -32,6 +31,8 @@ import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
+import { UserLink } from "~/src/user/UserLink";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -140,7 +141,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
     case ActionType.ReplyTo: {
       const content = invariant(replyContentScheme, form.get("content"));
-      const replyToId = invariant(idScheme, form.get("replyToId"));
+      const domId = invariant(idScheme, form.get("domId"));
       await db.reply.create({
         data: {
           content,
@@ -156,7 +157,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           },
           domReply: {
             connect: {
-              id: replyToId,
+              id: domId,
             },
           },
         },
@@ -202,13 +203,7 @@ export async function loader({ params, request }: LoaderArgs) {
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
-      creator: {
-        select: {
-          id: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
+      creator: true,
       heartees: {
         select: {
           id: true,
@@ -221,15 +216,20 @@ export async function loader({ params, request }: LoaderArgs) {
       },
       replies: {
         include: {
-          creator: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
-            },
-          },
+          creator: true,
           subReplies: {
             include: {
+              creator: true,
+              heartees: {
+                select: {
+                  id: true,
+                },
+              },
+              reports: {
+                select: {
+                  creatorId: true,
+                },
+              },
               replyTo: {
                 select: {
                   content: true,
@@ -308,15 +308,16 @@ function CommentTitle({
         }}
       >
         <NewReplyTo
-          replyToId={0}
           onReply={() => setVisible(false)}
           onCancel={() => setVisible(false)}
           action={ActionType.Reply}
         />
       </Modal>
       <span style={{ display: "flex", alignItems: "center" }}>
-        <Avatar src={author.avatar} name={author.nickname} size={32} />
-        <Typography.Text>{author.nickname}</Typography.Text>
+        <UserAvatar user={author} />
+        <Typography.Text>
+          <UserLink user={author} />
+        </Typography.Text>
         <Typography.Text>@{formatDateTime(comment.createdAt)}</Typography.Text>
       </span>
       <Space size={8}>
@@ -414,12 +415,143 @@ function CommentCard({
   );
 }
 
-function ReplyCard({
-  reply,
+function SubReplyCard({
   self,
+  reply,
 }: {
-  reply: LoaderData["comment"]["replies"][number];
   self: LoaderData["self"];
+  reply: LoaderData["comment"]["replies"][number]["subReplies"][number];
+}) {
+  const author = reply.creator;
+
+  const replyTo = reply.replyTo ? (
+    <Link to={`/user/${reply.replyTo.creator.id}`}>
+      {"@" + reply.replyTo.creator.nickname + ": "}
+    </Link>
+  ) : (
+    ""
+  );
+
+  const likeStyles = {
+    fontSize: "0.9rem",
+    width: "2.5rem",
+    height: "1.5rem",
+    padding: "0 0.3rem",
+  };
+
+  const [visible, setVisible] = useState(false);
+
+  const actions = (
+    <Space size={2}>
+      <Modal
+        title={`New Reply To #${reply.id}`}
+        visible={visible}
+        footer={null}
+        onCancel={() => {
+          setVisible(false);
+        }}
+      >
+        <NewReplyTo
+          domId={reply.domId!}
+          replyToId={reply.id}
+          onCancel={() => {
+            setVisible(false);
+          }}
+          onReply={() => {
+            setVisible(false);
+          }}
+          action={ActionType.ReplyToSub}
+        />
+      </Modal>
+      <Like
+        props={{
+          id: reply.id,
+          like: reply.heartees.map((u) => u.id).includes(self),
+          count: reply.heartees.length,
+          likeAction: ActionType.Heart,
+          dislikeAction: ActionType.UnHeart,
+          likeElement: (
+            <>
+              <IconHeartFill style={{ color: "#f53f3f" }} />{" "}
+            </>
+          ),
+          dislikeElement: (
+            <>
+              <IconHeart />{" "}
+            </>
+          ),
+          style: likeStyles,
+        }}
+      />
+      <Like
+        props={{
+          id: reply.id,
+          likeAction: ActionType.None,
+          likeElement: (
+            <>
+              <IconMessage />{" "}
+            </>
+          ),
+          style: likeStyles,
+          preload: false,
+          onClick: () => {
+            setVisible(true);
+          },
+        }}
+      />
+      <Link to={`/comment/report/${ReportType.R + reply.id}`}>
+        <Like
+          props={{
+            id: reply.id,
+            like: reply.reports.map((r) => r.creatorId).includes(self),
+            count: reply.reports.length,
+            likeAction: ActionType.None,
+            dislikeAction: ActionType.None,
+            likeElement: (
+              <>
+                <IconExclamationCircleFill style={{ color: "#F53F3F" }} />{" "}
+              </>
+            ),
+            dislikeElement: (
+              <>
+                {reply.reports.length > 0 ? (
+                  <IconExclamationCircle style={{ color: "#F53F3F" }} />
+                ) : (
+                  <IconExclamationCircle />
+                )}{" "}
+              </>
+            ),
+            style: likeStyles,
+            preload: false,
+          }}
+        />
+      </Link>
+    </Space>
+  );
+
+  return (
+    <ArcoComment
+      actions={actions}
+      author={<UserLink user={author} />}
+      key={"reply" + reply.id}
+      avatar={<UserAvatar user={author} />}
+      content={
+        <div>
+          {replyTo}
+          <span>{reply.content}</span>
+        </div>
+      }
+      datetime={formatDateTime(reply.createdAt)}
+    />
+  );
+}
+
+function ReplyCard({
+  self,
+  reply,
+}: {
+  self: LoaderData["self"];
+  reply: LoaderData["comment"]["replies"][number];
 }) {
   const author = reply.creator;
 
@@ -443,7 +575,7 @@ function ReplyCard({
         }}
       >
         <NewReplyTo
-          replyToId={reply.id}
+          domId={reply.id}
           onCancel={() => {
             setVisible(false);
           }}
@@ -526,17 +658,19 @@ function ReplyCard({
     </Space>
   );
 
-  // TODO: 二级评论
-
   return (
     <ArcoComment
       actions={actions}
-      author={author.nickname}
+      author={<UserLink user={author} />}
       key={"reply" + reply.id}
-      avatar={<Avatar src={author.avatar} name={author.nickname} />}
+      avatar={<UserAvatar user={author} />}
       content={<div>{reply.content}</div>}
       datetime={formatDateTime(reply.createdAt)}
-    />
+    >
+      {reply.subReplies.map((subReply, index) => (
+        <SubReplyCard reply={subReply} self={self} key={index} />
+      ))}
+    </ArcoComment>
   );
 }
 
@@ -603,12 +737,14 @@ function NewReply() {
 }
 
 function NewReplyTo({
+  domId,
   replyToId,
   onCancel,
   onReply,
   action,
 }: {
-  replyToId: number;
+  domId?: number;
+  replyToId?: number;
   onCancel: () => void;
   onReply: () => void;
   action: ActionType;
@@ -628,6 +764,9 @@ function NewReplyTo({
     >
       <FormItem hidden>
         <InputNumber name="replyToId" value={replyToId} />
+      </FormItem>
+      <FormItem hidden>
+        <InputNumber name="domId" value={domId} />
       </FormItem>
       <FormItem wrapperCol={{ span: 24 }}>
         <TextArea
