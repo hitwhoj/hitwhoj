@@ -254,12 +254,24 @@ model ContestProblem {
   @@unique([contestId, rank])
 }
 
+enum InvitationType {
+  // 无需邀请直接加入
+  FREE
+  // 需要邀请码
+  CODE
+  // 不允许加入
+  NONE
+}
+
 model Team {
   id   Int    @id @default(autoincrement())
   name String @unique
 
   createdAt   DateTime @default(now())
   description String   @default("")
+
+  invitationType InvitationType @default(FREE)
+  invitationCode String?        @default("")
 
   members     TeamMember[]
   contests    Contest[]

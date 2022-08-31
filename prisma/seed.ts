@@ -3,6 +3,8 @@ import {
   ContestSystem,
   PrismaClient,
   SystemUserRole,
+  InvitationType,
+  TeamMemberRole,
 } from "@prisma/client";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
@@ -557,6 +559,35 @@ this is language whatthefuck
     data: {
       userId: alice,
       teamId: team1,
+      role: TeamMemberRole.Owner,
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: bob,
+      teamId: team1,
+      role: TeamMemberRole.Admin,
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: cherry,
+      teamId: team1,
+      role: TeamMemberRole.Member,
+    },
+  });
+  const { id: team2 } = await prisma.team.create({
+    data: {
+      name: "team2",
+      invitationType: InvitationType.CODE,
+      invitationCode: "114514",
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: alice,
+      teamId: team2,
+      role: TeamMemberRole.Owner,
     },
   });
 

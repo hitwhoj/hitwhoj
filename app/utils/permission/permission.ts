@@ -99,4 +99,14 @@ export const Permissions = {
 
   /** 团队修改任意成员的角色 */
   PERM_TEAM_EDIT_MEMBER_ROLE: TeamPermission.Owners.with(UserPermission.Admins),
+  /** 查看团队内部信息 */
+  PERM_TEAM_VIEW_INTERNAL: TeamPermission.Members.with(UserPermission.Admins),
+  /** 修改团队内部信息 */
+  PERM_TEAM_EDIT_INTERNAL: TeamPermission.Admins.with(UserPermission.Admins),
+  /** 添加, 踢出普通成员 */
+  PERM_TEAM_KICK_MEMBER: TeamPermission.Admins.with(UserPermission.Admins),
+  /** 踢出管理员 */
+  PERM_TEAM_KICK_ADMIN: TeamPermission.Owners.with(UserPermission.Admins),
+  /** 解散或转让团队 */
+  PERM_TEAM_DISMISS: TeamPermission.Owners.with(UserPermission.Admins),
 };

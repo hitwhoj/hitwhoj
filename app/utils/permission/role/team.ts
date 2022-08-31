@@ -63,6 +63,8 @@ export class TeamUser {
           return permission.member;
         case "Guest":
           return permission.guest;
+        default:
+          return false;
       }
     });
   }

@@ -1,5 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
@@ -11,9 +11,18 @@ import { TableList } from "~/src/TableList";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params, request }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
+
+  const user = await findRequestUser(request);
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
+  await user.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
 
   const contests = await db.contest.findMany({
     where: { team: { id: teamId } },

@@ -23,18 +23,23 @@ import {
 } from "@arco-design/web-react";
 import { useState } from "react";
 import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
 
   if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
+
+  const teamId = invariant(idScheme, params.teamId);
+
+  await self.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
 
   return null;
 }
