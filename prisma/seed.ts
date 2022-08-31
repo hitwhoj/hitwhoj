@@ -272,6 +272,7 @@ this is language whatthefuck
       beginTime: new Date(Date.now() - 3600000),
       endTime: new Date(Date.now() + 3600000),
       system: ContestSystem.IOI,
+      allowJoinAfterStart: true,
       participants: {
         create: [
           { userId: alice, role: ContestParticipantRole.Mod },

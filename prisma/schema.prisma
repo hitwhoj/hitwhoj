@@ -180,6 +180,8 @@ model Contest {
   registrationType     ContestRegistrationType @default(Disallow)
   /// 比赛报名密码（只有当报名类型为 Password 时才有意义）
   registrationPassword String                  @default("")
+  /// 是否允许比赛开始后中途加入
+  allowJoinAfterStart  Boolean                 @default(false)
 
   beginTime DateTime
   endTime   DateTime
@@ -270,7 +272,9 @@ model Team {
   createdAt   DateTime @default(now())
   description String   @default("")
 
+  /// 邀请制类型
   invitationType InvitationType @default(FREE)
+  /// 邀请码（只有当邀请制为 CODE 时才有意义）
   invitationCode String?        @default("")
 
   members     TeamMember[]

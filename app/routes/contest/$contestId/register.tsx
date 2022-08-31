@@ -70,6 +70,7 @@ export async function action({ request, params }: ActionArgs) {
         private: true,
         registrationType: true,
         registrationPassword: true,
+        allowJoinAfterStart: true,
       },
     });
 
@@ -77,12 +78,15 @@ export async function action({ request, params }: ActionArgs) {
       throw new Response("Contest not found.", { status: 404 });
     }
 
-    if (status !== "Pending") {
-      throw new Response("Registration closed", { status: 400 });
+    if (
+      status !== "Pending" &&
+      !(status === "Running" && contest.allowJoinAfterStart)
+    ) {
+      throw new Response("Registration closed", { status: 403 });
     }
 
     if (contest.registrationType === "Disallow") {
-      throw new Response("Registration is not allowed", { status: 400 });
+      throw new Response("Registration is not allowed", { status: 403 });
     }
 
     if (contest.registrationType === "Password") {
@@ -90,7 +94,7 @@ export async function action({ request, params }: ActionArgs) {
       const password = invariant(weakPasswordScheme, form.get("password"));
 
       if (password !== contest.registrationPassword) {
-        throw new Response("Password incorrect", { status: 400 });
+        throw new Response("Password incorrect", { status: 403 });
       }
     }
 
