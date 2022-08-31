@@ -25,19 +25,26 @@ export async function action({ request }: ActionArgs) {
   const username = invariant(usernameScheme, form.get("username"));
   const password = invariant(passwordScheme, form.get("password"));
 
-  return await db.$transaction(async (db) => {
+  const result = await db.$transaction(async (db) => {
     if (await db.user.findUnique({ where: { username } })) {
-      return json({ success: false as const, reason: "用户已存在" }, 400);
+      return { success: false as const, reason: "用户已存在" };
     }
 
     const hashedPassword = passwordHash(password);
-    const user = await db.user.create({
-      data: { username, password: hashedPassword },
-    });
+    return {
+      success: true as const,
+      user: await db.user.create({
+        data: { username, password: hashedPassword },
+      }),
+    };
+  });
 
-    return redirect("/", {
-      headers: { "Set-Cookie": await commitSession(user.id) },
-    });
+  if (!result.success) {
+    return json(result, 400);
+  }
+
+  return redirect("/", {
+    headers: { "Set-Cookie": await commitSession(result.user.id) },
   });
 }
 

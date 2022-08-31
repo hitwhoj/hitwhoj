@@ -49,11 +49,11 @@ export const passwordScheme = z
   .regex(/^[0-9a-f]{64}$/, "Password must be a sha256 hash");
 
 /**
- * 聊天组的密码，随意的非空字符串即可
+ * 弱密码，随意的非空字符串
  *
  * @example "123456"
  */
-export const roomPasswordScheme = z
+export const weakPasswordScheme = z
   .string()
   .nonempty("Password must be nonempty");
 
