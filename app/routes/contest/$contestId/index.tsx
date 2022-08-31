@@ -39,6 +39,7 @@ export async function loader({ request, params }: LoaderArgs) {
       endTime: true,
       private: true,
       registrationType: true,
+      allowJoinAfterStart: true,
       tags: {
         select: {
           name: true,
@@ -122,8 +123,8 @@ export default function ContestIndex() {
           <i>您已经报名了该比赛</i>
         ) : contest.private ? (
           <i>无法报名私有比赛</i>
-        ) : status === "Running" ? (
-          <i>比赛已经开始</i>
+        ) : status === "Running" && !contest.allowJoinAfterStart ? (
+          <i>该比赛不允许中途加入</i>
         ) : status === "Ended" ? (
           <i>比赛已经结束</i>
         ) : contest.registrationType === "Disallow" ? (

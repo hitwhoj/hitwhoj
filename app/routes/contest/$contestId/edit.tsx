@@ -63,6 +63,7 @@ export async function loader({ request, params }: LoaderArgs) {
       private: true,
       registrationType: true,
       registrationPassword: true,
+      allowJoinAfterStart: true,
       tags: { select: { name: true } },
       problems: {
         orderBy: { rank: "asc" },
@@ -266,6 +267,7 @@ export async function action({ request, params }: ActionArgs) {
 
       const system = invariant(systemScheme, form.get("system"));
       const priv = form.get("private") === "true";
+      const allowJoinAfterStart = form.get("joinAfterStart") === "true";
       const registrationType = invariant(
         z.nativeEnum(ContestRegistrationType),
         form.get("registrationType")
@@ -284,6 +286,7 @@ export async function action({ request, params }: ActionArgs) {
           endTime,
           system,
           private: priv,
+          allowJoinAfterStart,
           registrationType,
           registrationPassword,
         },
@@ -309,6 +312,9 @@ export default function ContestEdit() {
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
   const [pub, setPub] = useState(!contest.private);
+  const [joinAfterStart, setJoinAfterStart] = useState(
+    contest.allowJoinAfterStart
+  );
   const [registrationType, setRegistrationType] = useState(
     contest.registrationType
   );
@@ -455,6 +461,21 @@ export default function ContestEdit() {
                 />
               )}
             </Space>
+          </FormItem>
+
+          <FormItem disabled={isUpdating}>
+            <input
+              type="hidden"
+              name="joinAfterStart"
+              value={String(joinAfterStart)}
+            />
+            <Checkbox
+              checked={joinAfterStart}
+              onChange={(checked) => setJoinAfterStart(checked)}
+              disabled={isUpdating}
+            >
+              允许比赛开始后中途加入
+            </Checkbox>
           </FormItem>
 
           <FormItem>
