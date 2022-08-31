@@ -1,24 +1,22 @@
 import { Button, Input, Space, Typography } from "@arco-design/web-react";
 import { IconLock, IconUnlock } from "@arco-design/web-react/icon";
-import type { ChatRoom } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 import { idScheme, roomPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUser } from "~/utils/sessions";
 
-type LoaderData = {
-  room: Pick<ChatRoom, "id" | "name" | "private" | "description">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self
+    .room(roomId)
+    .checkPermission(Permissions.PERM_JOIN_CHATROOM_MESSAGE);
 
   const room = await db.chatRoom.findUnique({
     where: { id: roomId },
@@ -27,10 +25,6 @@ export const loader: LoaderFunction<LoaderData> = async ({
       name: true,
       description: true,
       private: true,
-      userInChatRoom: {
-        where: { userId: self.id },
-        select: { role: true },
-      },
     },
   });
 
@@ -38,16 +32,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Room not found", { status: 404 });
   }
 
-  // 如果已经加入，则跳转到聊天室
-  if (room.userInChatRoom.length > 0) {
-    throw redirect(`/chat/room/${room.id}`);
-  }
+  return json({ room });
+}
 
-  return { room };
-};
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `加入聊天室: ${data?.room.name} - HITwh OJ`,
+  description: data?.room.description,
+});
 
 export default function EnterRoom() {
-  const { room } = useLoaderData<LoaderData>();
+  const { room } = useLoaderData<typeof loader>();
   const { state } = useTransition();
   const isSubmitting = state !== "idle";
 
@@ -89,9 +83,13 @@ export default function EnterRoom() {
   );
 }
 
-export const action: ActionFunction<Response> = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self
+    .room(roomId)
+    .checkPermission(Permissions.PERM_JOIN_CHATROOM_MESSAGE);
 
   await db.$transaction(async (db) => {
     const room = await db.chatRoom.findUnique({
@@ -100,19 +98,11 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
         id: true,
         private: true,
         password: true,
-        userInChatRoom: {
-          where: { userId: self.id },
-          select: { role: true },
-        },
       },
     });
 
     if (!room) {
       throw new Response("讨论组不存在", { status: 404 });
-    }
-
-    if (room.userInChatRoom.length > 0) {
-      throw new Response("您已经在讨论组中", { status: 400 });
     }
 
     if (room.private) {
@@ -124,9 +114,9 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
       }
     }
 
-    await db.userInChatRoom.create({
+    await db.chatRoomUser.create({
       data: {
-        userId: self.id,
+        userId: self.userId!,
         roomId: room.id,
       },
     });
@@ -134,7 +124,7 @@ export const action: ActionFunction<Response> = async ({ request, params }) => {
 
   // 加入成功，跳转到聊天室
   return redirect(`/chat/room/${roomId}`);
-};
+}
 
 export { CatchBoundary } from "~/src/CatchBoundary";
 export { ErrorBoundary } from "~/src/ErrorBoundary";

@@ -1,21 +1,12 @@
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { Space, Tag } from "@arco-design/web-react";
-import type { Comment, CommentTag } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
+import type { LoaderArgs } from "@remix-run/node";
 
-type LoaderData = {
-  comment: Comment & {
-    tags: Pick<CommentTag, "id" | "name">[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
-  const commentId = invariant(idScheme, params.commentId, {
-    status: 404,
-  });
+export async function loader({ params }: LoaderArgs) {
+  const commentId = invariant(idScheme, params.commentId, { status: 404 });
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
@@ -33,10 +24,10 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
   return {
     comment,
   };
-};
+}
 
 export default function CommentView() {
-  const { comment } = useLoaderData<LoaderData>();
+  const { comment } = useLoaderData<typeof loader>();
 
   return (
     <>

@@ -1,32 +1,30 @@
-import type { ProblemSet } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { Grid, Button, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
-import { isAdmin } from "~/utils/permission";
 import { TableList } from "~/src/TableList";
-import { findSessionUserOptional } from "~/utils/sessions";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
-    _count: {
-      problems: number;
-    };
-  })[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const self = await findSessionUserOptional(request);
+export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic, hasEditPerm] = await self
+    .team(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_PROBLEM_SET,
+      Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC,
+      Permissions.PERM_EDIT_PROBLEM_SET
+    );
 
   const problemSets = await db.problemSet.findMany({
-    where:
-      self && isAdmin(self.role)
-        ? { team: null }
-        : { team: null, private: false },
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
     orderBy: [{ id: "asc" }],
     select: {
       id: true,
@@ -40,16 +38,15 @@ export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
     },
   });
 
-  return { problemSets };
-};
+  return json({ problemSets, hasEditPerm });
+}
 
-export const meta: MetaFunction<LoaderData> = () => ({
+export const meta: MetaFunction = () => ({
   title: "题单列表 - HITwh OJ",
 });
 
 export default function ProblemsetList() {
-  const { problemSets } = useLoaderData<LoaderData>();
-  const user = useContext(UserInfoContext);
+  const { problemSets, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -57,7 +54,7 @@ export default function ProblemsetList() {
         <Grid.Row justify="space-between" align="center">
           <span>题单列表</span>
 
-          {user && isAdmin(user.role) && (
+          {hasEditPerm && (
             <Link to="new">
               <Button type="primary" icon={<IconPlus />}>
                 创建题单

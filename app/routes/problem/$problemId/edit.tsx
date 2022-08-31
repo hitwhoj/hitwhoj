@@ -6,14 +6,16 @@ import {
   Checkbox,
   Message,
 } from "@arco-design/web-react";
-import type { Problem, ProblemTag } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { Response } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
+import { findProblemTeam } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
-import { permissionProblemUpdate } from "~/utils/permission/problem";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 import {
   descriptionScheme,
   idScheme,
@@ -25,21 +27,13 @@ import { db } from "~/utils/server/db.server";
 
 const FormItem = ArcoForm.Item;
 
-type LoaderData = {
-  problem: Pick<
-    Problem,
-    "id" | "title" | "description" | "timeLimit" | "memoryLimit" | "private"
-  > & {
-    tags: Pick<ProblemTag, "name">[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -50,6 +44,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       timeLimit: true,
       memoryLimit: true,
       private: true,
+      allowSubmit: true,
       tags: {
         select: {
           name: true,
@@ -62,8 +57,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("题目未找到", { status: 404 });
   }
 
-  return { problem };
-};
+  return json({ problem });
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
+  title: `编辑题目: ${data?.problem.title} - HITwh OJ`,
+});
 
 enum ActionType {
   CreateTag = "createTag",
@@ -71,9 +70,13 @@ enum ActionType {
   UpdateInformation = "updateInformation",
 }
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemUpdate.ensure(request, problemId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self
+    .team(await findProblemTeam(problemId))
+    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const form = await request.formData();
   const _action = form.get("_action");
@@ -85,10 +88,18 @@ export const action: ActionFunction = async ({ request, params }) => {
       const timeLimit = invariant(limitScheme, form.get("timeLimit"));
       const memoryLimit = invariant(limitScheme, form.get("memoryLimit"));
       const priv = form.get("private") === "true";
+      const submit = form.get("allowSubmit") === "true";
 
       await db.problem.update({
         where: { id: problemId },
-        data: { title, description, timeLimit, memoryLimit, private: priv },
+        data: {
+          title,
+          description,
+          timeLimit,
+          memoryLimit,
+          private: priv,
+          allowSubmit: submit,
+        },
       });
 
       return null;
@@ -125,16 +136,18 @@ export const action: ActionFunction = async ({ request, params }) => {
   }
 
   throw new Response("无效的操作", { status: 400 });
-};
+}
 
 export default function ProblemEdit() {
-  const { problem } = useLoaderData<LoaderData>();
+  const { problem } = useLoaderData<typeof loader>();
 
-  const [hide, setHide] = useState(problem.private);
+  const [pub, setPub] = useState(!problem.private);
+  const [submit, setSubmit] = useState(problem.allowSubmit);
 
   const { state, type } = useTransition();
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = state === "submitting" || isActionReload;
+
   useEffect(() => {
     if (isActionReload) {
       Message.success("更新成功");
@@ -198,13 +211,23 @@ export default function ProblemEdit() {
             />
           </FormItem>
           <FormItem>
-            <input type="hidden" name="private" value={String(hide)} />
+            <input type="hidden" name="private" value={String(!pub)} />
             <Checkbox
-              checked={hide}
-              onChange={(checked) => setHide(checked)}
+              checked={pub}
+              onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
             >
-              首页隐藏
+              公开题目
+            </Checkbox>
+          </FormItem>
+          <FormItem>
+            <input type="hidden" name="allowSubmit" value={String(submit)} />
+            <Checkbox
+              checked={submit}
+              onChange={(checked) => setSubmit(checked)}
+              disabled={isUpdating}
+            >
+              允许提交
             </Checkbox>
           </FormItem>
           <FormItem layout="vertical">

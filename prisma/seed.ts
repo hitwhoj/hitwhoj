@@ -1,4 +1,5 @@
 import {
+  ContestParticipantRole,
   ContestSystem,
   PrismaClient,
   SystemUserRole,
@@ -7,8 +8,8 @@ import {
 } from "@prisma/client";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
-import { File } from "@remix-run/node/fetch";
 import { passwordHash } from "~/utils/tools";
+import { File } from "@remix-run/node/dist/fetch";
 
 const prisma = new PrismaClient();
 
@@ -34,7 +35,7 @@ async function seed() {
       password: hash("alice"),
       nickname: "嘉然今天吃什么",
       bio: "这里是嘉然！别看我小小的，我超能吃还超可爱的哦~",
-      role: SystemUserRole.Su,
+      role: SystemUserRole.Root,
     },
   });
 
@@ -85,13 +86,17 @@ async function seed() {
       username: "David",
       password: hash("david"),
       nickname: "蒙古上单",
-      role: SystemUserRole.Banned,
+      role: SystemUserRole.User,
     },
   });
 
   await prisma.user.createMany({
     data: [
-      { username: "Alice2", password: hash("alice2"), role: SystemUserRole.Su },
+      {
+        username: "Alice2",
+        password: hash("alice2"),
+        role: SystemUserRole.Root,
+      },
       { username: "Bob2", password: hash("bob2"), role: SystemUserRole.Admin },
       {
         username: "Cherry2",
@@ -101,7 +106,7 @@ async function seed() {
       {
         username: "David2",
         password: hash("david2"),
-        role: SystemUserRole.Banned,
+        role: SystemUserRole.User,
       },
     ],
   });
@@ -242,10 +247,14 @@ this is language whatthefuck
       beginTime: new Date(Date.now() + 3600000),
       endTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
-
-      mods: { connect: [{ id: cherry }] },
-      attendees: { connect: [{ id: david }, { id: alice }] },
-      juries: { connect: { id: bob } },
+      participants: {
+        create: [
+          { userId: cherry, role: ContestParticipantRole.Mod },
+          { userId: bob, role: ContestParticipantRole.Jury },
+          { userId: david, role: ContestParticipantRole.Contestant },
+          { userId: alice, role: ContestParticipantRole.Contestant },
+        ],
+      },
       tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
       problems: {
         create: [
@@ -263,8 +272,12 @@ this is language whatthefuck
       beginTime: new Date(Date.now() - 3600000),
       endTime: new Date(Date.now() + 3600000),
       system: ContestSystem.IOI,
-
-      mods: { connect: [{ id: alice }] },
+      participants: {
+        create: [
+          { userId: alice, role: ContestParticipantRole.Mod },
+          { userId: cherry, role: ContestParticipantRole.Contestant },
+        ],
+      },
       tags: { create: [{ name: "a-soul" }] },
       problems: {
         create: [
@@ -595,7 +608,7 @@ this is language whatthefuck
     },
   });
 
-  await prisma.userInChatRoom.create({
+  await prisma.chatRoomUser.create({
     data: {
       roomId: room1,
       userId: alice,

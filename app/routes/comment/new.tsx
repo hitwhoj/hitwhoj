@@ -1,15 +1,15 @@
-import type { ActionFunction, MetaFunction } from "@remix-run/node";
+import type { ActionArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
 import { commentScheme, tagScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
-export const action: ActionFunction<Response> = async ({ request }) => {
-  const self = await findSessionUid(request);
+export async function action({ request }: ActionArgs) {
+  const self = await findRequestUser(request);
 
-  if (!self) {
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -22,7 +22,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
     data: {
       title,
       content,
-      creator: { connect: { id: self } },
+      creator: { connect: { id: self.userId } },
       tags: {
         connectOrCreate: {
           where: { name: tag },
@@ -33,7 +33,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/comment/${id}`);
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "创建讨论 - HITwh OJ",

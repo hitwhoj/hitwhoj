@@ -1,4 +1,4 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import type { FormMethod } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -6,12 +6,6 @@ import { TeamMemberRole } from "@prisma/client";
 import type { User } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import {
-  permissionTeamRead,
-  permissionTeamMemberRole,
-  permissionTeamMemberKick,
-  permissionTeamSettings,
-} from "~/utils/permission/team";
 import {
   Button,
   Card,
@@ -32,8 +26,10 @@ import {
 } from "@arco-design/web-react/icon";
 import { useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { findSessionUid } from "~/utils/sessions";
+import { findRequestUser } from "~/utils/permission";
 import { TeamMemberRoleTag } from "~/src/team/TeamMemberRoleTag";
+import { redirect } from "@remix-run/node";
+import { Permissions } from "~/utils/permission/permission";
 const Row = Grid.Row;
 const Col = Grid.Col;
 const MenuItem = Menu.Item;
@@ -42,28 +38,24 @@ type Member = Pick<User, "id" | "username" | "avatar"> & {
   role: TeamMemberRole;
 };
 
-type LoaderData = {
-  members: Member[];
-  selfRole: TeamMemberRole;
-};
-
 enum ActionType {
   AddMember = "AddMember",
   DeleteMember = "DeleteMember",
   ChangeRole = "ChangeRole",
 }
 
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
 
-  await permissionTeamRead.ensure(request, teamId);
+  const user = await findRequestUser(request);
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
 
-  const self = await findSessionUid(request);
+  await user.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
+
   const teamMemberSelf = await db.teamMember.findUnique({
-    where: { userId_teamId: { teamId, userId: self } },
+    where: { userId_teamId: { teamId, userId: user.userId } },
     select: { role: true },
   });
   if (!teamMemberSelf) {
@@ -87,18 +79,26 @@ export const loader: LoaderFunction<LoaderData> = async ({
     members: result.map((member) => ({ ...member.user, role: member.role })),
     selfRole: teamMemberSelf.role,
   };
-};
+}
 
-export const action: ActionFunction<Response> = async ({ params, request }) => {
+export async function action({ params, request }: ActionArgs) {
   const teamId = invariant(idScheme, params.teamId);
   const form = await request.formData();
 
   const memberId = invariant(idScheme, form.get("member"));
+  const memberRole = await db.teamMember.findUnique({
+    where: { userId_teamId: { teamId, userId: memberId } },
+    select: { role: true },
+  });
   const _action = form.get("_action");
 
-  const self = await findSessionUid(request);
+  const user = await findRequestUser(request);
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
   const teamMember = await db.teamMember.findUnique({
-    where: { userId_teamId: { teamId, userId: self } },
+    where: { userId_teamId: { teamId, userId: user.userId } },
     select: { role: true },
   });
 
@@ -108,7 +108,9 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
   switch (_action) {
     case ActionType.AddMember: {
-      await permissionTeamSettings.ensure(request, teamId);
+      await user
+        .team(teamId)
+        .checkPermission(Permissions.PERM_TEAM_KICK_MEMBER);
       if (
         await db.teamMember.findUnique({
           where: { userId_teamId: { teamId, userId: memberId } },
@@ -126,7 +128,13 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       return new Response("add member success", { status: 200 });
     }
     case ActionType.DeleteMember: {
-      await permissionTeamMemberKick.ensure(request, teamId, memberId);
+      await user
+        .team(teamId)
+        .checkPermission(
+          memberRole?.role === TeamMemberRole.Admin
+            ? Permissions.PERM_TEAM_KICK_ADMIN
+            : Permissions.PERM_TEAM_KICK_MEMBER
+        );
 
       await db.teamMember.delete({
         where: {
@@ -140,7 +148,9 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       return new Response("delete member success", { status: 200 });
     }
     case ActionType.ChangeRole: {
-      await permissionTeamMemberRole.ensure(request, teamId);
+      await user
+        .team(teamId)
+        .checkPermission(Permissions.PERM_TEAM_EDIT_MEMBER_ROLE);
 
       const role = invariant(teamMemberRoleScheme, form.get("role"));
 
@@ -161,7 +171,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
+}
 
 const DeleteMember = ({ id }: { id: number }) => {
   const fetcher = useFetcher();
@@ -307,7 +317,7 @@ const Members = ({
 };
 
 export default function MemberList() {
-  const { members, selfRole } = useLoaderData<LoaderData>();
+  const { members, selfRole } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const [modalVisible, setModalVisible] = useState(false);
   const [userIdInput, setUserIdInput] = useState("");

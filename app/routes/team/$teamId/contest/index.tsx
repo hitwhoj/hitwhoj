@@ -1,33 +1,28 @@
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 import { Button, Grid, Typography } from "@arco-design/web-react";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { db } from "~/utils/server/db.server";
-import { permissionTeamRead } from "~/utils/permission/team";
 import { TableList } from "~/src/TableList";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  contests: ContestListData[];
-};
+export async function loader({ params, request }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
 
-export const meta: MetaFunction<LoaderData> = () => ({
-  title: `团队比赛列表 - HITwh OJ`,
-});
+  const user = await findRequestUser(request);
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
 
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const teamId = invariant(idScheme, params.teamId);
-
-  await permissionTeamRead.ensure(request, teamId);
+  await user.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
 
   const contests = await db.contest.findMany({
     where: { team: { id: teamId } },
@@ -37,11 +32,15 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
   });
 
-  return { contests };
-};
+  return json({ contests });
+}
+
+export const meta: MetaFunction = () => ({
+  title: `团队比赛列表 - HITwh OJ`,
+});
 
 export default function HomeworkList() {
-  const { contests } = useLoaderData<LoaderData>();
+  const { contests } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

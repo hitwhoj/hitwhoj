@@ -1,12 +1,7 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
 import { invariant } from "~/utils/invariant";
 import {
   teamNameScheme,
@@ -23,24 +18,26 @@ import {
   Select,
 } from "@arco-design/web-react";
 import { useState } from "react";
+import { findRequestUser } from "~/utils/permission";
 const TextArea = Input.TextArea;
 const FormItem = Form.Item;
 const Option = Select.Option;
+
+export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
+  return null;
+}
 
 export const meta: MetaFunction = () => ({
   title: "新建团队 - HITwh OJ",
 });
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
-    throw redirect("/login");
-  }
-  return null;
-};
-
-export const action: ActionFunction<Response> = async ({ request }) => {
-  const self = await findSessionUid(request);
+export async function action({ request }: ActionArgs) {
+  const self = await findRequestUser(request);
 
   const form = await request.formData();
   const name = invariant(teamNameScheme, form.get("name"));
@@ -67,7 +64,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
       members: {
         create: [
           {
-            userId: self,
+            userId: self.userId!,
             role: TeamMemberRole.Owner,
           },
         ],
@@ -76,7 +73,7 @@ export const action: ActionFunction<Response> = async ({ request }) => {
   });
 
   return redirect(`/team/${teamId}`);
-};
+}
 
 export default function NewTeam() {
   const fetcher = useFetcher();

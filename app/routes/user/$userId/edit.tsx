@@ -4,12 +4,8 @@ import {
   Input,
   Typography,
 } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/server/db.server";
@@ -22,18 +18,19 @@ import {
   nicknameScheme,
   usernameScheme,
 } from "~/utils/scheme";
-import { permissionUserProfileWrite } from "~/utils/permission/user";
+import { Permissions } from "~/utils/permission/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
-type LoaderData = {
-  user: Pick<User, "username" | "nickname" | "email" | "avatar" | "bio">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_EDIT_USER_PROFILE_SELF
+      : Permissions.PERM_EDIT_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -50,16 +47,22 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
-};
+  return json({ user });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
 });
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: ActionArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileWrite.ensure(request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_EDIT_USER_PROFILE_SELF
+      : Permissions.PERM_EDIT_USER_PROFILE
+  );
 
   const form = await request.formData();
 
@@ -97,12 +100,12 @@ export const action: ActionFunction = async ({ request, params }) => {
   });
 
   return null;
-};
+}
 
 const FormItem = ArcoForm.Item;
 
 export default function UserEdit() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<typeof loader>();
   const { state } = useTransition();
   const loading = state === "submitting";
 

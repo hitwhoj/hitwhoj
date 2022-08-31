@@ -1,25 +1,16 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { Outlet, useLoaderData, useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import type { Team } from "@prisma/client";
 import { InvitationType } from "@prisma/client";
-import { findSessionUserOptional, findSessionUid } from "~/utils/sessions";
+import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
 import { Space, Typography, Input, Button } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
 import { IconUserGroup } from "@arco-design/web-react/icon";
+import type { LoaderArgs, ActionArgs } from "@remix-run/node";
 
-type LoaderData = {
-  team: Pick<Team, "name" | "invitationType">;
-  userInTeam: boolean;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
-  const teamId = invariant(idScheme, params.teamId);
+export async function loader({ request, params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: { name: true, invitationType: true },
@@ -29,13 +20,14 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("团队不存在", { status: 404 });
   }
 
-  const user = await findSessionUserOptional(request);
+  const user = await findRequestUser(request);
+
   const userInTeam = Boolean(
-    user &&
+    user.userId &&
       (await db.teamMember.findUnique({
         where: {
           userId_teamId: {
-            userId: user.id,
+            userId: user.userId,
             teamId,
           },
         },
@@ -46,9 +38,9 @@ export const loader: LoaderFunction<LoaderData> = async ({
     team,
     userInTeam,
   };
-};
+}
 
-export const action: ActionFunction<Response> = async ({ params, request }) => {
+export const action = async ({ params, request }: ActionArgs) => {
   const teamId = invariant(idScheme, params.teamId);
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -59,12 +51,15 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
     throw new Response("团队不存在", { status: 404 });
   }
 
-  const uid = await findSessionUid(request);
+  const user = await findRequestUser(request);
+  if (!user.userId) {
+    throw new Response("请先登录", { status: 401 });
+  }
 
   const isMember = await db.teamMember.findUnique({
     where: {
       userId_teamId: {
-        userId: uid,
+        userId: user.userId,
         teamId,
       },
     },
@@ -89,7 +84,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
     data: {
       user: {
         connect: {
-          id: uid,
+          id: user.userId,
         },
       },
       team: {
@@ -131,7 +126,7 @@ function JoinTeam({ invitationType }: { invitationType: InvitationType }) {
 }
 
 export default function Record() {
-  const { team, userInTeam } = useLoaderData<LoaderData>();
+  const { team, userInTeam } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

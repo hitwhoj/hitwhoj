@@ -1,22 +1,21 @@
 import { Descriptions } from "@arco-design/web-react";
-import type { User } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { permissionUserProfileRead } from "~/utils/permission/user";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  user: Pick<User, "id" | "bio" | "username" | "nickname" | "email">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileRead.ensure(request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_VIEW_USER_PROFILE_SELF
+      : Permissions.PERM_VIEW_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -33,16 +32,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
-};
+  return json({ user });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `用户: ${data?.user.nickname || data?.user.username} - HITwh OJ`,
   description: data?.user.bio,
 });
 
 export default function Profile() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<typeof loader>();
 
   const data = [
     {

@@ -1,31 +1,24 @@
-import type { LoaderFunction } from "@remix-run/node";
-import { filter, map } from "rxjs";
+import type { LoaderArgs } from "@remix-run/node";
+import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
-import type {
-  PrivateMessageWithUser,
-  ServerEvents,
-} from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
-import { findSessionUser } from "~/utils/sessions";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import type { PrivateMessageWithUser } from "~/utils/serverEvents";
+import { privateMessageSubject } from "~/utils/serverEvents";
 
 export type MessageType = PrivateMessageWithUser;
 
-/**
- * 订阅用户收到的私信
- */
-export const loader: LoaderFunction<Response> = async ({ request }) => {
-  const self = await findSessionUser(request);
+// 用户订阅自己收到的私信
+export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   return createEventSource<MessageType>(
     request,
-    serverSubject.pipe(
-      filter(
-        (
-          message
-        ): message is Extract<ServerEvents, { type: "PrivateMessage" }> =>
-          message.type === "PrivateMessage" && message.message.toId === self.id
-      ),
-      map(({ message }) => message)
+    privateMessageSubject.pipe(
+      // 筛选接收用户
+      filter((message) => message.toId === self.userId)
     )
   );
-};
+}

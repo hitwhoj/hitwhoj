@@ -1,20 +1,20 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { idScheme, reasonScheme, reportTypeScheme } from "~/utils/scheme";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { Button, Form, Input, Modal, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { ReportType } from "@prisma/client";
-import { findSessionUid } from "~/utils/sessions";
-import { redirect } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useEffect, useState } from "react";
+import { findRequestUser } from "~/utils/permission";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 
-export const action: ActionFunction = async ({ request }) => {
-  const self = await findSessionUid(request);
-  if (!self) {
+export async function action({ request }: ActionArgs) {
+  const self = await findRequestUser(request);
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -32,7 +32,7 @@ export const action: ActionFunction = async ({ request }) => {
         where: {
           type: ReportType.C,
           reason,
-          creatorId: self,
+          creatorId: self.userId,
         },
       });
       if (lastReport) {
@@ -45,7 +45,7 @@ export const action: ActionFunction = async ({ request }) => {
           reason,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           comment: {
@@ -55,6 +55,7 @@ export const action: ActionFunction = async ({ request }) => {
           },
         },
       });
+
       return null;
     }
     case ReportType.R: {
@@ -62,7 +63,7 @@ export const action: ActionFunction = async ({ request }) => {
         where: {
           type: ReportType.R,
           reason,
-          creatorId: self,
+          creatorId: self.userId,
         },
       });
       if (lastReport) {
@@ -75,7 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
           reason,
           creator: {
             connect: {
-              id: self,
+              id: self.userId,
             },
           },
           reply: {
@@ -85,20 +86,13 @@ export const action: ActionFunction = async ({ request }) => {
           },
         },
       });
+
       return null;
     }
   }
-  return null;
-};
+}
 
-export type LoaderData = {
-  id: number;
-  type: string;
-  reportTo: string;
-  reportContent: string;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
+export async function loader({ params }: LoaderArgs) {
   const report = params.report;
   if (!report) {
     throw new Response("cannot report to a teapot", { status: 400 });
@@ -151,16 +145,16 @@ export const loader: LoaderFunction<LoaderData> = async ({ params }) => {
       break;
     }
   }
-  return {
+  return json({
     id,
     type,
     reportTo,
     reportContent,
-  };
-};
+  });
+}
 
 export default function Report() {
-  const { type, id, reportTo, reportContent } = useLoaderData<LoaderData>();
+  const { type, id, reportTo, reportContent } = useLoaderData<typeof loader>();
 
   const fetcher = useFetcher();
   const isCreating = fetcher.state === "submitting";

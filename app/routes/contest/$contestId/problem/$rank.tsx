@@ -13,12 +13,8 @@ import {
   Link as ArcoLink,
 } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { Contest, File, Problem, Record } from "@prisma/client";
-import type {
-  ActionFunction,
-  LinksFunction,
-  LoaderFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LinksFunction, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -38,47 +34,46 @@ import {
 import { db } from "~/utils/server/db.server";
 import contestStyle from "~/styles/contest.css";
 import { IconHistory, IconSend } from "@arco-design/web-react/icon";
-import { findSessionUid, findSessionUserOptional } from "~/utils/sessions";
 import { s3 } from "~/utils/server/s3.server";
 import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
-import { UserInfoContext } from "~/utils/context/user";
-import {
-  permissionContestProblemRead,
-  permissionContestProblemSubmit,
-} from "~/utils/permission/contest";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
+import { findRequestUser } from "~/utils/permission";
+import {
+  findContestProblemIdByRank,
+  findContestStatus,
+  findContestTeam,
+} from "~/utils/db/contest";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
+import { filter } from "rxjs";
+import { fromEventSource } from "~/utils/eventSource";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: contestStyle },
 ];
 
-type LoaderData = {
-  problem: Pick<
-    Problem,
-    "id" | "title" | "description" | "timeLimit" | "memoryLimit"
-  > & {
-    files: Pick<File, "id" | "filename">[];
-  };
-  records: Pick<Record, "id" | "score" | "status" | "time" | "memory">[];
-  contest: Pick<Contest, "id" | "beginTime" | "endTime">;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  const self = await findSessionUserOptional(request);
-
-  await permissionContestProblemRead.ensure(request, contestId);
+  const self = await findRequestUser(request);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
   const problem = await db.contestProblem.findUnique({
     where: {
@@ -117,12 +112,12 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  const records = self
+  const records = self.userId
     ? await db.record.findMany({
         where: {
           contestId,
           problemId: problem.problem.id,
-          submitterId: self.id,
+          submitterId: self.userId,
         },
         orderBy: {
           submittedAt: "desc",
@@ -137,37 +132,33 @@ export const loader: LoaderFunction<LoaderData> = async ({
       })
     : [];
 
-  return {
+  return json({
     records,
     problem: problem.problem,
     contest: problem.contest,
-  };
-};
+  });
+}
 
-type ActionData = {
-  recordId: number;
-};
-
-export const action: ActionFunction<ActionData> = async ({
-  request,
-  params,
-}) => {
+export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
     invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
     0x40;
-  await permissionContestProblemSubmit.ensure(request, contestId);
+  const self = await findRequestUser(request);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  const status = await findContestStatus(contestId);
+  await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .checkPermission(
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+    );
 
-  const problem = await db.contestProblem.findUnique({
-    where: { contestId_rank: { contestId, rank } },
-    select: { problemId: true },
-  });
-
-  if (!problem) {
-    throw new Response("Problem not found", { status: 404 });
-  }
-
-  const self = await findSessionUid(request);
+  const problemId = await findContestProblemIdByRank(contestId, rank);
 
   const form = await request.formData();
   const code = invariant(codeScheme, form.get("code"));
@@ -176,9 +167,9 @@ export const action: ActionFunction<ActionData> = async ({
   const { id: recordId } = await db.record.create({
     data: {
       language,
-      submitter: { connect: { id: self } },
-      problem: { connect: { id: problem.problemId } },
-      contest: { connect: { id: contestId } },
+      problemId,
+      contestId,
+      submitterId: self.userId!,
     },
     select: { id: true },
   });
@@ -186,15 +177,19 @@ export const action: ActionFunction<ActionData> = async ({
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
   judge.push(recordId);
 
-  return { recordId };
-};
+  return json({ recordId });
+}
 
 // override monaco loader
 monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
 
 export default function ContestProblemView() {
-  const { problem, records: _records, contest } = useLoaderData<LoaderData>();
-  const actionData = useActionData<ActionData>();
+  const {
+    problem,
+    records: _records,
+    contest,
+  } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
 
@@ -241,14 +236,13 @@ export default function ContestProblemView() {
   const isEnded = now > new Date(contest.endTime);
 
   const [records, setRecords] = useState(_records);
-  const user = useContext(UserInfoContext);
 
   useEffect(() => {
-    if (user?.id) {
-      const eventSource = new EventSource(`/contest/${contestId}/events`);
-      eventSource.addEventListener("message", ({ data }) => {
-        const message: MessageType = JSON.parse(data);
-
+    const subscription = fromEventSource<MessageType>(
+      `/contest/${contestId}/events`
+    )
+      .pipe(filter((message) => message.problemId === problem.id))
+      .subscribe((message) => {
         setRecords((records) => {
           const found = records.find((record) => record.id === message.id);
           if (found) {
@@ -257,23 +251,25 @@ export default function ContestProblemView() {
             found.score = message.score;
             found.memory = message.memory;
             found.status = message.status;
+            return records;
           } else {
             // 否则添加新的记录
-            records.unshift({
-              id: message.id,
-              time: message.time,
-              score: message.score,
-              memory: message.memory,
-              status: message.status,
-            });
+            return [
+              {
+                id: message.id,
+                time: message.time,
+                score: message.score,
+                memory: message.memory,
+                status: message.status,
+              },
+              ...records,
+            ];
           }
-          return [...records];
         });
       });
 
-      return () => eventSource.close();
-    }
-  }, [user?.id]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <>

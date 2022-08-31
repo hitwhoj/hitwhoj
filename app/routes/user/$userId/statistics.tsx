@@ -1,5 +1,5 @@
-import type { Contest } from "@prisma/client";
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -10,33 +10,29 @@ import {
   Statistic,
   Space,
 } from "@arco-design/web-react";
-import { permissionUserProfileRead } from "~/utils/permission/user";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  user: {
-    attendedContests: Pick<Contest, "id" | "title">[];
-    _count: {
-      createdRecords: number;
-      createdComments: number;
-      createdReplies: number;
-    };
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  await permissionUserProfileRead.ensure(request, userId);
+  const self = await findRequestUser(request);
+  await self.checkPermission(
+    self.userId === userId
+      ? Permissions.PERM_VIEW_USER_PROFILE_SELF
+      : Permissions.PERM_VIEW_USER_PROFILE
+  );
 
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
-      attendedContests: {
+      participatedContests: {
         select: {
-          id: true,
-          title: true,
+          contest: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
         },
       },
       _count: {
@@ -53,11 +49,11 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("User not found", { status: 404 });
   }
 
-  return { user };
-};
+  return json({ user });
+}
 
 export default function UserStatistics() {
-  const { user } = useLoaderData<LoaderData>();
+  const { user } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -71,9 +67,9 @@ export default function UserStatistics() {
 
       <Typography.Title heading={4}>参与的比赛</Typography.Title>
       <Typography.Paragraph>
-        {user.attendedContests.length ? (
+        {user.participatedContests.length ? (
           <ul>
-            {user.attendedContests.map((contest) => (
+            {user.participatedContests.map(({ contest }) => (
               <li key={contest.id}>
                 <ArcoLink>
                   <Link to={`/contest/${contest.id}`}>{contest.title}</Link>

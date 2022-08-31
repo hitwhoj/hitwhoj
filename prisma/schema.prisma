@@ -23,8 +23,10 @@ model User {
 
   password String
 
-  joinedAt DateTime       @default(now())
-  role     SystemUserRole @default(User)
+  joinedAt  DateTime       @default(now())
+  role      SystemUserRole @default(User)
+  premium   Boolean        @default(false)
+  privilege Int            @default(3)
 
   sessions UserSession[]
 
@@ -38,28 +40,23 @@ model User {
   starredComments Comment[] @relation("starredComments")
   starredReplies  Reply[]   @relation("starredReplies")
 
-  attendedContests Contest[] @relation("attendee")
-  moddedContests   Contest[] @relation("mod")
-  juriedContests   Contest[] @relation("jury")
-
-  attendedTeams TeamMember[]
+  participatedContests ContestParticipant[]
+  attendedTeams        TeamMember[]
 
   sentMessages     PrivateMessage[] @relation("send")
   receivedMessages PrivateMessage[] @relation("receive")
   chatMessage      ChatMessage[]
-  enteredChatRoom  UserInChatRoom[]
+  enteredChatRoom  ChatRoomUser[]
   reports          Report[]         @relation("reports")
 }
 
 enum SystemUserRole {
   /// 超级用户
-  Su
+  Root
   /// 管理员
   Admin
   /// 普通用户
   User
-  /// 封禁用户
-  Banned
 }
 
 /// 用户登录会话
@@ -100,8 +97,8 @@ model Problem {
   title       String
   description String @default("")
 
-  /// 是否公开
-  private Boolean @default(true)
+  private     Boolean @default(true)
+  allowSubmit Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -190,14 +187,30 @@ model Contest {
 
   problems ContestProblem[]
 
-  mods      User[] @relation("mod")
-  juries    User[] @relation("jury")
-  attendees User[] @relation("attendee")
+  participants ContestParticipant[]
 
   relatedRecords Record[]
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
+}
+
+enum ContestParticipantRole {
+  Mod
+  Jury
+  Contestant
+}
+
+model ContestParticipant {
+  contest   Contest @relation(fields: [contestId], references: [id])
+  contestId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  role ContestParticipantRole
+
+  @@id([contestId, userId])
 }
 
 model ContestTag {
@@ -421,7 +434,7 @@ model ChatRoom {
   password String  @default("")
 
   chatMessage    ChatMessage[]
-  userInChatRoom UserInChatRoom[]
+  userInChatRoom ChatRoomUser[]
 }
 
 enum ChatRoomRole {
@@ -430,7 +443,7 @@ enum ChatRoomRole {
   Member
 }
 
-model UserInChatRoom {
+model ChatRoomUser {
   role     ChatRoomRole @default(Member)
   joinedAt DateTime     @default(now())
 

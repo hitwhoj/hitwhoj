@@ -1,4 +1,4 @@
-import type { ActionFunction } from "@remix-run/node";
+import type { ActionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
@@ -18,36 +18,31 @@ import { passwordHash } from "~/utils/tools";
 
 const FormItem = AcroForm.Item;
 
-export type ActionData = {
-  success: false;
-  reason: string;
-};
-
-export const action: ActionFunction<Response> = async ({ request }) => {
+// TODO 完善注册功能
+export async function action({ request }: ActionArgs) {
   const form = await request.formData();
 
   const username = invariant(usernameScheme, form.get("username"));
   const password = invariant(passwordScheme, form.get("password"));
 
-  const { id: userId } = await db.$transaction(async (db) => {
-    const user = await db.user.findUnique({ where: { username } });
-    if (user) {
-      throw json({ success: false, reason: "Username already taken" }, 400);
+  return await db.$transaction(async (db) => {
+    if (await db.user.findUnique({ where: { username } })) {
+      return json({ success: false as const, reason: "用户已存在" }, 400);
     }
 
     const hashedPassword = passwordHash(password);
-    return await db.user.create({
+    const user = await db.user.create({
       data: { username, password: hashedPassword },
     });
-  });
 
-  return redirect("/", {
-    headers: { "Set-Cookie": await commitSession(userId) },
+    return redirect("/", {
+      headers: { "Set-Cookie": await commitSession(user.id) },
+    });
   });
-};
+}
 
 export default function Register() {
-  const data = useActionData<ActionData>();
+  const data = useActionData<typeof action>();
 
   useEffect(() => {
     if (data?.success === false) {

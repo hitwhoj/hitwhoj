@@ -1,4 +1,5 @@
 import type { Prisma, PrismaPromise, Problem } from "@prisma/client";
+import { db } from "../server/db.server";
 import type { Unpack } from "../tools";
 
 type ProblemFindMany<T> = Prisma.CheckSelect<
@@ -20,3 +21,29 @@ export const selectProblemListData = {
   title: true,
   private: true,
 } as const;
+
+export async function findProblemTeam(problemId: number) {
+  const problem = await db.problem.findUnique({
+    where: { id: problemId },
+    select: { teamId: true },
+  });
+
+  if (!problem) {
+    throw new Response("Problem not found", { status: 404 });
+  }
+
+  return problem.teamId;
+}
+
+export async function findProblemPrivacy(problemId: number) {
+  const problem = await db.problem.findUnique({
+    where: { id: problemId },
+    select: { private: true },
+  });
+
+  if (!problem) {
+    throw new Response("Problem not found", { status: 404 });
+  }
+
+  return problem.private;
+}

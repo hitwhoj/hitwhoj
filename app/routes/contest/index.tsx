@@ -1,55 +1,58 @@
 import { Button, Grid, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { useContext } from "react";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { TableList } from "~/src/TableList";
-import { UserInfoContext } from "~/utils/context/user";
-import type { ContestListData } from "~/utils/db/contest";
 import { selectContestListData } from "~/utils/db/contest";
-import { isAdmin } from "~/utils/permission";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
-import { findSessionUserOptional } from "~/utils/sessions";
 import { formatDateTime } from "~/utils/tools";
 
-type LoaderData = {
-  contests: ContestListData[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({ request }) => {
-  const self = await findSessionUserOptional(request);
+export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  const [hasCreatePerm] = await self
+    .team(null)
+    .hasPermission(Permissions.PERM_CREATE_CONTEST);
+  const [viewAll, viewPublic] = await self
+    .team(null)
+    .contest(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_CONTEST,
+      Permissions.PERM_VIEW_CONTEST_PUBLIC
+    );
 
   const contests = await db.contest.findMany({
-    // 只有系统管理员可以看到私有比赛
-    where:
-      self && isAdmin(self.role)
-        ? { team: null }
-        : { team: null, private: false },
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectContestListData,
     },
   });
 
-  return { contests };
-};
+  return json({ contests, hasCreatePerm });
+}
 
 export const meta: MetaFunction = () => ({
   title: "比赛列表 - HITwh OJ",
 });
 
 export default function ContestListIndex() {
-  const { contests } = useLoaderData<LoaderData>();
-  const user = useContext(UserInfoContext);
+  const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
       <Typography.Title heading={3}>
         <Grid.Row justify="space-between" align="center">
           比赛列表
-          {user && isAdmin(user.role) && (
+          {hasCreatePerm && (
             <Link to="/contest/new">
               <Button type="primary" icon={<IconPlus />}>
                 新建比赛

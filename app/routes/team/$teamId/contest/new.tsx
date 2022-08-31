@@ -1,8 +1,4 @@
-import type {
-  ActionFunction,
-  LoaderFunction,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -14,11 +10,9 @@ import {
   timezoneScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { ContestSystem } from "@prisma/client";
+import { ContestParticipantRole, ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { findSessionUid } from "~/utils/sessions";
 import { idScheme } from "~/utils/scheme";
-import { permissionTeamRead } from "~/utils/permission/team";
 import {
   Form,
   Input,
@@ -28,24 +22,33 @@ import {
   Typography,
 } from "@arco-design/web-react";
 import { useState } from "react";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
 const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export async function loader({ request, params }: LoaderArgs) {
+  const self = await findRequestUser(request);
+
+  if (!self.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
+
   const teamId = invariant(idScheme, params.teamId);
 
-  await permissionTeamRead.ensure(request, teamId);
+  await self.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
 
   return null;
-};
+}
 
-export const action: ActionFunction<Response> = async ({ params, request }) => {
-  const teamId = invariant(idScheme, params.teamId);
-  const self = await findSessionUid(request);
+export async function action({ request, params }: ActionArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const self = await findRequestUser(request);
 
-  if (!self) {
+  if (!self.userId) {
     throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
   }
 
@@ -74,12 +77,14 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
       endTime,
       system,
       team: { connect: { id: teamId } },
-      mods: { connect: [{ id: self }] },
+      participants: {
+        create: [{ userId: self.userId!, role: ContestParticipantRole.Mod }],
+      },
     },
   });
 
   return redirect(`/contest/${contestId}`);
-};
+}
 
 export const meta: MetaFunction = () => ({
   title: "创建团队比赛 - HITwh OJ",

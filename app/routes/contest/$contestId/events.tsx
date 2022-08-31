@@ -1,36 +1,43 @@
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
 import { filter, map } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
-import type {
-  ContestRecordUpdateMessage,
-  ServerEvents,
-} from "~/utils/serverEvents";
-import { serverSubject } from "~/utils/serverEvents";
-import { findSessionUser } from "~/utils/sessions";
+import type { RecordUpdateMessage } from "~/utils/serverEvents";
+import { recordUpdateSubject } from "~/utils/serverEvents";
 
-export type MessageType = ContestRecordUpdateMessage;
+export type MessageType = Pick<
+  RecordUpdateMessage,
+  "id" | "status" | "problemId" | "time" | "score" | "memory"
+>;
 
-/** 订阅用户自己在某场比赛中的提交 */
-export const loader: LoaderFunction<Response> = async ({ request, params }) => {
+/** 订阅用户自己在某场比赛中的提交，只保留最基础的信息 */
+export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const self = await findSessionUser(request);
+  const self = await findRequestUser(request);
 
-  // TODO: OI 赛制的话自己应该看不到结果！
+  if (!self.userId) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
 
-  return createEventSource<MessageType>(
+  // FIXME OI 赛制也许应该换一个接口！
+
+  return createEventSource(
     request,
-    serverSubject.pipe(
+    recordUpdateSubject.pipe(
       filter(
-        (
-          message
-        ): message is Extract<ServerEvents, { type: "ContestRecordUpdate" }> =>
-          message.type === "ContestRecordUpdate" &&
-          message.message.contestId === contestId &&
-          message.message.submitterId === self.id
+        (message) =>
+          message.contestId === contestId && message.submitterId === self.userId
       ),
-      map(({ message }) => message)
+      map((message) => ({
+        id: message.id,
+        time: message.time,
+        score: message.score,
+        memory: message.memory,
+        status: message.status,
+        problemId: message.problemId,
+      }))
     )
   );
-};
+}

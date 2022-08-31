@@ -1,5 +1,5 @@
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import {
   descriptionScheme,
@@ -9,14 +9,9 @@ import {
   teamInvitationCodeScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { findSessionUid } from "~/utils/sessions";
+import { findRequestUser } from "~/utils/permission";
 import { TeamMemberRole, InvitationType } from "@prisma/client";
-import type { Team } from "@prisma/client";
-import {
-  permissionTeamRead,
-  permissionTeamSettings,
-  permissionTeamDissolve,
-} from "~/utils/permission/team";
+import { Permissions } from "~/utils/permission/permission";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import {
@@ -35,24 +30,16 @@ const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
 const Option = Select.Option;
 
-type LoaderData = {
-  profile: Pick<Team, "name" | "description">;
-  invitation: {
-    type: InvitationType;
-    code: string | null;
-  };
-  role: TeamMemberRole;
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
 
-  await permissionTeamRead.ensure(request, teamId);
+  const user = await findRequestUser(request);
 
-  const self = await findSessionUid(request);
+  await user.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
+
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
 
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -62,7 +49,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       invitationType: true,
       invitationCode: true,
       members: {
-        where: { userId: self },
+        where: { userId: user.userId },
         select: {
           userId: true,
           role: true,
@@ -90,7 +77,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
     },
     role: team.members[0].role,
   };
-};
+}
 
 enum ActionType {
   EditProfile = "EditProfile",
@@ -100,13 +87,16 @@ enum ActionType {
   TransferTeam = "TransferTeam",
 }
 
-// TODO: 系统超管好像没这么大权力qwq
-export const action: ActionFunction<Response> = async ({ params, request }) => {
+export async function action({ params, request }: ActionArgs) {
   const teamId = invariant(idScheme, params.teamId);
-  const self = await findSessionUid(request);
+  const user = await findRequestUser(request);
+
+  if (!user.userId) {
+    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
+  }
 
   const teamMember = await db.teamMember.findUnique({
-    where: { userId_teamId: { teamId, userId: self } },
+    where: { userId_teamId: { teamId, userId: user.userId } },
     select: { role: true },
   });
 
@@ -120,7 +110,9 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
   switch (_action) {
     // 编辑基本信息
     case ActionType.EditProfile: {
-      await permissionTeamSettings.ensure(request, teamId);
+      await user
+        .team(teamId)
+        .checkPermission(Permissions.PERM_TEAM_EDIT_INTERNAL);
 
       const name = invariant(teamNameScheme, form.get("name"));
       const description = invariant(descriptionScheme, form.get("description"));
@@ -151,7 +143,9 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 修改邀请制
     case ActionType.ModifyInvitation: {
-      await permissionTeamSettings.ensure(request, teamId);
+      await user
+        .team(teamId)
+        .checkPermission(Permissions.PERM_TEAM_EDIT_INTERNAL);
 
       const invitationType = invariant(
         teamInvitationScheme,
@@ -188,7 +182,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
         where: {
           userId_teamId: {
             teamId,
-            userId: self,
+            userId: user.userId,
           },
         },
       });
@@ -198,7 +192,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 解散团队
     case ActionType.DissolveTeam: {
-      await permissionTeamDissolve.ensure(request, teamId);
+      await user.team(teamId).checkPermission(Permissions.PERM_TEAM_DISMISS);
 
       await db.teamMember.deleteMany({ where: { teamId } });
       await db.team.delete({ where: { id: teamId } });
@@ -208,11 +202,11 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
 
     // 转让团队
     case ActionType.TransferTeam: {
-      await permissionTeamSettings.ensure(request, teamId);
+      await user.team(teamId).checkPermission(Permissions.PERM_TEAM_DISMISS);
 
       const newId = invariant(idScheme, form.get("new_id"));
 
-      if (newId === self) {
+      if (newId === user.userId) {
         throw new Response("You can't transfer to yourself.", { status: 400 });
       }
 
@@ -234,7 +228,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
           },
         }),
         db.teamMember.update({
-          where: { userId_teamId: { teamId, userId: self } },
+          where: { userId_teamId: { teamId, userId: user.userId } },
           data: {
             role: TeamMemberRole.Admin,
           },
@@ -246,7 +240,7 @@ export const action: ActionFunction<Response> = async ({ params, request }) => {
   }
 
   throw new Response("I'm a teapot", { status: 418 });
-};
+}
 
 function EditProfile({
   name,
@@ -487,7 +481,7 @@ function DissolveTeam() {
 }
 
 export default function TeamSettings() {
-  const { profile, invitation, role } = useLoaderData<LoaderData>();
+  const { profile, invitation, role } = useLoaderData<typeof loader>();
   const isOwner = role === TeamMemberRole.Owner;
   const isAdmin =
     role === TeamMemberRole.Admin || role === TeamMemberRole.Owner;

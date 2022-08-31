@@ -1,85 +1,53 @@
-import type { SystemUserRole, TeamMemberRole } from "@prisma/client";
+import type { TeamMemberRole } from "@prisma/client";
+import { User } from "./permission/role/user";
+import { db } from "./server/db.server";
+import { getSession } from "./sessions";
 
-/**
- * 判断用户权限等级是否大于等于 User
- */
-export function isUser(role: SystemUserRole | undefined) {
-  return role === "User" || role === "Admin" || role === "Su";
+export async function findRequestUser(request: Request) {
+  const session = getSession(request);
+
+  if (!session) {
+    return new User(null);
+  }
+
+  const result = await db.userSession.findUnique({
+    where: { session },
+    select: { userId: true },
+  });
+
+  if (!result) {
+    return new User(null);
+  }
+
+  return new User(result.userId);
 }
 
-/**
- * 判断用户权限等级是否大于等于 Admin
- */
-export function isAdmin(role: SystemUserRole | undefined) {
-  return role === "Admin" || role === "Su";
+export async function getProblemTeam(problemId: number) {
+  const problem = await db.problem.findUnique({
+    where: { id: problemId },
+    select: { teamId: true },
+  });
+
+  return problem && problem.teamId;
 }
 
-/**
- * 判断用户权限等级是否大于等于 Su
- */
-export function isSu(role: SystemUserRole | undefined) {
-  return role === "Su";
+export async function getTeamMember(teamId: number | null, userId: number) {
+  if (!teamId) return null;
+
+  const member = await db.teamMember.findUnique({
+    where: { userId_teamId: { userId, teamId } },
+    select: { role: true },
+  });
+
+  return member && member.role;
 }
 
-/**
- * 判断团队用户是否是管理员
- */
-export function isTeamAdmin(role: TeamMemberRole | undefined) {
-  return role === "Admin" || role === "Owner";
-}
-
-/**
- * 判断团队用户是否是所有者
- */
-export function isTeamOwner(role: TeamMemberRole | undefined) {
+export function isTeamOwner(role: TeamMemberRole | null) {
   return role === "Owner";
 }
-
-type PermissionCondition<R> = (resource: R) => boolean | undefined | null;
-
-export class Permission<T extends any[], R> {
-  constructor(
-    private proxy: (...t: T) => Promise<R>,
-    private condition: PermissionCondition<R>
-  ) {}
-
-  async check(...t: T) {
-    try {
-      const resource = await this.proxy(...t);
-      return Boolean(this.condition(resource));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async ensure(...t: T) {
-    if (!(await this.check(...t))) {
-      throw new Response("权限不足", { status: 403 });
-    }
-  }
+export function isTeamAdmin(role: TeamMemberRole | null) {
+  return role === "Owner" || role === "Admin";
 }
-
-export const or =
-  <T>(...conditions: PermissionCondition<T>[]) =>
-  (resource: T) =>
-    conditions.some((condition) => condition(resource));
-
-export const and =
-  <T>(...conditions: PermissionCondition<T>[]) =>
-  (resource: T) =>
-    conditions.every((condition) => condition(resource));
-
-export const not =
-  <T>(condition: PermissionCondition<T>) =>
-  (resource: T) =>
-    !condition(resource);
-
-export const allow =
-  <T>() =>
-  (_resource: T) =>
-    true;
-
-export const deny =
-  <T>() =>
-  (_resource: T) =>
-    false;
+export function isTeamMember(role: TeamMemberRole | null) {
+  return role === "Owner" || role === "Admin" || role === "Member";
+}

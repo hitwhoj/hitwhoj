@@ -1,35 +1,31 @@
-import type { ProblemSet } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { Typography } from "@arco-design/web-react";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { findSessionUserOptional } from "~/utils/sessions";
-import { isAdmin } from "~/utils/permission";
 import { TableList } from "~/src/TableList";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
-type LoaderData = {
-  problemSets: (Pick<ProblemSet, "id" | "title" | "private"> & {
-    _count: {
-      problems: number;
-    };
-  })[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  request,
-  params,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
-  const self = await findSessionUserOptional(request);
+  const self = await findRequestUser(request);
+  const [viewAll, viewPublic] = await self
+    .team(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_PROBLEM_SET,
+      Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+    );
 
   const problemSets = await db.problemSet.findMany({
-    where:
-      self && isAdmin(self.role)
-        ? { team: null, tags: { some: { name: tag } } }
-        : { team: null, tags: { some: { name: tag } }, private: false },
+    where: viewAll
+      ? { team: null, tags: { some: { name: tag } } }
+      : viewPublic
+      ? { team: null, tags: { some: { name: tag } }, private: false }
+      : { id: -1 },
     orderBy: { id: "asc" },
     select: {
       id: true,
@@ -47,8 +43,8 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem Set Tag not found", { status: 404 });
   }
 
-  return { problemSets };
-};
+  return json({ problemSets });
+}
 
 export const meta: MetaFunction = ({ params }) => ({
   title: `题单标签: ${params.tag} - HITwh OJ`,
@@ -56,7 +52,7 @@ export const meta: MetaFunction = ({ params }) => ({
 
 export default function ProblemSetTag() {
   const { tag } = useParams();
-  const { problemSets } = useLoaderData<LoaderData>();
+  const { problemSets } = useLoaderData<typeof loader>();
 
   return (
     <Typography>

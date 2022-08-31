@@ -1,24 +1,16 @@
 import { Typography } from "@arco-design/web-react";
-import type { Problem, Record } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { TableList } from "~/src/TableList";
 import { UserLink } from "~/src/user/UserLink";
-import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
 
-type LoaderData = {
-  records: (Pick<Record, "id" | "status" | "submittedAt"> & {
-    problem: Pick<Problem, "id" | "title" | "private">;
-    submitter: UserData;
-  })[];
-};
-
-export const loader: LoaderFunction<LoaderData> = async () => {
+export async function loader(_: LoaderArgs) {
   const records = await db.record.findMany({
     where: { contest: null },
     orderBy: [{ id: "desc" }],
@@ -42,22 +34,22 @@ export const loader: LoaderFunction<LoaderData> = async () => {
     },
   });
 
-  return { records };
-};
+  return json({ records });
+}
 
 export const meta: MetaFunction = () => ({
   title: "评测记录 - HITwh OJ",
 });
 
 export default function RecordList() {
-  const { records } = useLoaderData<LoaderData>();
+  const { records } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
       <Typography.Title heading={3}>评测记录</Typography.Title>
 
       <Typography.Paragraph>
-        您只能查询到最近的 100 条评测记录。
+        您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。
       </Typography.Paragraph>
 
       <Typography.Paragraph>

@@ -1,30 +1,31 @@
-import type { Problem, ProblemTag } from "@prisma/client";
-import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Typography, Tag } from "@arco-design/web-react";
 import { Navigator } from "~/src/Navigator";
-import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
+import {
+  IconClose,
+  IconEyeInvisible,
+  IconTag,
+} from "@arco-design/web-react/icon";
 import { TagSpace } from "~/src/TagSpace";
-import { useContext } from "react";
-import { UserInfoContext } from "~/utils/context/user";
-import { isAdmin, isUser } from "~/utils/permission";
-import { permissionProblemRead } from "~/utils/permission/problem";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 
-type LoaderData = {
-  problem: Pick<Problem, "id" | "title" | "description" | "private"> & {
-    tags: Pick<ProblemTag, "name">[];
-  };
-};
-
-export const loader: LoaderFunction<LoaderData> = async ({
-  params,
-  request,
-}) => {
+export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
-  await permissionProblemRead.ensure(request, problemId);
+  const self = await findRequestUser(request);
+  const team = self.team(await findProblemTeam(problemId));
+  await team.checkPermission(
+    (await findProblemPrivacy(problemId))
+      ? Permissions.PERM_VIEW_PROBLEM
+      : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+  );
+  const [hasEditPerm] = await team.hasPermission(Permissions.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -33,6 +34,7 @@ export const loader: LoaderFunction<LoaderData> = async ({
       title: true,
       description: true,
       private: true,
+      allowSubmit: true,
       tags: {
         select: {
           name: true,
@@ -45,17 +47,16 @@ export const loader: LoaderFunction<LoaderData> = async ({
     throw new Response("Problem not found", { status: 404 });
   }
 
-  return { problem };
-};
+  return json({ problem, hasEditPerm });
+}
 
-export const meta: MetaFunction<LoaderData> = ({ data }) => ({
+export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `题目: ${data?.problem.title} - HITwh OJ`,
   description: data?.problem.description,
 });
 
 export default function ProblemView() {
-  const { problem } = useLoaderData<LoaderData>();
-  const self = useContext(UserInfoContext);
+  const { problem, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
@@ -67,6 +68,11 @@ export default function ProblemView() {
             {problem.private && (
               <Tag icon={<IconEyeInvisible />} color="gold">
                 隐藏
+              </Tag>
+            )}
+            {!problem.allowSubmit && (
+              <Tag icon={<IconClose />} color="red">
+                禁止提交
               </Tag>
             )}
             {problem.tags.map((tag) => (
@@ -81,15 +87,9 @@ export default function ProblemView() {
       <Navigator
         routes={[
           { title: "题面", key: "." },
-          ...(self && isUser(self.role)
-            ? [{ title: "提交", key: "submit" }]
-            : [{ title: "登录后提交", key: "submit" }]),
-          ...(self && isAdmin(self.role)
-            ? [
-                { title: "数据", key: "data" },
-                { title: "编辑", key: "edit" },
-              ]
-            : []),
+          ...(problem.allowSubmit ? [{ title: "提交", key: "submit" }] : []),
+          ...(hasEditPerm ? [{ title: "数据", key: "data" }] : []),
+          ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
         ]}
       />
 
