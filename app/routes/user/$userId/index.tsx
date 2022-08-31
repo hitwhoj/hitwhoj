@@ -25,6 +25,8 @@ export async function loader({ request, params }: LoaderArgs) {
       username: true,
       nickname: true,
       email: true,
+      department: true,
+      studentId: true,
     },
   });
 
@@ -54,7 +56,19 @@ export default function Profile() {
     },
     {
       label: "电子邮箱",
-      value: <a href={`mailto:${user.email}`}>{user.email}</a>,
+      value: user.email ? (
+        <a href={`mailto:${user.email}`}>{user.email}</a>
+      ) : (
+        "-"
+      ),
+    },
+    {
+      label: "工作单位",
+      value: user.department || "-",
+    },
+    {
+      label: "学号",
+      value: user.studentId || "-",
     },
   ];
 

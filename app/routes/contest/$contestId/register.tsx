@@ -1,8 +1,16 @@
-import { Alert, Button, Message, Typography } from "@arco-design/web-react";
+import {
+  Alert,
+  Button,
+  Input,
+  Message,
+  Space,
+  Typography,
+} from "@arco-design/web-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useTransition } from "@remix-run/react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect } from "react";
 import {
   findContestParticipantRole,
@@ -11,7 +19,7 @@ import {
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { idScheme } from "~/utils/scheme";
+import { idScheme, weakPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -25,7 +33,23 @@ export async function loader({ request, params }: LoaderArgs) {
     });
   }
 
-  return null;
+  const contest = await db.contest.findUnique({
+    where: { id: contestId },
+    select: {
+      private: true,
+      registrationType: true,
+    },
+  });
+
+  if (!contest) {
+    throw new Response("Contest not found", { status: 404 });
+  }
+
+  if (contest.private || contest.registrationType === "Disallow") {
+    throw new Response("Registration is not allowed", { status: 403 });
+  }
+
+  return json({ contest });
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -44,8 +68,8 @@ export async function action({ request, params }: ActionArgs) {
       where: { id: contestId },
       select: {
         private: true,
-        allowAfterRegistration: true,
-        allowPublicRegistration: true,
+        registrationType: true,
+        registrationPassword: true,
       },
     });
 
@@ -53,22 +77,21 @@ export async function action({ request, params }: ActionArgs) {
       throw new Response("Contest not found.", { status: 404 });
     }
 
-    if (status === "Pending") {
-      if (contest.private || !contest.allowPublicRegistration) {
-        throw new Response("Contest does not allow public registeration", {
-          status: 400,
-        });
+    if (status !== "Pending") {
+      throw new Response("Registration closed", { status: 400 });
+    }
+
+    if (contest.registrationType === "Disallow") {
+      throw new Response("Registration is not allowed", { status: 400 });
+    }
+
+    if (contest.registrationType === "Password") {
+      const form = await request.formData();
+      const password = invariant(weakPasswordScheme, form.get("password"));
+
+      if (password !== contest.registrationPassword) {
+        throw new Response("Password incorrect", { status: 400 });
       }
-    } else if (status === "Running") {
-      if (
-        contest.private ||
-        !contest.allowPublicRegistration ||
-        !contest.allowAfterRegistration
-      ) {
-        throw new Response("Contest is running", { status: 400 });
-      }
-    } else {
-      throw new Response("Contest has ended", { status: 400 });
     }
 
     await db.contestParticipant.create({
@@ -84,6 +107,8 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ContestRegisteration() {
+  const { contest } = useLoaderData<typeof loader>();
+
   const { state, type } = useTransition();
   const isActionSubmit = state === "submitting" && type === "actionSubmission";
   const isActionReload = state === "loading" && type === "actionRedirect";
@@ -105,9 +130,23 @@ export default function ContestRegisteration() {
 
       <Typography.Paragraph>
         <Form method="post">
-          <Button type="primary" htmlType="submit" loading={isLoading}>
-            确认报名
-          </Button>
+          {contest.registrationType === "Password" ? (
+            <Space>
+              <Input
+                placeholder="密码"
+                name="password"
+                required
+                style={{ width: 150 }}
+              />
+              <Button type="primary" htmlType="submit" loading={isLoading}>
+                报名
+              </Button>
+            </Space>
+          ) : (
+            <Button type="primary" htmlType="submit" loading={isLoading}>
+              同意并报名
+            </Button>
+          )}
         </Form>
       </Typography.Paragraph>
     </Typography>

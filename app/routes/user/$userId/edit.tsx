@@ -2,6 +2,7 @@ import {
   Button,
   Form as ArcoForm,
   Input,
+  Message,
   Typography,
 } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
@@ -21,6 +22,7 @@ import {
 import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -40,6 +42,8 @@ export async function loader({ request, params }: LoaderArgs) {
       avatar: true,
       email: true,
       bio: true,
+      department: true,
+      studentId: true,
     },
   });
 
@@ -78,25 +82,31 @@ export async function action({ request, params }: ActionArgs) {
   );
   const email = invariant(emailScheme.or(emptyStringScheme), form.get("email"));
   const bio = invariant(bioScheme.or(emptyStringScheme), form.get("bio"));
+  const department = invariant(z.string(), form.get("department"));
+  const studentId = invariant(z.string(), form.get("studentId"));
 
-  const user = await db.user.findUnique({
-    where: { username },
-    select: { id: true },
-  });
+  await db.$transaction(async (db) => {
+    const user = await db.user.findUnique({
+      where: { username },
+      select: { id: true },
+    });
 
-  if (user && user.id !== userId) {
-    throw new Response("Username already taken", { status: 400 });
-  }
+    if (user && user.id !== userId) {
+      throw new Response("Username already taken", { status: 400 });
+    }
 
-  await db.user.update({
-    where: { id: userId },
-    data: {
-      username,
-      nickname,
-      avatar,
-      email,
-      bio,
-    },
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        username,
+        nickname,
+        avatar,
+        email,
+        bio,
+        department,
+        studentId,
+      },
+    });
   });
 
   return null;
@@ -106,8 +116,16 @@ const FormItem = ArcoForm.Item;
 
 export default function UserEdit() {
   const { user } = useLoaderData<typeof loader>();
-  const { state } = useTransition();
-  const loading = state === "submitting";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isUpdating = isActionSubmit || isActionReload;
+
+  useEffect(() => {
+    if (isActionReload) {
+      Message.success("更新成功");
+    }
+  }, [isActionReload]);
 
   return (
     <Typography>
@@ -118,7 +136,7 @@ export default function UserEdit() {
             <Input
               name="username"
               defaultValue={user.username}
-              disabled={loading}
+              disabled={isUpdating}
               required
               pattern="[a-zA-Z0-9_]+"
             />
@@ -127,15 +145,18 @@ export default function UserEdit() {
             <Input
               name="nickname"
               defaultValue={user.nickname}
-              disabled={loading}
+              disabled={isUpdating}
             />
+          </FormItem>
+          <FormItem label="个性签名" layout="vertical">
+            <Input name="bio" defaultValue={user.bio} disabled={isUpdating} />
           </FormItem>
           <FormItem label="电子邮箱" layout="vertical">
             <Input
               name="email"
               type="email"
               defaultValue={user.email}
-              disabled={loading}
+              disabled={isUpdating}
             />
           </FormItem>
           <FormItem label="头像地址" layout="vertical">
@@ -143,14 +164,25 @@ export default function UserEdit() {
               name="avatar"
               defaultValue={user.avatar}
               placeholder="https://"
-              disabled={loading}
+              disabled={isUpdating}
             />
           </FormItem>
-          <FormItem label="个人介绍" layout="vertical">
-            <Input name="bio" defaultValue={user.bio} disabled={loading} />
+          <FormItem label="工作单位" layout="vertical">
+            <Input
+              name="department"
+              defaultValue={user.department}
+              disabled={isUpdating}
+            />
+          </FormItem>
+          <FormItem label="学号" layout="vertical">
+            <Input
+              name="studentId"
+              defaultValue={user.studentId}
+              disabled={isUpdating}
+            />
           </FormItem>
           <FormItem layout="vertical">
-            <Button type="primary" htmlType="submit" loading={loading}>
+            <Button type="primary" htmlType="submit" loading={isUpdating}>
               确认修改
             </Button>
           </FormItem>

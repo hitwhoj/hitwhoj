@@ -1,4 +1,4 @@
-import { ContestSystem } from "@prisma/client";
+import { ContestRegistrationType, ContestSystem } from "@prisma/client";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
@@ -12,6 +12,7 @@ import {
   tagScheme,
   timezoneScheme,
   titleScheme,
+  weakPasswordScheme,
 } from "~/utils/scheme";
 import {
   Button,
@@ -23,6 +24,7 @@ import {
   Message,
   Alert,
   Checkbox,
+  Space,
 } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
@@ -33,6 +35,7 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
+import { z } from "zod";
 
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
@@ -58,8 +61,8 @@ export async function loader({ request, params }: LoaderArgs) {
       endTime: true,
       system: true,
       private: true,
-      allowAfterRegistration: true,
-      allowPublicRegistration: true,
+      registrationType: true,
+      registrationPassword: true,
       tags: { select: { name: true } },
       problems: {
         orderBy: { rank: "asc" },
@@ -86,9 +89,9 @@ enum ActionType {
   DeleteTag = "DeleteTag",
   CreateProblem = "CreateProblem",
   DeleteProblem = "DeleteProblem",
-  UpdateInformation = "UpdateInformation",
   MoveProblemUp = "MoveProblemUp",
   MoveProblemDown = "MoveProblemDown",
+  UpdateInformation = "UpdateInformation",
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -263,10 +266,14 @@ export async function action({ request, params }: ActionArgs) {
 
       const system = invariant(systemScheme, form.get("system"));
       const priv = form.get("private") === "true";
-      const allowPublicRegistration =
-        form.get("allowPublicRegistration") === "true";
-      const allowAfterRegistration =
-        form.get("allowAfterRegistration") === "true";
+      const registrationType = invariant(
+        z.nativeEnum(ContestRegistrationType),
+        form.get("registrationType")
+      );
+      const registrationPassword =
+        registrationType === "Password"
+          ? invariant(weakPasswordScheme, form.get("registrationPassword"))
+          : "";
 
       await db.contest.update({
         where: { id: contestId },
@@ -277,8 +284,8 @@ export async function action({ request, params }: ActionArgs) {
           endTime,
           system,
           private: priv,
-          allowPublicRegistration,
-          allowAfterRegistration,
+          registrationType,
+          registrationPassword,
         },
       });
 
@@ -302,11 +309,11 @@ export default function ContestEdit() {
   const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
   const [system, setSystem] = useState(contest.system);
   const [pub, setPub] = useState(!contest.private);
-  const [allowPublicRegisteration, setAllowPublicRegistration] = useState(
-    contest.allowPublicRegistration
+  const [registrationType, setRegistrationType] = useState(
+    contest.registrationType
   );
-  const [allowAfterRegistration, setAllowAfterRegistration] = useState(
-    contest.allowAfterRegistration
+  const [registrationPassword, setRegistrationPassword] = useState(
+    contest.registrationPassword
   );
 
   const { state, type } = useTransition();
@@ -410,38 +417,44 @@ export default function ContestEdit() {
               onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
             >
-              公开比赛
+              公开比赛（勾选后普通用户可以在网站首页查看到该比赛）
             </Checkbox>
           </FormItem>
 
-          <FormItem disabled={isUpdating || !pub}>
+          <FormItem label="报名方式" layout="vertical" required>
             <input
               type="hidden"
-              name="allowPublicRegistration"
-              value={String(allowPublicRegisteration)}
+              name="registrationType"
+              value={registrationType}
+              required
             />
-            <Checkbox
-              checked={allowPublicRegisteration}
-              onChange={(checked) => setAllowPublicRegistration(checked)}
-              disabled={isUpdating}
-            >
-              允许公开报名
-            </Checkbox>
-          </FormItem>
-
-          <FormItem disabled={isUpdating || !pub || !allowPublicRegisteration}>
             <input
               type="hidden"
-              name="allowAfterRegistration"
-              value={String(allowAfterRegistration)}
+              name="registrationPassword"
+              value={registrationPassword}
+              required
             />
-            <Checkbox
-              checked={allowAfterRegistration}
-              onChange={(checked) => setAllowAfterRegistration(checked)}
-              disabled={isUpdating}
-            >
-              允许比赛开始后报名
-            </Checkbox>
+            <Space>
+              <Select
+                value={registrationType}
+                onChange={(type) => setRegistrationType(type)}
+                disabled={isUpdating}
+                style={{ width: 150 }}
+              >
+                <Select.Option value="Disallow">不允许报名</Select.Option>
+                <Select.Option value="Password">需要密码</Select.Option>
+                <Select.Option value="Public">允许任何人</Select.Option>
+              </Select>
+              {registrationType === "Password" && (
+                <Input
+                  placeholder="报名密码"
+                  value={registrationPassword}
+                  onChange={(password) => setRegistrationPassword(password)}
+                  disabled={isUpdating}
+                  required
+                />
+              )}
+            </Space>
           </FormItem>
 
           <FormItem>

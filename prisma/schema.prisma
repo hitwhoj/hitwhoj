@@ -21,6 +21,9 @@ model User {
   avatar   String @default("")
   nickname String @default("")
 
+  department String @default("")
+  studentId  String @default("")
+
   password String
 
   joinedAt  DateTime       @default(now())
@@ -169,13 +172,14 @@ model Contest {
   title       String
   description String @default("")
 
-  system                  ContestSystem
+  /// 比赛赛制
+  system               ContestSystem
   /// 比赛是否公开（不公开的比赛不会展示在首页，而且用户无法查看）
-  private                 Boolean       @default(true)
-  /// 是否允许公开报名（首先必须公开比赛）
-  allowPublicRegistration Boolean       @default(true)
-  /// 是否允许用户在比赛进行中时报名（必须首先允许公开报名）
-  allowAfterRegistration  Boolean       @default(true)
+  private              Boolean                 @default(true)
+  /// 比赛报名类型
+  registrationType     ContestRegistrationType @default(Disallow)
+  /// 比赛报名密码（只有当报名类型为 Password 时才有意义）
+  registrationPassword String                  @default("")
 
   beginTime DateTime
   endTime   DateTime
@@ -193,6 +197,12 @@ model Contest {
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
+}
+
+enum ContestRegistrationType {
+  Public
+  Password
+  Disallow
 }
 
 enum ContestParticipantRole {
