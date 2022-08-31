@@ -24,7 +24,6 @@ import {
 } from "@arco-design/web-react/icon";
 import { Markdown } from "~/src/Markdown";
 import { Like } from "~/src/comment/Like";
-import { Avatar } from "~/src/comment/Avatar";
 import { redirect } from "@remix-run/node";
 import type { ActionFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { useState } from "react";
@@ -32,6 +31,8 @@ import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
+import { UserLink } from "~/src/user/UserLink";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 const FormItem = arcoForm.Item;
 const TextArea = Input.TextArea;
@@ -202,13 +203,7 @@ export async function loader({ params, request }: LoaderArgs) {
   const comment = await db.comment.findUnique({
     where: { id: commentId },
     include: {
-      creator: {
-        select: {
-          id: true,
-          nickname: true,
-          avatar: true,
-        },
-      },
+      creator: true,
       heartees: {
         select: {
           id: true,
@@ -221,22 +216,10 @@ export async function loader({ params, request }: LoaderArgs) {
       },
       replies: {
         include: {
-          creator: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
-            },
-          },
+          creator: true,
           subReplies: {
             include: {
-              creator: {
-                select: {
-                  id: true,
-                  nickname: true,
-                  avatar: true,
-                },
-              },
+              creator: true,
               heartees: {
                 select: {
                   id: true,
@@ -331,9 +314,9 @@ function CommentTitle({
         />
       </Modal>
       <span style={{ display: "flex", alignItems: "center" }}>
-        <Avatar src={author.avatar} name={author.nickname} size={32} />
+        <UserAvatar user={author} />
         <Typography.Text>
-          <Link to={`/user/${author.id}`}>{author.nickname}</Link>
+          <UserLink user={author} />
         </Typography.Text>
         <Typography.Text>@{formatDateTime(comment.createdAt)}</Typography.Text>
       </span>
@@ -549,9 +532,9 @@ function SubReplyCard({
   return (
     <ArcoComment
       actions={actions}
-      author={<Link to={`/user/${author.id}`}>{author.nickname}</Link>}
+      author={<UserLink user={author} />}
       key={"reply" + reply.id}
-      avatar={<Avatar src={author.avatar} name={author.nickname} />}
+      avatar={<UserAvatar user={author} />}
       content={
         <div>
           {replyTo}
@@ -678,9 +661,9 @@ function ReplyCard({
   return (
     <ArcoComment
       actions={actions}
-      author={<Link to={`/user/${author.id}`}>{author.nickname}</Link>}
+      author={<UserLink user={author} />}
       key={"reply" + reply.id}
-      avatar={<Avatar src={author.avatar} name={author.nickname} />}
+      avatar={<UserAvatar user={author} />}
       content={<div>{reply.content}</div>}
       datetime={formatDateTime(reply.createdAt)}
     >
