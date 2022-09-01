@@ -8,11 +8,11 @@ import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { Button, Input, Space, Select } from "@arco-design/web-react";
 import { useState } from "react";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
+import { judge } from "~/utils/server/judge/manager.server";
 
 const TextArea = Input.TextArea;
 

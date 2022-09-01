@@ -9,7 +9,7 @@ import type {
   JudgeStatus,
   SubtaskStatus,
   TaskStatus,
-} from "~/utils/server/judge.types";
+} from "~/utils/server/judge/judge.types";
 
 type Props = {
   status: JudgeStatus | SubtaskStatus | TaskStatus | string;

@@ -40,7 +40,6 @@ import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { ThemeContext } from "~/utils/context/theme";
 import type { MessageType } from "../events";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import {
   findContestProblemIdByRank,
@@ -51,6 +50,7 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
+import { judge } from "~/utils/server/judge/manager.server";
 
 // 加载特殊页面样式
 export const links: LinksFunction = () => [

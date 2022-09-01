@@ -23,7 +23,6 @@ import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
 import type { MessageType } from "./events";
-import type { SubtaskResult } from "~/utils/server/judge.types";
 import { selectContestListData } from "~/utils/db/contest";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -35,6 +34,7 @@ import {
   findRecordUser,
 } from "~/utils/db/record";
 import { fromEventSource } from "~/utils/eventSource";
+import type { SubtaskResult } from "~/utils/server/judge/judge.types";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -183,9 +183,6 @@ export default function RecordView() {
                       <RecordStatus status={item.status} />
                       <ResultMessage message={item.message} />
                     </Space>
-                  }
-                  extra={
-                    <RecordTimeMemory time={item.time} memory={item.memory} />
                   }
                 >
                   <List size="small" bordered={false}>
