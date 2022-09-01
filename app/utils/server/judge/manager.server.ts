@@ -65,6 +65,10 @@ export class JudgeManager {
 
       let dispatched = false;
       for (const judge of judges) {
+        // judge is full
+        if (judge.status.occupied >= judge.status.cpus) continue;
+
+        // try to dispatch to the certain judge
         try {
           await judge.dispatch(mission);
           dispatched = true;
@@ -72,6 +76,7 @@ export class JudgeManager {
         } catch (_) {}
       }
 
+      // recycle dispatched missions
       if (!dispatched) {
         this.#queue.push(mission);
       }
