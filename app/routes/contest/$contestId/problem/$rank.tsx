@@ -323,6 +323,12 @@ export default function ContestProblemView() {
                 </Typography.Paragraph>
               </>
             )}
+
+            <Typography.Paragraph>
+              <Link to="clarification">
+                <Button type="primary">反馈</Button>
+              </Link>
+            </Typography.Paragraph>
           </Typography>,
 
           <Form

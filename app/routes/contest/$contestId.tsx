@@ -27,6 +27,9 @@ export async function loader({ request, params }: LoaderArgs) {
       : Permissions.PERM_VIEW_CONTEST_PUBLIC
   );
   const [hasEditPerm] = await perm.hasPermission(Permissions.PERM_EDIT_CONTEST);
+  const [canReply] = await perm.hasPermission(
+    Permissions.PERM_REPLY_CONTEST_CLARIFICATION
+  );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -49,7 +52,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest, hasEditPerm };
+  return { contest, hasEditPerm, canReply };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -57,7 +60,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm } = useLoaderData<typeof loader>();
+  const { contest, hasEditPerm, canReply } = useLoaderData<typeof loader>();
 
   return (
     <Typography className="contest-problem-container">
@@ -93,6 +96,7 @@ export default function ContestView() {
           routes={[
             { title: "详情", key: "." },
             { title: "题目", key: "problem" },
+            { title: canReply ? "用户反馈" : "我的反馈", key: "clarification" },
             ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
           ]}
         />
