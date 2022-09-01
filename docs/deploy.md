@@ -33,7 +33,7 @@ DATABASE_URL=postgres://username:password@localhost:5432/dbname
 
 # === MinIO 配置 ===
 
-S3_ENDPOINT=localhost
+S3_END_POINT=localhost
 S3_PORT=9000
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin

@@ -39,7 +39,7 @@ yarn 在 install 之后会自动运行一个 postinstall hook，包括：
 之后需要手动安装 MinIO，并同样将 MinIO 的链接信息添加到 `.env` 文件中。
 
     // .env
-    S3_ENDPOINT=localhost
+    S3_END_POINT=localhost
     S3_PORT=9000
     S3_ACCESS_KEY=minioadmin
     S3_SECRET_KEY=minioadmin
