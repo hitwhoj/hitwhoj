@@ -28,6 +28,7 @@ import {
 } from "@arco-design/web-react";
 import { useEffect, useState } from "react";
 import { Form as ArcoForm, Input } from "@arco-design/web-react";
+import { clarificationSubject } from "~/utils/serverEvents";
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
 
@@ -299,20 +300,13 @@ export default function ContestClarification() {
                   <Popconfirm
                     title="确定要申领吗?"
                     onOk={() => {
-                      return new Promise<void>((resolve) => {
-                        fetcher.submit(
-                          {
-                            _action: ActionType.Apply,
-                            clarificationId:
-                              selectedClarification.id.toString(),
-                          },
-                          { method: "post" }
-                        );
-                        while (fetcher.state === "submitting");
-                        if (fetcher.type === "done") {
-                          resolve();
-                        }
-                      });
+                      fetcher.submit(
+                        {
+                          _action: ActionType.Apply,
+                          clarificationId: selectedClarification.id.toString(),
+                        },
+                        { method: "post" }
+                      );
                     }}
                     disabled={selectedClarification.applicant != null}
                   >
@@ -380,13 +374,18 @@ export async function action({ request, params }: ActionArgs) {
         status: 400,
       });
 
-      await db.clarification.create({
+      const clarification = await db.clarification.create({
         data: {
           contestId,
           userId: self.userId!,
           content,
           rank: rank,
         },
+      });
+
+      clarificationSubject.next({
+        ...clarification,
+        type: "judge",
       });
 
       return null;
@@ -402,7 +401,15 @@ export async function action({ request, params }: ActionArgs) {
 
       const clarification = await db.clarification.findUnique({
         where: { id: clarificationId },
-        select: { resolved: true, applicantId: true },
+        select: {
+          id: true,
+          contestId: true,
+          userId: true,
+          rank: true,
+          content: true,
+          resolved: true,
+          applicantId: true,
+        },
       });
 
       if (!clarification) {
@@ -428,6 +435,8 @@ export async function action({ request, params }: ActionArgs) {
           content,
         },
       });
+
+      clarificationSubject.next({ ...clarification, type: "user" });
 
       return null;
     }
@@ -473,7 +482,14 @@ export async function action({ request, params }: ActionArgs) {
 
       const clarification = await db.clarification.findUnique({
         where: { id: clarificationId },
-        select: { resolved: true },
+        select: {
+          id: true,
+          contestId: true,
+          userId: true,
+          rank: true,
+          content: true,
+          resolved: true,
+        },
       });
 
       if (!clarification) {
@@ -492,6 +508,8 @@ export async function action({ request, params }: ActionArgs) {
           resolved: true,
         },
       });
+
+      clarificationSubject.next({ ...clarification, type: "user" });
 
       return null;
     }

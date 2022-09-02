@@ -1,6 +1,6 @@
-import { Space, Tag, Typography } from "@arco-design/web-react";
+import { Message, Space, Tag, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -16,6 +16,11 @@ import {
 import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useContext, useEffect } from "react";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType } from "./$contestId/clarificationEvents";
+import { filter } from "rxjs";
+import { UserContext } from "~/utils/context/user";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -61,6 +66,47 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function ContestView() {
   const { contest, hasEditPerm, canReply } = useLoaderData<typeof loader>();
+  const { contestId } = useParams();
+  const self = useContext(UserContext);
+
+  useEffect(() => {
+    const observable = fromEventSource<MessageType>(
+      `/contest/${contestId}/clarificationEvents`
+    );
+    const subscription = canReply
+      ? observable
+          .pipe(filter((message) => message.type === "judge"))
+          .subscribe((message) => {
+            Message.info({
+              content: `用户对题目${String.fromCharCode(
+                0x40 + message.rank
+              )}的反馈${message.content}需要您的回复`,
+              duration: 0,
+              closable: true,
+            });
+          })
+      : observable
+          .pipe(
+            filter(
+              (message) => message.type === "user" && message.userId === self
+            )
+          )
+          .subscribe((message) => {
+            Message.info({
+              content: message.resolved
+                ? `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
+                    message.content
+                  }已被解决`
+                : `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
+                    message.content
+                  }已被回复`,
+              duration: 0,
+              closable: true,
+            });
+          });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <Typography className="contest-problem-container">

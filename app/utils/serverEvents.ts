@@ -8,6 +8,7 @@ import type {
   Record,
   User,
   ChatRoomUser,
+  Clarification,
 } from "@prisma/client";
 import { Subject } from "rxjs";
 import type { UserData } from "./db/user";
@@ -42,3 +43,12 @@ export type RecordUpdateMessage = Pick<
 >;
 
 export const recordUpdateSubject = new Subject<RecordUpdateMessage>();
+
+export type ClarificationMessage = Pick<
+  Clarification,
+  "id" | "contestId" | "rank" | "userId" | "content" | "resolved"
+> & {
+  type: "user" | "judge";
+};
+
+export const clarificationSubject = new Subject<ClarificationMessage>();
