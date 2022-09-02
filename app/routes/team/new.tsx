@@ -9,11 +9,10 @@ import {
   Input,
   Form as ArcoForm,
   Typography,
-  Form,
   Message,
 } from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
-import { useTransition } from "@remix-run/react";
+import { Form, useTransition } from "@remix-run/react";
 import { useEffect } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
