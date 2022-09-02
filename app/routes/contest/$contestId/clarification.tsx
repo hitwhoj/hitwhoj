@@ -6,7 +6,12 @@ import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
-import { Form, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useFetcher,
+  useLoaderData,
+  useTransition,
+} from "@remix-run/react";
 import { TableList } from "~/src/TableList";
 import {
   Button,
@@ -15,11 +20,13 @@ import {
   Drawer,
   Empty,
   List,
+  Message,
   Modal,
+  Popconfirm,
   Select,
   Space,
 } from "@arco-design/web-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Form as ArcoForm, Input } from "@arco-design/web-react";
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;
@@ -90,11 +97,13 @@ export async function loader({ request, params }: LoaderArgs) {
 enum ActionType {
   Create = "Create",
   Reply = "Reply",
+  Apply = "Apply",
+  Resolve = "Resolve",
 }
 
 export default function ContestClarification() {
   const { canReply, clarifications, problems } = useLoaderData<typeof loader>();
-  const [visible, setVisible] = useState(false);
+  const [addVisible, setAddVisible] = useState(false);
 
   const [rank, setRank] = useState(0);
 
@@ -102,6 +111,27 @@ export default function ContestClarification() {
   const [selectedClarification, setSelectedClarification] = useState(
     clarifications[0]
   );
+
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  useEffect(() => {
+    if (isActionSubmit) {
+      Message.success("提交成功");
+      setAddVisible(false);
+    }
+  }, [isActionSubmit]);
+
+  useEffect(() => {
+    console.log(clarifications);
+    console.log(selectedClarification);
+
+    setSelectedClarification(
+      clarifications.find((c) => c.id === selectedClarification.id) ||
+        clarifications[0]
+    );
+  }, [clarifications]);
+
+  const fetcher = useFetcher();
 
   return (
     <>
@@ -124,6 +154,14 @@ export default function ContestClarification() {
               return <Space>{title}</Space>;
             },
           },
+          {
+            title: "状态",
+            render: ({ resolved }) => (resolved ? "已解决" : "未解决"),
+          },
+          {
+            title: "时间",
+            render: ({ createdAt }) => new Date(createdAt).toLocaleString(),
+          },
           ...(canReply
             ? [
                 {
@@ -131,12 +169,17 @@ export default function ContestClarification() {
                   render: (clarification: { user: { username: any } }) =>
                     clarification.user.username,
                 },
+                {
+                  title: "申领",
+                  render: (clarifications: {
+                    applicant: { username: any } | null;
+                  }) =>
+                    clarifications.applicant
+                      ? clarifications.applicant.username
+                      : "无",
+                },
               ]
             : []),
-          {
-            title: "时间",
-            render: ({ createdAt }) => new Date(createdAt).toLocaleString(),
-          },
         ]}
         onRow={(clarification) => {
           return {
@@ -150,13 +193,13 @@ export default function ContestClarification() {
       {!canReply && (
         <>
           <Divider />
-          <Button type="primary" onClick={() => setVisible(true)}>
+          <Button type="primary" onClick={() => setAddVisible(true)}>
             添加反馈
           </Button>
           <Modal
             title="添加反馈"
-            visible={visible}
-            onCancel={() => setVisible(false)}
+            visible={addVisible}
+            onCancel={() => setAddVisible(false)}
             style={{ width: 600 }}
             footer={null}
           >
@@ -218,7 +261,9 @@ export default function ContestClarification() {
             render={(item) => (
               <List.Item>
                 <Card title={null}>
-                  <div>回复人：{item.replier.username}</div>
+                  <div>
+                    回复人：{canReply ? item.replier.username : "比赛管理员"}
+                  </div>
                   <div>回复内容：{item.content}</div>
                   <div>
                     回复时间：{new Date(item.createdAt).toLocaleString()}
@@ -239,30 +284,81 @@ export default function ContestClarification() {
             }
           ></List>
           {canReply && (
-            <Form
-              method="post"
-              style={{ position: "absolute", bottom: 0, width: "100%" }}
-            >
-              <FormItem label="回复内容" layout="vertical" required>
-                <input
-                  type="hidden"
-                  name="clarificationId"
-                  value={selectedClarification.id}
-                  required
-                />
-                <TextArea name="content" autoSize={{ minRows: 3 }} />
-              </FormItem>
-              <FormItem>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  name="_action"
-                  value={ActionType.Reply}
-                >
-                  提交
-                </Button>
-              </FormItem>
-            </Form>
+            <div style={{ position: "absolute", bottom: 0, width: "100%" }}>
+              <Form method="post" style={{}}>
+                <FormItem label="回复内容" layout="vertical" required>
+                  <input
+                    type="hidden"
+                    name="clarificationId"
+                    value={selectedClarification.id}
+                    required
+                  />
+                  <TextArea name="content" autoSize={{ minRows: 3 }} />
+                </FormItem>
+                <FormItem>
+                  <Popconfirm
+                    title="确定要申领吗?"
+                    onOk={() => {
+                      return new Promise<void>((resolve) => {
+                        fetcher.submit(
+                          {
+                            _action: ActionType.Apply,
+                            clarificationId:
+                              selectedClarification.id.toString(),
+                          },
+                          { method: "post" }
+                        );
+                        while (fetcher.state === "submitting");
+                        if (fetcher.type === "done") {
+                          resolve();
+                        }
+                      });
+                    }}
+                    disabled={selectedClarification.applicant != null}
+                  >
+                    <Button
+                      type="primary"
+                      status="warning"
+                      style={{ marginRight: "5px" }}
+                      disabled={selectedClarification.applicant != null}
+                    >
+                      申领
+                    </Button>
+                  </Popconfirm>
+                  <Popconfirm
+                    title="确定要标记为已解决吗?"
+                    onOk={() => {
+                      fetcher.submit(
+                        {
+                          _action: ActionType.Resolve,
+                          clarificationId: selectedClarification.id.toString(),
+                        },
+                        { method: "post" }
+                      );
+                    }}
+                    disabled={selectedClarification.resolved}
+                  >
+                    <Button
+                      type="primary"
+                      status="success"
+                      style={{ marginRight: "5px" }}
+                      disabled={selectedClarification.resolved}
+                    >
+                      解决
+                    </Button>
+                  </Popconfirm>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    name="_action"
+                    value={ActionType.Reply}
+                    disabled={selectedClarification.resolved}
+                  >
+                    提交
+                  </Button>
+                </FormItem>
+              </Form>
+            </div>
           )}
         </div>
       </Drawer>
@@ -276,12 +372,6 @@ export async function action({ request, params }: ActionArgs) {
 
   const form = await request.formData();
   const _action = form.get("_action");
-
-  switch (true) {
-    case _action === ActionType.Create:
-
-    case _action === ActionType.Reply:
-  }
 
   switch (_action) {
     case ActionType.Create: {
@@ -310,11 +400,96 @@ export async function action({ request, params }: ActionArgs) {
       const clarificationId = invariant(idScheme, form.get("clarificationId"));
       const content = invariant(contentScheme, form.get("content"));
 
+      const clarification = await db.clarification.findUnique({
+        where: { id: clarificationId },
+        select: { resolved: true, applicantId: true },
+      });
+
+      if (!clarification) {
+        throw new Response("Clarification not found", { status: 404 });
+      }
+
+      if (clarification.resolved) {
+        throw new Response("clarification already resolved", { status: 400 });
+      }
+
+      // 第一个回答的管理员会自动申领该Clarification
+      if (!clarification.applicantId) {
+        await db.clarification.update({
+          where: { id: clarificationId },
+          data: { applicantId: self.userId },
+        });
+      }
+
       await db.clarificationReply.create({
         data: {
           clarificationId,
           replierId: self.userId!,
           content,
+        },
+      });
+
+      return null;
+    }
+    case ActionType.Apply: {
+      await self
+        .team(await findContestTeam(contestId))
+        .contest(contestId)
+        .checkPermission(Permissions.PERM_REPLY_CONTEST_CLARIFICATION);
+
+      const clarificationId = invariant(idScheme, form.get("clarificationId"));
+
+      const clarification = await db.clarification.findUnique({
+        where: { id: clarificationId },
+        select: { applicantId: true },
+      });
+
+      if (!clarification) {
+        throw new Response("Clarification not found", { status: 404 });
+      }
+
+      if (clarification.applicantId) {
+        throw new Response("clarification already applied", { status: 400 });
+      }
+
+      await db.clarification.update({
+        where: {
+          id: clarificationId,
+        },
+        data: {
+          applicantId: self.userId!,
+        },
+      });
+
+      return null;
+    }
+    case ActionType.Resolve: {
+      await self
+        .team(await findContestTeam(contestId))
+        .contest(contestId)
+        .checkPermission(Permissions.PERM_REPLY_CONTEST_CLARIFICATION);
+
+      const clarificationId = invariant(idScheme, form.get("clarificationId"));
+
+      const clarification = await db.clarification.findUnique({
+        where: { id: clarificationId },
+        select: { resolved: true },
+      });
+
+      if (!clarification) {
+        throw new Response("Clarification not found", { status: 404 });
+      }
+
+      if (clarification.resolved) {
+        throw new Response("clarification already resolved", { status: 400 });
+      }
+
+      await db.clarification.update({
+        where: {
+          id: clarificationId,
+        },
+        data: {
+          resolved: true,
         },
       });
 
