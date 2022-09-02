@@ -52,7 +52,7 @@ export async function action({ request }: ActionArgs) {
     },
   });
 
-  return redirect(`/team/${teamId}`);
+  return redirect(`/team/${teamId}/settings`);
 }
 
 export default function NewTeam() {

@@ -37,7 +37,7 @@ export async function action({ request }: ActionArgs) {
     data: { title },
   });
 
-  return redirect(`/problem/${id}`);
+  return redirect(`/problem/${id}/edit`);
 }
 
 export default function ProblemNew() {

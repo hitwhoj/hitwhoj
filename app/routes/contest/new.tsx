@@ -77,7 +77,7 @@ export async function action({ request }: ActionArgs) {
     },
   });
 
-  return redirect(`/contest/${contestId}`);
+  return redirect(`/contest/${contestId}/edit`);
 }
 
 export const meta: MetaFunction = () => ({
