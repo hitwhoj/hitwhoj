@@ -63,6 +63,7 @@ export async function loader({ request, params }: LoaderArgs) {
       role: true,
     },
   });
+
   return json({
     members,
     hasEditPerm,
@@ -222,7 +223,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
 
   return (
     <fetcher.Form method="post">
-      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <button
         hidden
@@ -299,7 +300,7 @@ function MemberCard({
           <Space>
             <UserAvatar
               user={member.user}
-              style={{ marginRight: 10, backgroundColor: "#165DFF" }}
+              style={{ marginRight: 10 }}
               size={32}
             />
             <Typography.Text>
