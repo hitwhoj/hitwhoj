@@ -50,7 +50,9 @@ export default function Record() {
             { title: "信息", key: "." },
             ...(hasViewPerm ? [{ title: "比赛", key: "contest" }] : []),
             ...(hasViewPerm ? [{ title: "成员", key: "members" }] : []),
-            ...(hasEditPerm ? [{ title: "设置", key: "settings" }] : []),
+            ...(hasViewPerm || hasEditPerm
+              ? [{ title: "设置", key: "settings" }]
+              : []),
           ]}
         />
       </Typography.Paragraph>
