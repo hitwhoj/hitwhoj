@@ -8,7 +8,17 @@ import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData } from "@remix-run/react";
 import { TableList } from "~/src/TableList";
-import { Button, Divider, Modal, Select, Space } from "@arco-design/web-react";
+import {
+  Button,
+  Card,
+  Divider,
+  Drawer,
+  Empty,
+  List,
+  Modal,
+  Select,
+  Space,
+} from "@arco-design/web-react";
 import { useState } from "react";
 import { Form as ArcoForm, Input } from "@arco-design/web-react";
 const FormItem = ArcoForm.Item;
@@ -56,6 +66,17 @@ export async function loader({ request, params }: LoaderArgs) {
       rank: true,
       resolved: true,
       createdAt: true,
+      replies: {
+        select: {
+          replier: {
+            select: {
+              username: true,
+            },
+          },
+          content: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -66,11 +87,21 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 }
 
+enum ActionType {
+  Create = "Create",
+  Reply = "Reply",
+}
+
 export default function ContestClarification() {
   const { canReply, clarifications, problems } = useLoaderData<typeof loader>();
   const [visible, setVisible] = useState(false);
 
   const [rank, setRank] = useState(0);
+
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedClarification, setSelectedClarification] = useState(
+    clarifications[0]
+  );
 
   return (
     <>
@@ -107,6 +138,14 @@ export default function ContestClarification() {
             render: ({ createdAt }) => new Date(createdAt).toLocaleString(),
           },
         ]}
+        onRow={(clarification) => {
+          return {
+            onClick: () => {
+              setDetailVisible(true);
+              setSelectedClarification(clarification);
+            },
+          };
+        }}
       />
       {!canReply && (
         <>
@@ -139,7 +178,12 @@ export default function ContestClarification() {
                 <TextArea name="content" autoSize={{ minRows: 3 }} />
               </FormItem>
               <FormItem>
-                <Button type="primary" htmlType="submit">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  name="_action"
+                  value={ActionType.Create}
+                >
                   提交
                 </Button>
               </FormItem>
@@ -147,6 +191,81 @@ export default function ContestClarification() {
           </Modal>
         </>
       )}
+      <Drawer
+        width={600}
+        title={canReply ? "用户反馈" : "反馈详情"}
+        visible={detailVisible}
+        footer={null}
+        onCancel={() => {
+          setDetailVisible(false);
+        }}
+      >
+        <div style={{ height: "100%", position: "relative" }}>
+          <Card title={null}>
+            <div>
+              题号：{String.fromCharCode(0x40 + selectedClarification.rank)}
+            </div>
+            <div>内容：{selectedClarification.content}</div>
+            <div>用户：{selectedClarification.user.username}</div>
+            <div>
+              时间：{new Date(selectedClarification.createdAt).toLocaleString()}
+            </div>
+          </Card>
+          <List
+            header={null}
+            style={{ marginTop: 20 }}
+            dataSource={selectedClarification.replies}
+            render={(item) => (
+              <List.Item>
+                <Card title={null}>
+                  <div>回复人：{item.replier.username}</div>
+                  <div>回复内容：{item.content}</div>
+                  <div>
+                    回复时间：{new Date(item.createdAt).toLocaleString()}
+                  </div>
+                </Card>
+              </List.Item>
+            )}
+            noDataElement={
+              <div style={{ textAlign: "center" }}>
+                <Empty
+                  description={
+                    canReply
+                      ? "暂无管理员回复，请尽快回复"
+                      : "暂无管理员回复，请耐心等候~"
+                  }
+                />
+              </div>
+            }
+          ></List>
+          {canReply && (
+            <Form
+              method="post"
+              style={{ position: "absolute", bottom: 0, width: "100%" }}
+            >
+              <FormItem label="回复内容" layout="vertical" required>
+                <input
+                  type="hidden"
+                  name="clarificationId"
+                  value={selectedClarification.id}
+                  required
+                />
+                <TextArea name="content" autoSize={{ minRows: 3 }} />
+              </FormItem>
+              <FormItem>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  name="_action"
+                  value={ActionType.Reply}
+                >
+                  提交
+                </Button>
+              </FormItem>
+            </Form>
+          )}
+        </div>
+      </Drawer>
     </>
   );
 }
@@ -156,19 +275,50 @@ export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
 
   const form = await request.formData();
-  const rank = invariant(idScheme, form.get("rank"), { status: 400 });
-  const content = invariant(contentScheme, form.get("content"), {
-    status: 400,
-  });
+  const _action = form.get("_action");
 
-  await db.clarification.create({
-    data: {
-      contestId,
-      userId: self.userId!,
-      content,
-      rank: rank,
-    },
-  });
+  switch (true) {
+    case _action === ActionType.Create:
 
-  return null;
+    case _action === ActionType.Reply:
+  }
+
+  switch (_action) {
+    case ActionType.Create: {
+      const rank = invariant(idScheme, form.get("rank"), { status: 400 });
+      const content = invariant(contentScheme, form.get("content"), {
+        status: 400,
+      });
+
+      await db.clarification.create({
+        data: {
+          contestId,
+          userId: self.userId!,
+          content,
+          rank: rank,
+        },
+      });
+
+      return null;
+    }
+    case ActionType.Reply: {
+      await self
+        .team(await findContestTeam(contestId))
+        .contest(contestId)
+        .checkPermission(Permissions.PERM_REPLY_CONTEST_CLARIFICATION);
+
+      const clarificationId = invariant(idScheme, form.get("clarificationId"));
+      const content = invariant(contentScheme, form.get("content"));
+
+      await db.clarificationReply.create({
+        data: {
+          clarificationId,
+          replierId: self.userId!,
+          content,
+        },
+      });
+
+      return null;
+    }
+  }
 }

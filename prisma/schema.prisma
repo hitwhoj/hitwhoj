@@ -287,8 +287,8 @@ model Clarification {
 
   content String
 
-  createdAt          DateTime             @default(now())
-  ClarificationReply ClarificationReply[]
+  createdAt DateTime             @default(now())
+  replies   ClarificationReply[]
 }
 
 model ClarificationReply {

@@ -1,5 +1,6 @@
 import type { TableColumnProps } from "@arco-design/web-react";
 import { Table } from "@arco-design/web-react";
+import type { RowCallbackProps } from "@arco-design/web-react/es/Table/interface";
 
 type Id = { id: string | number };
 
@@ -14,6 +15,7 @@ type TableListColumnProps<T extends Id> = {
 type TableListProps<T extends Id> = {
   data: T[];
   columns?: TableListColumnProps<T>[];
+  onRow?: (row: T, index: number) => RowCallbackProps;
 };
 
 /**
@@ -36,6 +38,7 @@ export function TableList<T extends Id>(props: TableListProps<T>) {
           ...(column.sorter && { sorter: column.sorter }),
         })
       )}
+      onRow={props.onRow}
       rowKey="id"
       hover={false}
       border={false}
