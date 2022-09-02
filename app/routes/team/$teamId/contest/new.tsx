@@ -20,10 +20,12 @@ import {
   Select,
   Button,
   Typography,
+  Message,
 } from "@arco-design/web-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
@@ -31,15 +33,10 @@ const RangePicker = DatePicker.RangePicker;
 const Option = Select.Option;
 
 export async function loader({ request, params }: LoaderArgs) {
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-
-  if (!self.userId) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
-  const teamId = invariant(idScheme, params.teamId);
-
-  await self.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(teamId).checkPermission(Permissions.PERM_CREATE_CONTEST);
 
   return null;
 }
@@ -47,10 +44,8 @@ export async function loader({ request, params }: LoaderArgs) {
 export async function action({ request, params }: ActionArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-
-  if (!self.userId) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
+  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
 
   const form = await request.formData();
 
@@ -76,7 +71,7 @@ export async function action({ request, params }: ActionArgs) {
       beginTime,
       endTime,
       system,
-      team: { connect: { id: teamId } },
+      teamId,
       participants: {
         create: [{ userId: self.userId!, role: ContestParticipantRole.Mod }],
       },
@@ -95,7 +90,18 @@ export default function ContestNew() {
   const [endTime, setEndTime] = useState(Date.now() + 5 * 60 * 60 * 1000);
   const [system, setSystem] = useState<ContestSystem>(ContestSystem.Homework);
   const fetcher = useFetcher();
-  const isCreating = fetcher.state === "submitting";
+
+  const isActionSubmit =
+    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
+  const isActionRedirect =
+    fetcher.state === "loading" && fetcher.type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionRedirect;
+
+  useEffect(() => {
+    if (isActionRedirect) {
+      Message.success("创建成功");
+    }
+  }, [isActionRedirect]);
 
   return (
     <Typography>
@@ -160,7 +166,7 @@ export default function ContestNew() {
           </Select>
         </FormItem>
         <FormItem layout="vertical">
-          <Button type="primary" htmlType="submit" loading={isCreating}>
+          <Button type="primary" htmlType="submit" loading={isLoading}>
             创建比赛
           </Button>
         </FormItem>

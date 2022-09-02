@@ -12,7 +12,7 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -20,6 +20,7 @@ import {
   Select,
   Button,
   Typography,
+  Message,
 } from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -84,11 +85,22 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestNew() {
-  const [beginTime, setBeginTime] = React.useState(Date.now());
-  const [endTime, setEndTime] = React.useState(Date.now() + 5 * 60 * 60 * 1000);
-  const [system, setSystem] = React.useState<ContestSystem>(ContestSystem.ACM);
+  const [beginTime, setBeginTime] = useState(Date.now());
+  const [endTime, setEndTime] = useState(Date.now() + 5 * 60 * 60 * 1000);
+  const [system, setSystem] = useState<ContestSystem>(ContestSystem.ACM);
   const fetcher = useFetcher();
-  const isCreating = fetcher.state === "submitting";
+
+  const isActionSubmit =
+    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
+  const isActionRedirect =
+    fetcher.state === "loading" && fetcher.type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionRedirect;
+
+  useEffect(() => {
+    if (isActionRedirect) {
+      Message.success("创建成功");
+    }
+  }, [isActionRedirect]);
 
   return (
     <Typography>
@@ -152,7 +164,7 @@ export default function ContestNew() {
           </Select>
         </FormItem>
         <FormItem>
-          <Button type="primary" htmlType="submit" loading={isCreating}>
+          <Button type="primary" htmlType="submit" loading={isLoading}>
             创建比赛
           </Button>
         </FormItem>

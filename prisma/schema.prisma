@@ -273,9 +273,12 @@ model Team {
   description String   @default("")
 
   /// 邀请制类型
-  invitationType InvitationType @default(FREE)
+  invitationType InvitationType @default(NONE)
   /// 邀请码（只有当邀请制为 CODE 时才有意义）
-  invitationCode String?        @default("")
+  invitationCode String         @default("")
+
+  /// 允许团队成员直接拉人进入
+  allowMembersInvite Boolean @default(false)
 
   members     TeamMember[]
   contests    Contest[]

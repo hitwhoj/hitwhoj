@@ -97,16 +97,20 @@ export const Permissions = {
     TeamPermission.Everyone.with(UserPermission.Everyone)
   ),
 
-  /** 团队修改任意成员的角色 */
+  /** 创建团队的权限 */
+  PERM_TEAM_CREATE: UserPermission.Users,
+  /** 团队修改成员的角色 */
   PERM_TEAM_EDIT_MEMBER_ROLE: TeamPermission.Owners.with(UserPermission.Admins),
   /** 查看团队内部信息 */
   PERM_TEAM_VIEW_INTERNAL: TeamPermission.Members.with(UserPermission.Admins),
   /** 修改团队内部信息 */
   PERM_TEAM_EDIT_INTERNAL: TeamPermission.Admins.with(UserPermission.Admins),
-  /** 添加, 踢出普通成员 */
-  PERM_TEAM_KICK_MEMBER: TeamPermission.Admins.with(UserPermission.Admins),
   /** 踢出管理员 */
   PERM_TEAM_KICK_ADMIN: TeamPermission.Owners.with(UserPermission.Admins),
-  /** 解散或转让团队 */
-  PERM_TEAM_DISMISS: TeamPermission.Owners.with(UserPermission.Admins),
+  /** 踢出普通成员 */
+  PERM_TEAM_KICK_MEMBER: TeamPermission.Admins.with(UserPermission.Admins),
+  /** 管理员直接邀请其他成员加入 */
+  PERM_TEAM_INVITE_ADMIN: TeamPermission.Admins.with(UserPermission.Admins),
+  /** 团队成员直接邀请其他成员加入 */
+  PERM_TEAM_INVITE_MEMBER: TeamPermission.Members.with(UserPermission.Admins),
 };
