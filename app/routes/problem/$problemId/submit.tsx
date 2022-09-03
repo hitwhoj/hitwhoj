@@ -6,15 +6,11 @@ import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { Button, Input, Space, Select } from "@arco-design/web-react";
-import { useState } from "react";
 import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
-
-const TextArea = Input.TextArea;
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -93,41 +89,25 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ProblemSubmit() {
-  const [language, setLanguage] = useState("");
-
   return (
-    <Form method="post" style={{ marginTop: "25px" }}>
-      <Space
-        direction="vertical"
-        size="medium"
-        style={{ display: "flex", marginTop: "10px" }}
-      >
-        <Space direction="horizontal" size="medium" style={{ display: "flex" }}>
-          <Select
-            placeholder="Select a language"
-            style={{ width: "10rem" }}
-            options={[
-              { value: "c", label: "C" },
-              { value: "cpp", label: "C++" },
-              { value: "java", label: "Java" },
-            ]}
-            onChange={(value) => setLanguage(value)}
-          />
-          <Button type="primary" htmlType="submit">
-            提交捏
-          </Button>
-          <input type="hidden" name="language" value={language} />
-        </Space>
-        <TextArea
-          name="code"
-          placeholder="Paste your code here desu~"
-          required
-          autoSize={{
-            minRows: 10,
-            maxRows: 20,
-          }}
-        />
-      </Space>
+    <Form method="post" className="form-control">
+      <select className="select select-bordered" name="language" required>
+        <option value="" disabled selected>
+          选择代码语言
+        </option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+      </select>
+      <textarea
+        className="textarea textarea-bordered mt-4"
+        name="code"
+        placeholder="Paste your code here desu~"
+        required
+      />
+      <button className="btn btn-primary mt-4 w-full max-w-xs" type="submit">
+        提交
+      </button>
     </Form>
   );
 }

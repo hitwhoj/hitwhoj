@@ -1,7 +1,6 @@
-import { Space } from "@arco-design/web-react";
-import { IconEyeInvisible } from "@arco-design/web-react/icon";
 import type { Problem } from "@prisma/client";
 import { Link } from "@remix-run/react";
+import { HiOutlineEyeOff } from "react-icons/hi";
 
 type Props = {
   problem: Pick<Problem, "id" | "title" | "private">;
@@ -9,11 +8,12 @@ type Props = {
 
 export function ProblemLink({ problem }: Props) {
   return (
-    <Link to={`/problem/${problem.id}`}>
-      <Space>
-        {problem.title}
-        {problem.private && <IconEyeInvisible />}
-      </Space>
+    <Link
+      to={`/problem/${problem.id}`}
+      className="link inline-flex gap-2 items-center"
+    >
+      <span>{problem.title}</span>
+      {problem.private && <HiOutlineEyeOff className="inline-block" />}
     </Link>
   );
 }

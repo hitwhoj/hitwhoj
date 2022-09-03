@@ -1,9 +1,3 @@
-import {
-  Typography,
-  Form as ArcoForm,
-  Input,
-  Button,
-} from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useTransition } from "@remix-run/react";
@@ -13,8 +7,6 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { titleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-
-const FormItem = ArcoForm.Item;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -41,30 +33,30 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ProblemNew() {
-  const { state } = useTransition();
-  const isUpdating = state !== "idle";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionRedirect;
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>新建题目</Typography.Title>
-
-      <Typography.Paragraph>
-        这个页面非常简洁，因为只有管理员能看到，所以没有任何额外的功能。
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <Form method="post">
-          <FormItem layout="vertical" label="题目名称" required>
-            <Input name="title" required disabled={isUpdating} />
-          </FormItem>
-          <FormItem layout="vertical">
-            <Button type="primary" htmlType="submit" loading={isUpdating}>
-              创建题目
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
-    </Typography>
+    <>
+      <h1>新建题目</h1>
+      <Form method="post" className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">题目名称</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="title"
+          required
+          disabled={isLoading}
+        />
+        <button className="btn btn-primary mt-4" type="submit">
+          创建题目
+        </button>
+      </Form>
+    </>
   );
 }
 

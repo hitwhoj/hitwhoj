@@ -92,7 +92,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="font-sans">
         <UserContext.Provider value={user && user.id}>
           <div className="bg-base-100 drawer drawer-mobile">
             <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
@@ -112,7 +112,7 @@ export default function App() {
                       <HiOutlineChevronDown className="w-3 h-3" />
                     </div>
                     <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
-                      <div className="grid grid-cols-1 gap-3 p-3">
+                      <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
                         {themes.map((iter) => (
                           <div
                             key={iter}
@@ -120,7 +120,6 @@ export default function App() {
                             className={`p-3 rounded-lg text-base-content font-sans font-bold cursor-pointer outline-2 outline-offset-2${
                               theme === iter ? " outline" : ""
                             }`}
-                            tabIndex={0}
                             onClick={() => setTheme(iter)}
                           >
                             {iter}
@@ -197,57 +196,43 @@ export default function App() {
                 <ul className="menu p-4 overflow-y-auto w-80 text-base-content">
                   <li>
                     <NavLink className="flex gap-4" to="/">
-                      <span>
-                        <HiOutlineHome className="w-6 h-6" />
-                      </span>
+                      <HiOutlineHome className="w-6 h-6" />
                       <span>首页</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/problem">
-                      <span>
-                        <HiOutlineBookOpen className="w-6 h-6" />
-                      </span>
+                      <HiOutlineBookOpen className="w-6 h-6" />
                       <span>题目</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/problemset">
-                      <span>
-                        <HiOutlineCollection className="w-6 h-6" />
-                      </span>
+                      <HiOutlineCollection className="w-6 h-6" />
                       <span>题单</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/contest">
-                      <span>
-                        <AiOutlineTrophy className="w-6 h-6" />
-                      </span>
+                      <AiOutlineTrophy className="w-6 h-6" />
                       <span>比赛</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/team">
-                      <span>
-                        <HiOutlineUserGroup className="w-6 h-6" />
-                      </span>
+                      <HiOutlineUserGroup className="w-6 h-6" />
                       <span>团队</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/record">
-                      <span>
-                        <AiOutlineHistory className="w-6 h-6" />
-                      </span>
+                      <AiOutlineHistory className="w-6 h-6" />
                       <span>评测</span>
                     </NavLink>
                   </li>
                   <li>
                     <NavLink className="flex gap-4" to="/docs">
-                      <span>
-                        <HiOutlineQuestionMarkCircle className="w-6 h-6" />
-                      </span>
+                      <HiOutlineQuestionMarkCircle className="w-6 h-6" />
                       <span>文档</span>
                     </NavLink>
                   </li>

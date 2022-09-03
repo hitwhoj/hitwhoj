@@ -1,14 +1,12 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { Button, Grid, Typography } from "@arco-design/web-react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
-import { IconPlus } from "@arco-design/web-react/icon";
-import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { HiOutlinePlus } from "react-icons/hi";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -48,44 +46,40 @@ export default function ProblemIndex() {
   const { problems, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Grid.Row justify="space-between" align="center">
-          题目列表
-          {hasCreatePerm && (
-            <Link to="/problem/new">
-              <Button type="primary" icon={<IconPlus />}>
-                新建题目
-              </Button>
-            </Link>
-          )}
-        </Grid.Row>
-      </Typography.Title>
+    <>
+      <h1 className="flex justify-between items-center">
+        <span>题目列表</span>
+        {hasCreatePerm && (
+          <Link to="/problem/new" className="btn btn-outline gap-4">
+            <HiOutlinePlus />
+            <span>新建题目</span>
+          </Link>
+        )}
+      </h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={problems}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "题目",
-              render: (problem) => <ProblemLink problem={problem} />,
-            },
-            {
-              title: "提交",
-              render: ({ _count: { relatedRecords } }) => relatedRecords,
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <div className="overflow-x-auto not-prose">
+        <table className="table static w-full overflow-x-auto">
+          <thead>
+            <tr>
+              <th className="w-16" />
+              <th>题目</th>
+              <th>提交</th>
+            </tr>
+          </thead>
+          <tbody>
+            {problems.map((problem) => (
+              <tr key={problem.id}>
+                <th className="text-center">{problem.id}</th>
+                <td>
+                  <ProblemLink problem={problem} />
+                </td>
+                <td>{problem._count.relatedRecords}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

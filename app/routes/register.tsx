@@ -5,7 +5,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
-import { Form, useActionData, useTransition } from "@remix-run/react";
+import { Form, Link, useActionData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { passwordHash } from "~/utils/tools";
 
@@ -68,6 +68,7 @@ export default function Register() {
           name="username"
           required
           disabled={isSubmitting}
+          pattern="\w+"
         />
         <input type="hidden" name="password" value={passwordHash(password)} />
         <label className="label">
@@ -81,9 +82,14 @@ export default function Register() {
           required
           disabled={isSubmitting}
         />
-        <button className="btn btn-primary mt-8" type="submit">
+        <button className="btn btn-primary mt-4" type="submit">
           注册
         </button>
+        <label className="label">
+          <Link to="/login" className="label-text-alt">
+            登录
+          </Link>
+        </label>
       </Form>
     </>
   );

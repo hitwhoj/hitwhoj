@@ -1,4 +1,5 @@
 import type { ActionArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -7,7 +8,9 @@ import { commitSession } from "~/utils/sessions";
 import { passwordHash } from "~/utils/tools";
 import { User } from "~/utils/permission/role/user";
 import { Privileges } from "~/utils/permission/privilege";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
+import { Form, Link, useActionData, useTransition } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import { HiOutlineX } from "react-icons/hi";
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
@@ -21,20 +24,89 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (!user) {
-    return json({ success: false as const, reason: "用户不存在" }, 400);
+    return json({ reason: "用户不存在" }, 400);
   }
 
   if (user.password !== passwordHash(password)) {
-    return json({ success: false as const, reason: "密码错误" }, 400);
+    return json({ reason: "密码错误" }, 400);
   }
 
   const self = new User(user.id);
   await self.checkPrivilege(Privileges.PRIV_LOGIN);
 
-  return json(
-    { success: true as const },
-    { headers: { "Set-Cookie": await commitSession(user.id) } }
-  );
+  return redirect("/", {
+    headers: { "Set-Cookie": await commitSession(user.id) },
+  });
 }
 
-export type ActionData = UseDataFunctionReturn<typeof action>;
+export default function Register() {
+  const data = useActionData<typeof action>();
+
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type == "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionReload || isActionRedirect;
+
+  useEffect(() => {
+    if (isActionRedirect) {
+      // FIXME
+      // Message.error("注册失败：" + data.reason);
+      console.log("登录成功");
+    }
+  }, [isActionRedirect]);
+
+  const [password, setPassword] = useState("");
+
+  return (
+    <>
+      <h1>登录</h1>
+      <p>网站内测中，随时删档，请不要上传任何违反法律法规的内容。</p>
+      <Form method="post" className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">用户名</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="text"
+          name="username"
+          required
+          disabled={isLoading}
+          pattern="\w+"
+        />
+        <input type="hidden" name="password" value={passwordHash(password)} />
+        <label className="label">
+          <span className="label-text">密码</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.currentTarget.value)}
+          required
+          disabled={isLoading}
+        />
+        <button className="btn btn-primary mt-4" type="submit">
+          登录
+        </button>
+        <label className="label">
+          <Link to="/register" className="label-text-alt">
+            注册
+          </Link>
+          <Link to="/reset" className="label-text-alt">
+            忘记密码
+          </Link>
+        </label>
+
+        {data?.reason && (
+          <div className="alert alert-error shadow-lg">
+            <div>
+              <HiOutlineX className="w-6 h-6" />
+              <span>{data.reason}</span>
+            </div>
+          </div>
+        )}
+      </Form>
+    </>
+  );
+}

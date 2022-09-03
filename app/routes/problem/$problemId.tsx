@@ -1,20 +1,13 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Typography, Tag } from "@arco-design/web-react";
-import { Navigator } from "~/src/Navigator";
-import {
-  IconClose,
-  IconEyeInvisible,
-  IconTag,
-} from "@arco-design/web-react/icon";
-import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
+import { HiOutlineEyeOff, HiOutlineTag, HiOutlineX } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -59,44 +52,57 @@ export default function ProblemView() {
   const { problem, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>{problem.title}</Typography.Title>
+    <>
+      <h1>{problem.title}</h1>
 
       {(problem.tags.length > 0 || problem.private) && (
-        <Typography.Paragraph>
-          <TagSpace>
-            {problem.private && (
-              <Tag icon={<IconEyeInvisible />} color="gold">
-                隐藏
-              </Tag>
-            )}
-            {!problem.allowSubmit && (
-              <Tag icon={<IconClose />} color="red">
-                禁止提交
-              </Tag>
-            )}
-            {problem.tags.map((tag) => (
-              <Link to={`/problem/tag/${tag.name}`} key={tag.name}>
-                <Tag icon={<IconTag />}>{tag.name}</Tag>
-              </Link>
-            ))}
-          </TagSpace>
-        </Typography.Paragraph>
+        <div className="flex not-prose gap-2">
+          {problem.private && (
+            <span className="badge badge-warning gap-1">
+              <HiOutlineEyeOff />
+              <span>隐藏</span>
+            </span>
+          )}
+          {!problem.allowSubmit && (
+            <span className="badge badge-error gap-1">
+              <HiOutlineX />
+              <span>禁止提交</span>
+            </span>
+          )}
+          {problem.tags.map((tag) => (
+            <Link
+              className="badge gap-1"
+              to={`/problem/tag/${tag.name}`}
+              key={tag.name}
+            >
+              <HiOutlineTag />
+              <span>{tag.name}</span>
+            </Link>
+          ))}
+        </div>
       )}
 
-      <Navigator
-        routes={[
-          { title: "题面", key: "." },
-          ...(problem.allowSubmit ? [{ title: "提交", key: "submit" }] : []),
-          ...(hasEditPerm ? [{ title: "数据", key: "data" }] : []),
-          ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
-        ]}
-      />
+      <p className="tabs tabs-boxed bg-base-100 not-prose">
+        <NavLink className="tab" to="desc">
+          题面
+        </NavLink>
+        <NavLink className="tab" to="submit">
+          提交
+        </NavLink>
+        {hasEditPerm && (
+          <NavLink className="tab" to="data">
+            数据
+          </NavLink>
+        )}
+        {hasEditPerm && (
+          <NavLink className="tab" to="edit">
+            编辑
+          </NavLink>
+        )}
+      </p>
 
-      <Typography.Paragraph>
-        <Outlet />
-      </Typography.Paragraph>
-    </Typography>
+      <Outlet />
+    </>
   );
 }
 

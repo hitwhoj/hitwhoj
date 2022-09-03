@@ -1,8 +1,7 @@
-import { Input, Tag } from "@arco-design/web-react";
-import { IconLoading, IconPlus, IconTag } from "@arco-design/web-react/icon";
+import { Message } from "@arco-design/web-react";
 import { useFetcher } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
-import { TagSpace } from "./TagSpace";
+import { useEffect, useRef } from "react";
+import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 
 type TagItemProps = {
   name: string;
@@ -12,21 +11,17 @@ type TagItemProps = {
 function TagItem(props: TagItemProps) {
   const fetcher = useFetcher();
   const isUpdating = fetcher.state !== "idle";
-  const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <Tag
-      visible={true}
-      closable
-      onClose={() => fetcher.submit(formRef.current)}
-      icon={isUpdating ? <IconLoading /> : <IconTag />}
-    >
+    <fetcher.Form method="post" className="badge gap-1">
+      <input type="hidden" name="tag" value={props.name} />
+      <input type="hidden" name="_action" value={props.deleteAction} />
+      {isUpdating ? <HiOutlineTag /> : <HiOutlineTag />}
       {props.name}
-      <fetcher.Form method="post" ref={formRef}>
-        <input type="hidden" name="tag" value={props.name} />
-        <input type="hidden" name="_action" value={props.deleteAction} />
-      </fetcher.Form>
-    </Tag>
+      <button type="submit">
+        <HiOutlineX />
+      </button>
+    </fetcher.Form>
   );
 }
 
@@ -35,49 +30,34 @@ type TagCreatorProps = {
 };
 
 function TagCreator(props: TagCreatorProps) {
-  const [showInput, setShowInput] = useState(false);
   const fetcher = useFetcher();
-  const isCreating = fetcher.state !== "idle";
+  const isActionSubmit =
+    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
+  const isActionReload =
+    fetcher.state === "loading" && fetcher.type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (fetcher.type === "done" && !isCreating) {
-      setShowInput(false);
+    if (!isLoading) {
+      Message.success("标签添加成功");
+      formRef.current?.reset();
     }
-  }, [isCreating]);
+  }, [isLoading]);
 
   return (
-    <fetcher.Form method="post" ref={formRef}>
-      <input type="hidden" name="_action" value={props.createAction} />
-      {showInput ? (
-        <Input
-          type="text"
-          size="mini"
-          name="tag"
-          style={{ width: "82px" }}
-          autoFocus
-          onBlur={(e) =>
-            e.target.value
-              ? fetcher.submit(formRef.current)
-              : setShowInput(false)
-          }
-          disabled={isCreating}
-          required
-        />
-      ) : (
-        <Tag
-          icon={<IconPlus />}
-          style={{
-            cursor: "pointer",
-            width: "82px",
-            textAlign: "center",
-          }}
-          onClick={() => setShowInput(true)}
-        >
-          添加标签
-        </Tag>
-      )}
-    </fetcher.Form>
+    <div className="inline-flex gap-4 mt-2">
+      <input className="input input-bordered" type="text" name="tag" required />
+      <button
+        className="btn btn-primary"
+        type="submit"
+        name="_action"
+        value={props.createAction}
+      >
+        添加
+      </button>
+    </div>
   );
 }
 
@@ -99,11 +79,13 @@ type TagEditorProps = {
  */
 export function TagEditor(props: TagEditorProps) {
   return (
-    <TagSpace>
-      {props.tags.map((name) => (
-        <TagItem key={name} name={name} deleteAction={props.deleteAction} />
-      ))}
+    <>
+      <div className="inline-flex gap-2">
+        {props.tags.map((name) => (
+          <TagItem key={name} name={name} deleteAction={props.deleteAction} />
+        ))}
+      </div>
       <TagCreator createAction={props.createAction} />
-    </TagSpace>
+    </>
   );
 }
