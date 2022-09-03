@@ -9,7 +9,7 @@ export class JudgeManager {
 
   constructor() {
     // TODO 动态添加评测机
-    this.addJudge("localhost:3000");
+    this.addJudge("127.0.0.1:1145");
 
     setInterval(() => {
       this.#dispatch();
@@ -55,8 +55,10 @@ export class JudgeManager {
 
   async #dispatch() {
     // consume all missions at a time
-    const queue = this.#queue;
-    this.#queue = [];
+    const queue: DispatchTask[] = [];
+    while (this.#queue.length > 0) {
+      queue.push(this.#queue.shift()!);
+    }
 
     for (const mission of queue) {
       const judges = this.#judges.filter((judge) =>

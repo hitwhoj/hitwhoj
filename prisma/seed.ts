@@ -162,25 +162,27 @@ int main() {
         [
           Buffer.from(
             JSON.stringify({
-              type: "normal",
+              type: "default",
+              time: 1000,
+              memory: 256000000,
               subtasks: [
                 {
                   score: 60,
-                  tasks: [
+                  cases: [
                     { input: "1.in", output: "1.out" },
                     { input: "2.in", output: "2.out" },
                   ],
                 },
                 {
                   score: 20,
-                  tasks: [
+                  cases: [
                     { input: "3.in", output: "3.out" },
                     { input: "4.in", output: "4.out" },
                   ],
                 },
                 {
                   score: 20,
-                  tasks: [{ input: "5.in", output: "5.out" }],
+                  cases: [{ input: "5.in", output: "5.out" }],
                 },
               ],
             })

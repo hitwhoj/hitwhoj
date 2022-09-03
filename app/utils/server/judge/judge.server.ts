@@ -55,6 +55,7 @@ export class Judge {
   constructor(host: string) {
     this.#ws = new WebSocket(`ws://${host}/`);
     this.#ws.on("message", (data) => {
+      console.log("recieved", data.toString());
       try {
         this.#subject.next(JSON.parse(data.toString()));
       } catch (e) {
@@ -102,9 +103,9 @@ export class Judge {
         if (!callback) return;
 
         this.#dispatches.delete(data.id);
-        if (data.type === "accept") callback.resolve();
-        else callback.reject();
         clearTimeout(callback.timeout);
+        if (data.type === "accept") callback.resolve();
+        else callback.reject(new Error("Remote rejected"));
       });
 
     // 监听文件同步消息
@@ -178,6 +179,7 @@ export class Judge {
   }
 
   #send(data: Web2JudgeMessage) {
+    console.log("send", JSON.stringify(data));
     if (this.#ws.readyState === WebSocket.OPEN) {
       this.#ws.send(JSON.stringify(data));
     }
@@ -220,10 +222,11 @@ export class Judge {
   async dispatch(task: DispatchTask) {
     await new Promise<void>((resolve, reject) => {
       // 5s timeout if client still not response
-      const timeout = setTimeout(
-        () => this.#dispatches.delete(task.id) && reject(),
-        5000
-      );
+      const timeout = setTimeout(() => {
+        if (this.#dispatches.delete(task.id)) {
+          reject(new Error("Dispatch Timeout"));
+        }
+      }, 5000);
       this.#dispatches.set(task.id, { timeout, resolve, reject });
       this.#send({ type: "task", ...task });
     });
