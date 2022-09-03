@@ -13,7 +13,7 @@ import {
   Link as ArcoLink,
 } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { ActionArgs, LinksFunction, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   Form,
@@ -32,13 +32,11 @@ import {
   languageScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import contestStyle from "~/styles/contest.css";
 import { IconHistory, IconSend } from "@arco-design/web-react/icon";
 import { s3 } from "~/utils/server/s3.server";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { ThemeContext } from "~/utils/context/theme";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
@@ -51,11 +49,6 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
-
-// 加载特殊页面样式
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: contestStyle },
-];
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -190,7 +183,6 @@ export default function ContestProblemView() {
     contest,
   } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
 
   const { state } = useTransition();
@@ -337,7 +329,8 @@ export default function ContestProblemView() {
               onChange={(code) => setCode(code ?? "")}
               value={code}
               language={language}
-              theme={theme === "light" ? "light" : "vs-dark"}
+              // FIXME monaco theme here
+              theme="light"
               options={{
                 cursorSmoothCaretAnimation: true,
                 smoothScrolling: true,

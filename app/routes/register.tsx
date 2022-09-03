@@ -5,18 +5,9 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
-import {
-  Typography,
-  Form as AcroForm,
-  Button,
-  Input,
-  Message,
-} from "@arco-design/web-react";
 import { Form, useActionData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { passwordHash } from "~/utils/tools";
-
-const FormItem = AcroForm.Item;
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -53,7 +44,8 @@ export default function Register() {
 
   useEffect(() => {
     if (data?.success === false) {
-      Message.error("注册失败：" + data.reason);
+      // FIXME
+      // Message.error("注册失败：" + data.reason);
     }
   }, [data]);
 
@@ -63,40 +55,37 @@ export default function Register() {
   const [password, setPassword] = useState("");
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>注册</Typography.Title>
-
-      <Typography.Paragraph>
-        网站内测中，随时删档，请不要上传任何违反法律法规的内容。
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <Form method="post">
-          <FormItem
-            layout="vertical"
-            label="用户名 (请使用字母数字下划线)"
-            required
-          >
-            <Input name="username" required disabled={isSubmitting} />
-          </FormItem>
-
-          <FormItem layout="vertical" label="密码" required>
-            <input type="hidden" name="password" value={password} />
-            <Input.Password
-              required
-              disabled={isSubmitting}
-              onChange={(password) => setPassword(passwordHash(password))}
-            />
-          </FormItem>
-
-          <FormItem layout="vertical">
-            <Button type="primary" htmlType="submit" loading={isSubmitting}>
-              注册
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
-    </Typography>
+    <>
+      <h1>注册</h1>
+      <p>网站内测中，随时删档，请不要上传任何违反法律法规的内容。</p>
+      <Form method="post" className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">用户名 (请使用字母数字下划线)</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="text"
+          name="username"
+          required
+          disabled={isSubmitting}
+        />
+        <input type="hidden" name="password" value={passwordHash(password)} />
+        <label className="label">
+          <span className="label-text">密码</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.currentTarget.value)}
+          required
+          disabled={isSubmitting}
+        />
+        <button className="btn btn-primary mt-8" type="submit">
+          注册
+        </button>
+      </Form>
+    </>
   );
 }
 

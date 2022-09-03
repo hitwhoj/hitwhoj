@@ -1,9 +1,4 @@
-import type {
-  ActionArgs,
-  LinksFunction,
-  LoaderArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
@@ -22,12 +17,8 @@ import { ChatMessage } from "~/src/chat/ChatMessage";
 import { ChatAvatar } from "~/src/chat/ChatAvatar";
 import ChatBubble from "~/src/chat/ChatBubble";
 import ChatTime from "~/src/chat/ChatTime";
-
-import style from "~/styles/simplify.css";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });

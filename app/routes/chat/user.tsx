@@ -1,5 +1,4 @@
 import { Empty, List } from "@arco-design/web-react";
-import type { LinksFunction, LoaderArgs } from "@remix-run/node";
 import { Link, Outlet, useLoaderData } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
@@ -8,11 +7,8 @@ import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
 import type { MessageType } from "./events";
-
-import style from "~/styles/simplify.css";
 import { Permissions } from "~/utils/permission/permission";
-
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
+import type { LoaderArgs } from "@remix-run/node";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);

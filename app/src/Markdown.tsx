@@ -7,8 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import { Link } from "@remix-run/react";
-import { Link as AcroLink, Space, Typography } from "@arco-design/web-react";
-import { IconShareExternal } from "@arco-design/web-react/icon";
+import { HiOutlineExternalLink } from "react-icons/hi";
 
 /** @see https://www.npmjs.com/package/rehype-sanitize */
 const sanitizeOptions = {
@@ -43,69 +42,23 @@ export function Markdown({ children }: Props) {
 
           if (isExternalLink) {
             return (
-              <AcroLink>
-                <Space size="mini">
-                  <a {...props} target="_blank" rel="noreferrer noopener">
-                    {children}
-                  </a>
-                  <IconShareExternal />
-                </Space>
-              </AcroLink>
+              <a
+                {...props}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="link"
+              >
+                <span>{children}</span>
+                <HiOutlineExternalLink className="inline-block" />
+              </a>
             );
           } else {
             return (
-              <AcroLink>
-                <Link to={props.href ?? "#"}>{children}</Link>
-              </AcroLink>
+              <Link to={props.href ?? "#"} className="link">
+                {children}
+              </Link>
             );
           }
-        },
-        p({ children, node, ...props }) {
-          return (
-            <Typography.Paragraph {...props}>{children}</Typography.Paragraph>
-          );
-        },
-        h1({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={3} {...props}>
-              {children}
-            </Typography.Title>
-          );
-        },
-        h2({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={4} {...props}>
-              {children}
-            </Typography.Title>
-          );
-        },
-        h3({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={5} {...props}>
-              {children}
-            </Typography.Title>
-          );
-        },
-        h4({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={6} {...props}>
-              {children}
-            </Typography.Title>
-          );
-        },
-        h5({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={6} {...props}>
-              {children}
-            </Typography.Title>
-          );
-        },
-        h6({ children, node, ...props }) {
-          return (
-            <Typography.Title heading={6} {...props}>
-              {children}
-            </Typography.Title>
-          );
         },
       }}
     >

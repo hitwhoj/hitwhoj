@@ -1,49 +1,55 @@
 import { useEffect, useState } from "react";
-import { Button, Notification } from "@arco-design/web-react";
 import type { LinksFunction, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-
 import {
+  Link,
   Links,
   LiveReload,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
-  useCatch,
   useLoaderData,
-  useNavigate,
 } from "@remix-run/react";
-
-import Layout from "./src/Layout";
 import { db } from "~/utils/server/db.server";
-import { CatchBoundary as CustomCatchBoundary } from "~/src/CatchBoundary";
-import { ErrorBoundary as CustomErrorBoundary } from "~/src/ErrorBoundary";
-import { getCookie } from "./utils/cookies";
-import type { Theme } from "./utils/context/theme";
-import { ThemeContext } from "./utils/context/theme";
 import type { MessageType } from "./routes/chat/events";
 import { findRequestUser } from "./utils/permission";
 import { selectUserData } from "./utils/db/user";
 import { UserContext } from "./utils/context/user";
+import { fromEventSource } from "./utils/eventSource";
+import {
+  HiOutlineBookOpen,
+  HiOutlineChevronDown,
+  HiOutlineCollection,
+  HiOutlineColorSwatch,
+  HiOutlineHome,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineUserGroup,
+} from "react-icons/hi";
+import { AiOutlineHistory, AiOutlineTrophy } from "react-icons/ai";
+import { version } from "../package.json";
 
-import style from "./styles/global.css";
-import arcoStyle from "@arco-design/web-react/dist/css/arco.css";
+import style from "./styles/app.css";
 import katexStyle from "katex/dist/katex.css";
-import tailwindStyle from "./styles/app.css";
+import { getCookie } from "./utils/cookies";
+import type { Theme } from "./utils/theme";
+import { themes } from "./utils/theme";
 
 export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: arcoStyle },
-  { rel: "stylesheet", href: katexStyle },
-  { rel: "stylesheet", href: tailwindStyle },
   { rel: "stylesheet", href: style },
+  { rel: "stylesheet", href: katexStyle },
 ];
 
 export async function loader({ request }: LoaderArgs) {
-  const theme = getCookie(request, "theme") === "dark" ? "dark" : "light";
+  let theme = getCookie(request, "theme") ?? "light";
+  if (!themes.includes(theme as Theme)) {
+    theme = "light";
+  }
+
   const self = await findRequestUser(request);
   if (!self.userId) {
-    return json({ theme, user: null });
+    return json({ theme: theme as Theme, user: null });
   }
 
   const user = await db.user.findUnique({
@@ -51,114 +57,216 @@ export async function loader({ request }: LoaderArgs) {
     select: selectUserData,
   });
 
-  return json({ theme, user });
+  return json({ theme: theme as Theme, user });
 }
 
-interface DocumentProps {
-  children: React.ReactNode;
-  title?: string;
-  theme?: Theme;
-}
+// https://remix.run/api/conventions#default-export
+// https://remix.run/api/conventions#route-filenames
+export default function App() {
+  const { user, theme: defaultTheme } = useLoaderData<typeof loader>();
+  const [theme, setTheme] = useState(defaultTheme);
 
-const Document = ({ children, title, theme }: DocumentProps) => {
+  useEffect(() => {
+    document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax;`;
+  }, [theme]);
+
+  useEffect(() => {
+    if (user?.id) {
+      // 订阅新私聊消息
+      const subscription = fromEventSource<MessageType>(
+        "/chat/events"
+      ).subscribe((message) => {
+        // FIXME
+        console.log(`new message: ${message.content}`);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, [user?.id]);
+
   return (
-    <html lang="zh-Hans" {...(theme === "dark" ? { className: "dark" } : {})}>
+    <html lang="zh-Hans" data-theme={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="color-scheme" content={theme} />
-        {title && <title>{title}</title>}
         <Meta />
         <Links />
       </head>
-      <body arco-theme={theme ?? "light"}>
-        {children}
+      <body>
+        <UserContext.Provider value={user && user.id}>
+          <div className="bg-base-100 drawer drawer-mobile">
+            <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
+            {/* 整个网站右边部分 */}
+            <div className="drawer-content flex flex-col h-full">
+              {/* 顶部导航栏 */}
+              <div className="sticky top-0 bg-base-100">
+                <nav className="navbar w-full flex justify-end gap-4">
+                  {/* 主题切换按钮 */}
+                  <div className="dropdown dropdown-end">
+                    <div
+                      className="btn gap-2 normal-case btn-ghost"
+                      tabIndex={0}
+                    >
+                      <HiOutlineColorSwatch className="w-6 h-6" />
+                      主题
+                      <HiOutlineChevronDown className="w-3 h-3" />
+                    </div>
+                    <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
+                      <div className="grid grid-cols-1 gap-3 p-3">
+                        {themes.map((iter) => (
+                          <div
+                            key={iter}
+                            data-theme={iter}
+                            className={`p-3 rounded-lg text-base-content font-sans font-bold cursor-pointer outline-2 outline-offset-2${
+                              theme === iter ? " outline" : ""
+                            }`}
+                            tabIndex={0}
+                            onClick={() => setTheme(iter)}
+                          >
+                            {iter}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 用户头像 */}
+                  {/* <div className="dropdown dropdown-end">
+                      <div className="btn btn-outline gap-2" tabIndex={0}>
+                        登录
+                      </div>
+                      <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box w-52 shadow-2xl top-0 mt-16">
+                        hello world
+                      </div>
+                    </div> */}
+                  <Link className="btn btn-outline" to="/login">
+                    登录
+                  </Link>
+                  <Link className="btn btn-primary" to="/register">
+                    注册
+                  </Link>
+                </nav>
+              </div>
+              {/* 中间部分 */}
+              <div className="p-6 flex-1">
+                <div className="prose w-full max-w-4xl">
+                  <Outlet />
+                </div>
+              </div>
+              {/* 底部 */}
+              <footer className="footer p-10 bg-neutral text-neutral-content">
+                <div>
+                  <span className="footer-title">Services</span>
+                  <span className="link link-hover">Branding</span>
+                  <span className="link link-hover">Design</span>
+                  <span className="link link-hover">Marketing</span>
+                  <span className="link link-hover">Advertisement</span>
+                </div>
+                <div>
+                  <span className="footer-title">Company</span>
+                  <span className="link link-hover">About us</span>
+                  <span className="link link-hover">Contact</span>
+                  <span className="link link-hover">Jobs</span>
+                  <span className="link link-hover">Press kit</span>
+                </div>
+                <div>
+                  <span className="footer-title">Legal</span>
+                  <span className="link link-hover">Terms of use</span>
+                  <span className="link link-hover">Privacy policy</span>
+                  <span className="link link-hover">Cookie policy</span>
+                </div>
+              </footer>
+            </div>
+            {/* 左侧目录部分 */}
+            <div className="drawer-side">
+              <label htmlFor="drawer-menu" className="drawer-overlay" />
+              <aside className="w-80 h-full bg-base-200">
+                <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
+                  <a className="flex-0 btn btn-ghost px-2 text-3xl" href="/">
+                    <span className="lowercase text-primary">hitwh</span>
+                    <span>OJ</span>
+                  </a>
+                  <a
+                    className="link link-hover font-mono text-xs text-opacity-50"
+                    href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {version}
+                  </a>
+                </div>
+                <ul className="menu p-4 overflow-y-auto w-80 text-base-content">
+                  <li>
+                    <NavLink className="flex gap-4" to="/">
+                      <span>
+                        <HiOutlineHome className="w-6 h-6" />
+                      </span>
+                      <span>首页</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/problem">
+                      <span>
+                        <HiOutlineBookOpen className="w-6 h-6" />
+                      </span>
+                      <span>题目</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/problemset">
+                      <span>
+                        <HiOutlineCollection className="w-6 h-6" />
+                      </span>
+                      <span>题单</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/contest">
+                      <span>
+                        <AiOutlineTrophy className="w-6 h-6" />
+                      </span>
+                      <span>比赛</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/team">
+                      <span>
+                        <HiOutlineUserGroup className="w-6 h-6" />
+                      </span>
+                      <span>团队</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/record">
+                      <span>
+                        <AiOutlineHistory className="w-6 h-6" />
+                      </span>
+                      <span>评测</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="flex gap-4" to="/docs">
+                      <span>
+                        <HiOutlineQuestionMarkCircle className="w-6 h-6" />
+                      </span>
+                      <span>文档</span>
+                    </NavLink>
+                  </li>
+                </ul>
+              </aside>
+            </div>
+          </div>
+        </UserContext.Provider>
         <ScrollRestoration />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
       </body>
     </html>
   );
-};
-
-// https://remix.run/api/conventions#default-export
-// https://remix.run/api/conventions#route-filenames
-export default function App() {
-  const { user, theme: defaultTheme } = useLoaderData<typeof loader>();
-  const [theme, setTheme] = useState<Theme>(defaultTheme as Theme);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user?.id) {
-      // 新私聊消息
-      const eventSource = new EventSource("/chat/events");
-      eventSource.addEventListener("message", ({ data }) => {
-        const message: MessageType = JSON.parse(data);
-
-        // 生成一个随机 id 给 Notification
-        const id = Date.now().toString(16) + Math.random().toString(16);
-        Notification.info({
-          id,
-          title: "新私聊消息",
-          content: (
-            <span>
-              <b>{message.from.nickname || message.from.username}</b>
-              {": "}
-              {message.content}
-            </span>
-          ),
-          btn: (
-            <Button
-              type="primary"
-              onClick={() => {
-                navigate(`/chat/user/${message.from.id}`);
-                Notification.remove(id);
-              }}
-            >
-              View
-            </Button>
-          ),
-        });
-      });
-
-      return () => eventSource.close();
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    document.cookie = `theme=${theme}; path=/; Expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax`;
-  }, [theme]);
-
-  return (
-    <Document theme={theme}>
-      <UserContext.Provider value={user && user.id}>
-        <ThemeContext.Provider value={{ theme, setTheme }}>
-          <Layout user={user}>
-            <Outlet />
-          </Layout>
-        </ThemeContext.Provider>
-      </UserContext.Provider>
-    </Document>
-  );
 }
 
-// FIXME: ErrorBoundary 和 CatchBoundary 好像没法同步主题
+// FIXME ErrorBoundary 和 CatchBoundary 好像没法同步主题
+// Won't fix: 那就这样吧，摆烂了
 // https://remix.run/docs/en/v1/api/conventions#errorboundary
-export function ErrorBoundary({ error }: { error: Error }) {
-  return (
-    <Document title={`错误: ${error.message} - HITwh OJ`}>
-      <CustomErrorBoundary error={error} />
-    </Document>
-  );
-}
-
+export { ErrorBoundary } from "~/src/ErrorBoundary";
 // https://remix.run/docs/en/v1/api/conventions#catchboundary
-export function CatchBoundary() {
-  const caught = useCatch();
-
-  return (
-    <Document title={`错误: ${caught.status} ${caught.statusText} - HITwh OJ`}>
-      <CustomCatchBoundary />
-    </Document>
-  );
-}
+export { CatchBoundary } from "~/src/CatchBoundary";
