@@ -139,6 +139,56 @@ export type DispatchTask = {
   files: Record<string, string>;
 };
 
+export type ConfigTaskDefault = {
+  input: string;
+  output: string;
+  time?: number;
+  memory?: number;
+};
+
+export type ConfigTaskDynamic = {
+  args: string;
+  time?: number;
+  memory?: number;
+};
+
+export type ConfigSubtask<T> = {
+  score: number;
+  time?: number;
+  memory?: number;
+  cases: T[];
+};
+
+export type ConfigJson =
+  | {
+      type: "default";
+      checkerType?: "default" | "testlib";
+      checkerName?: string;
+      time?: number;
+      memory?: number;
+      subtasks: ConfigSubtask<ConfigTaskDefault>[];
+    }
+  | {
+      type: "interactive";
+      interactive: string;
+      time?: number;
+      memory?: number;
+    }
+  | {
+      type: "submit_answer";
+      answer: string;
+    }
+  | {
+      type: "dynamic";
+      mkdata: string;
+      std: string;
+      checkerType?: "default" | "testlib";
+      checkerName?: string;
+      time?: number;
+      memory?: number;
+      subtasks: ConfigSubtask<ConfigTaskDefault | ConfigTaskDynamic>[];
+    };
+
 export function timeSummary(subtasks: SubtaskResult[]) {
   return subtasks.reduce((sum, subtask) => {
     const tasktimes = subtask.tasks.reduce((sum, task) => {
