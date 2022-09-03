@@ -251,7 +251,8 @@ export default function ContestProblemView() {
             found.score = message.score;
             found.memory = message.memory;
             found.status = message.status;
-            return records;
+            // 如果返回原来的 records，React 就不会重新渲染
+            return [...records];
           } else {
             // 否则添加新的记录
             return [
