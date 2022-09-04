@@ -135,7 +135,7 @@ export default function ChatIndex() {
             return (
               <ChatMessage self={isSelf} key={message.id}>
                 <ChatAvatar visible={isLast}>
-                  <UserAvatar user={message.from} size={35} />
+                  <UserAvatar user={message.from} />
                 </ChatAvatar>
                 <ChatBubble self={isSelf}>{message.content}</ChatBubble>
                 <ChatTime time={message.sentAt} />

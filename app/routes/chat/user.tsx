@@ -82,7 +82,7 @@ export default function UserChatIndex() {
                 className="block"
               >
                 <div className="flex w-full gap-3 items-center">
-                  <UserAvatar user={user} className="shrink-0" />
+                  <UserAvatar user={user} />
                   <div className="overflow-hidden">
                     <div className="bold text-ellipsis whitespace-nowrap overflow-hidden">
                       {user.nickname || user.username}

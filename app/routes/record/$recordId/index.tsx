@@ -6,19 +6,10 @@ import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
-import {
-  Button,
-  Collapse,
-  Descriptions,
-  List,
-  Message,
-  Space,
-  Typography,
-} from "@arco-design/web-react";
+import { Message } from "@arco-design/web-react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { useEffect, useState } from "react";
-import { IconCopy } from "@arco-design/web-react/icon";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
@@ -35,6 +26,8 @@ import {
   findRecordUser,
 } from "~/utils/db/record";
 import { fromEventSource } from "~/utils/eventSource";
+import { AiOutlineCopy } from "react-icons/ai";
+import { HiOutlineChevronRight } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -81,21 +74,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `提交记录: ${data?.record.status} - HITwh OJ`,
 });
 
-function ResultMessage({ message }: { message: string }) {
-  return (
-    <span style={{ color: "rgb(var(--gray-6))" }} title={message}>
-      {message}
-    </span>
-  );
-}
-
-function getExpandedKeys(subtasks: SubtaskResult[]) {
-  return subtasks
-    .map((subtask, i) => [subtask.status, i.toString()])
-    .filter(([status, _]) => status !== "Accepted" && status !== "Pending")
-    .map(([_, name]) => name);
-}
-
 export default function RecordView() {
   const { record, code } = useLoaderData<typeof loader>();
 
@@ -104,7 +82,6 @@ export default function RecordView() {
   const [status, setStatus] = useState(record.status);
   const [subtasks, setSubtasks] = useState(record.subtasks as SubtaskResult[]);
   const [message, setMessage] = useState(record.message);
-  const [keys, setKeys] = useState<string[]>(getExpandedKeys(subtasks));
 
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
@@ -115,130 +92,78 @@ export default function RecordView() {
       setStatus(message.status);
       setSubtasks(message.subtasks as SubtaskResult[]);
       setMessage(message.message);
-      setKeys(getExpandedKeys(message.subtasks as SubtaskResult[]));
     });
 
     return () => subscription.unsubscribe();
   }, [record.id]);
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
+    <>
+      <h1>
         <RecordStatus status={status} />
-      </Typography.Title>
+      </h1>
 
-      <Typography.Paragraph>
+      <p>
         <RecordTimeMemory time={time} memory={memory} />
-      </Typography.Paragraph>
+      </p>
 
-      <Descriptions
-        column={1}
-        labelStyle={{ paddingRight: 36 }}
-        data={[
-          {
-            label: "提交用户",
-            value: <UserLink user={record.submitter} />,
-          },
-          {
-            label: "题目",
-            value: <ProblemLink problem={record.problem} />,
-          },
-          ...(record.contest
-            ? [
-                {
-                  label: "比赛",
-                  value: <ContestLink contest={record.contest} />,
-                },
-              ]
-            : []),
-        ]}
-      />
+      <UserLink user={record.submitter} />
+      <ProblemLink problem={record.problem} />
+      {record.contest && <ContestLink contest={record.contest} />}
 
       {message && (
-        <Typography>
-          <Typography.Title heading={4}>输出信息</Typography.Title>
-          <Typography.Paragraph>
-            <Highlighter language="text" children={message} />
-          </Typography.Paragraph>
-        </Typography>
+        <>
+          <h2>输出信息</h2>
+          <Highlighter language="text" children={message} />
+        </>
       )}
 
       {subtasks.length > 0 && (
-        <Typography>
-          <Typography.Title heading={4}>测试点结果</Typography.Title>
-          <Typography.Paragraph>
-            <Collapse
-              style={{ whiteSpace: "nowrap" }}
-              bordered={false}
-              activeKey={keys}
-              onChange={(_, keys) => setKeys(keys)}
-            >
-              {subtasks.map((item, index) => (
-                <Collapse.Item
-                  key={index}
-                  name={index.toString()}
-                  header={
-                    <Space>
-                      <span>Subtask #{index + 1}</span>
-                      <RecordStatus status={item.status} />
-                      <ResultMessage message={item.message} />
-                    </Space>
-                  }
-                  extra={
-                    <RecordTimeMemory time={item.time} memory={item.memory} />
-                  }
-                >
-                  <List size="small" bordered={false}>
-                    {item.tasks.map((task, index) => (
-                      <List.Item
-                        key={index}
-                        extra={
-                          <RecordTimeMemory
-                            time={task.time}
-                            memory={task.memory}
-                          />
-                        }
-                      >
-                        <Space>
-                          <span>Task #{index + 1}</span>
-                          <RecordStatus status={task.status} />
-                          <ResultMessage message={task.message} />
-                        </Space>
-                      </List.Item>
-                    ))}
-                  </List>
-                </Collapse.Item>
-              ))}
-            </Collapse>
-          </Typography.Paragraph>
-        </Typography>
+        <>
+          <h2>测试点结果</h2>
+          {subtasks.map((subtask, index) => (
+            <div className={`collapse collapse-open`} key={index} tabIndex={0}>
+              <div className="collapse-title flex gap-2">
+                <span>子任务 {index + 1}</span>
+                <RecordStatus status={subtask.status} />
+                <span>{subtask.message}</span>
+              </div>
+              <div className="collapse-content">
+                {subtask.tasks.map((task, index) => (
+                  <div className="flex gap-2 items-center" key={index}>
+                    <HiOutlineChevronRight />
+                    <span>测试点 {index + 1}</span>
+                    <RecordStatus status={task.status} />
+                    <span>{task.message}</span>
+                    <RecordTimeMemory time={task.time} memory={task.memory} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
       )}
 
       {code && (
-        <Typography>
-          <Typography.Title heading={4}>
-            <Space>
-              源代码
-              <Button
-                icon={<IconCopy />}
-                iconOnly
-                type="text"
-                onClick={() =>
-                  navigator.clipboard.writeText(code).then(
-                    () => Message.success("复制成功"),
-                    () => Message.error("权限不足")
-                  )
-                }
-              />
-            </Space>
-          </Typography.Title>
-
-          <Typography.Paragraph>
-            <Highlighter language={record.language} children={code} />
-          </Typography.Paragraph>
-        </Typography>
+        <>
+          <h2 className="flex gap-2">
+            <span>源代码</span>
+            <button
+              className="btn btn-ghost btn-sm btn-square"
+              onClick={() =>
+                navigator.clipboard.writeText(code).then(
+                  () => Message.success("复制成功"),
+                  () => Message.error("权限不足")
+                )
+              }
+            >
+              <AiOutlineCopy className="w-4 h-4 text-info" />
+            </button>
+          </h2>
+          <Highlighter language={record.language} children={code} />
+        </>
       )}
-    </Typography>
+    </>
   );
 }
 

@@ -116,7 +116,7 @@ export default function ChatRoomIndex() {
             <ChatMessage self={isSelf} key={message.id}>
               <ChatAvatar visible={isLast}>
                 <Link to={`/user/${message.sender.id}`}>
-                  <UserAvatar user={message.sender} size={35} />
+                  <UserAvatar user={message.sender} />
                 </Link>
               </ChatAvatar>
               <ChatBubble self={isSelf}>

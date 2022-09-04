@@ -36,13 +36,8 @@ import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
 import FullScreen from "~/src/FullScreen";
 import { AiOutlineHistory } from "react-icons/ai";
-import {
-  HiOutlineChevronLeft,
-  HiOutlineChip,
-  HiOutlineClock,
-  HiOutlinePaperAirplane,
-} from "react-icons/hi";
-import { formatNumber } from "~/utils/tools";
+import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
+import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -292,17 +287,11 @@ export default function ContestProblemView() {
             <h1>
               {rank}. {problem.title}
             </h1>
-            <p className="flex flex-wrap gap-2">
-              <span className="badge gap-1">
-                <HiOutlineClock />
-                <span>{formatNumber(problem.timeLimit / 1000)} s</span>
-              </span>
-              <span className="badge gap-1">
-                <HiOutlineChip />
-                <span>
-                  {formatNumber(problem.memoryLimit / 1024 / 1024)} MB
-                </span>
-              </span>
+            <p>
+              <RecordTimeMemory
+                time={problem.timeLimit}
+                memory={problem.memoryLimit}
+              />
             </p>
             {isNotStarted && (
               <p className="alert alert-warning shadow-lg">比赛还没有开始</p>

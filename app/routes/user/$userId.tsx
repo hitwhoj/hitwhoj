@@ -65,10 +65,10 @@ export default function UserProfile() {
         <Space size="large" align="start">
           {user.premium ? (
             <AvatarBadge icon="大" color="magenta">
-              <UserAvatar user={user} size={60} />
+              <UserAvatar user={user} />
             </AvatarBadge>
           ) : (
-            <UserAvatar user={user} size={60} />
+            <UserAvatar user={user} />
           )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "2em" }}>

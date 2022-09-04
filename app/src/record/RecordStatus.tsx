@@ -14,17 +14,17 @@ import type {
 
 type Props = {
   status: JudgeStatus | SubtaskStatus | TaskStatus | string;
+  size?: string;
 };
 
 export function RecordStatus({ status }: Props) {
   let color: string;
   let icon: ReactNode;
-  const iconsize = "w-4 h-4";
 
   switch (status) {
     case "Accepted": {
       color = "text-green-500";
-      icon = <HiOutlineCheck className={iconsize} />;
+      icon = <HiOutlineCheck />;
       break;
     }
 
@@ -37,7 +37,7 @@ export function RecordStatus({ status }: Props) {
     case "Unknown Error":
     case "Wrong Answer": {
       color = "text-red-500";
-      icon = <HiOutlineX className={iconsize} />;
+      icon = <HiOutlineX />;
       break;
     }
 
@@ -45,29 +45,25 @@ export function RecordStatus({ status }: Props) {
     case "Judging":
     case "Running": {
       color = "text-orange-500";
-      icon = (
-        <AiOutlineLoading3Quarters className={`${iconsize} animate-spin`} />
-      );
+      icon = <AiOutlineLoading3Quarters className="animate-spin" />;
       break;
     }
 
     case "Pending": {
       color = "text-gray-500";
-      icon = (
-        <AiOutlineLoading3Quarters className={`${iconsize} animate-spin`} />
-      );
+      icon = <AiOutlineLoading3Quarters className="animate-spin" />;
       break;
     }
 
     case "Skipped": {
       color = "text-gray-500";
-      icon = <HiOutlineMinus className={iconsize} />;
+      icon = <HiOutlineMinus />;
       break;
     }
 
     default: {
       color = "";
-      icon = <HiOutlineQuestionMarkCircle className={iconsize} />;
+      icon = <HiOutlineQuestionMarkCircle />;
       break;
     }
   }

@@ -1,5 +1,5 @@
-import { Space } from "@arco-design/web-react";
-import { IconStorage } from "@arco-design/web-react/icon";
+import { HiOutlineChip } from "react-icons/hi";
+import { formatNumber } from "~/utils/tools";
 
 type Props = {
   memory: number;
@@ -7,19 +7,19 @@ type Props = {
 
 export function RecordMemory({ memory }: Props) {
   return (
-    <Space size="mini">
-      <IconStorage />
+    <span className="badge gap-1">
+      <HiOutlineChip />
       <span>
         {memory < 0
           ? "N/A"
           : memory < 1024
-          ? `${memory}B`
+          ? `${formatNumber(memory)} B`
           : memory < 1024 * 1024
-          ? `${(memory / 1024).toFixed(2)}KB`
+          ? `${formatNumber(memory / 1024)} KB`
           : memory < 1024 * 1024 * 1024
-          ? `${(memory / 1024 / 1024).toFixed(2)}MB`
-          : `${(memory / 1024 / 1024 / 1024).toFixed(2)}GB`}
+          ? `${formatNumber(memory / 1024 / 1024)} MB`
+          : `${formatNumber(memory / 1024 / 1024 / 1024)} GB`}
       </span>
-    </Space>
+    </span>
   );
 }

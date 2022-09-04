@@ -298,11 +298,7 @@ function MemberCard({
       <Row justify="space-between" align="center">
         <Link to={`/user/${member.user.id}`}>
           <Space>
-            <UserAvatar
-              user={member.user}
-              style={{ marginRight: 10 }}
-              size={32}
-            />
+            <UserAvatar user={member.user} />
             <Typography.Text>
               <UserLink user={member.user} />
             </Typography.Text>

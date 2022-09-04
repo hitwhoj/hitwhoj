@@ -1,10 +1,8 @@
-import { Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
-import { TableList } from "~/src/TableList";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { db } from "~/utils/server/db.server";
@@ -45,52 +43,43 @@ export default function RecordList() {
   const { records } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>评测记录</Typography.Title>
+    <>
+      <h1>评测记录</h1>
+      <p>您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。</p>
 
-      <Typography.Paragraph>
-        您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <TableList
-          data={records}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "状态",
-              render: (record) => (
-                <Link to={`/record/${record.id}`}>
-                  <RecordStatus status={record.status} />
-                </Link>
-              ),
-              minimize: true,
-            },
-            {
-              title: "题目",
-              render: ({ problem }) => <ProblemLink problem={problem} />,
-            },
-            {
-              title: "用户",
-              render: ({ submitter }) => <UserLink user={submitter} />,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "提交时间",
-              render: ({ submittedAt }) => formatDateTime(submittedAt),
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <div className="not-prose">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th className="w-16" />
+              <th>状态</th>
+              <th>题目</th>
+              <th>用户</th>
+              <th>提交时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((record) => (
+              <tr key={record.id}>
+                <th className="text-center">{record.id}</th>
+                <td>
+                  <Link to={`/record/${record.id}`}>
+                    <RecordStatus status={record.status} />
+                  </Link>
+                </td>
+                <td>
+                  <ProblemLink problem={record.problem} />
+                </td>
+                <td>
+                  <UserLink user={record.submitter} />
+                </td>
+                <td>{formatDateTime(record.submittedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
