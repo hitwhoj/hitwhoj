@@ -28,6 +28,8 @@ export async function loader({ request, params }: LoaderArgs) {
         rank: message.rank,
         userId: message.userId,
         content: message.content,
+        resolved: message.resolved,
+        type: message.type,
       }))
     )
   );

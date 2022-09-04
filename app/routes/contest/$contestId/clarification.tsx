@@ -76,6 +76,7 @@ export async function loader({ request, params }: LoaderArgs) {
       createdAt: true,
       replies: {
         select: {
+          id: true,
           replier: {
             select: {
               username: true,
@@ -260,7 +261,7 @@ export default function ContestClarification() {
             style={{ marginTop: 20 }}
             dataSource={selectedClarification.replies}
             render={(item) => (
-              <List.Item>
+              <List.Item key={item.id.toString()}>
                 <Card title={null}>
                   <div>
                     回复人：{canReply ? item.replier.username : "比赛管理员"}
