@@ -11,7 +11,6 @@ import {
 import { invariant } from "~/utils/invariant";
 import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
-import { Space, Typography } from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
@@ -109,23 +108,17 @@ export default function ProblemData() {
   } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>测试数据</Typography.Title>
-      <Typography.Paragraph>用于评测的数据文件</Typography.Paragraph>
-      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <FileUploader uploadAction={ActionType.UploadData} />
-        <FileList files={data} deleteAction={ActionType.RemoveData} />
-      </Space>
+    <>
+      <h2>测试数据</h2>
+      <p>用于评测的数据文件</p>
+      <FileUploader uploadAction={ActionType.UploadData} />
+      <FileList files={data} deleteAction={ActionType.RemoveData} />
 
-      <Typography.Title heading={4}>附加文件</Typography.Title>
-      <Typography.Paragraph>
-        题目的附加资料，例如样例数据、PDF 题面等
-      </Typography.Paragraph>
-      <Space direction="vertical" size="medium" style={{ display: "flex" }}>
-        <FileUploader uploadAction={ActionType.UploadFile} />
-        <FileList files={files} deleteAction={ActionType.RemoveFile} />
-      </Space>
-    </Typography>
+      <h2>附加文件</h2>
+      <p>题目的附加资料，例如样例数据、PDF 题面等</p>
+      <FileUploader uploadAction={ActionType.UploadFile} />
+      <FileList files={files} deleteAction={ActionType.RemoveFile} />
+    </>
   );
 }
 

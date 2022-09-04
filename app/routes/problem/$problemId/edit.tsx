@@ -134,25 +134,34 @@ export default function ProblemEdit() {
     }
   }, [isActionReload]);
 
+  const handleRemoveTag = (name: string) =>
+    setTags((tags) => tags.filter((tag) => tag !== name));
+
   return (
     <Form method="post" className="form-control">
+      <label className="label">
+        <span className="label-text">题目名称</span>
+      </label>
+      <input
+        className="input input-bordered w-full max-w-xs"
+        name="title"
+        required
+        defaultValue={problem.title}
+        disabled={isLoading}
+      />
+
       <label className="label">
         <span className="label-text">题目标签</span>
       </label>
       <div className="flex flex-wrap gap-2">
-        {tags.map((name, index) => (
+        {tags.map((name) => (
           <div className="badge inline-flex gap-1" key={name}>
             <input type="hidden" name="tag" value={name} />
             <HiOutlineTag />
             {name}
             <HiOutlineX
               className="cursor-pointer"
-              onClick={() =>
-                setTags((tags) => [
-                  ...tags.slice(0, index),
-                  ...tags.slice(index + 1),
-                ])
-              }
+              onClick={() => handleRemoveTag(name)}
             />
           </div>
         ))}
@@ -175,17 +184,6 @@ export default function ProblemEdit() {
           添加标签
         </button>
       </div>
-
-      <label className="label">
-        <span className="label-text">题目名称</span>
-      </label>
-      <input
-        className="input input-bordered w-full max-w-xs"
-        name="title"
-        required
-        defaultValue={problem.title}
-        disabled={isLoading}
-      />
 
       <label className="label">
         <span className="label-text">题目正文</span>

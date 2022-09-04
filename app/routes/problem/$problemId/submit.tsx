@@ -91,7 +91,11 @@ export async function action({ request, params }: ActionArgs) {
 export default function ProblemSubmit() {
   return (
     <Form method="post" className="form-control">
-      <select className="select select-bordered" name="language" required>
+      <select
+        className="select select-bordered w-full max-w-xs"
+        name="language"
+        required
+      >
         <option value="" disabled selected>
           选择代码语言
         </option>

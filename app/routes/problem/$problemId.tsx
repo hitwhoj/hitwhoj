@@ -56,7 +56,7 @@ export default function ProblemView() {
       <h1>{problem.title}</h1>
 
       {(problem.tags.length > 0 || problem.private) && (
-        <div className="flex not-prose gap-2">
+        <div className="flex not-prose gap-2 flex-wrap">
           {problem.private && (
             <span className="badge badge-warning gap-1">
               <HiOutlineEyeOff />
