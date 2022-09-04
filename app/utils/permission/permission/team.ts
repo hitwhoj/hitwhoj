@@ -11,7 +11,7 @@ export class TeamPermission {
     readonly admin: boolean,
     readonly member: boolean,
     readonly guest: boolean,
-    readonly fallback = UserPermission.Admins
+    readonly fallback = UserPermission.Nobody
   ) {}
 
   with(fallback: UserPermission) {

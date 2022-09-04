@@ -1,11 +1,8 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { teamNameScheme } from "~/utils/scheme";
-import { invariant } from "~/utils/invariant";
-import { Button, Grid, Input, Space, Typography } from "@arco-design/web-react";
+import { Button, Grid, Typography } from "@arco-design/web-react";
 import { IconPlus } from "@arco-design/web-react/icon";
 import { TableList } from "~/src/TableList";
 import { TeamLink } from "~/src/team/TeamLink";
@@ -14,30 +11,10 @@ export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
 });
 
-export async function action({ request }: ActionArgs) {
-  const form = await request.formData();
-  const teamName = invariant(teamNameScheme, form.get("teamName"));
-
-  if (!teamName)
-    throw new Response("teamName is not registered", { status: 400 });
-
-  const team = await db.team.findUnique({
-    select: { id: true },
-    where: { name: teamName },
-  });
-  if (!team) {
-    throw new Response("team is not registered", { status: 400 });
-  }
-
-  return redirect(`/team/${team.id}`);
-}
-
 export async function loader(_: LoaderArgs) {
   const teams = await db.team.findMany({
     take: 20,
-    orderBy: {
-      name: "asc",
-    },
+    orderBy: { name: "asc" },
   });
 
   return json({ teams });
@@ -58,22 +35,6 @@ export default function TeamList() {
           </Link>
         </Grid.Row>
       </Typography.Title>
-
-      <Typography.Paragraph>
-        <Form method="post">
-          <Space>
-            <Input
-              type="text"
-              name="teamName"
-              placeholder="团队名称"
-              required
-            />
-            <Button htmlType="submit" type="primary">
-              前往
-            </Button>
-          </Space>
-        </Form>
-      </Typography.Paragraph>
 
       <Typography.Paragraph>
         <TableList

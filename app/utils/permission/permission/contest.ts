@@ -11,7 +11,7 @@ export class ContestPermission {
     readonly jury: boolean,
     readonly contestant: boolean,
     readonly guest: boolean,
-    readonly fallback = TeamPermission.Admins
+    readonly fallback = TeamPermission.Nobody
   ) {}
 
   with(fallback: TeamPermission) {

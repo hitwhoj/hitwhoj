@@ -45,7 +45,7 @@ yarn 在 install 之后会自动运行一个 postinstall hook，包括：
     S3_SECRET_KEY=minioadmin
     S3_BUCKET=hitwhoj
 
-其中的 `S3_ENDPOINT` 可以设置为 MinIO 服务器的 IP 地址，默认为 `localhost`，`S3_PORT` 默认为 9000，其余三个选项都必须手动提供，否则启动时将会报错。
+其中的 `S3_END_POINT` 可以设置为 MinIO 服务器的 IP 地址，默认为 `localhost`，`S3_PORT` 默认为 9000，其余三个选项都必须手动提供，否则启动时将会报错。
 
 ---
 
@@ -88,6 +88,8 @@ yarn 在 install 之后会自动运行一个 postinstall hook，包括：
 dev 服务器会自动监听 app/ 目录下的文件变化，并自动刷新网站的页面。
 
 ## 跑测试
+
+**更新：测试已经不存在了**
 
 跑测试需要在数据库中预先填入一些特定的数据，以满足权限检查测试的要求。
 

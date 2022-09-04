@@ -1,11 +1,16 @@
 import { Message, Space, Tag, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { Navigator } from "~/src/Navigator";
-import { findContestPrivacy, findContestTeam } from "~/utils/db/contest";
+import {
+  findContestPrivacy,
+  findContestStatus,
+  findContestTeam,
+} from "~/utils/db/contest";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import {
@@ -21,6 +26,7 @@ import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType } from "./$contestId/clarificationEvents";
 import { filter } from "rxjs";
 import { UserContext } from "~/utils/context/user";
+import { ContestPermission } from "~/utils/permission/permission/contest";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -31,7 +37,18 @@ export async function loader({ request, params }: LoaderArgs) {
       ? Permissions.PERM_VIEW_CONTEST
       : Permissions.PERM_VIEW_CONTEST_PUBLIC
   );
-  const [hasEditPerm] = await perm.hasPermission(Permissions.PERM_EDIT_CONTEST);
+  const status = await findContestStatus(contestId);
+  const [hasEditPerm, hasViewProblemPerm, isContestants] =
+    await perm.hasPermission(
+      Permissions.PERM_EDIT_CONTEST,
+      status === "Pending"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+        : status === "Running"
+        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
+      ContestPermission.Contestants
+    );
+
   const [canReply] = await perm.hasPermission(
     Permissions.PERM_REPLY_CONTEST_CLARIFICATION
   );
@@ -57,7 +74,13 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return { contest, hasEditPerm, canReply };
+  return json({
+    contest,
+    hasEditPerm,
+    canReply,
+    hasViewProblemPerm,
+    isContestants,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -65,7 +88,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm, canReply } = useLoaderData<typeof loader>();
+  const { contest, hasEditPerm, canReply, hasViewProblemPerm, isContestants } =
+    useLoaderData<typeof loader>();
   const { contestId } = useParams();
   const self = useContext(UserContext);
 
@@ -141,7 +165,9 @@ export default function ContestView() {
         <Navigator
           routes={[
             { title: "详情", key: "." },
-            { title: "题目", key: "problem" },
+            ...(hasViewProblemPerm || isContestants
+              ? [{ title: "题目", key: "problem" }]
+              : []),
             { title: canReply ? "用户反馈" : "我的反馈", key: "clarification" },
             ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
           ]}

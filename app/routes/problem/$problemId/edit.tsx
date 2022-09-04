@@ -216,16 +216,16 @@ export default function ProblemEdit() {
               checked={pub}
               onChange={(checked) => setPub(checked)}
               disabled={isUpdating}
+              className="block"
             >
               公开题目
             </Checkbox>
-          </FormItem>
-          <FormItem>
             <input type="hidden" name="allowSubmit" value={String(submit)} />
             <Checkbox
               checked={submit}
               onChange={(checked) => setSubmit(checked)}
               disabled={isUpdating}
+              className="block"
             >
               允许提交
             </Checkbox>

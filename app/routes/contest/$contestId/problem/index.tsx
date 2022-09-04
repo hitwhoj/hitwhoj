@@ -10,70 +10,87 @@ import { Permissions } from "~/utils/permission/permission";
 import { findContestStatus, findContestTeam } from "~/utils/db/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
+import { ContestPermission } from "~/utils/permission/permission/contest";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   const status = await findContestStatus(contestId);
-  await self
+  const [hasViewProblemPerm, isContestants] = await self
     .team(await findContestTeam(contestId))
     .contest(contestId)
-    .checkPermission(
+    .hasPermission(
       status === "Pending"
         ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
         : status === "Running"
         ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
-        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER
+        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
+      ContestPermission.Contestants
     );
 
-  const contest = await db.contest.findUnique({
-    where: { id: contestId },
-    select: {
-      beginTime: true,
-      endTime: true,
-      problems: {
-        orderBy: { rank: "asc" },
-        select: {
-          rank: true,
-          problem: {
-            select: {
-              title: true,
-              relatedRecords: {
-                where: { contestId, submitterId: self.userId ?? -1 },
-                select: { status: true },
+  // if problem is ok to see
+  if (hasViewProblemPerm) {
+    const contest = await db.contest.findUnique({
+      where: { id: contestId },
+      select: {
+        beginTime: true,
+        endTime: true,
+        problems: {
+          orderBy: { rank: "asc" },
+          select: {
+            rank: true,
+            problem: {
+              select: {
+                title: true,
+                relatedRecords: {
+                  where: { contestId, submitterId: self.userId ?? -1 },
+                  select: { status: true },
+                },
               },
             },
           },
         },
       },
-    },
-  });
-
-  if (!contest) {
-    throw new Response("Contest not found", { status: 404 });
+    });
+    if (!contest) throw new Response("Contest not found", { status: 404 });
+    return json({ countdown: false as const, contest });
   }
-
-  return json({ contest });
+  // or show a counting down page for user
+  else if (isContestants) {
+    const contest = await db.contest.findUnique({
+      where: { id: contestId },
+      select: {
+        beginTime: true,
+        endTime: true,
+      },
+    });
+    if (!contest) throw new Response("Contest not found", { status: 404 });
+    return json({ countdown: true as const, contest });
+  }
+  // or throw 403
+  else {
+    throw new Response("Permission Denied", { status: 403 });
+  }
 }
 
 export default function ContestProblemIndex() {
-  const { contest } = useLoaderData<typeof loader>();
-
-  const started = new Date() > new Date(contest.beginTime);
+  const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!started) {
+  if (data.countdown) {
     return (
       <div style={{ textAlign: "center", marginTop: 100 }}>
         <Statistic.Countdown
           title="距离比赛开始还有"
-          value={new Date(contest.beginTime)}
+          value={new Date(data.contest.beginTime)}
           format="D 天 H 时 m 分 s 秒"
           onFinish={() => navigate(".")}
         />
       </div>
     );
   }
+
+  const { contest } = data;
 
   return (
     <TableList

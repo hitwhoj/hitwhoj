@@ -1,5 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
@@ -16,23 +16,32 @@ import { Permissions } from "~/utils/permission/permission";
 
 export async function loader({ params, request }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
-
-  const user = await findRequestUser(request);
-  if (!user.userId) {
-    throw redirect(`/login?redirect=${new URL(request.url).pathname}`);
-  }
-
-  await user.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
+  const self = await findRequestUser(request);
+  await self.team(teamId).checkPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
+  const [hasCreatePerm] = await self
+    .team(teamId)
+    .hasPermission(Permissions.PERM_CREATE_CONTEST);
+  const [viewAll, viewPublic] = await self
+    .team(teamId)
+    .contest(null)
+    .hasPermission(
+      Permissions.PERM_VIEW_CONTEST,
+      Permissions.PERM_VIEW_CONTEST_PUBLIC
+    );
 
   const contests = await db.contest.findMany({
-    where: { team: { id: teamId } },
-    orderBy: [{ id: "asc" }],
+    where: viewAll
+      ? { teamId }
+      : viewPublic
+      ? { teamId, private: false }
+      : { id: -1 },
+    orderBy: [{ id: "desc" }],
     select: {
       ...selectContestListData,
     },
   });
 
-  return json({ contests });
+  return json({ contests, hasCreatePerm });
 }
 
 export const meta: MetaFunction = () => ({
@@ -40,18 +49,20 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function HomeworkList() {
-  const { contests } = useLoaderData<typeof loader>();
+  const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
     <Typography>
       <Typography.Title heading={4}>
         <Grid.Row justify="space-between" align="center">
           <span>团队比赛</span>
-          <Link to="new">
-            <Button type="primary" icon={<IconPlus />}>
-              创建比赛
-            </Button>
-          </Link>
+          {hasCreatePerm && (
+            <Link to="new">
+              <Button type="primary" icon={<IconPlus />}>
+                创建比赛
+              </Button>
+            </Link>
+          )}
         </Grid.Row>
       </Typography.Title>
 
