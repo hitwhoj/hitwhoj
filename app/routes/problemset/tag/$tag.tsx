@@ -4,9 +4,7 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
-import { Typography } from "@arco-design/web-react";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { TableList } from "~/src/TableList";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
@@ -55,34 +53,32 @@ export default function ProblemSetTag() {
   const { problemSets } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>题单标签：{tag}</Typography.Title>
+    <>
+      <h1>题单标签：{tag}</h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={problemSets}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              minimize: true,
-            },
-            {
-              title: "题单",
-              render: (problemset) => (
-                <ProblemSetLink problemset={problemset} />
-              ),
-            },
-            {
-              title: "题目数",
-              render: ({ _count: { problems } }) => problems,
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <div className="not-prose overflow-x-auto">
+        <table className="table static w-full">
+          <thead>
+            <tr>
+              <th className="w-16" />
+              <th>题单</th>
+              <th>题目数量</th>
+            </tr>
+          </thead>
+          <tbody>
+            {problemSets.map((problemset) => (
+              <tr key={problemset.id}>
+                <th className="text-center">{problemset.id}</th>
+                <td>
+                  <ProblemSetLink problemset={problemset} />
+                </td>
+                <td>{problemset._count.problems}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

@@ -29,13 +29,13 @@ import {
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
 import { TagEditor } from "~/src/TagEditor";
-import { ProblemEditor } from "~/src/ProblemEditor";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
+import { ProblemEditor } from "~/src/problem/ProblemEditor";
 
 const FormItem = ArcoForm.Item;
 const TextArea = Input.TextArea;

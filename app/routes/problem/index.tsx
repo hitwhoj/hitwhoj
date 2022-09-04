@@ -50,8 +50,8 @@ export default function ProblemIndex() {
       <h1 className="flex justify-between items-center">
         <span>题目列表</span>
         {hasCreatePerm && (
-          <Link to="/problem/new" className="btn btn-outline gap-4">
-            <HiOutlinePlus />
+          <Link to="/problem/new" className="btn btn-primary gap-2">
+            <HiOutlinePlus className="w-4 h-4" />
             <span>新建题目</span>
           </Link>
         )}

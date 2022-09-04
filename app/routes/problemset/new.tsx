@@ -1,15 +1,12 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form as RemixForm, useTransition } from "@remix-run/react";
+import { Form, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { titleScheme } from "~/utils/scheme";
-import { Button, Input, Form, Typography } from "@arco-design/web-react";
 import { Privileges } from "~/utils/permission/privilege";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-
-const FormItem = Form.Item;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -43,19 +40,29 @@ export default function ProblemSetNew() {
   const loading = state !== "idle";
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>创建题单</Typography.Title>
-      <RemixForm method="post" style={{ maxWidth: 300 }}>
-        <FormItem label="标题" required layout="vertical">
-          <Input name="title" disabled={loading} required />
-        </FormItem>
-        <FormItem>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            创建题单
-          </Button>
-        </FormItem>
-      </RemixForm>
-    </Typography>
+    <>
+      <h1>创建题单</h1>
+
+      <Form method="post" className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">标题</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="title"
+          disabled={loading}
+          required
+        />
+        <button
+          className="btn btn-primary mt-4"
+          type="submit"
+          disabled={loading}
+        >
+          创建题单
+        </button>
+      </Form>
+    </>
   );
 }
 

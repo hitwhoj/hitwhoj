@@ -1,32 +1,31 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Tag, Typography } from "@arco-design/web-react";
-import { Navigator } from "~/src/Navigator";
-import { IconEyeInvisible, IconTag } from "@arco-design/web-react/icon";
-import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import {
   findProblemSetPrivacy,
   findProblemSetTeam,
 } from "~/utils/db/problemset";
+import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
   const self = await findRequestUser(request);
-  await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(
-      (await findProblemSetPrivacy(problemSetId))
-        ? Permissions.PERM_VIEW_PROBLEM_SET
-        : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
-    );
+  const team = self.team(await findProblemSetTeam(problemSetId));
+  await team.checkPermission(
+    (await findProblemSetPrivacy(problemSetId))
+      ? Permissions.PERM_VIEW_PROBLEM_SET
+      : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+  );
+  const [hasEditPerm] = await team.hasPermission(
+    Permissions.PERM_EDIT_PROBLEM_SET
+  );
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet });
+  return json({ problemSet, hasEditPerm });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -51,42 +50,46 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function Problemset() {
-  const { problemSet } = useLoaderData<typeof loader>();
+  const { problemSet, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>{problemSet.title}</Typography.Title>
+    <>
+      <h1>{problemSet.title}</h1>
 
       {(problemSet.tags.length > 0 || problemSet.private) && (
-        <Typography.Paragraph>
-          <TagSpace>
-            {problemSet.private && (
-              <Tag icon={<IconEyeInvisible />} color="gold">
-                隐藏
-              </Tag>
-            )}
-            {problemSet.tags.map(({ name }) => (
-              <Link to={`/problemset/tag/${name}`} key={name}>
-                <Tag icon={<IconTag />}>{name}</Tag>
-              </Link>
-            ))}
-          </TagSpace>
-        </Typography.Paragraph>
+        <div className="flex flex-wrap gap-2 not-prose">
+          {problemSet.private && (
+            <span className="badge badge-warning gap-1">
+              <HiOutlineEyeOff />
+              <span>隐藏</span>
+            </span>
+          )}
+          {problemSet.tags.map(({ name }) => (
+            <Link
+              className="badge gap-1"
+              to={`/problemset/tag/${name}`}
+              key={name}
+            >
+              <HiOutlineTag />
+              <span>{name}</span>
+            </Link>
+          ))}
+        </div>
       )}
 
-      <Typography.Paragraph>
-        <Navigator
-          routes={[
-            { title: "详情", key: "." },
-            { title: "编辑", key: "edit" },
-          ]}
-        />
-      </Typography.Paragraph>
+      <p className="tabs tabs-boxed bg-base-100 not-prose">
+        <NavLink className="tab" to="problem">
+          详情
+        </NavLink>
+        {hasEditPerm && (
+          <NavLink className="tab" to="edit">
+            编辑
+          </NavLink>
+        )}
+      </p>
 
-      <Typography.Paragraph>
-        <Outlet />
-      </Typography.Paragraph>
-    </Typography>
+      <Outlet />
+    </>
   );
 }
 

@@ -9,25 +9,15 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import {
-  Form as ArcoForm,
-  Input,
-  Button,
-  Typography,
-  Checkbox,
-  Message,
-} from "@arco-design/web-react";
 import { useEffect, useState } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
-import { TagEditor } from "~/src/TagEditor";
-import { ProblemEditor } from "~/src/ProblemEditor";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
-
-const FormItem = ArcoForm.Item;
-const TextArea = Input.TextArea;
+import { Message } from "@arco-design/web-react";
+import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { ProblemEditor } from "~/src/problem/ProblemEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -268,88 +258,116 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function ProblemSetEdit() {
   const { problemSet } = useLoaderData<typeof loader>();
-
-  const [priv, setPriv] = useState(problemSet.private);
-
   const { state, type } = useTransition();
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isUpdating = state === "submitting" || isActionReload;
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
+  const isUpdating = isActionSubmit || isActionRedirect;
+
   useEffect(() => {
-    if (isActionReload) {
+    if (isActionRedirect) {
       Message.success("更新成功");
     }
-  }, [isActionReload]);
+  }, [isActionRedirect]);
+
+  const [tags, setTags] = useState(problemSet.tags.map(({ name }) => name));
+  const [tag, setTag] = useState("");
+
+  const handleRemoveTag = (name: string) =>
+    setTags(tags.filter((tag) => tag !== name));
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>编辑题单</Typography.Title>
-      <Typography.Paragraph>
-        <Form method="post">
-          <FormItem label="标签" layout="vertical">
-            <TagEditor
-              tags={problemSet.tags.map(({ name }) => name)}
-              createAction={ActionType.CreateTag}
-              deleteAction={ActionType.DeleteTag}
-            />
-          </FormItem>
-
-          <FormItem label="标题" layout="vertical" required>
-            <Input
-              id="title"
-              name="title"
-              type="text"
-              defaultValue={problemSet.title}
-              disabled={isUpdating}
-              required
-            />
-          </FormItem>
-
-          <FormItem label="描述" layout="vertical">
-            <TextArea
-              id="description"
-              name="description"
-              defaultValue={problemSet.description}
-              disabled={isUpdating}
-              autoSize={{ minRows: 3, maxRows: 10 }}
-            />
-          </FormItem>
-
-          <FormItem>
-            <input type="hidden" name="private" value={String(priv)} />
-            <Checkbox
-              checked={priv}
-              onChange={(checked) => setPriv(checked)}
-              disabled={isUpdating}
-            >
-              首页隐藏
-            </Checkbox>
-          </FormItem>
-
-          <FormItem>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isUpdating}
-              name="_action"
-              value={ActionType.UpdateInformation}
-            >
-              确认修改
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
-
-      <Typography.Title heading={4}>题目</Typography.Title>
-      <Typography.Paragraph>
-        <ProblemEditor
-          problems={problemSet.problems.map(({ problem }) => problem)}
-          createAction={ActionType.CreateProblem}
-          deleteAction={ActionType.DeleteProblem}
-          moveUpAction={ActionType.MoveProblemUp}
-          moveDownAction={ActionType.MoveProblemDown}
+    <>
+      <h2>编辑题目信息</h2>
+      <Form method="post" className="form-control">
+        <label className="label">
+          <span className="label-text">标题</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="text"
+          name="title"
+          defaultValue={problemSet.title}
+          disabled={isUpdating}
+          required
         />
-      </Typography.Paragraph>
-    </Typography>
+
+        <label className="label">
+          <span className="label-text">题单标签</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {tags.map((name) => (
+            <div className="badge inline-flex gap-1" key={name}>
+              <input type="hidden" name="tag" value={name} />
+              <HiOutlineTag />
+              {name}
+              <HiOutlineX
+                className="cursor-pointer"
+                onClick={() => handleRemoveTag(name)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 mt-2">
+          <input
+            type="text"
+            className="input input-bordered"
+            value={tag}
+            onChange={(event) => setTag(event.target.value)}
+          />
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={() => {
+              tag && setTags((tags) => [...tags, tag]);
+              setTag("");
+            }}
+          >
+            添加标签
+          </button>
+        </div>
+
+        <label className="label">
+          <span className="label-text">简介</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
+          name="description"
+          defaultValue={problemSet.description}
+          disabled={isUpdating}
+          required
+        />
+
+        <label className="label cursor-pointer justify-start gap-2 mt-4">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="private"
+            defaultChecked={problemSet.private}
+            disabled={isUpdating}
+          />
+          <span className="label-text">保持题单隐藏</span>
+        </label>
+
+        <button
+          className="btn btn-primary mt-4 w-full max-w-xs"
+          type="submit"
+          name="_action"
+          value={ActionType.UpdateInformation}
+          disabled={isUpdating}
+        >
+          确认修改
+        </button>
+      </Form>
+
+      <h2>题目</h2>
+      <ProblemEditor
+        problems={problemSet.problems.map(({ problem }) => problem)}
+        createAction={ActionType.CreateProblem}
+        deleteAction={ActionType.DeleteProblem}
+        moveUpAction={ActionType.MoveProblemUp}
+        moveDownAction={ActionType.MoveProblemDown}
+      />
+    </>
   );
 }
 
