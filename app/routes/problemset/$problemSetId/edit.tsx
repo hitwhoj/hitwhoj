@@ -58,13 +58,11 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 enum ActionType {
-  CreateTag = "createTag",
-  DeleteTag = "deleteTag",
   CreateProblem = "createProblem",
   DeleteProblem = "deleteProblem",
-  UpdateInformation = "updateInformation",
   MoveProblemUp = "moveProblemUp",
   MoveProblemDown = "moveProblemDown",
+  UpdateInformation = "updateInformation",
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -196,53 +194,39 @@ export async function action({ request, params }: ActionArgs) {
       return null;
     }
 
-    case ActionType.CreateTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          tags: {
-            connectOrCreate: {
-              where: { name: tag },
-              create: { name: tag },
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
-    case ActionType.DeleteTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          tags: {
-            disconnect: {
-              name: tag,
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
     case ActionType.UpdateInformation: {
       const title = invariant(titleScheme, form.get("title"));
       const description = invariant(descriptionScheme, form.get("description"));
-      const priv = form.get("private") === "true";
+      const priv = form.has("private");
+      const tags = form.getAll("tag").map((tag) => invariant(tagScheme, tag));
 
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          title,
-          description,
-          private: priv,
-        },
+      await db.$transaction(async (db) => {
+        const problemset = await db.problemSet.update({
+          where: { id: problemSetId },
+          data: {
+            title,
+            description,
+            private: priv,
+          },
+          select: { tags: { select: { name: true } } },
+        });
+
+        await db.problemSet.update({
+          where: { id: problemSetId },
+          data: {
+            tags: {
+              connectOrCreate: tags
+                .filter((tag) => !problemset.tags.some((t) => t.name === tag))
+                .map((tag) => ({
+                  where: { name: tag },
+                  create: { name: tag },
+                })),
+              disconnect: problemset.tags
+                .filter((tag) => !tags.includes(tag.name))
+                .map((tag) => ({ name: tag.name })),
+            },
+          },
+        });
       });
 
       return null;

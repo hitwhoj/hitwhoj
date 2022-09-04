@@ -1,7 +1,7 @@
-import { Space } from "@arco-design/web-react";
-import { IconEyeInvisible, IconTrophy } from "@arco-design/web-react/icon";
 import { Link } from "@remix-run/react";
 import type { SerializeType } from "@remix-run/react/dist/components";
+import { AiOutlineTrophy } from "react-icons/ai";
+import { HiOutlineEyeOff } from "react-icons/hi";
 import type { ContestListData } from "~/utils/db/contest";
 import { ContestStateTag } from "./ContestStateTag";
 
@@ -11,16 +11,17 @@ type Props = {
 
 export function ContestLink({ contest }: Props) {
   return (
-    <Link to={`/contest/${contest.id}`}>
-      <Space>
-        <IconTrophy />
-        {contest.title}
-        {contest.private && <IconEyeInvisible />}
-        <ContestStateTag
-          beginTime={contest.beginTime}
-          endTime={contest.endTime}
-        />
-      </Space>
+    <Link
+      className="link inline-flex gap-2 items-center"
+      to={`/contest/${contest.id}`}
+    >
+      <AiOutlineTrophy />
+      {contest.title}
+      {contest.private && <HiOutlineEyeOff />}
+      <ContestStateTag
+        beginTime={contest.beginTime}
+        endTime={contest.endTime}
+      />
     </Link>
   );
 }

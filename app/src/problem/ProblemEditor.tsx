@@ -124,12 +124,10 @@ type ProblemEditorProps = {
 export function ProblemEditor(props: ProblemEditorProps) {
   return (
     <>
-      <p>
-        <ProblemEditorCreator createAction={props.createAction} />
-      </p>
+      <ProblemEditorCreator createAction={props.createAction} />
 
-      <p className="not-prose overflow-x-auto">
-        <table className="table static w-full">
+      <div className="not-prose overflow-x-auto mt-4">
+        <table className="table w-full">
           <thead>
             <tr>
               <th className="w-16" />
@@ -158,7 +156,7 @@ export function ProblemEditor(props: ProblemEditorProps) {
             ))}
           </tbody>
         </table>
-      </p>
+      </div>
     </>
   );
 }

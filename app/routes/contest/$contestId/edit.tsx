@@ -14,21 +14,9 @@ import {
   titleScheme,
   weakPasswordScheme,
 } from "~/utils/scheme";
-import {
-  Button,
-  Form as ArcoForm,
-  Input,
-  DatePicker,
-  Select,
-  Typography,
-  Message,
-  Alert,
-  Checkbox,
-  Space,
-} from "@arco-design/web-react";
+import { Message } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { useEffect, useState } from "react";
-import { TagEditor } from "~/src/TagEditor";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -36,11 +24,7 @@ import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
-
-const FormItem = ArcoForm.Item;
-const TextArea = Input.TextArea;
-const RangePicker = DatePicker.RangePicker;
-const Option = Select.Option;
+import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -86,8 +70,6 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 enum ActionType {
-  CreateTag = "CreateTag",
-  DeleteTag = "DeleteTag",
   CreateProblem = "CreateProblem",
   DeleteProblem = "DeleteProblem",
   MoveProblemUp = "MoveProblemUp",
@@ -211,43 +193,6 @@ export async function action({ request, params }: ActionArgs) {
       return null;
     }
 
-    // 创建标签
-    case ActionType.CreateTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.contest.update({
-        where: { id: contestId },
-        data: {
-          tags: {
-            connectOrCreate: {
-              where: { name: tag },
-              create: { name: tag },
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
-    // 删除标签
-    case ActionType.DeleteTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.contest.update({
-        where: { id: contestId },
-        data: {
-          tags: {
-            disconnect: {
-              name: tag,
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
     // 更新比赛信息
     case ActionType.UpdateInformation: {
       const title = invariant(titleScheme, form.get("title"));
@@ -255,7 +200,6 @@ export async function action({ request, params }: ActionArgs) {
 
       // 客户端所在的时区
       const timezone = invariant(timezoneScheme, form.get("timezone"));
-
       const beginTime = adjustTimezone(
         invariant(datetimeStringScheme, form.get("beginTime")),
         timezone
@@ -266,8 +210,8 @@ export async function action({ request, params }: ActionArgs) {
       );
 
       const system = invariant(systemScheme, form.get("system"));
-      const priv = form.get("private") === "true";
-      const allowJoinAfterStart = form.get("joinAfterStart") === "true";
+      const priv = form.has("private");
+      const allowJoinAfterStart = form.has("joinAfterStart");
       const registrationType = invariant(
         z.nativeEnum(ContestRegistrationType),
         form.get("registrationType")
@@ -276,20 +220,43 @@ export async function action({ request, params }: ActionArgs) {
         registrationType === "Password"
           ? invariant(weakPasswordScheme, form.get("registrationPassword"))
           : "";
+      const tags = form.getAll("tag").map((tag) => invariant(tagScheme, tag));
 
-      await db.contest.update({
-        where: { id: contestId },
-        data: {
-          title,
-          description,
-          beginTime,
-          endTime,
-          system,
-          private: priv,
-          allowJoinAfterStart,
-          registrationType,
-          registrationPassword,
-        },
+      await db.$transaction(async (db) => {
+        const contest = await db.contest.update({
+          where: { id: contestId },
+          data: {
+            title,
+            description,
+            beginTime,
+            endTime,
+            system,
+            private: priv,
+            allowJoinAfterStart,
+            registrationType,
+            registrationPassword,
+          },
+          select: {
+            tags: { select: { name: true } },
+          },
+        });
+
+        await db.contest.update({
+          where: { id: contestId },
+          data: {
+            tags: {
+              connectOrCreate: tags
+                .filter((tag) => !contest.tags.some((t) => t.name === tag))
+                .map((tag) => ({
+                  where: { name: tag },
+                  create: { name: tag },
+                })),
+              disconnect: contest.tags
+                .filter((tag) => !tags.includes(tag.name))
+                .map((tag) => ({ name: tag.name })),
+            },
+          },
+        });
       });
 
       return null;
@@ -306,26 +273,20 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function ContestEdit() {
   const { contest } = useLoaderData<typeof loader>();
 
-  const [beginTime, setBeginTime] = useState(
-    new Date(contest.beginTime).getTime()
-  );
-  const [endTime, setEndTime] = useState(new Date(contest.endTime).getTime());
-  const [system, setSystem] = useState(contest.system);
-  const [pub, setPub] = useState(!contest.private);
-  const [joinAfterStart, setJoinAfterStart] = useState(
-    contest.allowJoinAfterStart
-  );
   const [registrationType, setRegistrationType] = useState(
     contest.registrationType
   );
-  const [registrationPassword, setRegistrationPassword] = useState(
-    contest.registrationPassword
-  );
+  const [tags, setTags] = useState(contest.tags.map(({ name }) => name));
+  const [tag, setTag] = useState("");
+
+  const handleRemoveTag = (name: string) =>
+    setTags(tags.filter((t) => t !== name));
 
   const { state, type } = useTransition();
   const isActionSubmit = state === "submitting" && type === "actionSubmission";
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = isActionSubmit || isActionReload;
+
   useEffect(() => {
     if (isActionReload) {
       Message.success("更新成功");
@@ -333,184 +294,201 @@ export default function ContestEdit() {
   }, [isActionReload]);
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>修改比赛信息</Typography.Title>
-      <Typography.Paragraph>
-        <FormItem label="标签" layout="vertical">
-          <TagEditor
-            tags={contest.tags.map(({ name }) => name)}
-            createAction={ActionType.CreateTag}
-            deleteAction={ActionType.DeleteTag}
-          />
-        </FormItem>
-
-        <Form method="post">
-          <FormItem
-            label="标题"
-            required
-            layout="vertical"
-            disabled={isUpdating}
-          >
-            <Input name="title" defaultValue={contest.title} required />
-          </FormItem>
-
-          <FormItem label="描述" layout="vertical" disabled={isUpdating}>
-            <TextArea
-              name="description"
-              defaultValue={contest.description}
-              autoSize={{ minRows: 3 }}
-            />
-          </FormItem>
-
-          <FormItem
-            label="时间"
-            required
-            layout="vertical"
-            disabled={isUpdating}
-          >
-            <input
-              type="hidden"
-              name="beginTime"
-              value={getDatetimeLocal(beginTime)}
-              required
-            />
-            <input
-              type="hidden"
-              name="endTime"
-              value={getDatetimeLocal(endTime)}
-              required
-            />
-            <input
-              type="hidden"
-              name="timezone"
-              value={new Date().getTimezoneOffset()}
-              required
-            />
-            <RangePicker
-              defaultValue={[beginTime, endTime]}
-              showTime={{ format: "HH:mm" }}
-              format="YYYY-MM-DD HH:mm"
-              allowClear={false}
-              onChange={(dates) => {
-                setBeginTime(new Date(dates[0]).getTime());
-                setEndTime(new Date(dates[1]).getTime());
-              }}
-            />
-          </FormItem>
-
-          <FormItem
-            label="赛制"
-            required
-            layout="vertical"
-            disabled={isUpdating}
-          >
-            <input type="hidden" name="system" value={system} required />
-            <Select
-              value={system}
-              onChange={(value) => setSystem(value as ContestSystem)}
-              style={{ width: 150 }}
-            >
-              {Object.values(ContestSystem).map((system) => (
-                <Option key={system} value={system} />
-              ))}
-            </Select>
-          </FormItem>
-
-          <FormItem disabled={isUpdating}>
-            <input type="hidden" name="private" value={String(!pub)} />
-            <Checkbox
-              checked={pub}
-              onChange={(checked) => setPub(checked)}
-              disabled={isUpdating}
-            >
-              公开比赛（勾选后普通用户可以在网站首页查看到该比赛）
-            </Checkbox>
-          </FormItem>
-
-          <FormItem label="报名方式" layout="vertical" required>
-            <input
-              type="hidden"
-              name="registrationType"
-              value={registrationType}
-              required
-            />
-            <input
-              type="hidden"
-              name="registrationPassword"
-              value={registrationPassword}
-              required
-            />
-            <Space>
-              <Select
-                value={registrationType}
-                onChange={(type) => setRegistrationType(type)}
-                disabled={isUpdating}
-                style={{ width: 150 }}
-              >
-                <Select.Option value="Disallow">不允许报名</Select.Option>
-                <Select.Option value="Password">需要密码</Select.Option>
-                <Select.Option value="Public">允许任何人</Select.Option>
-              </Select>
-              {registrationType === "Password" && (
-                <Input
-                  placeholder="报名密码"
-                  value={registrationPassword}
-                  onChange={(password) => setRegistrationPassword(password)}
-                  disabled={isUpdating}
-                  required
-                />
-              )}
-            </Space>
-          </FormItem>
-
-          <FormItem disabled={isUpdating}>
-            <input
-              type="hidden"
-              name="joinAfterStart"
-              value={String(joinAfterStart)}
-            />
-            <Checkbox
-              checked={joinAfterStart}
-              onChange={(checked) => setJoinAfterStart(checked)}
-              disabled={isUpdating}
-            >
-              允许比赛开始后中途加入
-            </Checkbox>
-          </FormItem>
-
-          <FormItem>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isUpdating}
-              name="_action"
-              value={ActionType.UpdateInformation}
-            >
-              确认更新
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
-
-      <Typography.Title heading={4}>修改比赛题目</Typography.Title>
-      {new Date() > new Date(contest.beginTime) && (
-        <Typography.Paragraph>
-          <Alert
-            type="warning"
-            content="如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性"
-          />
-        </Typography.Paragraph>
-      )}
-      <Typography.Paragraph>
-        <ProblemEditor
-          problems={contest.problems.map(({ problem }) => problem)}
-          createAction={ActionType.CreateProblem}
-          deleteAction={ActionType.DeleteProblem}
-          moveUpAction={ActionType.MoveProblemUp}
-          moveDownAction={ActionType.MoveProblemDown}
+    <>
+      <h2>修改比赛信息</h2>
+      <Form method="post" className="form-control">
+        <label className="label">
+          <span className="label-text">标题</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="text"
+          name="title"
+          defaultValue={contest.title}
+          required
+          disabled={isUpdating}
         />
-      </Typography.Paragraph>
-    </Typography>
+
+        <label className="label">
+          <span className="label-text">比赛标签</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {tags.map((name) => (
+            <div className="badge inline-flex gap-1" key={name}>
+              <input type="hidden" name="tag" value={name} />
+              <HiOutlineTag />
+              {name}
+              <HiOutlineX
+                className="cursor-pointer"
+                onClick={() => handleRemoveTag(name)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 mt-2">
+          <input
+            type="text"
+            className="input input-bordered"
+            value={tag}
+            onChange={(event) => setTag(event.target.value)}
+          />
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={() => {
+              tag && setTags((tags) => [...tags, tag]);
+              setTag("");
+            }}
+          >
+            添加标签
+          </button>
+        </div>
+
+        <label className="label">
+          <span className="label-text">介绍</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
+          name="description"
+          defaultValue={contest.description}
+          required
+          disabled={isUpdating}
+        />
+
+        <label className="label">
+          <span className="label-text">开始时间</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="datetime-local"
+          name="beginTime"
+          defaultValue={getDatetimeLocal(new Date(contest.beginTime).getTime())}
+          required
+          disabled={isUpdating}
+        />
+
+        <label className="label">
+          <span className="label-text">结束时间</span>
+        </label>
+        <input
+          className="input input-bordered w-full max-w-xs"
+          type="datetime-local"
+          name="endTime"
+          defaultValue={getDatetimeLocal(new Date(contest.endTime).getTime())}
+          required
+          disabled={isUpdating}
+        />
+        <input
+          type="hidden"
+          name="timezone"
+          value={new Date().getTimezoneOffset()}
+          required
+        />
+
+        <label className="label">
+          <span className="label-text">比赛赛制</span>
+        </label>
+        <select
+          className="select select-bordered w-full max-w-xs"
+          name="system"
+          required
+          disabled={isUpdating}
+          defaultValue={contest.system}
+        >
+          {Object.keys(ContestSystem).map((key) => (
+            <option key={key} value={key}>
+              {ContestSystem[key as keyof typeof ContestSystem]}
+            </option>
+          ))}
+        </select>
+
+        <label className="label">
+          <span className="label-text">报名方式</span>
+        </label>
+        <div className="flex gap-4">
+          <select
+            className="select select-bordered"
+            name="registrationType"
+            value={registrationType}
+            onChange={(event) =>
+              setRegistrationType(
+                event.target.value as keyof typeof ContestRegistrationType
+              )
+            }
+            disabled={isUpdating}
+          >
+            {Object.keys(ContestRegistrationType).map((key) => (
+              <option key={key} value={key}>
+                {
+                  ContestRegistrationType[
+                    key as keyof typeof ContestRegistrationType
+                  ]
+                }
+              </option>
+            ))}
+          </select>
+          {registrationType === "Password" && (
+            <input
+              className="input input-bordered"
+              type="text"
+              name="registrationPassword"
+              defaultValue={contest.registrationPassword}
+              disabled={isUpdating}
+            />
+          )}
+        </div>
+
+        <label className="label cursor-pointer justify-start gap-2 mt-4">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="private"
+            defaultChecked={contest.private}
+            disabled={isUpdating}
+          />
+          <span className="label-text">
+            保持比赛隐藏（取消勾选之后用户可以在首页看到该比赛）
+          </span>
+        </label>
+
+        <label className="label cursor-pointer justify-start gap-2">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="joinAfterStart"
+            defaultChecked={contest.allowJoinAfterStart}
+            disabled={isUpdating}
+          />
+          <span className="label-text">允许比赛开始后中途加入</span>
+        </label>
+
+        <button
+          className="btn btn-primary mt-4 w-full max-w-xs"
+          type="submit"
+          name="_action"
+          value={ActionType.UpdateInformation}
+          disabled={isUpdating}
+        >
+          确认更新
+        </button>
+      </Form>
+
+      <h2>修改比赛题目</h2>
+
+      {new Date() > new Date(contest.beginTime) && (
+        <p className="alert alert-warning shadow-lg">
+          如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性
+        </p>
+      )}
+
+      <ProblemEditor
+        problems={contest.problems.map(({ problem }) => problem)}
+        createAction={ActionType.CreateProblem}
+        deleteAction={ActionType.DeleteProblem}
+        moveUpAction={ActionType.MoveProblemUp}
+        moveDownAction={ActionType.MoveProblemDown}
+      />
+    </>
   );
 }
 

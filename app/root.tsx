@@ -35,6 +35,7 @@ import katexStyle from "katex/dist/katex.css";
 import { getCookie } from "./utils/cookies";
 import type { Theme } from "./utils/theme";
 import { themes } from "./utils/theme";
+import { MenuDrawerContext } from "./utils/context/menu";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
@@ -65,6 +66,7 @@ export async function loader({ request }: LoaderArgs) {
 export default function App() {
   const { user, theme: defaultTheme } = useLoaderData<typeof loader>();
   const [theme, setTheme] = useState(defaultTheme);
+  const [menuEnable, setMenuEnable] = useState(true);
 
   useEffect(() => {
     document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax;`;
@@ -94,42 +96,54 @@ export default function App() {
       </head>
       <body className="font-sans">
         <UserContext.Provider value={user && user.id}>
-          <div className="bg-base-100 drawer drawer-mobile">
-            <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
-            {/* 整个网站右边部分 */}
-            <div className="drawer-content flex flex-col h-full">
-              {/* 顶部导航栏 */}
-              <div className="sticky top-0 bg-base-100">
-                <nav className="navbar w-full flex justify-end gap-4">
-                  {/* 主题切换按钮 */}
-                  <div className="dropdown dropdown-end">
-                    <div
-                      className="btn gap-2 normal-case btn-ghost"
-                      tabIndex={0}
-                    >
-                      <HiOutlineColorSwatch className="w-6 h-6" />
-                      主题
-                      <HiOutlineChevronDown className="w-3 h-3" />
-                    </div>
-                    <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
-                      <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
-                        {themes.map((iter) => (
-                          <div
-                            key={iter}
-                            data-theme={iter}
-                            className={`p-3 rounded-lg text-base-content font-sans font-bold cursor-pointer outline-2 outline-offset-2${
-                              theme === iter ? " outline" : ""
-                            }`}
-                            onClick={() => setTheme(iter)}
-                          >
-                            {iter}
-                          </div>
-                        ))}
+          <MenuDrawerContext.Provider value={setMenuEnable}>
+            <div
+              className={`bg-base-100 drawer${
+                menuEnable ? " drawer-mobile" : ""
+              }`}
+            >
+              <input
+                id="drawer-menu"
+                type="checkbox"
+                className="drawer-toggle"
+              />
+              {/* 整个网站右边部分 */}
+              <div className="drawer-content flex flex-col h-full">
+                {/* 顶部导航栏 */}
+                <div className="sticky top-0 bg-base-100 z-10">
+                  <nav className="navbar w-full flex justify-end gap-4">
+                    {/* 主题切换按钮 */}
+                    <div className="dropdown dropdown-end">
+                      <div
+                        className="btn gap-2 normal-case btn-ghost"
+                        tabIndex={0}
+                      >
+                        <HiOutlineColorSwatch className="w-6 h-6" />
+                        主题
+                        <HiOutlineChevronDown className="w-3 h-3" />
+                      </div>
+                      <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
+                        <div
+                          className="grid grid-cols-1 gap-3 p-3"
+                          tabIndex={0}
+                        >
+                          {themes.map((iter) => (
+                            <div
+                              key={iter}
+                              data-theme={iter}
+                              className={`p-3 rounded-lg text-base-content font-sans font-bold cursor-pointer outline-2 outline-offset-2${
+                                theme === iter ? " outline" : ""
+                              }`}
+                              onClick={() => setTheme(iter)}
+                            >
+                              {iter}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {/* 用户头像 */}
-                  {/* <div className="dropdown dropdown-end">
+                    {/* 用户头像 */}
+                    {/* <div className="dropdown dropdown-end">
                       <div className="btn btn-outline gap-2" tabIndex={0}>
                         登录
                       </div>
@@ -137,109 +151,110 @@ export default function App() {
                         hello world
                       </div>
                     </div> */}
-                  <Link className="btn btn-outline" to="/login">
-                    登录
-                  </Link>
-                  <Link className="btn btn-primary" to="/register">
-                    注册
-                  </Link>
-                </nav>
+                    <Link className="btn btn-outline" to="/login">
+                      登录
+                    </Link>
+                    <Link className="btn btn-primary" to="/register">
+                      注册
+                    </Link>
+                  </nav>
+                </div>
+                {/* 中间部分 */}
+                <div className="p-6 flex-1">
+                  <div className="prose w-full max-w-4xl">
+                    <Outlet />
+                  </div>
+                </div>
+                {/* 底部 */}
+                <footer className="footer p-10 bg-neutral text-neutral-content">
+                  <div>
+                    <span className="footer-title">Services</span>
+                    <span className="link link-hover">Branding</span>
+                    <span className="link link-hover">Design</span>
+                    <span className="link link-hover">Marketing</span>
+                    <span className="link link-hover">Advertisement</span>
+                  </div>
+                  <div>
+                    <span className="footer-title">Company</span>
+                    <span className="link link-hover">About us</span>
+                    <span className="link link-hover">Contact</span>
+                    <span className="link link-hover">Jobs</span>
+                    <span className="link link-hover">Press kit</span>
+                  </div>
+                  <div>
+                    <span className="footer-title">Legal</span>
+                    <span className="link link-hover">Terms of use</span>
+                    <span className="link link-hover">Privacy policy</span>
+                    <span className="link link-hover">Cookie policy</span>
+                  </div>
+                </footer>
               </div>
-              {/* 中间部分 */}
-              <div className="p-6 flex-1">
-                <div className="prose w-full max-w-4xl">
-                  <Outlet />
-                </div>
+              {/* 左侧目录部分 */}
+              <div className="drawer-side">
+                <label htmlFor="drawer-menu" className="drawer-overlay" />
+                <aside className="w-80 h-full bg-base-200">
+                  <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
+                    <a className="flex-0 btn btn-ghost px-2 text-3xl" href="/">
+                      <span className="lowercase text-primary">hitwh</span>
+                      <span>OJ</span>
+                    </a>
+                    <a
+                      className="link link-hover font-mono text-xs text-opacity-50"
+                      href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {version}
+                    </a>
+                  </div>
+                  <ul className="menu p-4 overflow-y-auto w-80 text-base-content">
+                    <li>
+                      <NavLink className="flex gap-4" to="/">
+                        <HiOutlineHome className="w-6 h-6" />
+                        <span>首页</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/problem">
+                        <HiOutlineBookOpen className="w-6 h-6" />
+                        <span>题目</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/problemset">
+                        <HiOutlineCollection className="w-6 h-6" />
+                        <span>题单</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/contest">
+                        <AiOutlineTrophy className="w-6 h-6" />
+                        <span>比赛</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/team">
+                        <HiOutlineUserGroup className="w-6 h-6" />
+                        <span>团队</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/record">
+                        <AiOutlineHistory className="w-6 h-6" />
+                        <span>评测</span>
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink className="flex gap-4" to="/docs">
+                        <HiOutlineQuestionMarkCircle className="w-6 h-6" />
+                        <span>文档</span>
+                      </NavLink>
+                    </li>
+                  </ul>
+                </aside>
               </div>
-              {/* 底部 */}
-              <footer className="footer p-10 bg-neutral text-neutral-content">
-                <div>
-                  <span className="footer-title">Services</span>
-                  <span className="link link-hover">Branding</span>
-                  <span className="link link-hover">Design</span>
-                  <span className="link link-hover">Marketing</span>
-                  <span className="link link-hover">Advertisement</span>
-                </div>
-                <div>
-                  <span className="footer-title">Company</span>
-                  <span className="link link-hover">About us</span>
-                  <span className="link link-hover">Contact</span>
-                  <span className="link link-hover">Jobs</span>
-                  <span className="link link-hover">Press kit</span>
-                </div>
-                <div>
-                  <span className="footer-title">Legal</span>
-                  <span className="link link-hover">Terms of use</span>
-                  <span className="link link-hover">Privacy policy</span>
-                  <span className="link link-hover">Cookie policy</span>
-                </div>
-              </footer>
             </div>
-            {/* 左侧目录部分 */}
-            <div className="drawer-side">
-              <label htmlFor="drawer-menu" className="drawer-overlay" />
-              <aside className="w-80 h-full bg-base-200">
-                <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
-                  <a className="flex-0 btn btn-ghost px-2 text-3xl" href="/">
-                    <span className="lowercase text-primary">hitwh</span>
-                    <span>OJ</span>
-                  </a>
-                  <a
-                    className="link link-hover font-mono text-xs text-opacity-50"
-                    href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {version}
-                  </a>
-                </div>
-                <ul className="menu p-4 overflow-y-auto w-80 text-base-content">
-                  <li>
-                    <NavLink className="flex gap-4" to="/">
-                      <HiOutlineHome className="w-6 h-6" />
-                      <span>首页</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/problem">
-                      <HiOutlineBookOpen className="w-6 h-6" />
-                      <span>题目</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/problemset">
-                      <HiOutlineCollection className="w-6 h-6" />
-                      <span>题单</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/contest">
-                      <AiOutlineTrophy className="w-6 h-6" />
-                      <span>比赛</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/team">
-                      <HiOutlineUserGroup className="w-6 h-6" />
-                      <span>团队</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/record">
-                      <AiOutlineHistory className="w-6 h-6" />
-                      <span>评测</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="flex gap-4" to="/docs">
-                      <HiOutlineQuestionMarkCircle className="w-6 h-6" />
-                      <span>文档</span>
-                    </NavLink>
-                  </li>
-                </ul>
-              </aside>
-            </div>
-          </div>
+          </MenuDrawerContext.Provider>
         </UserContext.Provider>
         <ScrollRestoration />
         <Scripts />

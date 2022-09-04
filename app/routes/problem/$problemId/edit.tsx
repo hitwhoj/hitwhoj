@@ -86,32 +86,22 @@ export async function action({ request, params }: ActionArgs) {
       select: { tags: { select: { name: true } } },
     });
 
-    // remove unused tags
-    for (const { name } of problem.tags) {
-      if (!tags.includes(name)) {
-        await db.problem.update({
-          where: { id: problemId },
-          data: { tags: { disconnect: { name } } },
-        });
-      }
-    }
-
-    // insert new tags
-    for (const tag of tags) {
-      if (!problem.tags.some(({ name }) => name === tag)) {
-        await db.problem.update({
-          where: { id: problemId },
-          data: {
-            tags: {
-              connectOrCreate: {
-                where: { name: tag },
-                create: { name: tag },
-              },
-            },
-          },
-        });
-      }
-    }
+    await db.problem.update({
+      where: { id: problemId },
+      data: {
+        tags: {
+          connectOrCreate: tags
+            .filter((tag) => !problem.tags.some((t) => t.name === tag))
+            .map((tag) => ({
+              where: { name: tag },
+              create: { name: tag },
+            })),
+          disconnect: problem.tags
+            .filter((tag) => !tags.includes(tag.name))
+            .map((tag) => ({ name: tag.name })),
+        },
+      },
+    });
   });
 
   return null;
@@ -177,7 +167,7 @@ export default function ProblemEdit() {
           className="btn btn-primary"
           type="button"
           onClick={() => {
-            setTags((tags) => [...tags, tag]);
+            tag && setTags((tags) => [...tags, tag]);
             setTag("");
           }}
         >

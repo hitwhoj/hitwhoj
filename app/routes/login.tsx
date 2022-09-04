@@ -10,7 +10,7 @@ import { User } from "~/utils/permission/role/user";
 import { Privileges } from "~/utils/permission/privilege";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { HiOutlineX } from "react-icons/hi";
+import { Message } from "@arco-design/web-react";
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
@@ -50,9 +50,7 @@ export default function Register() {
 
   useEffect(() => {
     if (isActionRedirect) {
-      // FIXME
-      // Message.error("注册失败：" + data.reason);
-      console.log("登录成功");
+      Message.success("登录成功");
     }
   }, [isActionRedirect]);
 
@@ -99,12 +97,7 @@ export default function Register() {
         </label>
 
         {data?.reason && (
-          <div className="alert alert-error shadow-lg">
-            <div>
-              <HiOutlineX className="w-6 h-6" />
-              <span>{data.reason}</span>
-            </div>
-          </div>
+          <p className="alert alert-error shadow-lg">{data.reason}</p>
         )}
       </Form>
     </>

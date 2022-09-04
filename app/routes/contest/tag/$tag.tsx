@@ -3,9 +3,7 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { selectContestListData } from "~/utils/db/contest";
-import { Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
-import { TableList } from "~/src/TableList";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
@@ -47,38 +45,38 @@ export default function ContestTag() {
   const { contests } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>比赛标签：{tag}</Typography.Title>
-      <Typography.Paragraph>
-        <TableList
-          data={contests}
-          columns={[
-            {
-              title: "标题",
-              render: (contest) => <ContestLink contest={contest} />,
-            },
-            {
-              title: "赛制",
-              render: ({ system }) => <ContestSystemTag system={system} />,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "开始时间",
-              render: ({ beginTime }) => formatDateTime(beginTime),
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "结束时间",
-              render: ({ endTime }) => formatDateTime(endTime),
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+    <>
+      <h1>比赛标签：{tag}</h1>
+
+      <div className="not-prose overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th className="w-16" />
+              <th>标题</th>
+              <th>赛制</th>
+              <th>开始时间</th>
+              <th>结束时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contests.map((contest) => (
+              <tr key={contest.id}>
+                <th className="text-center">{contest.id}</th>
+                <td>
+                  <ContestLink contest={contest} />
+                </td>
+                <td>
+                  <ContestSystemTag system={contest.system} />
+                </td>
+                <td>{formatDateTime(contest.beginTime)}</td>
+                <td>{formatDateTime(contest.endTime)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

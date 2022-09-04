@@ -1,10 +1,11 @@
-import { Space } from "@arco-design/web-react";
+import type { ReactNode } from "react";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import {
-  IconCheck,
-  IconClose,
-  IconLoading,
-  IconMinus,
-} from "@arco-design/web-react/icon";
+  HiOutlineCheck,
+  HiOutlineMinus,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineX,
+} from "react-icons/hi";
 import type {
   JudgeStatus,
   SubtaskStatus,
@@ -17,12 +18,13 @@ type Props = {
 
 export function RecordStatus({ status }: Props) {
   let color: string;
-  let icon: JSX.Element;
+  let icon: ReactNode;
+  const iconsize = "w-4 h-4";
 
   switch (status) {
     case "Accepted": {
-      color = "green";
-      icon = <IconCheck />;
+      color = "text-green-500";
+      icon = <HiOutlineCheck className={iconsize} />;
       break;
     }
 
@@ -34,42 +36,46 @@ export function RecordStatus({ status }: Props) {
     case "Time Limit Exceeded":
     case "Unknown Error":
     case "Wrong Answer": {
-      color = "red";
-      icon = <IconClose />;
+      color = "text-red-500";
+      icon = <HiOutlineX className={iconsize} />;
       break;
     }
 
     case "Compiling":
     case "Judging":
     case "Running": {
-      color = "yellow";
-      icon = <IconLoading />;
+      color = "text-orange-500";
+      icon = (
+        <AiOutlineLoading3Quarters className={`${iconsize} animate-spin`} />
+      );
       break;
     }
 
     case "Pending": {
-      color = "gray";
-      icon = <IconLoading />;
+      color = "text-gray-500";
+      icon = (
+        <AiOutlineLoading3Quarters className={`${iconsize} animate-spin`} />
+      );
       break;
     }
 
     case "Skipped": {
-      color = "gray";
-      icon = <IconMinus />;
+      color = "text-gray-500";
+      icon = <HiOutlineMinus className={iconsize} />;
       break;
     }
 
     default: {
       color = "";
-      icon = <IconClose />;
+      icon = <HiOutlineQuestionMarkCircle className={iconsize} />;
       break;
     }
   }
 
   return (
-    <Space style={{ color: `rgb(var(--${color}-6))` }}>
+    <span className={`inline-flex items-center gap-2 font-bold ${color}`}>
       {icon}
-      {status}
-    </Space>
+      <span>{status}</span>
+    </span>
   );
 }

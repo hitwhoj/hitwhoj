@@ -68,7 +68,7 @@ export default function ProblemSetIndex() {
       <Markdown>{problemSet.description}</Markdown>
 
       <div className="not-prose overflow-x-auto">
-        <table className="table static w-full">
+        <table className="table w-full">
           <thead>
             <tr>
               <th className="w-16" />

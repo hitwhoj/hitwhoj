@@ -60,7 +60,7 @@ export default function ProblemsetList() {
       </h1>
 
       <div className="not-prose overflow-x-auto">
-        <table className="table static w-full">
+        <table className="table w-full">
           <thead>
             <tr>
               <th className="w-16" />

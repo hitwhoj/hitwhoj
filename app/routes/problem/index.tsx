@@ -58,7 +58,7 @@ export default function ProblemIndex() {
       </h1>
 
       <div className="overflow-x-auto not-prose">
-        <table className="table static w-full">
+        <table className="table w-full">
           <thead>
             <tr>
               <th className="w-16" />

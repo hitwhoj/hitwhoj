@@ -8,6 +8,7 @@ import { commitSession } from "~/utils/sessions";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { passwordHash } from "~/utils/tools";
+import { Message } from "@arco-design/web-react";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -42,15 +43,17 @@ export async function action({ request }: ActionArgs) {
 export default function Register() {
   const data = useActionData<typeof action>();
 
-  useEffect(() => {
-    if (data?.success === false) {
-      // FIXME
-      // Message.error("注册失败：" + data.reason);
-    }
-  }, [data]);
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type == "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionReload || isActionRedirect;
 
-  const { state } = useTransition();
-  const isSubmitting = state !== "idle";
+  useEffect(() => {
+    if (isActionRedirect) {
+      Message.success("登录成功");
+    }
+  }, [isActionRedirect]);
 
   const [password, setPassword] = useState("");
 
@@ -67,7 +70,7 @@ export default function Register() {
           type="text"
           name="username"
           required
-          disabled={isSubmitting}
+          disabled={isLoading}
           pattern="\w+"
         />
         <input type="hidden" name="password" value={passwordHash(password)} />
@@ -80,7 +83,7 @@ export default function Register() {
           value={password}
           onChange={(event) => setPassword(event.currentTarget.value)}
           required
-          disabled={isSubmitting}
+          disabled={isLoading}
         />
         <button className="btn btn-primary mt-4" type="submit">
           注册
@@ -91,6 +94,10 @@ export default function Register() {
           </Link>
         </label>
       </Form>
+
+      {data?.reason && (
+        <p className="alert alert-error shadow-lg">{data.reason}</p>
+      )}
     </>
   );
 }

@@ -1,19 +1,6 @@
-import {
-  Alert,
-  Button,
-  Drawer,
-  Grid,
-  List,
-  Message,
-  ResizeBox,
-  Select,
-  Space,
-  Spin,
-  Typography,
-  Link as ArcoLink,
-} from "@arco-design/web-react";
+import { Message } from "@arco-design/web-react";
 import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   Form,
@@ -32,11 +19,9 @@ import {
   languageScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { IconHistory, IconSend } from "@arco-design/web-react/icon";
 import { s3 } from "~/utils/server/s3.server";
 import { useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
-import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
@@ -49,6 +34,15 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
+import FullScreen from "~/src/FullScreen";
+import { AiOutlineHistory } from "react-icons/ai";
+import {
+  HiOutlineChevronLeft,
+  HiOutlineChip,
+  HiOutlineClock,
+  HiOutlinePaperAirplane,
+} from "react-icons/hi";
+import { formatNumber } from "~/utils/tools";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -132,6 +126,10 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 }
 
+export const meta: MetaFunction<typeof loader> = ({ data, params }) => ({
+  title: `${params.rank}. ${data?.problem.title} - HITwh OJ`,
+});
+
 export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
@@ -185,8 +183,12 @@ export default function ContestProblemView() {
   const actionData = useActionData<typeof action>();
   const { contestId, rank } = useParams();
 
-  const { state } = useTransition();
-  const isSubmitting = state === "submitting";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (actionData?.recordId) {
@@ -207,7 +209,6 @@ export default function ContestProblemView() {
       "  return 0;\n" +
       "}\n"
   );
-  const [visible, setVisible] = useState(false);
 
   // load code from local storage
   useEffect(() => {
@@ -265,140 +266,143 @@ export default function ContestProblemView() {
   }, []);
 
   return (
-    <>
-      <ResizeBox.Split
-        style={{ height: "100%" }}
-        panes={[
-          <Typography key={1} style={{ padding: "0 5%" }}>
-            <Typography.Title heading={3}>
+    <FullScreen
+      visible={true}
+      className="drawer drawer-end w-full h-full bg-base-100"
+    >
+      <input
+        type="checkbox"
+        id="records"
+        className="drawer-toggle"
+        checked={visible}
+        readOnly
+      />
+      <div className="drawer-content grid grid-cols-2 grid-rows-1">
+        <div className="flex flex-col overflow-y-auto">
+          <nav className="p-4 sticky top-0 bg-base-100 flex-shrink-0">
+            <Link
+              className="btn btn-ghost gap-2"
+              to={`/contest/${contest.id}/problem`}
+            >
+              <HiOutlineChevronLeft className="" />
+              <span>返回题目列表</span>
+            </Link>
+          </nav>
+          <article className="p-4">
+            <h1>
               {rank}. {problem.title}
-            </Typography.Title>
-
-            <Typography.Paragraph>
-              <RecordTimeMemory
-                time={problem.timeLimit}
-                memory={problem.memoryLimit}
-              />
-            </Typography.Paragraph>
-
+            </h1>
+            <p className="flex flex-wrap gap-2">
+              <span className="badge gap-1">
+                <HiOutlineClock />
+                <span>{formatNumber(problem.timeLimit / 1000)} s</span>
+              </span>
+              <span className="badge gap-1">
+                <HiOutlineChip />
+                <span>
+                  {formatNumber(problem.memoryLimit / 1024 / 1024)} MB
+                </span>
+              </span>
+            </p>
             {isNotStarted && (
-              <Typography.Paragraph>
-                <Alert type="warning" content="比赛还没有开始" />
-              </Typography.Paragraph>
+              <p className="alert alert-warning shadow-lg">比赛还没有开始</p>
             )}
-
             {isEnded && (
-              <Typography.Paragraph>
-                <Alert
-                  type="warning"
-                  content="比赛已经结束，当前页面仅供查看"
-                />
-              </Typography.Paragraph>
+              <p className="alert alert-warning shadow-lg">
+                比赛已经结束，本页面仅供查看
+              </p>
             )}
-
             <Markdown>{problem.description}</Markdown>
-
             {problem.files.length > 0 && (
               <>
-                <Typography.Title heading={4}>附件</Typography.Title>
-                <Typography.Paragraph>
-                  <ul>
-                    {problem.files.map((file) => (
-                      <li key={file.id}>
-                        <ArcoLink>
-                          <Link to={`/file/${file.id}`} target="_blank">
-                            {file.filename}
-                          </Link>
-                        </ArcoLink>
-                      </li>
-                    ))}
-                  </ul>
-                </Typography.Paragraph>
+                <h2>可供下载的文件</h2>
+                <ol>
+                  {problem.files.map((file) => (
+                    <li key={file.id}>
+                      <Link to={`/file/${file.id}`} target="_blank">
+                        {file.filename}
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
               </>
             )}
-          </Typography>,
-
-          <Form
-            key={2}
-            method="post"
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
-            <textarea hidden name="code" value={code} readOnly />
-            <Editor
-              loading={<Spin />}
-              onChange={(code) => setCode(code ?? "")}
-              value={code}
-              language={language}
-              // FIXME monaco theme here
-              theme="light"
-              options={{
-                cursorSmoothCaretAnimation: true,
-                smoothScrolling: true,
-                fontSize: 16,
-              }}
-            />
-            <input type="hidden" name="language" value={language} />
-            <Grid.Row justify="space-between" style={{ padding: 10 }}>
-              <Select
+          </article>
+        </div>
+        <Form method="post" className="flex flex-col">
+          <Editor
+            value={code}
+            language={language}
+            theme="light"
+            onChange={(code) => setCode(code ?? "")}
+            options={{
+              cursorSmoothCaretAnimation: true,
+              smoothScrolling: true,
+              fontSize: 16,
+            }}
+          />
+          <textarea name="code" hidden value={code} readOnly />
+          <div className="flex-shrink-0 flex justify-between p-2">
+            <div>
+              <select
+                className="select select-bordered"
+                name="language"
                 value={language}
-                onChange={(language) => setLanguage(language)}
-                style={{ width: 150 }}
-                disabled={isSubmitting}
+                onChange={(event) => setLanguage(event.target.value)}
+                disabled={isLoading}
               >
-                <Select.Option value="c">C</Select.Option>
-                <Select.Option value="cpp">C++</Select.Option>
-                <Select.Option value="java">Java</Select.Option>
-              </Select>
-              <Space>
-                <Button icon={<IconHistory />} onClick={() => setVisible(true)}>
-                  查看记录
-                </Button>
-                {isNotStarted || isEnded ? (
-                  <Link to={`/problem/${problem.id}`}>
-                    <Button type="primary" icon={<IconSend />}>
-                      跳转到题目页面
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    icon={<IconSend />}
-                    loading={isSubmitting}
-                  >
-                    提交
-                  </Button>
-                )}
-              </Space>
-            </Grid.Row>
-          </Form>,
-        ]}
-      />
-
-      <Drawer
-        visible={visible}
-        width={400}
-        footer={null}
-        onOk={() => setVisible(false)}
-        onCancel={() => setVisible(false)}
-        title="提交记录"
-      >
-        <List
-          dataSource={records}
-          bordered={false}
-          render={(record) => (
-            <List.Item key={record.id}>
-              <Grid.Row justify="space-between">
-                <Link to={`/record/${record.id}`} target="_blank">
+                <option value="c">C</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+              </select>
+            </div>
+            <div className="inline-flex gap-4">
+              <button
+                className="btn btn-ghost gap-2"
+                type="button"
+                onClick={() => setVisible(true)}
+              >
+                <AiOutlineHistory />
+                <span>查看提交记录</span>
+              </button>
+              {!isNotStarted && !isEnded ? (
+                <button
+                  className="btn btn-primary gap-2"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  <HiOutlinePaperAirplane className="rotate-90" />
+                  <span>提交</span>
+                </button>
+              ) : (
+                <Link className="btn btn-primary" to={`/problem/${problem.id}`}>
+                  跳转到题目页面
+                </Link>
+              )}
+            </div>
+          </div>
+        </Form>
+      </div>
+      <div className="drawer-side">
+        <label className="drawer-overlay" onClick={() => setVisible(false)} />
+        <aside className="bg-base-200 p-4 not-prose">
+          <h3 className="font-bold text-lg">提交记录</h3>
+          <ul className="menu menu-compact w-96 my-4">
+            {records.map((record) => (
+              <li key={record.id}>
+                <Link
+                  to={`/record/${record.id}`}
+                  className="block p-4"
+                  target="_blank"
+                >
                   <RecordStatus status={record.status} />
                 </Link>
-                <RecordTimeMemory time={record.time} memory={record.memory} />
-              </Grid.Row>
-            </List.Item>
-          )}
-        />
-      </Drawer>
-    </>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
+    </FullScreen>
   );
 }
 
