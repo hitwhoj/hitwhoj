@@ -1,4 +1,4 @@
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, SerializeFrom } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
@@ -27,7 +27,6 @@ import {
 } from "@arco-design/web-react";
 import { IconCheck } from "@arco-design/web-react/icon";
 import { Privileges } from "~/utils/permission/privilege";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 const FormItem = arcoForm.Item;
@@ -145,7 +144,7 @@ export async function action({ params, request }: ActionArgs) {
   throw new Response("Unknown action", { status: 400 });
 }
 
-type LoaderData = UseDataFunctionReturn<typeof loader>;
+type LoaderData = SerializeFrom<typeof loader>;
 
 function EditProfile({
   name,

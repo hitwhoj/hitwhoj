@@ -1,11 +1,11 @@
 import { Button } from "@arco-design/web-react";
 import { IconDelete } from "@arco-design/web-react/icon";
 import type { File } from "@prisma/client";
-import type { SerializeType } from "@remix-run/react/dist/components";
+import type { SerializeFrom } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 
 type FileRemoveButtonProps = {
-  file: SerializeType<File>;
+  file: SerializeFrom<File>;
   deleteAction: string;
 };
 

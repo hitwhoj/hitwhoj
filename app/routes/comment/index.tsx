@@ -1,4 +1,9 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import type {
+  ActionArgs,
+  LoaderArgs,
+  MetaFunction,
+  SerializeFrom,
+} from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -21,7 +26,6 @@ import { ReportType } from "@prisma/client";
 import { CommentTag } from "~/src/comment/CommentTag";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { useContext } from "react";
 import { UserContext } from "~/utils/context/user";
 
@@ -124,7 +128,7 @@ export const meta: MetaFunction = () => ({
   title: "讨论列表 - HITwh OJ",
 });
 
-type LoaderData = UseDataFunctionReturn<typeof loader>;
+type LoaderData = SerializeFrom<typeof loader>;
 
 export function CommentList({
   comments,

@@ -1,4 +1,4 @@
-import type { ActionArgs } from "@remix-run/node";
+import type { ActionArgs, SerializeFrom } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -7,7 +7,6 @@ import { commitSession } from "~/utils/sessions";
 import { passwordHash } from "~/utils/tools";
 import { User } from "~/utils/permission/role/user";
 import { Privileges } from "~/utils/permission/privilege";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
@@ -37,4 +36,4 @@ export async function action({ request }: ActionArgs) {
   );
 }
 
-export type ActionData = UseDataFunctionReturn<typeof action>;
+export type ActionData = SerializeFrom<typeof action>;

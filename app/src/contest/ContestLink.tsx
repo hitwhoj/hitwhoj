@@ -1,12 +1,12 @@
 import { Space } from "@arco-design/web-react";
 import { IconEyeInvisible, IconTrophy } from "@arco-design/web-react/icon";
+import type { SerializeFrom } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import type { SerializeType } from "@remix-run/react/dist/components";
 import type { ContestListData } from "~/utils/db/contest";
 import { ContestStateTag } from "./ContestStateTag";
 
 type Props = {
-  contest: SerializeType<ContestListData>;
+  contest: SerializeFrom<ContestListData>;
 };
 
 export function ContestLink({ contest }: Props) {
