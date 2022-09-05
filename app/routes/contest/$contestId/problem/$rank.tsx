@@ -20,7 +20,7 @@ import {
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import type { MessageType } from "../events";
 import { judge } from "~/utils/server/judge.server";
@@ -38,6 +38,7 @@ import FullScreen from "~/src/FullScreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
+import { darkThemes, ThemeContext } from "~/utils/theme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -260,6 +261,8 @@ export default function ContestProblemView() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const theme = useContext(ThemeContext);
+
   return (
     <FullScreen
       visible={true}
@@ -274,7 +277,7 @@ export default function ContestProblemView() {
       />
       <div className="drawer-content grid grid-cols-2 grid-rows-1">
         <div className="flex flex-col overflow-y-auto">
-          <nav className="p-4 sticky top-0 bg-base-100 flex-shrink-0">
+          <nav className="p-4 sticky top-0 z-10 bg-base-100 flex-shrink-0">
             <Link
               className="btn btn-ghost gap-2"
               to={`/contest/${contest.id}/problem`}
@@ -322,7 +325,7 @@ export default function ContestProblemView() {
           <Editor
             value={code}
             language={language}
-            theme="light"
+            theme={darkThemes.includes(theme) ? "vs-dark" : "light"}
             onChange={(code) => setCode(code ?? "")}
             options={{
               cursorSmoothCaretAnimation: true,

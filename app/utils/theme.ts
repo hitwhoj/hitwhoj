@@ -1,3 +1,5 @@
+import { createContext } from "react";
+
 export const themes = [
   "light",
   "dark",
@@ -31,3 +33,19 @@ export const themes = [
 ] as const;
 
 export type Theme = typeof themes[number];
+
+export const darkThemes: Theme[] = [
+  "dark",
+  "synthwave",
+  "halloween",
+  "forest",
+  "aqua",
+  "black",
+  "luxury",
+  "dracula",
+  "business",
+  "night",
+  "coffee",
+];
+
+export const ThemeContext = createContext<Theme>("light");

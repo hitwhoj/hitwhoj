@@ -210,7 +210,7 @@ export default function ProblemEdit() {
         disabled={isLoading}
       />
 
-      <label className="label cursor-pointer justify-start gap-2">
+      <label className="label cursor-pointer justify-start gap-2 mt-4">
         <input
           className="checkbox checkbox-primary"
           type="checkbox"
