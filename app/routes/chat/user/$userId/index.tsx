@@ -112,7 +112,7 @@ export default function ChatIndex() {
   }, [isActionReload]);
 
   return (
-    <div className="w-full h-full px-4 flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <header className="py-4 sticky top-0 z-10 bg-base-100">
         <h1 className="font-bold text-2xl">
           {target.nickname || target.username}

@@ -72,7 +72,7 @@ export default function UserChatIndex() {
     <FullScreen visible={true} className="bg-base-100 flex not-prose">
       <div className="drawer drawer-mobile">
         <input type="checkbox" className="drawer-toggle" />
-        <div className="drawer-content overflow-hidden">
+        <div className="drawer-content overflow-hidden px-4">
           <Outlet />
         </div>
         <div className="drawer-side">
