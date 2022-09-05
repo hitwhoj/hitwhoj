@@ -7,14 +7,15 @@
   @apply tab-active;
 }
 
-pre[class*="language-"]::selection,
+/* 太难看了还不如不用 */
+/* pre[class*="language-"]::selection,
 code[class*="language-"]::selection,
 pre[class*="language-"] ::selection,
 code[class*="language-"] ::selection {
-  background-color: #363636;
-}
+  @apply bg-base-100;
+} */
+
 .hljs {
-  color: #abb2bf;
   font-size: 16px;
   line-height: 24px;
   font-family: Roboto Mono, monospace;

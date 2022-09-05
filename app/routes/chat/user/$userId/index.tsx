@@ -112,10 +112,12 @@ export default function ChatIndex() {
   }, [isActionReload]);
 
   return (
-    <div className="w-full h-full px-4">
-      <h1 className="font-bold text-2xl py-4 sticky top-0 z-10 bg-base-100">
-        {target.nickname || target.username}
-      </h1>
+    <div className="w-full h-full px-4 flex flex-col">
+      <header className="py-4 sticky top-0 z-10 bg-base-100">
+        <h1 className="font-bold text-2xl">
+          {target.nickname || target.username}
+        </h1>
+      </header>
 
       <div className="flex-1">
         {messages.length > 0 ? (
@@ -185,6 +187,7 @@ export default function ChatIndex() {
         method="post"
         ref={formRef}
         className="sticky bottom-0 py-4 bg-base-100 z-10 flex gap-4"
+        autoComplete="off"
       >
         <input type="hidden" name="to" value={target.id} />
         <input

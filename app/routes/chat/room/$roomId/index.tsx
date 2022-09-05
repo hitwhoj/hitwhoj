@@ -5,28 +5,25 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useRef, useState } from "react";
-import { Button, Input, Typography } from "@arco-design/web-react";
+import { useEffect, useRef, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
 import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
-import { UserContext } from "~/utils/context/user";
-import { ChatMessage } from "~/src/chat/ChatMessage";
-import { ChatAvatar } from "~/src/chat/ChatAvatar";
-import ChatBubble from "~/src/chat/ChatBubble";
-import ChatTime from "~/src/chat/ChatTime";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
+import FullScreen from "~/src/FullScreen";
+import { formatDateTime, formatTime } from "~/utils/tools";
+import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
-  const _room = self.room(roomId);
-  const [hasReadPerm] = await _room.hasPermission(
-    Permissions.PERM_VIEW_CHATROOM_MESSAGE
-  );
+  const [hasReadPerm] = await self
+    .room(roomId)
+    .hasPermission(Permissions.PERM_VIEW_CHATROOM_MESSAGE);
+
   if (!hasReadPerm) {
     throw redirect(`/chat/room/${roomId}/enter`);
   }
@@ -71,10 +68,7 @@ export default function ChatRoomIndex() {
   const { room } = useLoaderData<typeof loader>();
   const [messages, setMessages] = useState(room.chatMessage);
 
-  useEffect(() => {
-    setMessages(room.chatMessage);
-  }, [room.chatMessage]);
-
+  useEffect(() => setMessages(room.chatMessage), [room.chatMessage]);
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${room.id}/events`
@@ -84,95 +78,137 @@ export default function ChatRoomIndex() {
     return () => subscription.unsubscribe();
   }, [room.id]);
 
-  const submitRef = useRef<HTMLButtonElement>(null);
-  const [content, setContent] = useState<string>("");
-  const { state } = useTransition();
-  const isFetching = state !== "idle";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!isFetching) {
-      setContent("");
+    if (isActionReload) {
+      formRef.current?.reset();
     }
-  }, [isFetching]);
-
-  const self = useContext(UserContext);
+  }, [isActionReload]);
 
   return (
-    <Typography className="flex flex-col h-full gap-2">
-      <Typography.Title heading={4}>{room.name}</Typography.Title>
-      <div className="flex-1 overflow-auto min-h-0">
-        {messages.map((message, index, array) => {
-          const role = message.sender.enteredChatRoom.at(0)?.role;
-          // 是同一个人的连续第一次发言
-          const isFirst =
-            index === 0 || message.sender.id !== array[index - 1].sender.id;
-          // 是同一个人的连续最后一次发言
-          const isLast =
-            index === array.length - 1 ||
-            message.sender.id !== array[index + 1].sender.id;
-          const isSelf = message.sender.id === self;
+    <FullScreen visible={true} className="not-prose">
+      <div className="drawer drawer-mobile">
+        <input type="checkbox" className="drawer-toggle" />
+        <div className="drawer-content bg-base-100 px-4 not-prose min-h-full flex flex-col overflow-auto">
+          <header className="sticky top-0 py-4 z-10 bg-base-100">
+            <h1 className="font-bold text-2xl">{room.name}</h1>
+          </header>
 
-          return (
-            <ChatMessage self={isSelf} key={message.id}>
-              <ChatAvatar visible={isLast}>
-                <Link to={`/user/${message.sender.id}`}>
-                  <UserAvatar user={message.sender} />
-                </Link>
-              </ChatAvatar>
-              <ChatBubble self={isSelf}>
-                {isFirst && (
-                  <header className="flex gap-2 justify-between">
-                    <Link
-                      to={`/user/${message.sender.id}`}
-                      className="font-bold"
+          <div className="flex-1">
+            {messages.map((message, index, array) => {
+              const role = message.sender.enteredChatRoom.at(0)?.role;
+
+              // 是否是同一个人在连续五分钟内发送的第一条消息
+              const isFirst =
+                index === 0 ||
+                array[index - 1].senderId !== message.senderId ||
+                new Date(message.sentAt).getTime() -
+                  new Date(array[index - 1].sentAt).getTime() >
+                  1000 * 60 * 5;
+
+              return isFirst ? (
+                <div
+                  className="flex gap-4 pt-2 px-2 hover:bg-base-200 transition"
+                  key={message.id}
+                >
+                  <UserAvatar
+                    className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
+                    user={message.sender}
+                  />
+                  <div className="flex-1">
+                    <div className="w-full flex justify-between">
+                      <span className="inline-flex gap-2 items-center">
+                        <span className="text-primary">
+                          {message.sender.nickname || message.sender.nickname}
+                        </span>
+                        {role === "Owner" && (
+                          <span className="badge badge-primary">所有人</span>
+                        )}
+                        {role === "Admin" && (
+                          <span className="badge badge-primary">管理员</span>
+                        )}
+                        {!role && <span className="badge">游客</span>}
+                      </span>
+                      <div
+                        className="tooltip tooltip-left"
+                        data-tip={formatDateTime(message.sentAt)}
+                      >
+                        <time className="text-base-content text-sm">
+                          {formatTime(message.sentAt)}
+                        </time>
+                      </div>
+                    </div>
+                    <div className="break-words min-w-0">{message.content}</div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex gap-4 px-2 hover:bg-base-200 transition group"
+                  key={message.id}
+                >
+                  <div className="w-12 h-0 flex-shrink-0" />
+                  <span className="flex-1 break-words min-w-0">
+                    {message.content}
+                  </span>
+                  <div>
+                    <time
+                      className="tooltip tooltip-left text-base-content text-sm opacity-0 group-hover:opacity-100 transition"
+                      data-tip={formatDateTime(message.sentAt)}
                     >
-                      {message.sender.nickname || message.sender.username}
-                    </Link>
-                    {(role === "Owner" || role === "Admin") && (
-                      <span>{role}</span>
-                    )}
-                  </header>
-                )}
-                <span>{message.content}</span>
-              </ChatBubble>
-              <ChatTime time={message.sentAt} />
-            </ChatMessage>
-          );
-        })}
-      </div>
+                      {formatTime(message.sentAt)}
+                    </time>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-      <Form method="post" className="flex gap-2 items-end">
-        <input type="hidden" name="roomId" value={room.id} />
-        <Input.TextArea
-          placeholder="输入消息..."
-          name="content"
-          maxLength={255}
-          showWordLimit
-          autoSize={{ minRows: 1, maxRows: 5 }}
-          style={{ flex: 1, height: "32px" }}
-          value={content}
-          onChange={(v) => setContent(v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (!e.ctrlKey) submitRef.current?.click();
-              else setContent((content) => content + "\n");
-            }
-          }}
-          disabled={isFetching}
-          required
-        />
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          ref={submitRef}
-          style={{ height: "32px" }}
-          loading={isFetching}
-        >
-          发送
-        </Button>
-      </Form>
-    </Typography>
+          <Form
+            method="post"
+            className="sticky bottom-0 z-10 flex gap-4 py-4 bg-base-100"
+            ref={formRef}
+            autoComplete="off"
+          >
+            <input type="hidden" name="roomId" value={room.id} />
+            <input
+              className="input input-bordered flex-1"
+              type="text"
+              placeholder="输入消息..."
+              name="content"
+              disabled={isLoading}
+              required
+              autoComplete="false"
+            />
+            <button
+              className="btn btn-primary gap-2"
+              type="submit"
+              disabled={isLoading}
+            >
+              <HiOutlinePaperAirplane className="rotate-90" />
+              <span>发送</span>
+            </button>
+          </Form>
+        </div>
+        <div className="drawer-side">
+          <div className="drawer-overlay" />
+          <aside className="w-72 bg-base-200 p-4">
+            <Link className="btn btn-ghost gap-2" to="/">
+              <HiOutlineChevronLeft />
+              <span>返回上一页</span>
+            </Link>
+            <div className="alert alert-info shadow-lg mt-4">
+              TODO 总觉得这里应该放一些什么东西，不然显得空荡荡的
+            </div>
+          </aside>
+        </div>
+      </div>
+    </FullScreen>
   );
 }
 

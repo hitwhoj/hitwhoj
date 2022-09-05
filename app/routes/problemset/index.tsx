@@ -54,7 +54,7 @@ export default function ProblemsetList() {
         {hasEditPerm && (
           <Link className="btn btn-primary gap-2" to="new">
             <HiOutlinePlus className="w-4 h-4" />
-            <span>创建题单</span>
+            <span>新建题单</span>
           </Link>
         )}
       </h1>
