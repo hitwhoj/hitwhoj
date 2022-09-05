@@ -1,5 +1,8 @@
 import { Message } from "@arco-design/web-react";
-import Editor, { loader as monacoLoader } from "@monaco-editor/react";
+import Editor, {
+  loader as monacoLoader,
+  useMonaco,
+} from "@monaco-editor/react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
@@ -38,7 +41,12 @@ import FullScreen from "~/src/FullScreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { darkThemes, ThemeContext } from "~/utils/theme";
+import {
+  darkThemes,
+  defaultThemeColor,
+  ThemeContext,
+  themes,
+} from "~/utils/theme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -193,6 +201,22 @@ export default function ContestProblemView() {
     }
   }, [actionData?.recordId]);
 
+  const monaco = useMonaco();
+  // 设置 monaco 主题
+  useEffect(() => {
+    if (monaco) {
+      themes.forEach((theme) => {
+        monaco.editor.defineTheme(theme, {
+          base: darkThemes.includes(theme) ? "vs-dark" : "vs",
+          inherit: true,
+          rules: [],
+          colors: { ...defaultThemeColor[theme] },
+        });
+      });
+      monaco.editor.setTheme(theme);
+    }
+  }, [monaco]);
+
   const [language, setLanguage] = useState("cpp");
   const [code, setCode] = useState(
     "#include <bits/stdc++.h>\n" +
@@ -325,7 +349,7 @@ export default function ContestProblemView() {
           <Editor
             value={code}
             language={language}
-            theme={darkThemes.includes(theme) ? "vs-dark" : "light"}
+            theme={theme}
             onChange={(code) => setCode(code ?? "")}
             options={{
               cursorSmoothCaretAnimation: true,

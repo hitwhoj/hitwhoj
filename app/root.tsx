@@ -33,7 +33,7 @@ import { version } from "../package.json";
 import style from "./styles/app.css";
 import katexStyle from "katex/dist/katex.css";
 import { getCookie } from "./utils/cookies";
-import type { Theme} from "./utils/theme";
+import type { Theme } from "./utils/theme";
 import { darkThemes, ThemeContext } from "./utils/theme";
 import { themes } from "./utils/theme";
 import { MenuDrawerContext } from "./utils/context/menu";
