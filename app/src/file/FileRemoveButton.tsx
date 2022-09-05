@@ -1,10 +1,10 @@
 import type { File } from "@prisma/client";
-import type { SerializeType } from "@remix-run/react/dist/components";
+import type { SerializeFrom } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { HiOutlineTrash } from "react-icons/hi";
 
 type FileRemoveButtonProps = {
-  file: SerializeType<File>;
+  file: SerializeFrom<File>;
   deleteAction: string;
 };
 

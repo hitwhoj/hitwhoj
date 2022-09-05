@@ -25,12 +25,16 @@ import {
 import { Markdown } from "~/src/Markdown";
 import { Like } from "~/src/comment/Like";
 import { redirect } from "@remix-run/node";
-import type { ActionFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
+import type {
+  ActionFunction,
+  LoaderArgs,
+  MetaFunction,
+  SerializeFrom,
+} from "@remix-run/node";
 import { useState } from "react";
 import { ReportType } from "@prisma/client";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { UserLink } from "~/src/user/UserLink";
 import { UserAvatar } from "~/src/user/UserAvatar";
 
@@ -272,7 +276,7 @@ export async function loader({ params, request }: LoaderArgs) {
   return json({ comment, self: self.userId ?? -1 });
 }
 
-type LoaderData = UseDataFunctionReturn<typeof loader>;
+type LoaderData = SerializeFrom<typeof loader>;
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `讨论: ${data?.comment.title} - HITwh OJ`,

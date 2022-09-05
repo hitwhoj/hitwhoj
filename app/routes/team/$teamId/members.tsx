@@ -1,4 +1,4 @@
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, SerializeFrom } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -33,7 +33,6 @@ import {
   findTeamAllowMembersInvite,
   findTeamMemberRole,
 } from "~/utils/db/team";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 const Row = Grid.Row;
@@ -73,7 +72,7 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 }
 
-type Member = UseDataFunctionReturn<typeof loader>["members"][number];
+type Member = SerializeFrom<typeof loader>["members"][number];
 
 enum ActionType {
   AddMember = "AddMember",

@@ -1,4 +1,4 @@
-import type { SerializeType } from "@remix-run/react/dist/components";
+import type { SerializeFrom } from "@remix-run/node";
 import { Observable } from "rxjs";
 import { interval, map, merge } from "rxjs";
 
@@ -45,7 +45,7 @@ export function createEventSource<T>(
 }
 
 export function fromEventSource<T>(url: string) {
-  return new Observable<SerializeType<T>>((observer) => {
+  return new Observable<SerializeFrom<T>>((observer) => {
     const eventSource = new EventSource(url);
     eventSource.addEventListener("message", ({ data }) =>
       observer.next(JSON.parse(data))

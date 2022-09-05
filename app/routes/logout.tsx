@@ -1,6 +1,5 @@
-import type { ActionArgs } from "@remix-run/node";
+import type { ActionArgs, SerializeFrom } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { findRequestUser } from "~/utils/permission";
 import { destroySession, getSession } from "~/utils/sessions";
 
@@ -22,4 +21,4 @@ export async function action({ request }: ActionArgs) {
   );
 }
 
-export type ActionData = UseDataFunctionReturn<typeof action>;
+export type ActionData = SerializeFrom<typeof action>;
