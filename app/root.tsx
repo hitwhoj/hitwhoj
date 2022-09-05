@@ -160,7 +160,7 @@ export default function App() {
                           <UserAvatar
                             user={user}
                             tabIndex={0}
-                            className="w-12 h-12 cursor-pointer"
+                            className="w-12 h-12 cursor-pointer bg-base-300 text-2xl"
                           />
                           <ul className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box w-52 shadow-2xl top-0 mt-16 p-4 menu">
                             <li>

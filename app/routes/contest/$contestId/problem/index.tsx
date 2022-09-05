@@ -9,7 +9,11 @@ import { findContestStatus, findContestTeam } from "~/utils/db/contest";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestPermission } from "~/utils/permission/permission/contest";
-import { HiOutlineCheck, HiOutlineX } from "react-icons/hi";
+import {
+  HiOutlineArrowsExpand,
+  HiOutlineCheck,
+  HiOutlineX,
+} from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -115,13 +119,19 @@ export default function ContestProblemIndex() {
               <tr key={rank}>
                 <th className="text-center">{charCode}</th>
                 <td>
-                  <Link className="link" to={charCode}>
-                    {problem.title}
+                  <Link
+                    className="link inline-flex gap-2 items-center"
+                    to={charCode}
+                  >
+                    <span>{problem.title}</span>
+                    <HiOutlineArrowsExpand />
                   </Link>
                 </td>
                 <td>
-                  {accepted && <HiOutlineCheck className="text-success" />}
-                  {failed && <HiOutlineX className="text-error" />}
+                  {accepted && (
+                    <HiOutlineCheck className="text-success w-6 h-6" />
+                  )}
+                  {failed && <HiOutlineX className="text-error w-6 h-6" />}
                 </td>
               </tr>
             );

@@ -1,5 +1,4 @@
-import { Empty, List } from "@arco-design/web-react";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { UserContext } from "~/utils/context/user";
@@ -9,6 +8,8 @@ import { db } from "~/utils/server/db.server";
 import type { MessageType } from "./events";
 import { Permissions } from "~/utils/permission/permission";
 import type { LoaderArgs } from "@remix-run/node";
+import FullScreen from "~/src/FullScreen";
+import { HiOutlineChevronLeft } from "react-icons/hi";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -68,40 +69,46 @@ export default function UserChatIndex() {
   useEffect(() => setMsgs(messages), [messages]);
 
   return (
-    <div className="flex overflow-hidden h-full flex-row">
-      <div className="basis-[30%]">
-        <List
-          bordered={false}
-          dataSource={users}
-          render={({ user, message }) => (
-            <div key={user.id} className="py-2 px-0">
-              <Link
-                key={user.id}
-                to={`/chat/user/${user.id}`}
-                prefetch="intent"
-                className="block"
-              >
-                <div className="flex w-full gap-3 items-center">
-                  <UserAvatar user={user} />
-                  <div className="overflow-hidden">
-                    <div className="bold text-ellipsis whitespace-nowrap overflow-hidden">
-                      {user.nickname || user.username}
+    <FullScreen visible={true} className="bg-base-100 flex not-prose">
+      <div className="drawer drawer-mobile">
+        <input type="checkbox" className="drawer-toggle" />
+        <div className="drawer-content overflow-hidden">
+          <Outlet />
+        </div>
+        <div className="drawer-side">
+          <div className="drawer-overlay"></div>
+          <aside className="p-4 bg-base-200">
+            {/* FIXME 这个是假的上一页 */}
+            <Link className="btn btn-ghost gap-2" to="/">
+              <HiOutlineChevronLeft />
+              <span>返回到上一页</span>
+            </Link>
+            <ul className="p-0 menu w-72 mt-4">
+              {users.map(({ user, message }) => (
+                <li key={user.id}>
+                  <NavLink to={`/chat/user/${user.id}`} className="p-4 w-full">
+                    <div className="flex w-full gap-3 items-center">
+                      <UserAvatar
+                        user={user}
+                        className="w-16 h-16 flex-shrink-0 bg-base-300 text-3xl"
+                      />
+                      <div className="overflow-hidden">
+                        <div className="font-bold text-xl text-ellipsis whitespace-nowrap overflow-hidden">
+                          {user.nickname || user.username}
+                        </div>
+                        <div className="text-ellipsis whitespace-nowrap overflow-hidden">
+                          {message.content}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-ellipsis whitespace-nowrap overflow-hidden">
-                      {message.content}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          )}
-          noDataElement={<Empty description="没有对话" />}
-        />
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
       </div>
-      <div className="basis-[70%]">
-        <Outlet />
-      </div>
-    </div>
+    </FullScreen>
   );
 }
 

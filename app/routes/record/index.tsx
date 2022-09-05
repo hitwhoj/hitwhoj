@@ -6,7 +6,7 @@ import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { db } from "~/utils/server/db.server";
-import { formatDateTime } from "~/utils/tools";
+import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
 export async function loader(_: LoaderArgs) {
   const records = await db.record.findMany({
@@ -53,9 +53,9 @@ export default function RecordList() {
             <tr>
               <th className="w-16" />
               <th>状态</th>
-              <th>题目</th>
+              <th className="hidden md:table-cell">题目</th>
               <th>用户</th>
-              <th>提交时间</th>
+              <th className="hidden xl:table-cell">提交时间</th>
             </tr>
           </thead>
           <tbody>
@@ -67,13 +67,20 @@ export default function RecordList() {
                     <RecordStatus status={record.status} />
                   </Link>
                 </td>
-                <td>
+                <td className="hidden md:table-cell">
                   <ProblemLink problem={record.problem} />
                 </td>
                 <td>
                   <UserLink user={record.submitter} />
                 </td>
-                <td>{formatDateTime(record.submittedAt)}</td>
+                <td className="hidden xl:table-cell">
+                  <span
+                    className="tooltip"
+                    data-tip={formatDateTime(record.submittedAt)}
+                  >
+                    {formatRelativeDateTime(record.submittedAt)}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>

@@ -25,7 +25,10 @@ export function UserLink({ user }: Props) {
         tabIndex={0}
         className="dropdown-content p-4 shadow bg-base-300 rounded-box w-72 flex gap-4"
       >
-        <UserAvatar user={user} />
+        <UserAvatar
+          user={user}
+          className="w-16 h-16 flex-shrink-0 bg-base-100 text-3xl"
+        />
         <div className="whitespace-normal">
           <div className="font-bold text-lg">
             {user.nickname || user.username}

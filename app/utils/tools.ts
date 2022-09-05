@@ -36,6 +36,13 @@ export function formatDateTime(time: Date | string) {
   return dateTimeFormatter.format(new Date(time));
 }
 
+/**
+ * Format time to HH:mm:ss
+ */
+export function formatTime(time: Date | string) {
+  return new Date(time).toLocaleTimeString("zh-CN");
+}
+
 const numberFormatter = new Intl.NumberFormat("zh-CN");
 
 export function formatNumber(number: number) {

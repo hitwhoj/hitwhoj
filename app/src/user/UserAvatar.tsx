@@ -14,16 +14,16 @@ export function UserAvatar({
 
   return (
     <div
-      className={`avatar placeholder ${className ?? "w-16 h-16"}`}
+      className={`avatar placeholder overflow-hidden flex justify-center items-center rounded-box ${
+        className ?? "w-16 h-16 text-3xl"
+      }`}
       {...props}
     >
-      <div className="rounded-box bg-base-100">
-        {user.avatar ? (
-          <img src={user.avatar} alt={name} />
-        ) : (
-          <span className="text-3xl">{name.charAt(0)}</span>
-        )}
-      </div>
+      {user.avatar ? (
+        <img src={user.avatar} alt={name} />
+      ) : (
+        <span className="text-base-content">{name.charAt(0)}</span>
+      )}
     </div>
   );
 }
