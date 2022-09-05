@@ -20,6 +20,7 @@ import { UserContext } from "./utils/context/user";
 import { fromEventSource } from "./utils/eventSource";
 import {
   HiOutlineBookOpen,
+  HiOutlineChat,
   HiOutlineChevronDown,
   HiOutlineCollection,
   HiOutlineColorSwatch,
@@ -27,7 +28,11 @@ import {
   HiOutlineQuestionMarkCircle,
   HiOutlineUserGroup,
 } from "react-icons/hi";
-import { AiOutlineHistory, AiOutlineTrophy } from "react-icons/ai";
+import {
+  AiOutlineHistory,
+  AiOutlineProfile,
+  AiOutlineTrophy,
+} from "react-icons/ai";
 import { version } from "../package.json";
 
 import style from "./styles/app.css";
@@ -37,6 +42,7 @@ import type { Theme } from "./utils/theme";
 import { darkThemes, ThemeContext } from "./utils/theme";
 import { themes } from "./utils/theme";
 import { MenuDrawerContext } from "./utils/context/menu";
+import { UserAvatar } from "./src/user/UserAvatar";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
@@ -149,20 +155,38 @@ export default function App() {
                         </div>
                       </div>
                       {/* 用户头像 */}
-                      {/* <div className="dropdown dropdown-end">
-                      <div className="btn btn-outline gap-2" tabIndex={0}>
-                        登录
-                      </div>
-                      <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box w-52 shadow-2xl top-0 mt-16">
-                        hello world
-                      </div>
-                    </div> */}
-                      <Link className="btn btn-outline" to="/login">
-                        登录
-                      </Link>
-                      <Link className="btn btn-primary" to="/register">
-                        注册
-                      </Link>
+                      {user ? (
+                        <div className="dropdown dropdown-end w-12 h-12">
+                          <UserAvatar
+                            user={user}
+                            tabIndex={0}
+                            className="w-12 h-12 cursor-pointer"
+                          />
+                          <ul className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box w-52 shadow-2xl top-0 mt-16 p-4 menu">
+                            <li>
+                              <Link to={`/user/${user.id}`}>
+                                <AiOutlineProfile />
+                                <span>资料</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link to="/chat/user">
+                                <HiOutlineChat />
+                                <span>聊天</span>
+                              </Link>
+                            </li>
+                          </ul>
+                        </div>
+                      ) : (
+                        <>
+                          <Link className="btn btn-outline" to="/login">
+                            登录
+                          </Link>
+                          <Link className="btn btn-primary" to="/register">
+                            注册
+                          </Link>
+                        </>
+                      )}
                     </nav>
                   </div>
                   {/* 中间部分 */}

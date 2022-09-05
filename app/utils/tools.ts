@@ -68,7 +68,7 @@ export function formatRelativeDateTime(time: Date | string) {
   const date = new Date(time).getTime();
   const now = Date.now();
 
-  const relativeSeconds = (now - date) / 1000;
+  const relativeSeconds = (date - now) / 1000;
   if (Math.abs(relativeSeconds) < 60) {
     return relativeDateTimeFormatter.format(
       Math.floor(relativeSeconds),
