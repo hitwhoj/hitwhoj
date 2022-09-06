@@ -4,20 +4,13 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
-import { Typography } from "@arco-design/web-react";
 
 export async function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
 
   const file = await db.file.findUnique({
     where: { id: fileId },
-    select: {
-      id: true,
-      filesize: true,
-      mimetype: true,
-      filename: true,
-      createdAt: true,
-    },
+    select: { filename: true },
   });
 
   if (!file) {
@@ -31,13 +24,10 @@ export default function FileIndex() {
   const { filename } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>{filename}</Typography.Title>
-
-      <Typography.Paragraph>
-        <Outlet />
-      </Typography.Paragraph>
-    </Typography>
+    <>
+      <h1>{filename}</h1>
+      <Outlet />
+    </>
   );
 }
 

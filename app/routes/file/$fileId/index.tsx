@@ -1,11 +1,10 @@
-import { Button, Image, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
-import { IconDownload } from "@arco-design/web-react/icon";
+import { HiOutlineArrowsExpand, HiOutlineDownload } from "react-icons/hi";
 
 export async function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
@@ -36,37 +35,40 @@ export default function FileIndex() {
   const filelink = `/file/${file.id}/${file.filename}`;
 
   return (
-    <Typography>
-      <Typography.Paragraph>
-        {file.mimetype.startsWith("audio/") ? (
-          <audio controls src={filelink} style={{ maxWidth: "100%" }} />
-        ) : file.mimetype.startsWith("video/") ? (
-          <video
-            controls
-            src={filelink}
-            style={{ maxHeight: "80vh", maxWidth: "100%" }}
-          />
-        ) : file.mimetype.startsWith("image/") ? (
-          <Image src={filelink} alt={file.filename} />
-        ) : null}
-      </Typography.Paragraph>
+    <>
+      {/* previews for audio/video/images */}
+      {file.mimetype.startsWith("audio/") ? (
+        <audio controls src={filelink} style={{ maxWidth: "100%" }} />
+      ) : file.mimetype.startsWith("video/") ? (
+        <video
+          controls
+          src={filelink}
+          style={{ maxHeight: "80vh", maxWidth: "100%" }}
+        />
+      ) : file.mimetype.startsWith("image/") ? (
+        <img src={filelink} alt={file.filename} />
+      ) : null}
 
-      <Typography.Paragraph>
+      <p className="flex gap-4">
+        {file.mimetype === "application/pdf" && (
+          <Link to={filelink} className="btn btn-primary gap-2" reloadDocument>
+            <HiOutlineArrowsExpand />
+            <span>在标签页中打开</span>
+          </Link>
+        )}
         <Link
+          className="btn btn-primary gap-2"
           to={filelink}
           target="_blank"
           rel="noreferrer noopener"
           aria-label="download"
           download
-          // 默认是 inline 好像会有点问题
-          style={{ display: "inline-block" }}
         >
-          <Button type="primary" icon={<IconDownload />}>
-            下载
-          </Button>
+          <HiOutlineDownload />
+          <span>下载</span>
         </Link>
-      </Typography.Paragraph>
-    </Typography>
+      </p>
+    </>
   );
 }
 
