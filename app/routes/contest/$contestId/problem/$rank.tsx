@@ -37,7 +37,7 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
-import FullScreen from "~/src/FullScreen";
+import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
@@ -288,7 +288,7 @@ export default function ContestProblemView() {
   const theme = useContext(ThemeContext);
 
   return (
-    <FullScreen
+    <Fullscreen
       visible={true}
       className="drawer drawer-end w-full h-full bg-base-100"
     >
@@ -418,7 +418,7 @@ export default function ContestProblemView() {
           </ul>
         </aside>
       </div>
-    </FullScreen>
+    </Fullscreen>
   );
 }
 

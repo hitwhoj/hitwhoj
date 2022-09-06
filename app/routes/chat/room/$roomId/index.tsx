@@ -13,16 +13,24 @@ import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import FullScreen from "~/src/FullScreen";
+import Fullscreen from "~/src/Fullscreen";
 import { formatDateTime, formatTime } from "~/utils/tools";
-import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
+import {
+  HiOutlineChevronLeft,
+  HiOutlineLogout,
+  HiOutlinePaperAirplane,
+} from "react-icons/hi";
+import { ChatRoomPermission } from "~/utils/permission/permission/room";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
-  const [hasReadPerm] = await self
+  const [hasReadPerm, isMember] = await self
     .room(roomId)
-    .hasPermission(Permissions.PERM_VIEW_CHATROOM_MESSAGE);
+    .hasPermission(
+      Permissions.PERM_VIEW_CHATROOM_MESSAGE,
+      ChatRoomPermission.Members
+    );
 
   if (!hasReadPerm) {
     throw redirect(`/chat/room/${roomId}/enter`);
@@ -57,7 +65,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Room not found", { status: 404 });
   }
 
-  return json({ room });
+  return json({ room, isMember });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -65,7 +73,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ChatRoomIndex() {
-  const { room } = useLoaderData<typeof loader>();
+  const { room, isMember } = useLoaderData<typeof loader>();
   const [messages, setMessages] = useState(room.chatMessage);
 
   useEffect(() => setMessages(room.chatMessage), [room.chatMessage]);
@@ -92,7 +100,7 @@ export default function ChatRoomIndex() {
   }, [isActionReload]);
 
   return (
-    <FullScreen visible={true} className="not-prose">
+    <Fullscreen visible={true} className="not-prose">
       <div className="drawer drawer-mobile">
         <input type="checkbox" className="drawer-toggle" />
         <div className="drawer-content bg-base-100 px-4 not-prose min-h-full flex flex-col overflow-auto">
@@ -135,16 +143,18 @@ export default function ChatRoomIndex() {
                         )}
                         {!role && <span className="badge">游客</span>}
                       </span>
-                      <div
-                        className="tooltip tooltip-left"
-                        data-tip={formatDateTime(message.sentAt)}
-                      >
-                        <time className="text-base-content text-sm opacity-60">
-                          {formatTime(message.sentAt)}
-                        </time>
-                      </div>
                     </div>
                     <div className="break-words min-w-0">{message.content}</div>
+                  </div>
+                  <div>
+                    <span
+                      className="tooltip tooltip-left"
+                      data-tip={formatDateTime(message.sentAt)}
+                    >
+                      <time className="text-base-content text-sm opacity-60">
+                        {formatTime(message.sentAt)}
+                      </time>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -199,18 +209,25 @@ export default function ChatRoomIndex() {
         </div>
         <div className="drawer-side">
           <div className="drawer-overlay" />
-          <aside className="w-72 bg-base-200 p-4">
-            <Link className="btn btn-ghost gap-2" to="/">
-              <HiOutlineChevronLeft />
-              <span>返回上一页</span>
-            </Link>
-            <div className="alert alert-info shadow-lg mt-4">
-              TODO 总觉得这里应该放一些什么东西，不然显得空荡荡的
+          <aside className="w-72 bg-base-200 p-4 flex flex-col justify-between">
+            <div>
+              <Link className="btn btn-ghost gap-2" to="/">
+                <HiOutlineChevronLeft />
+                <span>返回上一页</span>
+              </Link>
             </div>
+            {isMember && (
+              <Form method="post" action="exit">
+                <button className="btn btn-error gap-2 w-full">
+                  <HiOutlineLogout />
+                  <span>退出群组</span>
+                </button>
+              </Form>
+            )}
           </aside>
         </div>
       </div>
-    </FullScreen>
+    </Fullscreen>
   );
 }
 

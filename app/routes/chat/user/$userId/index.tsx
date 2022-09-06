@@ -144,16 +144,18 @@ export default function ChatIndex() {
                     <span className="text-primary">
                       {message.from.nickname || message.from.username}
                     </span>
-                    <div
+                  </div>
+                  <div className="break-words min-w-0">{message.content}</div>
+                  <div>
+                    <span
                       className="tooltip tooltip-left"
                       data-tip={formatDateTime(message.sentAt)}
                     >
                       <time className="text-base-content text-sm opacity-60">
                         {formatTime(message.sentAt)}
                       </time>
-                    </div>
+                    </span>
                   </div>
-                  <div className="break-words min-w-0">{message.content}</div>
                 </div>
               </div>
             ) : (

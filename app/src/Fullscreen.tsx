@@ -9,7 +9,7 @@ type FullScreenProps = {
 /**
  * Making a fullscreen page (hiding left drawer)
  */
-export default function FullScreen({
+export default function Fullscreen({
   visible,
   className,
   ...props

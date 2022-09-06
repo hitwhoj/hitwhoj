@@ -8,7 +8,7 @@ import { db } from "~/utils/server/db.server";
 import type { MessageType } from "./events";
 import { Permissions } from "~/utils/permission/permission";
 import type { LoaderArgs } from "@remix-run/node";
-import FullScreen from "~/src/FullScreen";
+import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 
 export async function loader({ request }: LoaderArgs) {
@@ -69,7 +69,7 @@ export default function UserChatIndex() {
   useEffect(() => setMsgs(messages), [messages]);
 
   return (
-    <FullScreen visible={true} className="bg-base-100 flex not-prose">
+    <Fullscreen visible={true} className="bg-base-100 flex not-prose">
       <div className="drawer drawer-mobile">
         <input type="checkbox" className="drawer-toggle" />
         <div className="drawer-content overflow-hidden px-4">
@@ -108,7 +108,7 @@ export default function UserChatIndex() {
           </aside>
         </div>
       </div>
-    </FullScreen>
+    </Fullscreen>
   );
 }
 

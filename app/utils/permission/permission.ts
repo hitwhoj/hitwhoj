@@ -34,10 +34,6 @@ export const Permissions = {
   PERM_JOIN_CHATROOM_MESSAGE: ChatRoomPermission.GuestOnly.with(
     UserPermission.Nobody
   ),
-  /** 退出讨论组 */
-  PERM_QUIT_CHATROOM_MESSAGE: ChatRoomPermission.Members.with(
-    UserPermission.Nobody
-  ),
 
   /** 添加题目 */
   PERM_CREATE_PROBLEM: TeamPermission.Admins.with(UserPermission.Admins),
