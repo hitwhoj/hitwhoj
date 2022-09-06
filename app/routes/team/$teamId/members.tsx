@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
@@ -287,9 +287,12 @@ export default function MemberList() {
                     className="w-12 h-12 bg-base-100 text-xl shrink-0"
                   />
                   <div>
-                    <div className="font-bold">
+                    <Link
+                      to={`/user/${member.user.id}`}
+                      className="block link link-hover font-bold"
+                    >
                       {member.user.nickname || member.user.username}
-                    </div>
+                    </Link>
                     <div
                       className={`badge ${
                         member.role === "Owner"

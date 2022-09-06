@@ -28,6 +28,9 @@ type JudgeStatus = {
 };
 
 export class Judge {
+  id: number;
+  url: string;
+
   status: JudgeStatus = {
     status: "Offline",
     cpus: 0,
@@ -38,7 +41,7 @@ export class Judge {
   };
 
   #subject: Subject<Judge2WebMessage> = new Subject();
-  #ws: WebSocket;
+  #ws: WebSocket | null = null;
 
   // 分配之后等待响应的任务
   #dispatches: Map<
@@ -52,18 +55,9 @@ export class Judge {
   // 分配之后等待结果的任务
   #workings: Map<number, { timeout: NodeJS.Timeout }> = new Map();
 
-  constructor(host: string) {
-    this.#ws = new WebSocket(`ws://${host}/`);
-    this.#ws.on("message", (data) => {
-      console.log("recieved", data.toString());
-      try {
-        this.#subject.next(JSON.parse(data.toString()));
-      } catch (e) {
-        this.#subject.error(e);
-      }
-    });
-    this.#ws.on("error", (data) => this.#subject.error(data));
-    this.#ws.on("close", () => this.#subject.complete());
+  constructor(id: number, ip: string, port: number) {
+    this.id = id;
+    this.url = `ws://${ip}:${port}/`;
 
     // 监听握手消息
     this.#subject
@@ -71,7 +65,7 @@ export class Judge {
       .subscribe((data) => {
         // Reject mismatched judge version
         if (data.version !== "v0") {
-          this.#ws.close();
+          this.#ws?.terminate();
           return;
         }
 
@@ -170,18 +164,38 @@ export class Judge {
         // 推送到事件中心
         recordUpdateSubject.next(record);
       });
+  }
 
-    // 监听错误消息
-    this.#subject.subscribe({
-      error: () => (this.status.status = "Offline"),
-      complete: () => (this.status.status = "Offline"),
-    });
+  connect() {
+    // close the old connection
+    this.#ws?.close();
+
+    // start a new connection
+    this.#ws = new WebSocket(this.url);
+    this.#ws.onopen = () => (this.status.status = "Online");
+    this.#ws.onclose = () => (this.status.status = "Offline");
+    this.#ws.onmessage = ({ data }) => {
+      console.log("recieved", data.toString());
+      try {
+        this.#subject.next(JSON.parse(data.toString()));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    this.#ws.onerror = (error) => {
+      console.error(`[judge] ${error.message}`);
+    };
   }
 
   #send(data: Web2JudgeMessage) {
-    console.log("send", JSON.stringify(data));
-    if (this.#ws.readyState === WebSocket.OPEN) {
+    if (
+      this.#ws?.readyState === WebSocket.OPEN &&
+      this.status.status === "Online"
+    ) {
+      console.log("send", JSON.stringify(data));
       this.#ws.send(JSON.stringify(data));
+    } else {
+      console.warn("Trying to send message to offline judge");
     }
   }
 

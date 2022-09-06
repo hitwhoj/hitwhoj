@@ -491,3 +491,10 @@ model ChatMessage {
   sender   User @relation(fields: [senderId], references: [id])
   senderId Int
 }
+
+model Judge {
+  id   Int    @id @default(autoincrement())
+  name String
+  ip   String
+  port Int
+}

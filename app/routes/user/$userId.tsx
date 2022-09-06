@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -89,6 +89,9 @@ export default function UserProfile() {
               滥权
             </NavLink>
           )}
+          <Link className="tab" to={`/chat/user/${user.id}`}>
+            聊天
+          </Link>
         </div>
       </header>
 

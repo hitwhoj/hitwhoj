@@ -8,18 +8,35 @@ export class JudgeManager {
   #queue: DispatchTask[] = [];
 
   constructor() {
-    // TODO 动态添加评测机
-    this.addJudge("127.0.0.1:1145");
+    this.initializeJudge();
 
     setInterval(() => {
       this.#dispatch();
-    }, 1000);
+    }, 3000);
   }
 
-  /** 添加新的评测机 */
-  addJudge(host: string) {
-    const judge = new Judge(host);
-    this.#judges.push(judge);
+  /** 从数据库中加载评测机 */
+  async initializeJudge() {
+    console.log("Loading judges from Database");
+
+    const judges = await db.judge.findMany({
+      select: { id: true, ip: true, port: true },
+    });
+
+    for (const { id, ip, port } of judges) {
+      const judge = new Judge(id, ip, port);
+      this.#judges.push(judge);
+
+      console.log(`Connecting to ws://${ip}:${port}/`);
+      judge.connect();
+    }
+  }
+
+  getState() {
+    return this.#judges.map((judge) => ({
+      id: judge.id,
+      state: judge.status,
+    }));
   }
 
   /** 添加新的评测任务 */
