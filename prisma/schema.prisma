@@ -308,20 +308,24 @@ model Record {
   id Int @id @default(autoincrement())
 
   /// 评测状态（结果）
-  status   String @default("Pending")
+  status      String   @default("Pending")
   /// 得分
-  score    Float  @default(0)
-  /// 评测信息（错误信息）
-  message  String @default("")
+  score       Float    @default(0)
+  /// 评测信息（错误日志）
+  message     String   @default("")
   /// 评测总时间 (ms)
-  time     Int    @default(0)
+  /// 这个字段没啥用，就是看看的
+  time        Int      @default(0)
   /// 评测最大内存 (byte)
-  memory   Int    @default(0)
+  /// 这个字段也没啥用，单纯看看
+  memory      Int      @default(0)
   /// 具体每一个测试点的评测结果，由于结构过于复杂，这里直接用 JSON 保存
-  subtasks Json   @default("[]")
-
-  /// 提交语言，一般就是源文件的后缀名
+  /// 应该遵从 SubtaskResult[] 类型
+  /// 当 status 为 Compile Error 等类型时应该为一个空数组
+  subtasks    Json     @default("[]")
+  /// 提交语言
   language    String
+  /// 递交时间
   submittedAt DateTime @default(now())
 
   // ==== relations ====

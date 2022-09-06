@@ -25,7 +25,6 @@ import { s3 } from "~/utils/server/s3.server";
 import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import type { MessageType } from "../events";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import {
   findContestProblemIdByRank,
@@ -47,6 +46,7 @@ import {
   themes,
 } from "~/utils/theme";
 import { ToastContext } from "~/utils/context/toast";
+import { judge } from "~/utils/server/judge/manager.server";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });

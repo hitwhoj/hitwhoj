@@ -6,11 +6,11 @@ import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
+import { judge } from "~/utils/server/judge/manager.server";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
