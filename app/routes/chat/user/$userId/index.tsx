@@ -148,7 +148,7 @@ export default function ChatIndex() {
                       className="tooltip tooltip-left"
                       data-tip={formatDateTime(message.sentAt)}
                     >
-                      <time className="text-base-content text-sm">
+                      <time className="text-base-content text-sm opacity-60">
                         {formatTime(message.sentAt)}
                       </time>
                     </div>
@@ -166,12 +166,14 @@ export default function ChatIndex() {
                   {message.content}
                 </span>
                 <div>
-                  <time
-                    className="tooltip tooltip-left text-base-content text-sm opacity-0 group-hover:opacity-100 transition"
+                  <span
+                    className="tooltip tooltip-left"
                     data-tip={formatDateTime(message.sentAt)}
                   >
-                    {formatTime(message.sentAt)}
-                  </time>
+                    <time className="text-sm opacity-0 group-hover:opacity-60 transition">
+                      {formatTime(message.sentAt)}
+                    </time>
+                  </span>
                 </div>
               </div>
             );
