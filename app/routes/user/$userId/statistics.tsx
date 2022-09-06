@@ -1,17 +1,14 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import {
-  Typography,
-  Link as ArcoLink,
-  Statistic,
-  Space,
-} from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { ContestLink } from "~/src/contest/ContestLink";
+import { selectContestListData } from "~/utils/db/contest";
+import { formatNumber } from "~/utils/tools";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -29,8 +26,7 @@ export async function loader({ request, params }: LoaderArgs) {
         select: {
           contest: {
             select: {
-              id: true,
-              title: true,
+              ...selectContestListData,
             },
           },
         },
@@ -55,33 +51,43 @@ export async function loader({ request, params }: LoaderArgs) {
 export default function UserStatistics() {
   const { user } = useLoaderData<typeof loader>();
 
-  return (
-    <Typography>
-      <Typography.Paragraph>
-        <Space size="large">
-          <Statistic title="提交" value={user._count.createdRecords} />
-          <Statistic title="评论" value={user._count.createdComments} />
-          <Statistic title="回复" value={user._count.createdReplies} />
-        </Space>
-      </Typography.Paragraph>
+  // FIXME 摆烂了，这个页面就跟 profile 页面合并了吧
+  // 丢给 @lingyunchi 处理吧
 
-      <Typography.Title heading={4}>参与的比赛</Typography.Title>
-      <Typography.Paragraph>
-        {user.participatedContests.length ? (
-          <ul>
-            {user.participatedContests.map(({ contest }) => (
-              <li key={contest.id}>
-                <ArcoLink>
-                  <Link to={`/contest/${contest.id}`}>{contest.title}</Link>
-                </ArcoLink>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div>没有喵</div>
-        )}
-      </Typography.Paragraph>
-    </Typography>
+  return (
+    <>
+      <div className="stats w-full">
+        <div className="stat place-items-center">
+          <div className="stat-value">
+            {formatNumber(user._count.createdRecords)}
+          </div>
+          <div className="stat-desc">提交</div>
+        </div>
+
+        <div className="stat place-items-center">
+          <div className="stat-value">
+            {formatNumber(user._count.createdComments)}
+          </div>
+          <div className="stat-desc">评论</div>
+        </div>
+
+        <div className="stat place-items-center">
+          <div className="stat-value">
+            {formatNumber(user._count.createdReplies)}
+          </div>
+          <div className="stat-desc">回复</div>
+        </div>
+      </div>
+
+      <h2>参与的比赛</h2>
+      <ul>
+        {user.participatedContests.map(({ contest }) => (
+          <li key={contest.id}>
+            <ContestLink contest={contest} />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

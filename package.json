@@ -8,7 +8,7 @@
     "build:style": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
     "build:remix": "remix build",
     "build:assets": "shx mkdir -p public/build/_assets && shx cp -r node_modules/katex/dist/fonts node_modules/monaco-editor/min/vs public/build/_assets",
-    "dev": "yarn build && run-p dev:*",
+    "dev": "yarn clean && yarn build:assets && run-p dev:*",
     "dev:style": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
     "dev:node": "cross-env NODE_ENV=development node ./server/server.js",
     "dev:remix": "remix watch",

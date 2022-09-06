@@ -1,6 +1,7 @@
 import type { File } from "@prisma/client";
 import type { SerializeFrom } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { formatNumber } from "~/utils/tools";
 import { FileRemoveButton } from "./FileRemoveButton";
 
 type FileListProps = {
@@ -28,7 +29,7 @@ export function FileList({ files, deleteAction }: FileListProps) {
               </Link>
             </td>
             <td>{file.mimetype}</td>
-            <td>{file.filesize}</td>
+            <td>{formatNumber(file.filesize)}</td>
             <td>
               <FileRemoveButton file={file} deleteAction={deleteAction} />
             </td>

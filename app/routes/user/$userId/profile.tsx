@@ -1,4 +1,3 @@
-import { Descriptions } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
@@ -45,40 +44,45 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function Profile() {
   const { user } = useLoaderData<typeof loader>();
 
-  const data = [
-    {
-      label: "用户名",
-      value: user.username,
-    },
-    {
-      label: "用户昵称",
-      value: user.nickname || "-",
-    },
-    {
-      label: "电子邮箱",
-      value: user.email ? (
-        <a href={`mailto:${user.email}`}>{user.email}</a>
-      ) : (
-        "-"
-      ),
-    },
-    {
-      label: "工作单位",
-      value: user.department || "-",
-    },
-    {
-      label: "学号",
-      value: user.studentId || "-",
-    },
-  ];
+  // FIXME 摆烂了，这个页面就跟 statistics 页面合并了吧
+  // 丢给 @lingyunchi 处理吧
 
   return (
-    <Descriptions
-      column={1}
-      title="用户资料"
-      labelStyle={{ paddingRight: 36 }}
-      data={data}
-    />
+    <table>
+      <thead>
+        <tr>
+          <th>用户资料</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>用户名</th>
+          <td>{user.username}</td>
+        </tr>
+        <tr>
+          <th>用户昵称</th>
+          <td>{user.nickname}</td>
+        </tr>
+        <tr>
+          <th>电子邮箱</th>
+          <td>
+            {user.email ? (
+              <a href={`mailto:${user.email}`}>{user.email}</a>
+            ) : (
+              "-"
+            )}
+          </td>
+        </tr>
+        <tr>
+          <th>工作单位</th>
+          <td>{user.department || "-"}</td>
+        </tr>
+        <tr>
+          <th>学号</th>
+          <td>{user.studentId || "-"}</td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 
