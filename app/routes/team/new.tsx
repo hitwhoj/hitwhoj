@@ -4,12 +4,12 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
-import { Message } from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
 import { Form, useTransition } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -54,9 +54,11 @@ export default function NewTeam() {
   const isActionRedirect = state === "loading" && type === "actionReload";
   const isLoading = isActionSubmit || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("创建成功");
+      Toasts.success("创建成功");
     }
   }, [isActionRedirect]);
 

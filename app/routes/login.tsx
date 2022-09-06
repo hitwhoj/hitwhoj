@@ -9,8 +9,8 @@ import { passwordHash } from "~/utils/tools";
 import { User } from "~/utils/permission/role/user";
 import { Privileges } from "~/utils/permission/privilege";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { Message } from "@arco-design/web-react";
+import { useContext, useEffect, useState } from "react";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
@@ -48,9 +48,11 @@ export default function Register() {
   const isActionRedirect = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionReload || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("登录成功");
+      Toasts.success("登录成功");
     }
   }, [isActionRedirect]);
 

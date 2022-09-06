@@ -9,15 +9,15 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
-import { Message } from "@arco-design/web-react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -247,9 +247,11 @@ export default function ProblemSetEdit() {
   const isActionRedirect = state === "loading" && type === "actionRedirect";
   const isUpdating = isActionSubmit || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionRedirect]);
 

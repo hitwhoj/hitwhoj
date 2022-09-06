@@ -6,9 +6,9 @@ import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { passwordHash } from "~/utils/tools";
-import { Message } from "@arco-design/web-react";
+import { ToastContext } from "~/utils/context/toast";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -49,9 +49,11 @@ export default function Register() {
   const isActionRedirect = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionReload || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("登录成功");
+      Toasts.success("登录成功");
     }
   }, [isActionRedirect]);
 

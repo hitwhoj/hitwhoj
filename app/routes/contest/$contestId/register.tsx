@@ -1,10 +1,10 @@
-import { Message } from "@arco-design/web-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
 import {
   findContestParticipantRole,
   findContestStatus,
@@ -111,9 +111,11 @@ export default function ContestRegisteration() {
   const isActionReload = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("报名成功");
+      Toasts.success("报名成功");
     }
   }, [isActionReload]);
 

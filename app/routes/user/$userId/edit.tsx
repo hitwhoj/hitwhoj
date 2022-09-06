@@ -1,4 +1,3 @@
-import { Message } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
@@ -16,7 +15,8 @@ import {
 import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -113,9 +113,11 @@ export default function UserEdit() {
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionReload]);
 

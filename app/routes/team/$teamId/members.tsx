@@ -5,8 +5,7 @@ import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import { Message } from "@arco-design/web-react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -17,6 +16,7 @@ import {
 } from "~/utils/db/team";
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -155,9 +155,11 @@ function DeleteMember({ id }: { id: number }) {
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("踢出成功");
+      Toasts.success("踢出成功");
     }
   }, [isActionReload]);
 
@@ -175,7 +177,7 @@ function DeleteMember({ id }: { id: number }) {
         value={ActionType.DeleteMember}
         disabled={isLoading}
       >
-        <HiOutlineLogout />
+        <HiOutlineLogout className="w-6 h-6" />
       </button>
     </fetcher.Form>
   );
@@ -189,9 +191,11 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("设定成员角色成功");
+      Toasts.success("设定成员角色成功");
     }
   }, [isActionReload]);
 
@@ -204,7 +208,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <label tabIndex={0} className="btn btn-square">
-        <HiOutlineCog />
+        <HiOutlineCog className="w-6 h-6" />
       </label>
       <ul className="dropdown-content menu p-2 bg-base-300 w-72 rounded-box">
         <li className={isOwner ? "disabled" : ""}>

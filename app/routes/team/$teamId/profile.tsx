@@ -12,7 +12,7 @@ import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
 import { useContext, useEffect } from "react";
 import { UserContext } from "~/utils/context/user";
-import { Message } from "@arco-design/web-react";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -114,9 +114,11 @@ export default function TeamDetail() {
 
   const isNotMember = self && !hasViewPerm;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("成功加入团队");
+      Toasts.success("成功加入团队");
     }
   }, [isActionReload]);
 

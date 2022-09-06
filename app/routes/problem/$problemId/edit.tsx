@@ -1,9 +1,9 @@
-import { Message } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 import { findProblemTeam } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -118,9 +118,11 @@ export default function ProblemEdit() {
   const [tags, setTags] = useState(problem.tags.map(({ name }) => name));
   const [tag, setTag] = useState("");
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionReload]);
 

@@ -6,10 +6,9 @@ import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
-import { Message } from "@arco-design/web-react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
@@ -28,6 +27,7 @@ import {
 import { fromEventSource } from "~/utils/eventSource";
 import { AiOutlineCopy } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -97,6 +97,8 @@ export default function RecordView() {
     return () => subscription.unsubscribe();
   }, [record.id]);
 
+  const Toasts = useContext(ToastContext);
+
   return (
     <>
       <h1>
@@ -152,8 +154,8 @@ export default function RecordView() {
               className="btn btn-ghost btn-sm btn-square"
               onClick={() =>
                 navigator.clipboard.writeText(code).then(
-                  () => Message.success("复制成功"),
-                  () => Message.error("权限不足")
+                  () => Toasts.success("复制成功"),
+                  () => Toasts.error("权限不足")
                 )
               }
             >

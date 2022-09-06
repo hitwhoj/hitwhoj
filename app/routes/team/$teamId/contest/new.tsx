@@ -13,11 +13,11 @@ import {
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
-import { Message } from "@arco-design/web-react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -79,9 +79,11 @@ export default function TeamContestNew() {
   const isActionRedirect = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("创建成功");
+      Toasts.success("创建成功");
     }
   }, [isActionRedirect]);
 

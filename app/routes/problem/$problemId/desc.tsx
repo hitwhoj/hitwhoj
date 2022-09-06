@@ -2,7 +2,6 @@ import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
-import { Link as ArcoLink, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -53,14 +52,14 @@ export default function ProblemIndex() {
 
       {problem.files.length > 0 && (
         <>
-          <Typography.Title heading={4}>相关文件</Typography.Title>
+          <h2>相关文件</h2>
 
           <ul>
             {problem.files.map((file) => (
               <li key={file.id}>
-                <ArcoLink>
-                  <Link to={`/file/${file.id}`}>{file.filename}</Link>
-                </ArcoLink>
+                <Link className="link" to={`/file/${file.id}`} target="_blank">
+                  {file.filename}
+                </Link>
               </li>
             ))}
           </ul>

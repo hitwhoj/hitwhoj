@@ -1,4 +1,3 @@
-import { Message } from "@arco-design/web-react";
 import Editor, {
   loader as monacoLoader,
   useMonaco,
@@ -47,6 +46,7 @@ import {
   ThemeContext,
   themes,
 } from "~/utils/theme";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -194,9 +194,11 @@ export default function ContestProblemView() {
 
   const [visible, setVisible] = useState(false);
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (actionData?.recordId) {
-      Message.success("提交成功");
+      Toasts.success("提交成功");
       setVisible(true);
     }
   }, [actionData?.recordId]);

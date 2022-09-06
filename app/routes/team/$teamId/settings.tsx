@@ -14,12 +14,12 @@ import { findRequestUser } from "~/utils/permission";
 import { InvitationType } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { Message } from "@arco-design/web-react";
+import { useContext, useEffect, useState } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -155,9 +155,11 @@ function EditProfile({
     [InvitationType.NONE]: "禁止任何人加入",
   };
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新团队信息成功");
+      Toasts.success("更新团队信息成功");
     }
   }, [isActionReload]);
 
@@ -247,9 +249,11 @@ function ExitTeam() {
     fetcher.state === "loading" && fetcher.type === "actionRedirect";
   const isLoading = isActionSubmit || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("成功退出团队");
+      Toasts.success("成功退出团队");
     }
   }, [isActionRedirect]);
 

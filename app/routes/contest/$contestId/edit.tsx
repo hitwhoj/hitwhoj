@@ -14,9 +14,8 @@ import {
   titleScheme,
   weakPasswordScheme,
 } from "~/utils/scheme";
-import { Message } from "@arco-design/web-react";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -25,6 +24,7 @@ import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -287,9 +287,11 @@ export default function ContestEdit() {
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionReload]);
 

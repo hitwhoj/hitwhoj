@@ -1,12 +1,12 @@
-import { Message } from "@arco-design/web-react";
 import { useFetcher } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import {
   HiOutlineChevronDown,
   HiOutlineChevronUp,
   HiOutlinePlus,
   HiOutlineTrash,
 } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 import type { ProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "./ProblemLink";
 
@@ -72,10 +72,11 @@ function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   const isActionReload =
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionReload]);
 
