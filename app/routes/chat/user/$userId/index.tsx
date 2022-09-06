@@ -142,7 +142,7 @@ export default function ChatIndex() {
                 <div className="flex-1">
                   <div className="w-full flex justify-between">
                     <span className="text-primary">
-                      {message.from.nickname || message.from.nickname}
+                      {message.from.nickname || message.from.username}
                     </span>
                     <div
                       className="tooltip tooltip-left"

@@ -125,7 +125,7 @@ export default function ChatRoomIndex() {
                     <div className="w-full flex justify-between">
                       <span className="inline-flex gap-2 items-center">
                         <span className="text-primary">
-                          {message.sender.nickname || message.sender.nickname}
+                          {message.sender.nickname || message.sender.username}
                         </span>
                         {role === "Owner" && (
                           <span className="badge badge-primary">所有人</span>

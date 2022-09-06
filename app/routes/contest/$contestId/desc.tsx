@@ -87,7 +87,7 @@ export default function ContestIndex() {
 
   return (
     <>
-      <div className="stats bg-base-200 w-full">
+      <div className="stats w-full">
         <div className="stat">
           <div className="stat-figure text-secondary">
             <HiOutlineClock className="w-8 h-8" />

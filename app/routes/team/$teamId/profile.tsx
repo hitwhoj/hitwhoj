@@ -4,21 +4,15 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
-import {
-  Button,
-  Descriptions,
-  Input,
-  Space,
-  Typography,
-} from "@arco-design/web-react";
 import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { UserContext } from "~/utils/context/user";
+import { Message } from "@arco-design/web-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -120,52 +114,70 @@ export default function TeamDetail() {
 
   const isNotMember = self && !hasViewPerm;
 
+  useEffect(() => {
+    if (isActionReload) {
+      Message.success("成功加入团队");
+    }
+  }, [isActionReload]);
+
   return (
-    <Typography>
-      <Typography.Paragraph>
-        <Descriptions
-          title="团队信息"
-          column={1}
-          labelStyle={{ paddingRight: 36 }}
-          data={[
-            { label: "创建时间", value: formatDateTime(team.createdAt) },
-            { label: "成员数量", value: team._count.members },
-            { label: "题目数量", value: team._count.problems },
-            { label: "题单数量", value: team._count.problemSets },
-            { label: "比赛数量", value: team._count.contests },
-          ]}
-        />
-      </Typography.Paragraph>
+    <>
+      <table>
+        <thead>
+          <tr>
+            <th>团队信息</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>创建时间</th>
+            <td>{formatDateTime(team.createdAt)}</td>
+          </tr>
+          <tr>
+            <th>成员数量</th>
+            <td>{team._count.members}</td>
+          </tr>
+          <tr>
+            <th>题目数量</th>
+            <td>{team._count.problems}</td>
+          </tr>
+          <tr>
+            <th>题单数量</th>
+            <td>{team._count.problemSets}</td>
+          </tr>
+          <tr>
+            <th>比赛数量</th>
+            <td>{team._count.contests}</td>
+          </tr>
+        </tbody>
+      </table>
 
       <Markdown>{team.description}</Markdown>
 
       {isNotMember &&
         (team.invitationType === InvitationType.NONE ? (
-          <i>该团队未开放申请加入</i>
+          <div className="alert alert-info">该团队未开放申请加入</div>
         ) : (
-          <Typography.Paragraph>
-            <Form method="post">
-              {team.invitationType === InvitationType.CODE ? (
-                <Space>
-                  <Input
-                    name="code"
-                    placeholder="请输入邀请码"
-                    required
-                    disabled={isLoading}
-                  />
-                  <Button type="primary" htmlType="submit" loading={isLoading}>
-                    加入团队
-                  </Button>
-                </Space>
-              ) : (
-                <Button type="primary" htmlType="submit" loading={isLoading}>
-                  加入团队
-                </Button>
-              )}
-            </Form>
-          </Typography.Paragraph>
+          <Form method="post" className="flex gap-4">
+            {team.invitationType === InvitationType.CODE && (
+              <input
+                className="input input-bordered"
+                name="code"
+                placeholder="请输入邀请码"
+                required
+                disabled={isLoading}
+              />
+            )}
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={isLoading}
+            >
+              加入团队
+            </button>
+          </Form>
         ))}
-    </Typography>
+    </>
   );
 }
 

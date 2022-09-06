@@ -2,10 +2,8 @@ import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Button, Grid, Typography } from "@arco-design/web-react";
-import { IconPlus } from "@arco-design/web-react/icon";
-import { TableList } from "~/src/TableList";
 import { TeamLink } from "~/src/team/TeamLink";
+import { HiOutlinePlus } from "react-icons/hi";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
@@ -24,35 +22,36 @@ export default function TeamList() {
   const { teams } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Grid.Row justify="space-between" align="center">
-          <span>团队列表</span>
-          <Link to="new">
-            <Button type="primary" icon={<IconPlus />}>
-              创建团队
-            </Button>
-          </Link>
-        </Grid.Row>
-      </Typography.Title>
+    <>
+      <h1 className="flex justify-between items-center">
+        <span>团队列表</span>
+        <Link className="btn btn-primary" to="new">
+          <HiOutlinePlus />
+          <span>新建团队</span>
+        </Link>
+      </h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={teams}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              minimize: true,
-            },
-            {
-              title: "团队",
-              render: (team) => <TeamLink team={team} />,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <div className="not-prose overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th className="w-16" />
+              <th>团队</th>
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((team) => (
+              <tr key={team.id}>
+                <th className="text-center">{team.id}</th>
+                <td>
+                  <TeamLink team={team} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
