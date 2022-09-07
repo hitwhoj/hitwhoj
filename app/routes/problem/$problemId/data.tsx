@@ -28,7 +28,9 @@ import type {
 import {
   HiOutlineArrowsExpand,
   HiOutlineChevronLeft,
+  HiOutlineChevronRight,
   HiOutlinePlus,
+  HiOutlineX,
 } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
 
@@ -130,6 +132,9 @@ type DataSelectProps = {
 function DataSelect({ options, ...props }: DataSelectProps) {
   return (
     <select className="select select-bordered" {...props}>
+      <option value="" disabled>
+        选择文件
+      </option>
       {options.map((value) => (
         <option value={value} key={value}>
           {value}
@@ -141,6 +146,352 @@ function DataSelect({ options, ...props }: DataSelectProps) {
 
 const DEFAULT_TIME_LIMIT = 1000;
 const DEFAULT_MEMORY_LIMIT = 268435456; // 256MB
+
+type EditorProps<T> = {
+  config: T;
+  onChange: (config: T) => void;
+  data: string[];
+};
+type DefaultConfig = Extract<ConfigJson, { type: "default" }>;
+type DefaultConfigEditorProps = EditorProps<DefaultConfig>;
+
+function DefaultConfigEditor(props: DefaultConfigEditorProps) {
+  const handleAddSubtask = () => {
+    props.onChange({
+      ...props.config,
+      subtasks: [...props.config.subtasks, { score: 20, cases: [] }],
+    });
+  };
+
+  const totalScore = props.config.subtasks.reduce(
+    (prev, cur) => prev + cur.score,
+    0
+  );
+  const hasEmptySubtask = props.config.subtasks.some(
+    (subtask) => subtask.cases.length === 0
+  );
+  const hasEmptyTask = props.config.subtasks.some((subtask) =>
+    subtask.cases.some((task) => task.input === "" || task.output === "")
+  );
+  const hasInvalidScore = totalScore !== 100;
+  const allFiles = props.config.subtasks
+    .flatMap((subtask) =>
+      subtask.cases.flatMap((task) => [task.input, task.output])
+    )
+    .filter((file) => file !== "");
+  const hasDuplicatedFile = new Set(allFiles).size !== allFiles.length;
+
+  return (
+    <>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">时间限制 (ms)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="number"
+          value={props.config.time}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              time: Number(event.target.value),
+            });
+          }}
+          placeholder={DEFAULT_TIME_LIMIT.toString()}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">内存限制 (byte)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="number"
+          value={props.config.memory}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              memory: Number(event.target.value),
+            });
+          }}
+          placeholder={DEFAULT_MEMORY_LIMIT.toString()}
+        />
+      </div>
+
+      <h3 className="flex justify-between items-center">
+        <span>子任务配置</span>
+        <button className="btn btn-primary gap-2" onClick={handleAddSubtask}>
+          <HiOutlinePlus />
+          <span>添加子任务</span>
+        </button>
+      </h3>
+
+      {props.config.subtasks.map((subtask, index) => {
+        const setSubtask = (subtask: ConfigSubtask<ConfigTaskDefault>) => {
+          props.onChange({
+            ...props.config,
+            subtasks: [
+              ...props.config.subtasks.slice(0, index),
+              subtask,
+              ...props.config.subtasks.slice(index + 1),
+            ],
+          });
+        };
+        const handleRemoveSubtask = () => {
+          props.onChange({
+            ...props.config,
+            subtasks: [
+              ...props.config.subtasks.slice(0, index),
+              ...props.config.subtasks.slice(index + 1),
+            ],
+          });
+        };
+
+        const handleRemoveCase = (caseIndex: number) => {
+          setSubtask({
+            ...subtask,
+            cases: subtask.cases.filter((_, i) => i !== caseIndex),
+          });
+        };
+        const handleAddCase = () => {
+          setSubtask({
+            ...subtask,
+            cases: [...subtask.cases, { input: "", output: "" }],
+          });
+        };
+
+        return (
+          <div
+            className="collapse collapse-open overflow-visible"
+            key={index}
+            tabIndex={0}
+          >
+            <div className="collapse-title flex justify-between items-center">
+              <span className="inline-flex gap-2 items-center">
+                <span>子任务 {index + 1}</span>
+                <div className="tooltip" data-tip="分值">
+                  <input
+                    className="input input-bordered input-sm w-12"
+                    value={subtask.score}
+                    onChange={(event) => {
+                      setSubtask({
+                        ...subtask,
+                        score: Number(event.target.value),
+                      });
+                    }}
+                  />
+                </div>
+              </span>
+              <span className="inline-flex gap-2 items-center">
+                {/* 添加新的测试点 */}
+                <div className="tooltip" data-tip="新建测试点">
+                  <button
+                    className="btn btn-ghost btn-success btn-square btn-sm"
+                    onClick={handleAddCase}
+                  >
+                    <HiOutlinePlus className="text-success" />
+                  </button>
+                </div>
+                {/* 删除当前子任务 */}
+                <div className="tooltip" data-tip="删除子任务">
+                  <button
+                    className="btn btn-ghost btn-error btn-square btn-sm"
+                    onClick={handleRemoveSubtask}
+                  >
+                    <HiOutlineX className="text-error" />
+                  </button>
+                </div>
+              </span>
+            </div>
+            <div className="collapse-content overflow-visible">
+              {subtask.cases.map((task, index) => {
+                const setTask = (task: ConfigTaskDefault) => {
+                  setSubtask({
+                    ...subtask,
+                    cases: [
+                      ...subtask.cases.slice(0, index),
+                      task,
+                      ...subtask.cases.slice(index + 1),
+                    ],
+                  });
+                };
+
+                return (
+                  <div className="flex gap-2 items-center" key={index}>
+                    <span>测试点 {index + 1}</span>
+                    <HiOutlineChevronLeft />
+                    <div className="tooltip" data-tip="输入文件">
+                      <DataSelect
+                        className="select select-bordered select-sm"
+                        value={task.input}
+                        options={props.data}
+                        onChange={(event) => {
+                          setTask({ ...task, input: event.target.value });
+                        }}
+                      />
+                    </div>
+                    <HiOutlineChevronRight />
+                    <div className="tooltip" data-tip="输出文件">
+                      <DataSelect
+                        className="select select-bordered select-sm tooltip"
+                        value={task.output}
+                        options={props.data}
+                        onChange={(event) => {
+                          setTask({ ...task, output: event.target.value });
+                        }}
+                      />
+                    </div>
+                    {/* 删除当前测试点 */}
+                    <div className="tooltip" data-tip="删除测试点">
+                      <button className="btn btn-ghost btn-error btn-square btn-sm">
+                        <HiOutlineX
+                          className="text-error cursor-pointer"
+                          onClick={() => handleRemoveCase(index)}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex flex-col gap-2 my-4">
+        {!props.config.subtasks.length && (
+          <div className="alert alert-warning">还没有任何子任务</div>
+        )}
+        {!!props.config.subtasks.length && hasInvalidScore && (
+          <div className="alert alert-warning">子任务分数之和不等于 100</div>
+        )}
+        {hasEmptySubtask && (
+          <div className="alert alert-warning">存在空的子任务</div>
+        )}
+        {hasEmptyTask && (
+          <div className="alert alert-warning">存在未选择的测试点</div>
+        )}
+        {hasDuplicatedFile && (
+          <div className="alert alert-warning">存在重复使用的测试数据</div>
+        )}
+      </div>
+    </>
+  );
+}
+
+type InteractiveConfig = Extract<ConfigJson, { type: "interactive" }>;
+type InteractiveConfigEditorProps = EditorProps<InteractiveConfig>;
+
+function InteractiveConfigEditor(props: InteractiveConfigEditorProps) {
+  return (
+    <>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">交互代码</span>
+        </label>
+        <DataSelect
+          options={props.data}
+          value={props.config.interactive}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              interactive: event.target.value,
+            });
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 my-4">
+        {!props.config.interactive && (
+          <div className="alert alert-warning">请选择交互代码</div>
+        )}
+      </div>
+    </>
+  );
+}
+
+type DynamicConfig = Extract<ConfigJson, { type: "dynamic" }>;
+type DynamicConfigEditorProps = EditorProps<DynamicConfig>;
+
+function DynamicConfigEditor(props: DynamicConfigEditorProps) {
+  return (
+    <>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">数据构造代码 (mkdata.cpp)</span>
+        </label>
+        <DataSelect
+          options={props.data}
+          value={props.config.mkdata}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              mkdata: event.target.value,
+            });
+          }}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">标准代码 (std.cpp)</span>
+        </label>
+        <DataSelect
+          options={props.data}
+          value={props.config.std}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              std: event.target.value,
+            });
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 my-4">
+        {(!props.config.mkdata || !props.config.std) && (
+          <div className="alert alert-warning">
+            请选择数据构造代码和标准代码
+          </div>
+        )}
+        <div className="alert alert-warning">TODO 我还没写完，你先别急</div>
+      </div>
+    </>
+  );
+}
+
+type SubmitAnswerConfig = Extract<ConfigJson, { type: "submit_answer" }>;
+type SubmitAnswerConfigEditorProps = EditorProps<SubmitAnswerConfig>;
+
+function SubmitAnswerConfigEditor(props: SubmitAnswerConfigEditorProps) {
+  return (
+    <>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">答案</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          value={props.config.answer}
+          onChange={(event) => {
+            props.onChange({
+              ...props.config,
+              answer: event.target.value,
+            });
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 my-4">
+        {!props.config.answer && (
+          <div className="alert alert-warning">请输入答案</div>
+        )}
+      </div>
+    </>
+  );
+}
 
 type ConfigJSONEditorProps = {
   config: ConfigJson;
@@ -181,282 +532,32 @@ function ConfigJSONEditor({
       </div>
 
       {config.type === "default" && (
-        <>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">时间限制 (ms)</span>
-            </label>
-            <input
-              className="input input-bordered"
-              type="number"
-              value={config.time}
-              onChange={(event) => {
-                setConfig((config) => ({
-                  ...config,
-                  time: Number(event.target.value),
-                }));
-              }}
-              placeholder={DEFAULT_TIME_LIMIT.toString()}
-            />
-          </div>
-
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">内存限制 (byte)</span>
-            </label>
-            <input
-              className="input input-bordered"
-              type="number"
-              value={config.memory}
-              onChange={(event) => {
-                setConfig((config) => ({
-                  ...config,
-                  memory: Number(event.target.value),
-                }));
-              }}
-              placeholder={DEFAULT_MEMORY_LIMIT.toString()}
-            />
-          </div>
-
-          <h3 className="flex justify-between items-center">
-            <span>子任务配置</span>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setConfig((config) => ({
-                  ...config,
-                  subtasks: [
-                    ...(config as Extract<ConfigJson, { type: "default" }>)
-                      .subtasks,
-                    { score: 20, cases: [] },
-                  ],
-                }));
-              }}
-            >
-              <HiOutlinePlus />
-              <span>添加子任务</span>
-            </button>
-          </h3>
-
-          {config.subtasks.map((subtask, index) => {
-            const setSubtask = (
-              fn: (
-                subtask: ConfigSubtask<ConfigTaskDefault>
-              ) => ConfigSubtask<ConfigTaskDefault>
-            ) => {
-              setConfig((_config) => {
-                const config = _config as Extract<
-                  ConfigJson,
-                  { type: "default" }
-                >;
-                config.subtasks[index] = fn(config.subtasks[index]);
-                return { ...config };
-              });
-            };
-
-            return (
-              <div className="card" key={index}>
-                <div className="card-body gap-2">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">子任务分数</span>
-                    </label>
-                    <input
-                      className="input input-bordered"
-                      type="number"
-                      value={subtask.score}
-                      onChange={(value) => {
-                        setSubtask((subtask) => ({
-                          ...subtask,
-                          score: Number(value),
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">子任务时间限制 (ms)</span>
-                    </label>
-                    <input
-                      className="input input-bordered"
-                      type="number"
-                      value={subtask.time}
-                      onChange={(value) => {
-                        setSubtask((subtask) => ({
-                          ...subtask,
-                          time: Number(value),
-                        }));
-                      }}
-                      placeholder={(
-                        config.time ?? DEFAULT_TIME_LIMIT
-                      ).toString()}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">子任务内存限制 (byte)</span>
-                    </label>
-                    <input
-                      className="input input-bordered"
-                      type="number"
-                      value={subtask.memory}
-                      onChange={(value) => {
-                        setSubtask((subtask) => ({
-                          ...subtask,
-                          memory: Number(value),
-                        }));
-                      }}
-                      placeholder={(
-                        config.memory ?? DEFAULT_MEMORY_LIMIT
-                      ).toString()}
-                    />
-                  </div>
-
-                  <h4 className="flex justify-between items-center">
-                    <span>测试点配置</span>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() =>
-                        setSubtask((subtask) => ({
-                          ...subtask,
-                          cases: [...subtask.cases, { input: "", output: "" }],
-                        }))
-                      }
-                    >
-                      <HiOutlinePlus />
-                      <span>添加测试点</span>
-                    </button>
-                  </h4>
-
-                  {subtask.cases.map((task, index) => {
-                    const setTask = (
-                      fn: (task: ConfigTaskDefault) => ConfigTaskDefault
-                    ) => {
-                      setSubtask((subtask) => {
-                        subtask.cases[index] = fn(subtask.cases[index]);
-                        return { ...subtask };
-                      });
-                    };
-
-                    return (
-                      <div className="flex flex-col gap-2" key={index}>
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="label-text">输入文件</span>
-                          </label>
-                          <DataSelect
-                            options={data}
-                            value={task.input}
-                            onChange={(event) => {
-                              setTask((task) => ({
-                                ...task,
-                                input: event.target.value,
-                              }));
-                            }}
-                          />
-                        </div>
-
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="label-text">输出文件</span>
-                          </label>
-                          <DataSelect
-                            options={data}
-                            value={task.output}
-                            onChange={(event) => {
-                              setTask((task) => ({
-                                ...task,
-                                output: event.target.value,
-                              }));
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </>
+        <DefaultConfigEditor data={data} config={config} onChange={setConfig} />
       )}
-
       {config.type === "interactive" && (
-        <>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">交互代码</span>
-            </label>
-            <DataSelect
-              options={data}
-              value={config.interactive}
-              onChange={(event) => {
-                setConfig((config) => ({
-                  ...config,
-                  interactive: event.target.value,
-                }));
-              }}
-            />
-          </div>
-        </>
+        <InteractiveConfigEditor
+          data={data}
+          config={config}
+          onChange={setConfig}
+        />
       )}
-
       {config.type === "dynamic" && (
-        <>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">数据构造代码 (mkdata.cpp)</span>
-            </label>
-            <DataSelect
-              options={data}
-              value={config.mkdata}
-              onChange={(event) => {
-                setConfig((config) => ({
-                  ...config,
-                  interactive: event.target.value,
-                }));
-              }}
-            />
-          </div>
-
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">标准代码 (std.cpp)</span>
-            </label>
-            <DataSelect
-              options={data}
-              value={config.std}
-              onChange={(event) => {
-                setConfig((config) => ({
-                  ...config,
-                  std: event.target.value,
-                }));
-              }}
-            />
-          </div>
-        </>
+        <DynamicConfigEditor data={data} config={config} onChange={setConfig} />
       )}
-
       {config.type === "submit_answer" && (
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">答案</span>
-          </label>
-          <input
-            className="input input-bordered"
-            type="text"
-            value={config.answer}
-            onChange={(event) => {
-              setConfig((config) => ({
-                ...config,
-                answer: event.target.value,
-              }));
-            }}
-          />
-        </div>
+        <SubmitAnswerConfigEditor
+          data={data}
+          config={config}
+          onChange={setConfig}
+        />
       )}
+
+      <button
+        className="btn btn-primary"
+        onClick={() => alert("我还没写完，你先别急")}
+      >
+        确认更新
+      </button>
     </div>
   );
 }
@@ -477,6 +578,12 @@ export default function ProblemData() {
 
   return (
     <>
+      {!rawConfig && (
+        <div className="alert alert-warning">
+          您还没有进行题目的评测配置，题目当前无法被评测
+        </div>
+      )}
+
       <h2 className="flex justify-between items-center">
         <span>测试数据</span>
         <span className="inline-flex gap-4 items-center">

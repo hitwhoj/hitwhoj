@@ -124,7 +124,7 @@ export default function RecordView() {
         <>
           <h2>测试点结果</h2>
           {subtasks.map((subtask, index) => (
-            <div className={`collapse collapse-open`} key={index} tabIndex={0}>
+            <div className="collapse collapse-open" key={index} tabIndex={0}>
               <div className="collapse-title flex gap-2">
                 <span>子任务 {index + 1}</span>
                 <RecordStatus status={subtask.status} />

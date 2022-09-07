@@ -210,7 +210,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
       <label tabIndex={0} className="btn btn-square">
         <HiOutlineCog className="w-6 h-6" />
       </label>
-      <ul className="dropdown-content menu p-2 bg-base-300 w-72 rounded-box">
+      <ul className="dropdown-content shadow-2xl menu p-2 bg-base-300 w-72 rounded-box">
         <li className={isOwner ? "disabled" : ""}>
           <button
             type="submit"
@@ -284,7 +284,7 @@ export default function MemberList() {
                 <div className="flex gap-4 items-center">
                   <UserAvatar
                     user={member.user}
-                    className="w-12 h-12 bg-base-100 text-xl shrink-0"
+                    className="w-16 h-16 bg-base-100 text-2xl shrink-0"
                   />
                   <div>
                     <Link
