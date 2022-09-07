@@ -97,6 +97,9 @@ export const Permissions = {
     TeamPermission.Everyone.with(UserPermission.Everyone)
   ),
 
+  /** 回复比赛中的用户反馈 */
+  PERM_REPLY_CONTEST_CLARIFICATION: ContestPermission.Juries,
+
   /** 创建团队的权限 */
   PERM_TEAM_CREATE: UserPermission.Users,
   /** 团队修改成员的角色 */

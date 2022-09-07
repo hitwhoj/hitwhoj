@@ -1,7 +1,7 @@
-import { Space, Tag, Typography } from "@arco-design/web-react";
+import { Message, Space, Tag, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -21,6 +21,11 @@ import {
 import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useContext, useEffect } from "react";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType } from "./$contestId/clarificationEvents";
+import { filter } from "rxjs";
+import { UserContext } from "~/utils/context/user";
 import { ContestPermission } from "~/utils/permission/permission/contest";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -44,6 +49,10 @@ export async function loader({ request, params }: LoaderArgs) {
       ContestPermission.Contestants
     );
 
+  const [canReply] = await perm.hasPermission(
+    Permissions.PERM_REPLY_CONTEST_CLARIFICATION
+  );
+
   const contest = await db.contest.findUnique({
     where: { id: contestId },
     select: {
@@ -65,7 +74,13 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest, hasEditPerm, hasViewProblemPerm, isContestants });
+  return json({
+    contest,
+    hasEditPerm,
+    canReply,
+    hasViewProblemPerm,
+    isContestants,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -73,8 +88,49 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm, hasViewProblemPerm, isContestants } =
+  const { contest, hasEditPerm, canReply, hasViewProblemPerm, isContestants } =
     useLoaderData<typeof loader>();
+  const { contestId } = useParams();
+  const self = useContext(UserContext);
+
+  useEffect(() => {
+    const observable = fromEventSource<MessageType>(
+      `/contest/${contestId}/clarificationEvents`
+    );
+    const subscription = canReply
+      ? observable
+          .pipe(filter((message) => message.type === "judge"))
+          .subscribe((message) => {
+            Message.info({
+              content: `用户对题目${String.fromCharCode(
+                0x40 + message.rank
+              )}的反馈${message.content}需要您的回复`,
+              duration: 0,
+              closable: true,
+            });
+          })
+      : observable
+          .pipe(
+            filter(
+              (message) => message.type === "user" && message.userId === self
+            )
+          )
+          .subscribe((message) => {
+            Message.info({
+              content: message.resolved
+                ? `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
+                    message.content
+                  }已被解决`
+                : `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
+                    message.content
+                  }已被回复`,
+              duration: 0,
+              closable: true,
+            });
+          });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <Typography className="contest-problem-container">
@@ -112,6 +168,7 @@ export default function ContestView() {
             ...(hasViewProblemPerm || isContestants
               ? [{ title: "题目", key: "problem" }]
               : []),
+            { title: canReply ? "用户反馈" : "我的反馈", key: "clarification" },
             ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
           ]}
         />

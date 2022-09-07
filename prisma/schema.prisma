@@ -46,11 +46,14 @@ model User {
   participatedContests ContestParticipant[]
   attendedTeams        TeamMember[]
 
-  sentMessages     PrivateMessage[] @relation("send")
-  receivedMessages PrivateMessage[] @relation("receive")
-  chatMessage      ChatMessage[]
-  enteredChatRoom  ChatRoomUser[]
-  reports          Report[]         @relation("reports")
+  sentMessages          PrivateMessage[]     @relation("send")
+  receivedMessages      PrivateMessage[]     @relation("receive")
+  chatMessage           ChatMessage[]
+  enteredChatRoom       ChatRoomUser[]
+  reports               Report[]             @relation("reports")
+  submitedClarifacation Clarification[]      @relation("submit")
+  appliedClarification  Clarification[]      @relation("apply")
+  clarificationReply    ClarificationReply[]
 }
 
 enum SystemUserRole {
@@ -197,8 +200,9 @@ model Contest {
 
   relatedRecords Record[]
 
-  team   Team? @relation(fields: [teamId], references: [id])
-  teamId Int?
+  team          Team?           @relation(fields: [teamId], references: [id])
+  teamId        Int?
+  Clarification Clarification[]
 }
 
 enum ContestRegistrationType {
@@ -263,6 +267,42 @@ enum InvitationType {
   CODE
   // 不允许加入
   NONE
+}
+
+model Clarification {
+  id Int @id @default(autoincrement())
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  rank Int
+
+  userId Int
+  user   User @relation(name: "submit", fields: [userId], references: [id])
+
+  applicantId Int?
+  applicant   User? @relation(name: "apply", fields: [applicantId], references: [id])
+
+  resolved Boolean @default(false)
+
+  content String
+
+  createdAt DateTime             @default(now())
+  replies   ClarificationReply[]
+}
+
+model ClarificationReply {
+  id Int @id @default(autoincrement())
+
+  replierId Int
+  replier   User @relation(fields: [replierId], references: [id])
+
+  clarificationId Int
+  clarification   Clarification @relation(fields: [clarificationId], references: [id])
+
+  content String
+
+  createdAt DateTime @default(now())
 }
 
 model Team {
