@@ -39,12 +39,7 @@ import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import {
-  darkThemes,
-  defaultThemeColor,
-  ThemeContext,
-  themes,
-} from "~/utils/theme";
+import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
 
@@ -207,13 +202,16 @@ export default function ContestProblemView() {
   // 设置 monaco 主题
   useEffect(() => {
     if (monaco) {
-      themes.forEach((theme) => {
-        monaco.editor.defineTheme(theme, {
-          base: darkThemes.includes(theme) ? "vs-dark" : "vs",
-          inherit: true,
-          rules: [],
-          colors: { ...defaultThemeColor[theme] },
-        });
+      const color = defaultThemeColor[theme];
+      monaco.editor.defineTheme(theme, {
+        base: darkThemes.includes(theme) ? "vs-dark" : "vs",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": color.base100,
+          "editor.foreground": color.baseContent,
+          "editor.lineHighlightBackground": color.base200,
+        },
       });
       monaco.editor.setTheme(theme);
     }
