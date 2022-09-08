@@ -65,25 +65,32 @@ export default function NewTeam() {
   return (
     <>
       <h1>创建团队</h1>
+
       <p>创建一个新的团队！</p>
-      <Form method="post" className="form-control w-full max-w-xs">
-        <label className="label">
-          <span className="label-text">团队名称</span>
-        </label>
-        <input
-          className="input input-bordered"
-          type="text"
-          name="name"
-          required
-          disabled={isLoading}
-        />
-        <button
-          className="btn btn-primary mt-4"
-          type="submit"
-          disabled={isLoading}
-        >
-          创建团队
-        </button>
+
+      <Form method="post" className="form-control w-full max-w-xs gap-4">
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">团队名称</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="name"
+            required
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-control">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isLoading}
+          >
+            创建团队
+          </button>
+        </div>
       </Form>
     </>
   );

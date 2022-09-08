@@ -1,3 +1,4 @@
+import { SystemUserRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
@@ -146,10 +147,14 @@ export default function UserManage() {
         <>
           <h2>修改用户系统角色</h2>
           <Form method="post" className="flex gap-4">
-            <select className="select select-bordered" defaultValue={user.role}>
-              <option value="Root">超级管理员</option>
-              <option value="Admin">系统管理员</option>
-              <option value="User">普通用户</option>
+            <select
+              className="select select-bordered"
+              name="role"
+              defaultValue={user.role}
+            >
+              <option value={SystemUserRole.Root}>超级管理员</option>
+              <option value={SystemUserRole.Admin}>系统管理员</option>
+              <option value={SystemUserRole.User}>普通用户</option>
             </select>
 
             <button

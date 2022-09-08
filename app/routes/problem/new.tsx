@@ -41,20 +41,26 @@ export default function ProblemNew() {
   return (
     <>
       <h1>新建题目</h1>
-      <Form method="post" className="form-control w-full max-w-xs">
-        <label className="label">
-          <span className="label-text">题目名称</span>
-        </label>
-        <input
-          className="input input-bordered"
-          type="text"
-          name="title"
-          required
-          disabled={isLoading}
-        />
-        <button className="btn btn-primary mt-4" type="submit">
-          创建题目
-        </button>
+
+      <Form method="post" className="form-control w-full max-w-xs gap-4">
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">题目名称</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="title"
+            required
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-control">
+          <button className="btn btn-primary" type="submit">
+            创建题目
+          </button>
+        </div>
       </Form>
     </>
   );

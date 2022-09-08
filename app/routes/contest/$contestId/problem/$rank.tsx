@@ -220,12 +220,11 @@ export default function ContestProblemView() {
   const [language, setLanguage] = useState("cpp");
   const [code, setCode] = useState(
     "#include <bits/stdc++.h>\n" +
-      "using namespace std;\n" +
       "\n" +
       "int main() {\n" +
       "  int a, b;\n" +
-      "  cin >> a >> b;\n" +
-      "  cout << a + b << endl;\n" +
+      "  std::cin >> a >> b;\n" +
+      "  std::cout << a + b << std::endl;\n" +
       "  return 0;\n" +
       "}\n"
   );

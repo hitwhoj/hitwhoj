@@ -62,41 +62,53 @@ export default function Register() {
     <>
       <h1>登录</h1>
       <p>网站内测中，随时删档，请不要上传任何违反法律法规的内容。</p>
-      <Form method="post" className="form-control w-full max-w-xs">
-        <label className="label">
-          <span className="label-text">用户名</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="text"
-          name="username"
-          required
-          disabled={isLoading}
-          pattern="\w+"
-        />
-        <input type="hidden" name="password" value={passwordHash(password)} />
-        <label className="label">
-          <span className="label-text">密码</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.currentTarget.value)}
-          required
-          disabled={isLoading}
-        />
-        <button className="btn btn-primary mt-4" type="submit">
-          登录
-        </button>
-        <label className="label">
-          <Link to="/register" className="label-text-alt">
-            注册
-          </Link>
-          <Link to="/reset" className="label-text-alt">
-            忘记密码
-          </Link>
-        </label>
+
+      <Form
+        method="post"
+        className="form-control w-full max-w-xs gap-4 not-prose"
+      >
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">用户名</span>
+          </label>
+          <input
+            className="input input-bordered w-full max-w-xs"
+            type="text"
+            name="username"
+            required
+            disabled={isLoading}
+            pattern="\w+"
+          />
+        </div>
+
+        <div className="form-control">
+          <input type="hidden" name="password" value={passwordHash(password)} />
+          <label className="label">
+            <span className="label-text">密码</span>
+          </label>
+          <input
+            className="input input-bordered w-full max-w-xs"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.currentTarget.value)}
+            required
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-control">
+          <button className="btn btn-primary" type="submit">
+            登录
+          </button>
+          <label className="label">
+            <Link className="label-text-alt link link-hover" to="/register">
+              注册
+            </Link>
+            <Link className="label-text-alt link link-hover" to="/reset">
+              忘记密码
+            </Link>
+          </label>
+        </div>
 
         {data?.reason && (
           <p className="alert alert-error shadow-lg">{data.reason}</p>
