@@ -9,6 +9,7 @@ import type {
   FinishMessage,
   HandshakeMessage,
   Judge2WebMessage,
+  JudgeStatus,
   ProcessMessage,
   RejectMessage,
   StatusMessage,
@@ -17,7 +18,7 @@ import type {
 } from "./judge.types";
 import { memorySummary, timeSummary } from "./judge.types";
 
-type JudgeStatus = {
+type JudgeMachineStatus = {
   status: "Online" | "Offline";
   cpus: number;
   occupied: number;
@@ -31,7 +32,7 @@ export class Judge {
   id: number;
   url: string;
 
-  status: JudgeStatus = {
+  status: JudgeMachineStatus = {
     status: "Offline",
     cpus: 0,
     occupied: 0,
@@ -199,14 +200,11 @@ export class Judge {
     }
   }
 
-  /**
-   * 标记评测任务失败
-   */
-  async #markAsFailed(id: number, reason: string) {
+  async #mark(id: number, status: JudgeStatus, reason: string) {
     const record = await db.record.update({
       where: { id },
       data: {
-        status: "System Error",
+        status,
         score: 0,
         message: reason,
         time: -1,
@@ -248,12 +246,13 @@ export class Judge {
     // 评测超时计时器
     const timeout = setTimeout(() => {
       if (this.#workings.delete(task.id)) {
-        this.#markAsFailed(task.id, "[judge] judge timeout (60s)");
+        this.#mark(task.id, "System Error", "[judge] judge timeout (60s)");
       }
     }, 60000);
 
     // 成功分配给当前的评测机
     this.#workings.set(task.id, { timeout });
     this.status.occupied++;
+    this.#mark(task.id, "Judging", "");
   }
 }
