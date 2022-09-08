@@ -9,6 +9,9 @@ import { Permissions } from "~/utils/permission/permission";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectContestListData } from "~/utils/db/contest";
 import { formatNumber } from "~/utils/tools";
+import ActivityCalendar from "react-activity-calendar";
+import type { Level } from "react-activity-calendar";
+import ReactTooltip from "react-tooltip";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -53,9 +56,39 @@ export default function UserStatistics() {
 
   // FIXME 摆烂了，这个页面就跟 profile 页面合并了吧
   // 丢给 @lingyunchi 处理吧
+  const now = new Date();
 
   return (
     <>
+      <div className="stats w-full">
+        <div className="stat place-items-center">
+          <ActivityCalendar
+            data={[
+              ...Array.from({ length: 365 }).map((_, i) => {
+                const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+                return {
+                  count: Math.floor(Math.random() * 10),
+                  date: date.toISOString().slice(0, 10),
+                  level: Math.floor(Math.random() * 5) as Level,
+                };
+              }),
+            ]}
+            labels={{
+              tooltip: "<strong>{{count}} contributions</strong> on {{date}}",
+              totalCount: "{{count}} contributions in {{year}}",
+            }}
+            theme={{
+              level0: "#ebedf0",
+              level1: "#c6e48b",
+              level2: "#7bc96f",
+              level3: "#239a3b",
+              level4: "#196127",
+            }}
+          >
+            <ReactTooltip html />
+          </ActivityCalendar>
+        </div>
+      </div>
       <div className="stats w-full">
         <div className="stat place-items-center">
           <div className="stat-value">
