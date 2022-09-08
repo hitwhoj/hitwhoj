@@ -89,81 +89,94 @@ export default function ContestNew() {
   return (
     <>
       <h1>创建比赛</h1>
-      <Form method="post" className="form-control">
-        <label className="label">
-          <span className="label-text">标题</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="text"
-          name="title"
-          required
-          disabled={isLoading}
-        />
 
-        <label className="label">
-          <span className="label-text">比赛介绍</span>
-        </label>
-        <textarea
-          name="description"
-          className="textarea textarea-bordered"
-          required
-          disabled={isLoading}
-        />
+      <Form method="post" className="form-control gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="title"
+            required
+            disabled={isLoading}
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">比赛开始时间</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="datetime-local"
-          name="beginTime"
-          required
-          disabled={isLoading}
-        />
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">比赛介绍</span>
+          </label>
+          <textarea
+            name="description"
+            className="textarea textarea-bordered"
+            required
+            disabled={isLoading}
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">比赛结束时间</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="datetime-local"
-          name="endTime"
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="hidden"
-          name="timezone"
-          value={new Date().getTimezoneOffset()}
-        />
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛开始时间</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="beginTime"
+            required
+            disabled={isLoading}
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">比赛赛制</span>
-        </label>
-        <select
-          className="select select-bordered w-full max-w-xs"
-          name="system"
-          required
-          disabled={isLoading}
-        >
-          <option value="" disabled selected>
-            请选择比赛的赛制
-          </option>
-          {Object.keys(ContestSystem).map((key) => (
-            <option key={key} value={key}>
-              {ContestSystem[key as keyof typeof ContestSystem]}
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛结束时间</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="endTime"
+            required
+            disabled={isLoading}
+          />
+          <input
+            type="hidden"
+            name="timezone"
+            value={new Date().getTimezoneOffset()}
+          />
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛赛制</span>
+          </label>
+          <select
+            className="select select-bordered"
+            name="system"
+            required
+            disabled={isLoading}
+          >
+            <option value="" disabled selected>
+              请选择比赛的赛制
             </option>
-          ))}
-        </select>
+            {Object.keys(ContestSystem).map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <button
-          className="btn btn-primary w-full max-w-xs mt-4"
-          type="submit"
-          disabled={isLoading}
-        >
-          创建比赛
-        </button>
+        <div className="form-control w-full max-w-xs">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isLoading}
+          >
+            创建比赛
+          </button>
+        </div>
       </Form>
     </>
   );

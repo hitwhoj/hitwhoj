@@ -84,8 +84,13 @@ export class JudgeManager {
 
       let dispatched = false;
       for (const judge of judges) {
-        // judge is full
-        if (judge.status.occupied >= judge.status.cpus) continue;
+        // judge is offline or full
+        if (
+          judge.status.status === "Offline" ||
+          judge.status.occupied >= judge.status.cpus
+        ) {
+          continue;
+        }
 
         // try to dispatch to the certain judge
         try {

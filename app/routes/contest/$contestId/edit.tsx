@@ -276,6 +276,7 @@ export default function ContestEdit() {
   const [registrationType, setRegistrationType] = useState(
     contest.registrationType
   );
+  console.log(registrationType, contest.registrationType);
   const [tags, setTags] = useState(contest.tags.map(({ name }) => name));
   const [tag, setTag] = useState("");
 
@@ -298,186 +299,209 @@ export default function ContestEdit() {
   return (
     <>
       <h2>修改比赛信息</h2>
-      <Form method="post" className="form-control">
-        <label className="label">
-          <span className="label-text">标题</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="text"
-          name="title"
-          defaultValue={contest.title}
-          required
-          disabled={isUpdating}
-        />
 
-        <label className="label">
-          <span className="label-text">比赛标签</span>
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {tags.map((name) => (
-            <div className="badge inline-flex gap-1" key={name}>
-              <input type="hidden" name="tag" value={name} />
-              <HiOutlineTag />
-              {name}
-              <HiOutlineX
-                className="cursor-pointer"
-                onClick={() => handleRemoveTag(name)}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4 mt-2">
+      <Form method="post" className="form-control gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
           <input
-            type="text"
             className="input input-bordered"
-            value={tag}
-            onChange={(event) => setTag(event.target.value)}
+            type="text"
+            name="title"
+            defaultValue={contest.title}
+            required
+            disabled={isUpdating}
           />
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={() => {
-              tag && setTags((tags) => [...tags, tag]);
-              setTag("");
-            }}
-          >
-            添加标签
-          </button>
         </div>
 
-        <label className="label">
-          <span className="label-text">介绍</span>
-        </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          defaultValue={contest.description}
-          required
-          disabled={isUpdating}
-        />
+        <div className="form-control gap-2">
+          <label className="label">
+            <span className="label-text">比赛标签</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((name) => (
+              <div className="badge inline-flex gap-1" key={name}>
+                <input type="hidden" name="tag" value={name} />
+                <HiOutlineTag />
+                {name}
+                <HiOutlineX
+                  className="cursor-pointer"
+                  onClick={() => handleRemoveTag(name)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <input
+              type="text"
+              className="input input-bordered"
+              value={tag}
+              onChange={(event) => setTag(event.target.value)}
+            />
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => {
+                tag && setTags((tags) => [...tags, tag]);
+                setTag("");
+              }}
+            >
+              添加标签
+            </button>
+          </div>
+        </div>
 
-        <label className="label">
-          <span className="label-text">开始时间</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="datetime-local"
-          name="beginTime"
-          defaultValue={getDatetimeLocal(new Date(contest.beginTime).getTime())}
-          required
-          disabled={isUpdating}
-        />
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">介绍</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered"
+            name="description"
+            defaultValue={contest.description}
+            required
+            disabled={isUpdating}
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">结束时间</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="datetime-local"
-          name="endTime"
-          defaultValue={getDatetimeLocal(new Date(contest.endTime).getTime())}
-          required
-          disabled={isUpdating}
-        />
-        <input
-          type="hidden"
-          name="timezone"
-          value={new Date().getTimezoneOffset()}
-          required
-        />
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">开始时间</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="beginTime"
+            defaultValue={getDatetimeLocal(
+              new Date(contest.beginTime).getTime()
+            )}
+            required
+            disabled={isUpdating}
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">比赛赛制</span>
-        </label>
-        <select
-          className="select select-bordered w-full max-w-xs"
-          name="system"
-          required
-          disabled={isUpdating}
-          defaultValue={contest.system}
-        >
-          {Object.keys(ContestSystem).map((key) => (
-            <option key={key} value={key}>
-              {ContestSystem[key as keyof typeof ContestSystem]}
-            </option>
-          ))}
-        </select>
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">结束时间</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="endTime"
+            defaultValue={getDatetimeLocal(new Date(contest.endTime).getTime())}
+            required
+            disabled={isUpdating}
+          />
+          <input
+            type="hidden"
+            name="timezone"
+            value={new Date().getTimezoneOffset()}
+            required
+          />
+        </div>
 
-        <label className="label">
-          <span className="label-text">报名方式</span>
-        </label>
-        <div className="flex gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛赛制</span>
+          </label>
           <select
             className="select select-bordered"
-            name="registrationType"
-            value={registrationType}
-            onChange={(event) =>
-              setRegistrationType(
-                event.target.value as keyof typeof ContestRegistrationType
-              )
-            }
+            name="system"
+            required
             disabled={isUpdating}
+            defaultValue={contest.system}
           >
-            {Object.keys(ContestRegistrationType).map((key) => (
+            {Object.keys(ContestSystem).map((key) => (
               <option key={key} value={key}>
-                {
-                  ContestRegistrationType[
-                    key as keyof typeof ContestRegistrationType
-                  ]
-                }
+                {ContestSystem[key as keyof typeof ContestSystem]}
               </option>
             ))}
           </select>
-          {registrationType === "Password" && (
-            <input
-              className="input input-bordered"
-              type="text"
-              name="registrationPassword"
-              defaultValue={contest.registrationPassword}
-              disabled={isUpdating}
-            />
-          )}
         </div>
 
-        <label className="label cursor-pointer justify-start gap-2 mt-4">
-          <input
-            className="checkbox checkbox-primary"
-            type="checkbox"
-            name="private"
-            defaultChecked={contest.private}
-            disabled={isUpdating}
-          />
-          <span className="label-text">
-            保持比赛隐藏（取消勾选之后用户可以在首页看到该比赛）
-          </span>
-        </label>
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">报名方式</span>
+          </label>
+          <div className="flex gap-4">
+            <select
+              className="select select-bordered"
+              name="registrationType"
+              value={registrationType}
+              onChange={(event) =>
+                setRegistrationType(
+                  event.target.value as keyof typeof ContestRegistrationType
+                )
+              }
+              disabled={isUpdating}
+            >
+              <option value={ContestRegistrationType.Public}>
+                允许任何人报名
+              </option>
+              <option value={ContestRegistrationType.Password}>
+                需要填写邀请码
+              </option>
+              <option value={ContestRegistrationType.Disallow}>
+                不允许报名
+              </option>
+            </select>
+            {registrationType === "Password" && (
+              <input
+                className="input input-bordered"
+                type="text"
+                name="registrationPassword"
+                defaultValue={contest.registrationPassword}
+                disabled={isUpdating}
+                placeholder="邀请码"
+                required
+              />
+            )}
+          </div>
+        </div>
 
-        <label className="label cursor-pointer justify-start gap-2">
-          <input
-            className="checkbox checkbox-primary"
-            type="checkbox"
-            name="joinAfterStart"
-            defaultChecked={contest.allowJoinAfterStart}
-            disabled={isUpdating}
-          />
-          <span className="label-text">允许比赛开始后中途加入</span>
-        </label>
+        <div className="form-control">
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="private"
+              defaultChecked={contest.private}
+              disabled={isUpdating}
+            />
+            <span className="label-text">
+              保持比赛隐藏（取消勾选之后用户可以在首页看到该比赛）
+            </span>
+          </label>
 
-        <button
-          className="btn btn-primary mt-4 w-full max-w-xs"
-          type="submit"
-          name="_action"
-          value={ActionType.UpdateInformation}
-          disabled={isUpdating}
-        >
-          确认更新
-        </button>
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="joinAfterStart"
+              defaultChecked={contest.allowJoinAfterStart}
+              disabled={isUpdating}
+            />
+            <span className="label-text">允许比赛开始后中途加入</span>
+          </label>
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            name="_action"
+            value={ActionType.UpdateInformation}
+            disabled={isUpdating}
+          >
+            确认更新
+          </button>
+        </div>
       </Form>
 
       <h2>修改比赛题目</h2>
 
-      {new Date() > new Date(contest.beginTime) && (
+      {Date.now() > new Date(contest.beginTime).getTime() && (
         <p className="alert alert-warning shadow-lg">
           如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性
         </p>

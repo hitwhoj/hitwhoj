@@ -31,8 +31,12 @@ import {
 import {
   AiOutlineHistory,
   AiOutlineProfile,
+  AiOutlineQq,
   AiOutlineTrophy,
+  AiOutlineWechat,
 } from "react-icons/ai";
+import { FaTelegramPlane } from "react-icons/fa";
+import { SiElement, SiNiconico } from "react-icons/si";
 import { version } from "../package.json";
 
 import style from "./styles/app.css";
@@ -213,24 +217,29 @@ export default function App() {
             {/* 底部 */}
             <footer className="footer p-10 bg-neutral text-neutral-content">
               <div>
-                <span className="footer-title">Services</span>
-                <span className="link link-hover">Branding</span>
-                <span className="link link-hover">Design</span>
-                <span className="link link-hover">Marketing</span>
-                <span className="link link-hover">Advertisement</span>
+                <SiNiconico className="w-16 h-16" />
+                <p>
+                  HITwh OJ Dev Team. Presents
+                  <br />
+                  Providing unstable service since 2022
+                </p>
               </div>
               <div>
-                <span className="footer-title">Company</span>
-                <span className="link link-hover">About us</span>
-                <span className="link link-hover">Contact</span>
-                <span className="link link-hover">Jobs</span>
-                <span className="link link-hover">Press kit</span>
-              </div>
-              <div>
-                <span className="footer-title">Legal</span>
-                <span className="link link-hover">Terms of use</span>
-                <span className="link link-hover">Privacy policy</span>
-                <span className="link link-hover">Cookie policy</span>
+                <span className="footer-title">Contact</span>
+                <div className="grid grid-flow-col gap-4">
+                  <a href="#">
+                    <AiOutlineWechat className="w-6 h-6" />
+                  </a>
+                  <a href="#">
+                    <AiOutlineQq className="w-6 h-6" />
+                  </a>
+                  <a href="https://t.me/hitwhmoe" target="_blank">
+                    <FaTelegramPlane className="w-6 h-6" />
+                  </a>
+                  <a href="#">
+                    <SiElement className="w-6 h-6" />
+                  </a>
+                </div>
               </div>
             </footer>
           </div>

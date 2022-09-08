@@ -149,12 +149,6 @@ function EditProfile({
   const isLoading = isActionSubmit || isActionReload;
   const [invitationType, setInvitationType] = useState(type);
 
-  const invitationType2Description = {
-    [InvitationType.FREE]: "所有人均可加入",
-    [InvitationType.CODE]: "需要填写邀请码",
-    [InvitationType.NONE]: "禁止任何人加入",
-  };
-
   const Toasts = useContext(ToastContext);
 
   useEffect(() => {
@@ -164,79 +158,87 @@ function EditProfile({
   }, [isActionReload]);
 
   return (
-    <fetcher.Form method="post" className="form-control">
-      <label className="label">
-        <span className="label-text">团队名称</span>
-      </label>
-      <input
-        className="input input-bordered w-full max-w-xs"
-        name="name"
-        defaultValue={name}
-        disabled={isLoading}
-        required
-      />
-
-      <label className="label">
-        <span className="label-text">团队描述</span>
-      </label>
-      <textarea
-        className="textarea textarea-bordered"
-        name="description"
-        defaultValue={description}
-        disabled={isLoading}
-      />
-
-      <label className="label">
-        <span className="label-text">邀请制</span>
-      </label>
-      <div className="flex gap-4">
-        <select
-          className="select select-bordered"
-          name="invitation"
-          value={invitationType}
-          onChange={(event) =>
-            setInvitationType(event.target.value as InvitationType)
-          }
+    <fetcher.Form method="post" className="form-control gap-4">
+      <div className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">团队名称</span>
+        </label>
+        <input
+          className="input input-bordered"
+          name="name"
+          defaultValue={name}
           disabled={isLoading}
-        >
-          {Object.values(InvitationType).map((type) => (
-            <option key={type} value={type}>
-              {invitationType2Description[type]}
-            </option>
-          ))}
-        </select>
-        {invitationType === InvitationType.CODE && (
-          <input
-            className="input input-bordered"
-            name="code"
-            defaultValue={code}
-            placeholder="邀请码"
-            disabled={isLoading}
-            required
-          />
-        )}
+          required
+        />
       </div>
 
-      <label className="label cursor-pointer justify-start gap-2 mt-4">
-        <input
-          className="checkbox checkbox-primary"
-          type="checkbox"
-          name="allow_invite"
-          defaultChecked={allow}
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">团队描述</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
+          name="description"
+          defaultValue={description}
           disabled={isLoading}
         />
-        <span className="label-text">允许团队成员邀请其他用户直接加入</span>
-      </label>
+      </div>
 
-      <button
-        className="btn btn-primary w-full max-w-xs mt-4"
-        type="submit"
-        disabled={isLoading}
-        name="_action"
-        value={ActionType.EditProfile}
-      >
-        确认更新
-      </button>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">邀请制</span>
+        </label>
+        <div className="flex gap-4">
+          <select
+            className="select select-bordered"
+            name="invitation"
+            value={invitationType}
+            onChange={(event) =>
+              setInvitationType(event.target.value as InvitationType)
+            }
+            disabled={isLoading}
+          >
+            <option value={InvitationType.FREE}>所有人均可加入</option>
+            <option value={InvitationType.CODE}>需要填写邀请码</option>
+            <option value={InvitationType.NONE}>禁止任何人加入</option>
+          </select>
+          {invitationType === InvitationType.CODE && (
+            <input
+              className="input input-bordered"
+              name="code"
+              defaultValue={code}
+              placeholder="邀请码"
+              disabled={isLoading}
+              required
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="form-control">
+        <label className="label cursor-pointer justify-start gap-2">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="allow_invite"
+            defaultChecked={allow}
+            disabled={isLoading}
+          />
+          <span className="label-text">允许团队成员邀请其他用户直接加入</span>
+        </label>
+      </div>
+
+      <div className="form-control w-full max-w-xs">
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={isLoading}
+          name="_action"
+          value={ActionType.EditProfile}
+        >
+          确认更新
+        </button>
+      </div>
     </fetcher.Form>
   );
 }

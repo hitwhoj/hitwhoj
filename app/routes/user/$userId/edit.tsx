@@ -122,94 +122,106 @@ export default function UserEdit() {
   }, [isActionReload]);
 
   return (
-    <Form method="post" className="form-control w-full max-w-sm mx-auto">
-      <label className="label">
-        <span className="label-text">用户名 (字母数字下划线)</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="username"
-        defaultValue={user.username}
-        disabled={isUpdating}
-        required
-        pattern="\w+"
-      />
+    <Form method="post" className="form-control w-full max-w-lg mx-auto gap-4">
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">用户名 (字母数字下划线)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="username"
+          defaultValue={user.username}
+          disabled={isUpdating}
+          required
+          pattern="\w+"
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">用户昵称</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="nickname"
-        defaultValue={user.nickname}
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">用户昵称</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="nickname"
+          defaultValue={user.nickname}
+          disabled={isUpdating}
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">个性签名</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="bio"
-        defaultValue={user.bio}
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">个性签名</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="bio"
+          defaultValue={user.bio}
+          disabled={isUpdating}
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">电子邮箱</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="email"
-        name="email"
-        defaultValue={user.email}
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">电子邮箱</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="email"
+          name="email"
+          defaultValue={user.email}
+          disabled={isUpdating}
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">头像地址 (比较诡异，估计要改)</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="avatar"
-        defaultValue={user.avatar}
-        placeholder="https://"
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">头像地址 (比较诡异，估计要改)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="avatar"
+          defaultValue={user.avatar}
+          placeholder="https://"
+          disabled={isUpdating}
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">工作单位</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="department"
-        defaultValue={user.department}
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">工作单位</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="department"
+          defaultValue={user.department}
+          disabled={isUpdating}
+        />
+      </div>
 
-      <label className="label">
-        <span className="label-text">学号</span>
-      </label>
-      <input
-        className="input input-bordered"
-        type="text"
-        name="studentId"
-        defaultValue={user.studentId}
-        disabled={isUpdating}
-      />
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">学号</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="studentId"
+          defaultValue={user.studentId}
+          disabled={isUpdating}
+        />
+      </div>
 
-      <button
-        className="btn btn-primary mt-4"
-        type="submit"
-        disabled={isUpdating}
-      >
-        确认修改
-      </button>
+      <div className="form-control">
+        <button className="btn btn-primary" type="submit" disabled={isUpdating}>
+          确认修改
+        </button>
+      </div>
     </Form>
   );
 }

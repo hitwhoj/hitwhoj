@@ -263,89 +263,101 @@ export default function ProblemSetEdit() {
 
   return (
     <>
-      <h2>编辑题目信息</h2>
-      <Form method="post" className="form-control">
-        <label className="label">
-          <span className="label-text">标题</span>
-        </label>
-        <input
-          className="input input-bordered w-full max-w-xs"
-          type="text"
-          name="title"
-          defaultValue={problemSet.title}
-          disabled={isUpdating}
-          required
-        />
+      <h2>编辑题单信息</h2>
 
-        <label className="label">
-          <span className="label-text">题单标签</span>
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {tags.map((name) => (
-            <div className="badge inline-flex gap-1" key={name}>
-              <input type="hidden" name="tag" value={name} />
-              <HiOutlineTag />
-              {name}
-              <HiOutlineX
-                className="cursor-pointer"
-                onClick={() => handleRemoveTag(name)}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4 mt-2">
+      <Form method="post" className="form-control gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
           <input
-            type="text"
             className="input input-bordered"
-            value={tag}
-            onChange={(event) => setTag(event.target.value)}
+            type="text"
+            name="title"
+            defaultValue={problemSet.title}
+            disabled={isUpdating}
+            required
           />
+        </div>
+
+        <div className="form-control gap-2">
+          <label className="label">
+            <span className="label-text">题单标签</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((name) => (
+              <div className="badge inline-flex gap-1" key={name}>
+                <input type="hidden" name="tag" value={name} />
+                <HiOutlineTag />
+                {name}
+                <HiOutlineX
+                  className="cursor-pointer"
+                  onClick={() => handleRemoveTag(name)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <input
+              type="text"
+              className="input input-bordered"
+              value={tag}
+              onChange={(event) => setTag(event.target.value)}
+            />
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => {
+                tag && setTags((tags) => [...tags, tag]);
+                setTag("");
+              }}
+            >
+              添加标签
+            </button>
+          </div>
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">简介</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered"
+            name="description"
+            defaultValue={problemSet.description}
+            disabled={isUpdating}
+            required
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="private"
+              defaultChecked={problemSet.private}
+              disabled={isUpdating}
+            />
+            <span className="label-text">保持题单隐藏</span>
+          </label>
+        </div>
+
+        <div className="form-control w-full max-w-xs">
           <button
             className="btn btn-primary"
-            type="button"
-            onClick={() => {
-              tag && setTags((tags) => [...tags, tag]);
-              setTag("");
-            }}
+            type="submit"
+            name="_action"
+            value={ActionType.UpdateInformation}
+            disabled={isUpdating}
           >
-            添加标签
+            确认修改
           </button>
         </div>
-
-        <label className="label">
-          <span className="label-text">简介</span>
-        </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          defaultValue={problemSet.description}
-          disabled={isUpdating}
-          required
-        />
-
-        <label className="label cursor-pointer justify-start gap-2 mt-4">
-          <input
-            className="checkbox checkbox-primary"
-            type="checkbox"
-            name="private"
-            defaultChecked={problemSet.private}
-            disabled={isUpdating}
-          />
-          <span className="label-text">保持题单隐藏</span>
-        </label>
-
-        <button
-          className="btn btn-primary mt-4 w-full max-w-xs"
-          type="submit"
-          name="_action"
-          value={ActionType.UpdateInformation}
-          disabled={isUpdating}
-        >
-          确认修改
-        </button>
       </Form>
 
       <h2>题目</h2>
+
       <ProblemEditor
         problems={problemSet.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}

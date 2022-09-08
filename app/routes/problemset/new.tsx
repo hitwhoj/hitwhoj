@@ -43,24 +43,25 @@ export default function ProblemSetNew() {
     <>
       <h1>创建题单</h1>
 
-      <Form method="post" className="form-control w-full max-w-xs">
-        <label className="label">
-          <span className="label-text">标题</span>
-        </label>
-        <input
-          className="input input-bordered"
-          type="text"
-          name="title"
-          disabled={loading}
-          required
-        />
-        <button
-          className="btn btn-primary mt-4"
-          type="submit"
-          disabled={loading}
-        >
-          创建题单
-        </button>
+      <Form method="post" className="form-control w-full max-w-xs gap-4">
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="title"
+            disabled={loading}
+            required
+          />
+        </div>
+
+        <div className="form-control">
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            创建题单
+          </button>
+        </div>
       </Form>
     </>
   );

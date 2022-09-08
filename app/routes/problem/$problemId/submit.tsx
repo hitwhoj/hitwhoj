@@ -90,28 +90,43 @@ export async function action({ request, params }: ActionArgs) {
 
 export default function ProblemSubmit() {
   return (
-    <Form method="post" className="form-control">
-      <select
-        className="select select-bordered w-full max-w-xs"
-        name="language"
-        required
-      >
-        <option value="" disabled selected>
-          选择代码语言
-        </option>
-        <option value="c">C</option>
-        <option value="cpp">C++</option>
-        <option value="java">Java</option>
-      </select>
-      <textarea
-        className="textarea textarea-bordered mt-4"
-        name="code"
-        placeholder="Paste your code here desu~"
-        required
-      />
-      <button className="btn btn-primary mt-4 w-full max-w-xs" type="submit">
-        提交
-      </button>
+    <Form method="post" className="form-control gap-4">
+      <div className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">语言</span>
+        </label>
+        <select
+          className="select select-bordered"
+          name="language"
+          defaultValue=""
+          required
+        >
+          <option value="" disabled>
+            选择代码语言
+          </option>
+          <option value="c">C</option>
+          <option value="cpp">C++</option>
+          <option value="java">Java</option>
+        </select>
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">代码</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
+          name="code"
+          placeholder="Paste your code here desu~"
+          required
+        />
+      </div>
+
+      <div className="form-control w-full max-w-xs">
+        <button className="btn btn-primary" type="submit">
+          提交
+        </button>
+      </div>
     </Form>
   );
 }
