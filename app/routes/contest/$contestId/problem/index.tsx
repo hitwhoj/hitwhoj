@@ -1,4 +1,3 @@
-import { Statistic } from "@arco-design/web-react";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
@@ -14,6 +13,8 @@ import {
   HiOutlineCheck,
   HiOutlineX,
 } from "react-icons/hi";
+import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -76,17 +77,71 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 }
 
+type CountdownProps = { date: Date; onFinish?: () => void };
+
+function Countdown(props: CountdownProps) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const time = props.date.getTime() - now.getTime();
+  const day = Math.floor(time / 1000 / 60 / 60 / 24);
+  const hour = Math.floor(time / 1000 / 60 / 60) % 24;
+  const minute = Math.floor(time / 1000 / 60) % 60;
+  const second = Math.floor(time / 1000) % 60;
+
+  const finished = time < 0;
+
+  useEffect(() => {
+    if (finished) {
+      props.onFinish?.();
+    }
+  }, [finished]);
+
+  return (
+    <div className="flex gap-5">
+      <div>
+        <span className="countdown font-mono text-4xl">
+          <span style={{ "--value": day } as CSSProperties}></span>
+        </span>
+        days
+      </div>
+      <div>
+        <span className="countdown font-mono text-4xl">
+          <span style={{ "--value": hour } as CSSProperties}></span>
+        </span>
+        hours
+      </div>
+      <div>
+        <span className="countdown font-mono text-4xl">
+          <span style={{ "--value": minute } as CSSProperties}></span>
+        </span>
+        min
+      </div>
+      <div>
+        <span className="countdown font-mono text-4xl">
+          <span style={{ "--value": second } as CSSProperties}></span>
+        </span>
+        sec
+      </div>
+    </div>
+  );
+}
+
 export default function ContestProblemIndex() {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   if (data.countdown) {
     return (
-      <div style={{ textAlign: "center", marginTop: 100 }}>
-        <Statistic.Countdown
-          title="距离比赛开始还有"
-          value={new Date(data.contest.beginTime)}
-          format="D 天 H 时 m 分 s 秒"
+      <div className="mx-auto w-full max-w-sm text-center">
+        <h2>距离比赛开始还有</h2>
+
+        <Countdown
+          date={new Date(data.contest.beginTime)}
           onFinish={() => navigate(".")}
         />
       </div>

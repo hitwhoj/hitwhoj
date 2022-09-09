@@ -368,6 +368,9 @@ export default function ContestEdit() {
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">开始时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
           </label>
           <input
             className="input input-bordered"
@@ -384,6 +387,9 @@ export default function ContestEdit() {
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">结束时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
           </label>
           <input
             className="input input-bordered"

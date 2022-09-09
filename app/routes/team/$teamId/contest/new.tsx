@@ -120,6 +120,9 @@ export default function TeamContestNew() {
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">比赛开始时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
           </label>
           <input
             className="input input-bordered"
@@ -133,6 +136,9 @@ export default function TeamContestNew() {
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">比赛结束时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
           </label>
           <input
             className="input input-bordered"
