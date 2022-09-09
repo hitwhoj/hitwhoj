@@ -44,12 +44,15 @@ export function createEventSource<T>(
   return new Response(body, { headers, status: 200 });
 }
 
+/**
+ * 自动发起 new EventSource 请求并包装成 Observable
+ */
 export function fromEventSource<T>(url: string) {
   return new Observable<SerializeFrom<T>>((observer) => {
     const eventSource = new EventSource(url);
-    eventSource.addEventListener("message", ({ data }) =>
-      observer.next(JSON.parse(data))
-    );
+    eventSource.addEventListener("message", ({ data }) => {
+      observer.next(JSON.parse(data));
+    });
     eventSource.addEventListener("error", (event) => {
       observer.error(event);
       console.error(event);

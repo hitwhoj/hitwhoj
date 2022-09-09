@@ -25,6 +25,7 @@ import {
   HiOutlineCollection,
   HiOutlineColorSwatch,
   HiOutlineHome,
+  HiOutlineMenu,
   HiOutlineQuestionMarkCircle,
   HiOutlineUserGroup,
 } from "react-icons/hi";
@@ -93,20 +94,6 @@ export default function App() {
     document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax;`;
   }, [theme]);
 
-  useEffect(() => {
-    if (user?.id) {
-      // 订阅新私聊消息
-      const subscription = fromEventSource<MessageType>(
-        "/chat/events"
-      ).subscribe((message) => {
-        // FIXME
-        console.log(`new message: ${message.content}`);
-      });
-
-      return () => subscription.unsubscribe();
-    }
-  }, [user?.id]);
-
   const [toasts, setToasts] = useState<Toast[]>([]);
   const addToast = (toast: Toast) => {
     setToasts((toasts) => [...toasts, toast]);
@@ -116,6 +103,21 @@ export default function App() {
   const success = (message: string) => addToast({ type: "success", message });
   const error = (message: string) => addToast({ type: "error", message });
   const warning = (message: string) => addToast({ type: "warning", message });
+
+  useEffect(() => {
+    if (user?.id) {
+      // 订阅新私聊消息
+      const subscription = fromEventSource<MessageType>(
+        "/chat/events"
+      ).subscribe((message) => {
+        info(
+          `收到来自 ${message.from.nickname || message.from.username} 的新消息`
+        );
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, [user?.id]);
 
   return (
     <html lang="zh-Hans" data-theme={theme}>
@@ -139,6 +141,18 @@ export default function App() {
             {/* 顶部导航栏 */}
             <div className="sticky top-0 bg-base-100 z-10">
               <nav className="navbar w-full flex justify-end gap-4">
+                <div className="flex-1 flex gap-2 lg:hidden">
+                  <label
+                    className="btn btn-ghost btn-square"
+                    htmlFor="drawer-menu"
+                  >
+                    <HiOutlineMenu className="w-6 h-6" />
+                  </label>
+                  <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
+                    <span className="lowercase text-primary">hitwh</span>
+                    <span>OJ</span>
+                  </Link>
+                </div>
                 {/* 主题切换按钮 */}
                 <div className="dropdown dropdown-end">
                   <div className="btn gap-2 normal-case btn-ghost" tabIndex={0}>
@@ -252,10 +266,10 @@ export default function App() {
             <label htmlFor="drawer-menu" className="drawer-overlay" />
             <aside className="w-80 h-full bg-base-200">
               <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
-                <a className="flex-0 btn btn-ghost px-2 text-3xl" href="/">
+                <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
                   <span className="lowercase text-primary">hitwh</span>
                   <span>OJ</span>
-                </a>
+                </Link>
                 <a
                   className="link link-hover font-mono text-xs text-opacity-50"
                   href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
