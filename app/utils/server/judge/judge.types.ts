@@ -110,8 +110,8 @@ export type SyncResponseMessage = {
   data: string;
 };
 
-export type ProcessMessage = {
-  type: "process";
+export type ProgressMessage = {
+  type: "progress";
   id: number;
   result: JudgeResult;
 };
@@ -129,7 +129,7 @@ export type Judge2WebMessage =
   | AcceptMessage
   | RejectMessage
   | SyncMessage
-  | ProcessMessage
+  | ProgressMessage
   | FinishMessage;
 
 export type DispatchTask = {

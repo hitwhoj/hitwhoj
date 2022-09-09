@@ -10,7 +10,7 @@ import type {
   HandshakeMessage,
   Judge2WebMessage,
   JudgeStatus,
-  ProcessMessage,
+  ProgressMessage,
   RejectMessage,
   StatusMessage,
   SyncMessage,
@@ -119,8 +119,8 @@ export class Judge {
     this.#subject
       .pipe(
         filter(
-          (data): data is ProcessMessage | FinishMessage =>
-            data.type === "process" || data.type === "finish"
+          (data): data is ProgressMessage | FinishMessage =>
+            data.type === "progress" || data.type === "finish"
         )
       )
       .subscribe(async (data) => {
@@ -176,7 +176,9 @@ export class Judge {
     this.#ws.onopen = () => (this.status.status = "Online");
     this.#ws.onclose = () => (this.status.status = "Offline");
     this.#ws.onmessage = ({ data }) => {
-      console.log("recieved", data.toString());
+      if (process.env.NODE_ENV === "development") {
+        console.log("recieved", data.toString());
+      }
       try {
         this.#subject.next(JSON.parse(data.toString()));
       } catch (e) {
@@ -193,7 +195,9 @@ export class Judge {
       this.#ws?.readyState === WebSocket.OPEN &&
       this.status.status === "Online"
     ) {
-      console.log("send", JSON.stringify(data));
+      if (process.env.NODE_ENV === "development") {
+        console.log("send", JSON.stringify(data));
+      }
       this.#ws.send(JSON.stringify(data));
     } else {
       console.warn("Trying to send message to offline judge");

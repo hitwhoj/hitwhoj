@@ -227,12 +227,12 @@ export default function App() {
               <div>
                 <span className="footer-title">Contact</span>
                 <div className="grid grid-flow-col gap-4">
-                  <a href="#">
+                  <span>
                     <AiOutlineWechat className="w-6 h-6" />
-                  </a>
-                  <a href="#">
+                  </span>
+                  <span>
                     <AiOutlineQq className="w-6 h-6" />
-                  </a>
+                  </span>
                   <a
                     href="https://t.me/hitwhmoe"
                     target="_blank"
@@ -240,9 +240,9 @@ export default function App() {
                   >
                     <FaTelegramPlane className="w-6 h-6" />
                   </a>
-                  <a href="#">
+                  <span>
                     <SiElement className="w-6 h-6" />
-                  </a>
+                  </span>
                 </div>
               </div>
             </footer>
