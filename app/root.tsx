@@ -233,7 +233,11 @@ export default function App() {
                   <a href="#">
                     <AiOutlineQq className="w-6 h-6" />
                   </a>
-                  <a href="https://t.me/hitwhmoe" target="_blank">
+                  <a
+                    href="https://t.me/hitwhmoe"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <FaTelegramPlane className="w-6 h-6" />
                   </a>
                   <a href="#">

@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
   createProblemData,
@@ -19,6 +19,7 @@ import { FileList } from "~/src/file/FileList";
 import { FileUploader } from "~/src/file/FileUploader";
 import { s3 } from "~/utils/server/s3.server";
 import type { SelectHTMLAttributes } from "react";
+import { useContext, useEffect } from "react";
 import { useState } from "react";
 import type {
   ConfigJson,
@@ -33,6 +34,9 @@ import {
   HiOutlineX,
 } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
+import { z } from "zod";
+import { ToastContext } from "~/utils/context/toast";
+import Highlighter from "~/src/Highlighter";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -74,6 +78,7 @@ enum ActionType {
   UploadFile = "uploadFile",
   RemoveData = "removeData",
   RemoveFile = "removeFile",
+  UpdateConfig = "updateConfig",
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -117,6 +122,30 @@ export async function action({ request, params }: ActionArgs) {
 
       // 删除文件
       await removeFile(fid);
+
+      return null;
+    }
+
+    case ActionType.UpdateConfig: {
+      const config = invariant(z.string().nonempty(), form.get("config"));
+
+      await db.$transaction(async (db) => {
+        // remove old config
+        const data = await db.file.findMany({
+          where: {
+            filename: "config.json",
+            dataProblemId: problemId,
+          },
+          select: { id: true },
+        });
+        await Promise.all(data.map(({ id }) => removeFile(id)));
+
+        // create new config
+        await createProblemData(
+          new File([config], "config.json", { type: "application/json" }),
+          problemId
+        );
+      });
 
       return null;
     }
@@ -272,7 +301,8 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                 <span>子任务 {index + 1}</span>
                 <div className="tooltip" data-tip="分值">
                   <input
-                    className="input input-bordered input-sm w-12"
+                    className="input input-bordered input-sm w-24"
+                    type="number"
                     value={subtask.score}
                     onChange={(event) => {
                       setSubtask({
@@ -503,9 +533,22 @@ function ConfigJSONEditor({
   data,
 }: ConfigJSONEditorProps) {
   const [config, setConfig] = useState(defaultConfig);
+  const fetcher = useFetcher();
+  const isActionSubmit =
+    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
+  const isActionReload =
+    fetcher.state === "loading" && fetcher.type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+  const Toast = useContext(ToastContext);
+
+  useEffect(() => {
+    if (isActionReload) {
+      Toast.success("更新配置成功");
+    }
+  }, [isActionReload]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 mb-24">
       <div className="form-control">
         <label className="label">
           <span className="label-text">评测方式</span>
@@ -552,12 +595,34 @@ function ConfigJSONEditor({
         />
       )}
 
-      <button
-        className="btn btn-primary"
-        onClick={() => alert("我还没写完，你先别急")}
-      >
-        确认更新
-      </button>
+      <fetcher.Form method="post" encType="multipart/form-data">
+        <textarea
+          name="config"
+          value={JSON.stringify(config)}
+          hidden
+          readOnly
+        />
+        <button
+          className="btn btn-primary w-full"
+          type="submit"
+          name="_action"
+          value={ActionType.UpdateConfig}
+          disabled={isLoading}
+        >
+          确认更新
+        </button>
+        <div className="collapse collapse-arrow">
+          <input type="checkbox" />
+          <div className="collapse-title text-xl font-medium">
+            查看生成 JSON 文件
+          </div>
+          <div className="collapse-content">
+            <Highlighter language="json">
+              {JSON.stringify(config, null, 2)}
+            </Highlighter>
+          </div>
+        </div>
+      </fetcher.Form>
     </div>
   );
 }
@@ -598,7 +663,10 @@ export default function ProblemData() {
         </span>
       </h2>
       <p>用于评测的数据文件</p>
-      <FileList files={data} deleteAction={ActionType.RemoveData} />
+      <FileList
+        files={dataWithoutConfig}
+        deleteAction={ActionType.RemoveData}
+      />
 
       <h2 className="flex justify-between items-center">
         <span>附加文件</span>
