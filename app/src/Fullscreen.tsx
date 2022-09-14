@@ -2,7 +2,7 @@ import type { HTMLProps } from "react";
 import { useContext, useEffect, useState } from "react";
 import { MenuDrawerContext } from "~/utils/context/menu";
 
-type FullScreenProps = {
+type FullscreenProps = {
   visible: boolean;
 };
 
@@ -13,7 +13,7 @@ export default function Fullscreen({
   visible,
   className,
   ...props
-}: FullScreenProps & HTMLProps<HTMLDivElement>) {
+}: FullscreenProps & HTMLProps<HTMLDivElement>) {
   const setMenuDrawer = useContext(MenuDrawerContext);
 
   // listen to visibility change
