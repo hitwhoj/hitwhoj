@@ -93,6 +93,15 @@ export const Permissions = {
     TeamPermission.Everyone.with(UserPermission.Everyone)
   ),
 
+  /** 在比赛中提交用户反馈 */
+  PERM_SUBMIT_CONTEST_CLARIFICATION: ContestPermission.Contestants.with(
+    TeamPermission.Admins.with(UserPermission.Admins)
+  ),
+  /** 回复比赛中的用户反馈 */
+  PERM_REPLY_CONTEST_CLARIFICATION: ContestPermission.Juries.with(
+    TeamPermission.Admins.with(UserPermission.Admins)
+  ),
+
   /** 创建团队的权限 */
   PERM_TEAM_CREATE: UserPermission.Users,
   /** 团队修改成员的角色 */

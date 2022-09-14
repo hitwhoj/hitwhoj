@@ -1,6 +1,13 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLoaderData,
+  useLocation,
+  useParams,
+} from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -16,6 +23,11 @@ import { Permissions } from "~/utils/permission/permission";
 import { ContestPermission } from "~/utils/permission/permission/contest";
 import { AiOutlineTrophy } from "react-icons/ai";
 import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType } from "./$contestId/clarificationEvents";
+import { UserContext } from "~/utils/context/user";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -36,6 +48,13 @@ export async function loader({ request, params }: LoaderArgs) {
         ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
         : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
       ContestPermission.Contestants
+    );
+  const [canSubmit, canReply] = await self
+    .team(await findContestTeam(contestId))
+    .contest(contestId)
+    .hasPermission(
+      Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION,
+      Permissions.PERM_REPLY_CONTEST_CLARIFICATION
     );
 
   const contest = await db.contest.findUnique({
@@ -59,7 +78,14 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest, hasEditPerm, hasViewProblemPerm, isContestants });
+  return json({
+    contest,
+    hasEditPerm,
+    hasViewProblemPerm,
+    isContestants,
+    canSubmit,
+    canReply,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -67,8 +93,64 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm, hasViewProblemPerm, isContestants } =
-    useLoaderData<typeof loader>();
+  const {
+    contest,
+    hasEditPerm,
+    hasViewProblemPerm,
+    isContestants,
+    canSubmit,
+    canReply,
+  } = useLoaderData<typeof loader>();
+  const { contestId } = useParams();
+  const self = useContext(UserContext);
+
+  const Toasts = useContext(ToastContext);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    const subsctiption = fromEventSource<MessageType>(
+      `/contest/${contestId}/clarificationEvents`
+    ).subscribe((message) => {
+      if (canSubmit && message.userId === self) {
+        switch (message.type) {
+          case "reply":
+            Toasts.info(
+              `您对问题${String.fromCharCode(
+                message.rank + 0x40
+              )}的反馈有新的回复`
+            );
+            if (location.pathname === `/contest/${contestId}/clarification`) {
+              document.getElementById("clarification")?.click();
+            }
+
+            break;
+          case "resolve":
+            Toasts.info(
+              `您对问题${String.fromCharCode(
+                message.rank + 0x40
+              )}的反馈已被标记为解决`
+            );
+            if (location.pathname === `/contest/${contestId}/clarification`) {
+              document.getElementById("clarification")?.click();
+            }
+
+            break;
+        }
+      }
+      if (canReply && message.type === "submit") {
+        Toasts.info(
+          `用户对问题${String.fromCharCode(
+            message.rank + 0x40
+          )}有新的反馈，请及时处理`
+        );
+        if (location.pathname === `/contest/${contestId}/clarification`) {
+          document.getElementById("clarification")?.click();
+        }
+      }
+    });
+    return () => subsctiption.unsubscribe();
+  }, []);
 
   return (
     <>
@@ -111,6 +193,9 @@ export default function ContestView() {
             编辑
           </NavLink>
         )}
+        <NavLink id="clarification" className="tab" to="clarification">
+          反馈
+        </NavLink>
       </p>
 
       <Outlet />
