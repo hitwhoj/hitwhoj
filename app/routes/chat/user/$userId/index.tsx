@@ -26,12 +26,18 @@ export async function loader({ request, params }: LoaderArgs) {
   await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  const target = await db.user.findUnique({
-    where: { id: userId },
-    select: { nickname: true, username: true, id: true },
-  });
+  const [target, source] = await db.$transaction([
+    db.user.findUnique({
+      where: { id: userId },
+      select: { ...selectUserData },
+    }),
+    db.user.findUnique({
+      where: { id: self.userId },
+      select: { ...selectUserData },
+    }),
+  ]);
 
-  if (!target) {
+  if (!target || !source) {
     throw new Response("User not exists", { status: 404 });
   }
 
@@ -45,13 +51,16 @@ export async function loader({ request, params }: LoaderArgs) {
     orderBy: {
       sentAt: "asc",
     },
-    include: {
-      from: { select: selectUserData },
-      to: { select: selectUserData },
+    select: {
+      id: true,
+      fromId: true,
+      toId: true,
+      content: true,
+      sentAt: true,
     },
   });
 
-  return json({ target, msgs });
+  return json({ source, target, msgs });
 }
 
 export async function action({ request }: ActionArgs) {
@@ -70,19 +79,17 @@ export async function action({ request }: ActionArgs) {
       to: { connect: { id: to } },
       content: content,
     },
-    include: {
-      from: { select: selectUserData },
-      to: { select: selectUserData },
-    },
+    select: { id: true },
   });
 
-  privateMessageSubject.next(message);
+  // 推送新消息
+  privateMessageSubject.next(message.id);
 
   return null;
 }
 
 export default function ChatIndex() {
-  const { target, msgs } = useLoaderData<typeof loader>();
+  const { target, source, msgs } = useLoaderData<typeof loader>();
   const [messages, setMessages] = useState(msgs);
 
   useEffect(() => {
@@ -129,6 +136,7 @@ export default function ChatIndex() {
               new Date(message.sentAt).getTime() -
                 new Date(array[index - 1].sentAt).getTime() >
                 1000 * 60 * 5;
+            const from = message.fromId === target.id ? target : source;
 
             return isFirst ? (
               <div
@@ -137,12 +145,12 @@ export default function ChatIndex() {
               >
                 <UserAvatar
                   className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
-                  user={message.from}
+                  user={from}
                 />
                 <div className="flex-1">
                   <div className="w-full flex justify-between">
                     <span className="text-primary">
-                      {message.from.nickname || message.from.username}
+                      {from.nickname || from.username}
                     </span>
                   </div>
                   <div className="break-words min-w-0">{message.content}</div>

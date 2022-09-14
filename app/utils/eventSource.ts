@@ -1,4 +1,4 @@
-import type { SerializeFrom } from "@remix-run/node";
+import type { SerializeFrom, TypedResponse } from "@remix-run/node";
 import { Observable } from "rxjs";
 import { interval, map, merge } from "rxjs";
 
@@ -41,7 +41,7 @@ export function createEventSource<T>(
   // `X-Accel-Buffering` header disables nginx buffering
   // @see https://stackoverflow.com/a/33414096
   headers.set("X-Accel-Buffering", "no");
-  return new Response(body, { headers, status: 200 });
+  return new Response(body, { headers, status: 200 }) as TypedResponse<T>;
 }
 
 /**

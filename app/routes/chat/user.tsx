@@ -10,6 +10,7 @@ import { Permissions } from "~/utils/permission/permission";
 import type { LoaderArgs } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
+import { selectUserData } from "~/utils/db/user";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -22,13 +23,11 @@ export async function loader({ request }: LoaderArgs) {
     },
     orderBy: { sentAt: "desc" },
     distinct: ["fromId", "toId"],
-    include: {
-      from: {
-        select: { id: true, nickname: true, username: true, avatar: true },
-      },
-      to: {
-        select: { id: true, nickname: true, username: true, avatar: true },
-      },
+    select: {
+      from: { select: { ...selectUserData } },
+      to: { select: { ...selectUserData } },
+      content: true,
+      sentAt: true,
     },
   });
 

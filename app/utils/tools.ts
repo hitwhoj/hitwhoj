@@ -121,3 +121,8 @@ export function formatRelativeDateTime(time: Date | string) {
 export function passwordHash(password: string): string {
   return sha256().update(`TODO: hitwhoj-first-test{${password}}`).digest("hex");
 }
+
+/** 因为 typescript 没有 is not 这种关键字 */
+export function isNotNull<T>(value: T | null): value is T {
+  return value !== null;
+}

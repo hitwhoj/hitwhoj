@@ -148,22 +148,11 @@ export class Judge {
             memory: memorySummary(data.result.subtasks),
             subtasks: data.result.subtasks,
           },
-          select: {
-            id: true,
-            time: true,
-            score: true,
-            memory: true,
-            status: true,
-            message: true,
-            subtasks: true,
-            contestId: true,
-            problemId: true,
-            submitterId: true,
-          },
+          select: { id: true },
         });
 
         // 推送到事件中心
-        recordUpdateSubject.next(record);
+        recordUpdateSubject.next(record.id);
       });
   }
 
@@ -215,21 +204,10 @@ export class Judge {
         memory: -1,
         subtasks: [],
       },
-      select: {
-        id: true,
-        time: true,
-        score: true,
-        memory: true,
-        status: true,
-        message: true,
-        subtasks: true,
-        contestId: true,
-        problemId: true,
-        submitterId: true,
-      },
+      select: { id: true },
     });
     // 推送到事件中心
-    recordUpdateSubject.next(record);
+    recordUpdateSubject.next(record.id);
   }
 
   /**

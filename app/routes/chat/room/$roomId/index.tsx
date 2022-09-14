@@ -21,6 +21,7 @@ import {
   HiOutlinePaperAirplane,
 } from "react-icons/hi";
 import { ChatRoomPermission } from "~/utils/permission/permission/room";
+import { selectUserData } from "~/utils/db/user";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
@@ -43,19 +44,13 @@ export async function loader({ request, params }: LoaderArgs) {
       name: true,
       chatMessage: {
         orderBy: { sentAt: "asc" },
-        include: {
-          sender: {
-            select: {
-              id: true,
-              avatar: true,
-              nickname: true,
-              username: true,
-              enteredChatRoom: {
-                where: { roomId },
-                select: { role: true },
-              },
-            },
-          },
+        select: {
+          id: true,
+          role: true,
+          content: true,
+          sentAt: true,
+          roomId: true,
+          sender: { select: { ...selectUserData } },
         },
       },
     },
@@ -110,12 +105,10 @@ export default function ChatRoomIndex() {
 
           <div className="flex-1">
             {messages.map((message, index, array) => {
-              const role = message.sender.enteredChatRoom.at(0)?.role;
-
               // 是否是同一个人在连续五分钟内发送的第一条消息
               const isFirst =
                 index === 0 ||
-                array[index - 1].senderId !== message.senderId ||
+                array[index - 1].sender.id !== message.sender.id ||
                 new Date(message.sentAt).getTime() -
                   new Date(array[index - 1].sentAt).getTime() >
                   1000 * 60 * 5;
@@ -135,13 +128,13 @@ export default function ChatRoomIndex() {
                         <span className="text-primary">
                           {message.sender.nickname || message.sender.username}
                         </span>
-                        {role === "Owner" && (
+                        {message.role === "Owner" && (
                           <span className="badge badge-primary">所有人</span>
                         )}
-                        {role === "Admin" && (
+                        {message.role === "Admin" && (
                           <span className="badge badge-primary">管理员</span>
                         )}
-                        {!role && <span className="badge">游客</span>}
+                        {!message.role && <span className="badge">游客</span>}
                       </span>
                     </div>
                     <div className="break-words min-w-0">{message.content}</div>
@@ -242,31 +235,23 @@ export async function action({ request, params }: ActionArgs) {
   const form = await request.formData();
   const content = invariant(contentScheme, form.get("content"));
 
+  const user = await db.chatRoomUser.findUnique({
+    where: { roomId_userId: { roomId, userId: self.userId! } },
+    select: { role: true },
+  });
+
   const message = await db.chatMessage.create({
     data: {
       roomId: roomId,
       senderId: self.userId!,
       content,
+      role: user?.role,
     },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          nickname: true,
-          username: true,
-          avatar: true,
-          enteredChatRoom: {
-            select: {
-              role: true,
-            },
-          },
-        },
-      },
-    },
+    select: { id: true },
   });
 
   // 推送新的消息
-  chatMessageSubject.next(message);
+  chatMessageSubject.next(message.id);
 
   return null;
 }

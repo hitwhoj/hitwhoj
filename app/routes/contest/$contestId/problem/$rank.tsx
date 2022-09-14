@@ -7,7 +7,6 @@ import { json } from "@remix-run/node";
 import {
   Form,
   Link,
-  useActionData,
   useLoaderData,
   useParams,
   useTransition,
@@ -42,6 +41,7 @@ import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
 import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
+import { recordUpdateSubject } from "~/utils/serverEvents";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -154,7 +154,7 @@ export async function action({ request, params }: ActionArgs) {
   const code = invariant(codeScheme, form.get("code"));
   const language = invariant(languageScheme, form.get("language"));
 
-  const { id: recordId } = await db.record.create({
+  const record = await db.record.create({
     data: {
       language,
       problemId,
@@ -164,10 +164,11 @@ export async function action({ request, params }: ActionArgs) {
     select: { id: true },
   });
 
-  await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  judge.push(recordId);
+  await s3.writeFile(`/record/${record.id}`, Buffer.from(code));
+  judge.push(record.id);
+  recordUpdateSubject.next(record.id);
 
-  return json({ recordId });
+  return null;
 }
 
 // override monaco loader
@@ -179,7 +180,6 @@ export default function ContestProblemView() {
     records: _records,
     contest,
   } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
   const { contestId, rank } = useParams();
 
   const { state, type } = useTransition();
@@ -192,11 +192,11 @@ export default function ContestProblemView() {
   const Toasts = useContext(ToastContext);
 
   useEffect(() => {
-    if (actionData?.recordId) {
+    if (isActionReload) {
       Toasts.success("提交成功");
       setVisible(true);
     }
-  }, [actionData?.recordId]);
+  }, [isActionReload]);
 
   const monaco = useMonaco();
   // 设置 monaco 主题

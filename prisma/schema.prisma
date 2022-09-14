@@ -477,11 +477,14 @@ model ChatRoomUser {
   @@id([roomId, userId])
 }
 
+/// 群组的讨论消息
 model ChatMessage {
   id Int @id @default(autoincrement())
 
+  /// 缓存一下，表示发这条消息的时候用户的角色
+  role    ChatRoomRole?
   content String
-  sentAt  DateTime @default(now())
+  sentAt  DateTime      @default(now())
 
   // ==== relations ====
 
