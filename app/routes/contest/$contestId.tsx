@@ -111,6 +111,9 @@ export default function ContestView() {
             编辑
           </NavLink>
         )}
+        <NavLink className="tab" to="rank">
+          排行榜
+        </NavLink>
       </p>
 
       <Outlet />
