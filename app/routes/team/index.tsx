@@ -31,26 +31,24 @@ export default function TeamList() {
         </Link>
       </h1>
 
-      <div className="not-prose overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>团队</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>团队</th>
+          </tr>
+        </thead>
+        <tbody>
+          {teams.map((team) => (
+            <tr key={team.id}>
+              <th className="text-center">{team.id}</th>
+              <td>
+                <TeamLink team={team} />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {teams.map((team) => (
-              <tr key={team.id}>
-                <th className="text-center">{team.id}</th>
-                <td>
-                  <TeamLink team={team} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

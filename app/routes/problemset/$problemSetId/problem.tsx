@@ -67,26 +67,24 @@ export default function ProblemSetIndex() {
     <>
       <Markdown>{problemSet.description}</Markdown>
 
-      <div className="not-prose overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>题目</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题目</th>
+          </tr>
+        </thead>
+        <tbody>
+          {problemSet.problems.map((problem) => (
+            <tr key={problem.problem.id}>
+              <td className="text-center">{problem.rank}</td>
+              <td>
+                <ProblemLink problem={problem.problem} />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {problemSet.problems.map((problem) => (
-              <tr key={problem.problem.id}>
-                <td className="text-center">{problem.rank}</td>
-                <td>
-                  <ProblemLink problem={problem.problem} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

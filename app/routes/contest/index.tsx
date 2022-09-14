@@ -57,34 +57,32 @@ export default function ContestListIndex() {
         )}
       </h1>
 
-      <div className="not-prose overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>标题</th>
-              <th>赛制</th>
-              <th>开始时间</th>
-              <th>结束时间</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>标题</th>
+            <th>赛制</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {contests.map((contest) => (
+            <tr key={contest.id}>
+              <th className="text-center">{contest.id}</th>
+              <td>
+                <ContestLink contest={contest} />
+              </td>
+              <td>
+                <ContestSystemTag system={contest.system} />
+              </td>
+              <td>{formatDateTime(contest.beginTime)}</td>
+              <td>{formatDateTime(contest.endTime)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {contests.map((contest) => (
-              <tr key={contest.id}>
-                <th className="text-center">{contest.id}</th>
-                <td>
-                  <ContestLink contest={contest} />
-                </td>
-                <td>
-                  <ContestSystemTag system={contest.system} />
-                </td>
-                <td>{formatDateTime(contest.beginTime)}</td>
-                <td>{formatDateTime(contest.endTime)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

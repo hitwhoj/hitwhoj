@@ -59,28 +59,26 @@ export default function ProblemsetList() {
         )}
       </h1>
 
-      <div className="not-prose overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>题单</th>
-              <th>题目数量</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题单</th>
+            <th>题目数量</th>
+          </tr>
+        </thead>
+        <tbody>
+          {problemSets.map((problemset) => (
+            <tr key={problemset.id}>
+              <th className="text-center">{problemset.id}</th>
+              <td>
+                <ProblemSetLink problemset={problemset} />
+              </td>
+              <td>{problemset._count.problems}</td>
             </tr>
-          </thead>
-          <tbody>
-            {problemSets.map((problemset) => (
-              <tr key={problemset.id}>
-                <th className="text-center">{problemset.id}</th>
-                <td>
-                  <ProblemSetLink problemset={problemset} />
-                </td>
-                <td>{problemset._count.problems}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

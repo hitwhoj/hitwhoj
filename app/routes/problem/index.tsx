@@ -57,28 +57,26 @@ export default function ProblemIndex() {
         )}
       </h1>
 
-      <div className="overflow-x-auto not-prose">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>题目</th>
-              <th>提交</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题目</th>
+            <th>提交</th>
+          </tr>
+        </thead>
+        <tbody>
+          {problems.map((problem) => (
+            <tr key={problem.id}>
+              <th className="text-center">{problem.id}</th>
+              <td>
+                <ProblemLink problem={problem} />
+              </td>
+              <td>{problem._count.relatedRecords}</td>
             </tr>
-          </thead>
-          <tbody>
-            {problems.map((problem) => (
-              <tr key={problem.id}>
-                <th className="text-center">{problem.id}</th>
-                <td>
-                  <ProblemLink problem={problem} />
-                </td>
-                <td>{problem._count.relatedRecords}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

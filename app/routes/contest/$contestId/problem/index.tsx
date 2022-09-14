@@ -151,49 +151,47 @@ export default function ContestProblemIndex() {
   const { contest } = data;
 
   return (
-    <div className="not-prose overflow-x-auto">
-      <table className="table w-full">
-        <thead>
-          <tr>
-            <th className="w-16" />
-            <th>题目</th>
-            <th>状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contest.problems.map(({ rank, problem }) => {
-            const charCode = String.fromCharCode(0x40 + rank);
-            // 是否已经通过这道题目
-            const accepted = problem.relatedRecords.some(
-              ({ status }) => status === "Accepted"
-            );
-            // 是否有失败的提交记录
-            const failed = problem.relatedRecords.length > 0 && !accepted;
+    <table className="table w-full not-prose">
+      <thead>
+        <tr>
+          <th className="w-16" />
+          <th>题目</th>
+          <th>状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        {contest.problems.map(({ rank, problem }) => {
+          const charCode = String.fromCharCode(0x40 + rank);
+          // 是否已经通过这道题目
+          const accepted = problem.relatedRecords.some(
+            ({ status }) => status === "Accepted"
+          );
+          // 是否有失败的提交记录
+          const failed = problem.relatedRecords.length > 0 && !accepted;
 
-            return (
-              <tr key={rank}>
-                <th className="text-center">{charCode}</th>
-                <td>
-                  <Link
-                    className="link inline-flex gap-2 items-center"
-                    to={charCode}
-                  >
-                    <span>{problem.title}</span>
-                    <HiOutlineArrowsExpand />
-                  </Link>
-                </td>
-                <td>
-                  {accepted && (
-                    <HiOutlineCheck className="text-success w-6 h-6" />
-                  )}
-                  {failed && <HiOutlineX className="text-error w-6 h-6" />}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+          return (
+            <tr key={rank}>
+              <th className="text-center">{charCode}</th>
+              <td>
+                <Link
+                  className="link inline-flex gap-2 items-center"
+                  to={charCode}
+                >
+                  <span>{problem.title}</span>
+                  <HiOutlineArrowsExpand />
+                </Link>
+              </td>
+              <td>
+                {accepted && (
+                  <HiOutlineCheck className="text-success w-6 h-6" />
+                )}
+                {failed && <HiOutlineX className="text-error w-6 h-6" />}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
