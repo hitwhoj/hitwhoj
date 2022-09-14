@@ -1,6 +1,12 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -16,6 +22,12 @@ import { Permissions } from "~/utils/permission/permission";
 import { ContestPermission } from "~/utils/permission/permission/contest";
 import { AiOutlineTrophy } from "react-icons/ai";
 import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType as ResolveMessageType } from "./$contestId/clarification/events/resolve";
+import type { MessageType as ReplyMessageType } from "./$contestId/clarification/events/reply";
+import type { MessageType as AssignMessageType } from "./$contestId/clarification/events/reply";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -37,6 +49,10 @@ export async function loader({ request, params }: LoaderArgs) {
         : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
       ContestPermission.Contestants
     );
+  // const [canSubmit, canReply] = perm.hasPermission(
+  //   Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION,
+  //   Permissions.PERM_REPLY_CONTEST_CLARIFICATION
+  // );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -59,7 +75,12 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest, hasEditPerm, hasViewProblemPerm, isContestants });
+  return json({
+    contest,
+    hasEditPerm,
+    hasViewProblemPerm,
+    isContestants,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -69,6 +90,29 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function ContestView() {
   const { contest, hasEditPerm, hasViewProblemPerm, isContestants } =
     useLoaderData<typeof loader>();
+  const { contestId } = useParams();
+  const Toasts = useContext(ToastContext);
+
+  useEffect(() => {
+    const subsctiption = fromEventSource<ResolveMessageType>(
+      `/contest/${contestId}/clarification/events/resolve`
+    ).subscribe(() => Toasts.info("您提交的反馈已经被标记为解决"));
+    return () => subsctiption.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subsctiption = fromEventSource<ReplyMessageType>(
+      `/contest/${contestId}/clarification/events/reply`
+    ).subscribe(({ content }) => Toasts.info(`收到新的反馈回复：${content}`));
+    return () => subsctiption.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subsctiption = fromEventSource<AssignMessageType>(
+      `/contest/${contestId}/clarification/events/assign`
+    ).subscribe(() => Toasts.info("您提交的反馈正在被审理"));
+    return () => subsctiption.unsubscribe();
+  }, []);
 
   return (
     <>
@@ -113,6 +157,9 @@ export default function ContestView() {
         )}
         <NavLink className="tab" to="rank">
           排行榜
+        </NavLink>
+        <NavLink className="tab" to="clarification">
+          反馈
         </NavLink>
       </p>
 

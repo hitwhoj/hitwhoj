@@ -326,15 +326,17 @@ export default function App() {
             </aside>
           </div>
         </div>
-        <div className="toast toast-center toast-top w-full items-center">
-          {toasts.map((toast, index) => (
-            <div className="max-w-sm" key={index}>
-              <div className={`alert ${alertClassName[toast.type]}`}>
-                <span>{toast.message}</span>
+        {toasts.length > 0 && (
+          <div className="toast toast-center toast-top w-full items-center">
+            {toasts.map((toast, index) => (
+              <div className="max-w-sm" key={index}>
+                <div className={`alert ${alertClassName[toast.type]}`}>
+                  <span>{toast.message}</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         <ScrollRestoration />
         <Scripts />
         {process.env.NODE_ENV === "development" && <LiveReload />}
