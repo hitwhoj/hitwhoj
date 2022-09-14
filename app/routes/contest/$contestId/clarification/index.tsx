@@ -95,7 +95,7 @@ export default function ContestClarification() {
             <th>题号</th>
             <th>内容</th>
             <th>状态</th>
-            {canReply && <th></th>}
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -172,19 +172,17 @@ export default function ContestClarification() {
                       {clarification.resolved ? "已解决" : "未解决"}
                     </div>
                   </td>
-                  {canReply && (
-                    <td>
-                      <div className="text-sm text-gray-900">
-                        <Link
-                          className="link inline-flex gap-2 items-center"
-                          to={clarification.id.toString()}
-                        >
-                          <span>查看详情</span>
-                          <HiOutlineArrowsExpand />
-                        </Link>
-                      </div>
-                    </td>
-                  )}
+                  <td>
+                    <div className="text-sm text-gray-900">
+                      <Link
+                        className="link inline-flex gap-2 items-center"
+                        to={clarification.id.toString()}
+                      >
+                        <span>查看详情</span>
+                        <HiOutlineArrowsExpand />
+                      </Link>
+                    </div>
+                  </td>
                 </tr>
               ))
           )}

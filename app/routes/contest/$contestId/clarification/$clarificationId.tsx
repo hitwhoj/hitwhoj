@@ -114,7 +114,6 @@ export default function ClarificationDetail() {
           <span>{clarification.createdAt}</span>
         </div>
         <div className="flex flex-col items-center justify-center w-full">
-          {/* replies */}
           {clarification.replies.length === 0 ? (
             <div className="card w-full shadow">
               <span>暂无回复</span>
@@ -138,55 +137,57 @@ export default function ClarificationDetail() {
             ))
           )}
         </div>
-        <div className="flex flex-col items-center justify-center w-full">
-          <div>
-            <Form method="post">
-              <button
-                className="btn btn-primary"
-                type="submit"
-                name="_action"
-                value={ActionType.Apply}
-                disabled={isSubmitting}
-              >
-                认领
-              </button>
-            </Form>
-            <Form method="post">
-              <button
-                className="btn btn-primary"
-                type="submit"
-                name="_action"
-                value={ActionType.Resolve}
-                disabled={isSubmitting}
-              >
-                解决
-              </button>
+        {canReply && (
+          <div className="flex flex-col items-center justify-center w-full">
+            <div>
+              <Form method="post">
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  name="_action"
+                  value={ActionType.Apply}
+                  disabled={isSubmitting}
+                >
+                  认领
+                </button>
+              </Form>
+              <Form method="post">
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  name="_action"
+                  value={ActionType.Resolve}
+                  disabled={isSubmitting}
+                >
+                  解决
+                </button>
+              </Form>
+            </div>
+            <Form method="post" className="form-control gap-4">
+              <div className="form-control w-full max-w-xs">
+                <label className="label">
+                  <span className="label-text">回复内容</span>
+                </label>
+                <textarea
+                  className="textarea h-24 textarea-bordered"
+                  name="content"
+                  required
+                />
+              </div>
+              <div className="form-control w-full max-w-xs">
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  name="_action"
+                  value={ActionType.Reply}
+                  disabled={isSubmitting}
+                >
+                  提交
+                </button>
+              </div>
             </Form>
           </div>
-          <Form method="post" className="form-control gap-4">
-            <div className="form-control w-full max-w-xs">
-              <label className="label">
-                <span className="label-text">回复内容</span>
-              </label>
-              <textarea
-                className="textarea h-24 textarea-bordered"
-                name="content"
-                required
-              />
-            </div>
-            <div className="form-control w-full max-w-xs">
-              <button
-                className="btn btn-primary"
-                type="submit"
-                name="_action"
-                value={ActionType.Reply}
-                disabled={isSubmitting}
-              >
-                提交
-              </button>
-            </div>
-          </Form>
-        </div>
+        )}
       </div>
     </Fullscreen>
   );
