@@ -110,7 +110,8 @@ export default function UserStatistics() {
     [now.toISOString().slice(0, 10)]: 0,
     [new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)]: 0,
   } as Record<string, number>)).map(([date, count]) => {
-    const level = Math.min(Math.floor(count / 2), 4) as Level;
+    // level 0: 0, level 1: 1-2, level 2: 3-4, level 3: 4-5, level 4: 5-infinity
+    const level = Math.min(Math.floor(count + 1 / 2), 4) as Level;
     return { date, count, level };
   }).sort((a, b) => {
     return a.date > b.date ? 1 : -1;
