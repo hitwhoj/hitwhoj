@@ -155,6 +155,11 @@ export default function ContestView() {
             编辑
           </NavLink>
         )}
+        {hasEditPerm && (
+          <NavLink className="tab" to="members">
+            成员
+          </NavLink>
+        )}
         <NavLink className="tab" to="rank">
           排行榜
         </NavLink>
