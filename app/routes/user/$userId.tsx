@@ -1,13 +1,10 @@
-import { Space, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Navigator } from "~/src/Navigator";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { AvatarBadge } from "~/src/AvatarBadge";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 
@@ -60,52 +57,48 @@ export default function UserProfile() {
   const { user, hasEditPerm, hasAdminPerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Paragraph>
-        <Space size="large" align="start">
-          {user.premium ? (
-            <AvatarBadge icon="大" color="magenta">
-              <UserAvatar user={user} size={60} />
-            </AvatarBadge>
-          ) : (
-            <UserAvatar user={user} size={60} />
-          )}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "2em" }}>
-              {user.nickname ? (
-                <Space>
-                  {user.nickname}
-                  <span style={{ color: "rgb(var(--gray-5))" }}>
-                    ({user.username})
-                  </span>
-                </Space>
-              ) : (
-                user.username
-              )}
-            </span>
-            {user.bio || (
-              <i style={{ color: "rgb(var(--gray-6))" }}>没有签名</i>
-            )}
-          </div>
-        </Space>
-      </Typography.Paragraph>
-
-      <Typography.Paragraph>
-        <Navigator
-          routes={[
-            { title: "资料", key: "." },
-            { title: "统计", key: "statistics" },
-            ...(hasEditPerm ? [{ title: "文件", key: "files" }] : []),
-            ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
-            ...(hasAdminPerm ? [{ title: "滥权", key: "admin" }] : []),
-          ]}
+    <div>
+      <header className="text-center my-4 not-prose">
+        <UserAvatar
+          user={user}
+          className="w-20 h-20 bg-base-200 mx-auto text-3xl"
         />
-      </Typography.Paragraph>
+        <h1 className="font-bold text-lg mt-4">
+          {user.nickname || user.username}
+        </h1>
+        {user.bio && <p className="mt-3 text-sm">{user.bio}</p>}
+        <div className="tabs tabs-boxed bg-base-100 justify-center mt-5">
+          <NavLink className="tab" to="profile">
+            资料
+          </NavLink>
+          <NavLink className="tab" to="statistics">
+            统计
+          </NavLink>
+          {hasEditPerm && (
+            <NavLink className="tab" to="files">
+              文件
+            </NavLink>
+          )}
+          {hasEditPerm && (
+            <NavLink className="tab" to="edit">
+              编辑
+            </NavLink>
+          )}
+          {hasAdminPerm && (
+            <NavLink className="tab" to="admin">
+              滥权
+            </NavLink>
+          )}
+          <Link className="tab" to={`/chat/user/${user.id}`}>
+            聊天
+          </Link>
+        </div>
+      </header>
 
-      <Typography.Paragraph>
+      <div>
         <Outlet />
-      </Typography.Paragraph>
-    </Typography>
+      </div>
+    </div>
   );
 }
 

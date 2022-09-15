@@ -1,13 +1,12 @@
-import { Button, Select, Space, Typography } from "@arco-design/web-react";
-import {
-  IconCheck,
-  IconClose,
-  IconThumbDown,
-} from "@arco-design/web-react/icon";
+import { SystemUserRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useState } from "react";
+import {
+  HiOutlineCheck,
+  HiOutlineLockOpen,
+  HiOutlineXCircle,
+} from "react-icons/hi";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -118,73 +117,61 @@ export default function UserManage() {
   const isUpdating = state !== "idle";
 
   const isUserBanned = !(user.privilege & Privileges.PRIV_OPERATE);
-  const [role, setRole] = useState(user.role);
 
   return (
-    <Typography>
+    <>
       {hasEditPrivPerm && (
         <>
-          <Typography.Title heading={4}>
-            因为是管理员所以可以滥权！
-          </Typography.Title>
-          <Typography.Paragraph>
-            <Form method="post">
-              <input
-                type="hidden"
-                name="privilege"
-                value={user.privilege ^ Privileges.PRIV_OPERATE}
-              />
-              <Button
-                icon={isUserBanned ? <IconClose /> : <IconThumbDown />}
-                type="primary"
-                status="danger"
-                htmlType="submit"
-                name="_action"
-                value={ActionType.SetPrivilege}
-                loading={isUpdating}
-              >
-                {isUserBanned ? "取消封禁" : "封禁用户"}
-              </Button>
-            </Form>
-          </Typography.Paragraph>
+          <h2>管理员操作</h2>
+          <Form method="post">
+            <input
+              type="hidden"
+              name="privilege"
+              value={user.privilege ^ Privileges.PRIV_OPERATE}
+            />
+            <button
+              className="btn btn-primary gap-2"
+              type="submit"
+              name="_action"
+              value={ActionType.SetPrivilege}
+              disabled={isUpdating}
+            >
+              {isUserBanned ? <HiOutlineLockOpen /> : <HiOutlineXCircle />}
+              <span>{isUserBanned ? "取消封禁" : "封禁用户"}</span>
+            </button>
+          </Form>
         </>
       )}
 
       {hasEditRolePerm && (
         <>
-          <Typography.Title heading={4}>
-            因为是超级管理员所以可以更加滥权！
-          </Typography.Title>
-          <Typography.Paragraph>
-            <Form method="post">
-              <input type="hidden" name="role" value={role} />
-              <Space>
-                <Select onChange={(value) => setRole(value)} value={role}>
-                  <Select.Option value="Root">超级管理员</Select.Option>
-                  <Select.Option value="Admin">系统管理员</Select.Option>
-                  <Select.Option value="User">普通用户</Select.Option>
-                </Select>
+          <h2>修改用户系统角色</h2>
+          <Form method="post" className="flex gap-4">
+            <select
+              className="select select-bordered"
+              name="role"
+              defaultValue={user.role}
+            >
+              <option value={SystemUserRole.Root}>超级管理员</option>
+              <option value={SystemUserRole.Admin}>系统管理员</option>
+              <option value={SystemUserRole.User}>普通用户</option>
+            </select>
 
-                <Button
-                  icon={<IconCheck />}
-                  type="primary"
-                  status="danger"
-                  htmlType="submit"
-                  name="_action"
-                  value={ActionType.SetRole}
-                  loading={isUpdating}
-                >
-                  确认修改
-                </Button>
-              </Space>
-            </Form>
-          </Typography.Paragraph>
+            <button
+              className="btn btn-primary gap-2"
+              type="submit"
+              name="_action"
+              value={ActionType.SetRole}
+              disabled={isUpdating}
+            >
+              <HiOutlineCheck />
+              确认修改
+            </button>
+          </Form>
         </>
       )}
 
-      {!hasEditPrivPerm && !hasEditRolePerm && (
-        <Typography.Paragraph>你什么也做不到</Typography.Paragraph>
-      )}
-    </Typography>
+      {!hasEditPrivPerm && !hasEditRolePerm && <p>你是怎么进到这个页面的？</p>}
+    </>
   );
 }

@@ -1,4 +1,3 @@
-import { Typography } from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
@@ -108,18 +107,15 @@ export default function UserFilePage() {
   } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>用户文件</Typography.Title>
-      <Typography.Paragraph>
-        上传即代表同意我们的用户手册（虽然没有这个东西）
-      </Typography.Paragraph>
-      <Typography.Paragraph>
+    <>
+      <h2 className="flex justify-between items-center">
+        <span>用户文件</span>
         <FileUploader uploadAction={ActionType.UploadFile} />
-      </Typography.Paragraph>
-      <Typography.Paragraph>
-        <FileList files={files} deleteAction={ActionType.RemoveFile} />
-      </Typography.Paragraph>
-    </Typography>
+      </h2>
+      <p>上传即代表同意我们的用户手册（虽然没有这个东西）</p>
+
+      <FileList files={files} deleteAction={ActionType.RemoveFile} />
+    </>
   );
 }
 

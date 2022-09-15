@@ -1,8 +1,7 @@
-import { Button } from "@arco-design/web-react";
-import { IconDelete } from "@arco-design/web-react/icon";
 import type { File } from "@prisma/client";
 import type { SerializeFrom } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
+import { HiOutlineTrash } from "react-icons/hi";
 
 type FileRemoveButtonProps = {
   file: SerializeFrom<File>;
@@ -19,16 +18,15 @@ export function FileRemoveButton({
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
-      <Button
-        type="primary"
-        status="danger"
-        htmlType="submit"
+      <button
+        className="btn btn-error btn-square btn-sm"
+        type="submit"
         name="_action"
-        size="mini"
         value={deleteAction}
-        loading={isDeleting}
-        icon={<IconDelete />}
-      />
+        disabled={isDeleting}
+      >
+        <HiOutlineTrash className="w-4 h-4" />
+      </button>
     </fetcher.Form>
   );
 }

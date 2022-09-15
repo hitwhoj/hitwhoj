@@ -1,79 +1,76 @@
-import { Button, Result, Space } from "@arco-design/web-react";
 import type { ThrownResponse } from "@remix-run/react";
-import { Link, useCatch, useLocation, useNavigate } from "@remix-run/react";
+import { Link, useCatch } from "@remix-run/react";
+import { HiOutlineXCircle } from "react-icons/hi";
 
 export function CatchBoundary() {
   const caught = useCatch<ThrownResponse<number, string>>();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const login = (
-    <Link to={`/login?redirect=${location.pathname}`}>
-      <Button type="outline">登录</Button>
-    </Link>
-  );
-
-  const goback = (
-    <Button type="primary" onClick={() => navigate(-1)}>
-      返回
-    </Button>
-  );
-
-  const diana = (
-    <a
-      target="_blank"
-      rel="noreferrer"
-      href="https://www.bilibili.com/s/video/BV1FX4y1g7u8?t=42.3"
-    >
-      <Button type="outline">关注嘉然（不推荐）</Button>
-    </a>
-  );
 
   switch (caught.status) {
+    // 一般是用户提交的表单数据有问题
     case 400:
       return (
-        <Result
-          status="error"
-          title="请求参数错误"
-          subTitle={caught.data}
-          extra={<Space children={[goback]} />}
-        />
+        <div className="alert alert-error not-prose mt-4">
+          <div>
+            <HiOutlineXCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">错误</h3>
+              <div className="text-xs">{caught.data}</div>
+            </div>
+          </div>
+        </div>
       );
     case 401:
       return (
-        <Result
-          status="error"
-          title="请先登录"
-          subTitle={caught.data || "该页面不对访客开放"}
-          extra={<Space children={[goback, login]} />}
-        />
+        <div className="alert alert-error not-prose mt-4">
+          <div>
+            <HiOutlineXCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">未登录</h3>
+              <div className="text-xs">请登录后再进行尝试</div>
+            </div>
+          </div>
+          <Link className="btn btn-outline" to="/login">
+            登录
+          </Link>
+        </div>
       );
     case 403:
       return (
-        <Result
-          status="403"
-          title="权限不足"
-          subTitle={caught.data || "您没有访问该页面的权限"}
-          extra={<Space children={[goback]} />}
-        />
+        <div className="alert alert-error not-prose mt-4">
+          <div>
+            <HiOutlineXCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">权限不足</h3>
+              <div className="text-xs">{caught.data}</div>
+            </div>
+          </div>
+        </div>
       );
     case 404:
       return (
-        <Result
-          status="404"
-          title="未找到"
-          subTitle={caught.data || "您访问的页面不存在"}
-          extra={<Space children={[goback, diana]} />}
-        />
+        <div className="alert alert-error not-prose mt-4">
+          <div>
+            <HiOutlineXCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">未找到</h3>
+              <div className="text-xs">{caught.data}</div>
+            </div>
+          </div>
+        </div>
       );
     default:
       return (
-        <Result
-          status="error"
-          title="你打开了新世界的大门"
-          subTitle={caught.data || "我们甚至不知道发生了什么"}
-          extra={<Space children={[goback]} />}
-        />
+        <div className="alert alert-error not-prose mt-4">
+          <div>
+            <HiOutlineXCircle className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">
+                {caught.status} {caught.statusText}
+              </h3>
+              <div className="text-xs">{caught.data}</div>
+            </div>
+          </div>
+        </div>
       );
   }
 }

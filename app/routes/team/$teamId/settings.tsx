@@ -14,24 +14,12 @@ import { findRequestUser } from "~/utils/permission";
 import { InvitationType } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import {
-  Button,
-  Checkbox,
-  Typography,
-  Form as arcoForm,
-  Input,
-  Message,
-  Select,
-  Space,
-} from "@arco-design/web-react";
-import { IconCheck } from "@arco-design/web-react/icon";
+import { useContext, useEffect, useState } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
-const FormItem = arcoForm.Item;
-const TextArea = Input.TextArea;
-const Option = Select.Option;
+import { HiOutlineLogout } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -99,7 +87,7 @@ export async function action({ params, request }: ActionArgs) {
           invitationType === InvitationType.CODE
             ? invariant(teamInvitationCodeScheme, form.get("code"))
             : "";
-        const allowMembersInvite = form.get("allow_invite") === "true";
+        const allowMembersInvite = form.has("allow_invite");
 
         const team = await db.team.findUnique({ where: { name } });
         if (team && team.id !== teamId) {
@@ -160,60 +148,63 @@ function EditProfile({
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
   const [invitationType, setInvitationType] = useState(type);
-  const [allowMembersInvite, setAllowMembersInvite] = useState(allow);
 
-  const invitationType2Description = {
-    [InvitationType.FREE]: "所有人均可加入",
-    [InvitationType.CODE]: "需要填写邀请码",
-    [InvitationType.NONE]: "禁止任何人加入",
-  };
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新团队信息成功");
+      Toasts.success("更新团队信息成功");
     }
   }, [isActionReload]);
 
   return (
-    <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-      <FormItem label="团队名称" required layout="vertical">
-        <Input name="name" defaultValue={name} disabled={isLoading} required />
-      </FormItem>
+    <fetcher.Form method="post" className="form-control gap-4">
+      <div className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">团队名称</span>
+        </label>
+        <input
+          className="input input-bordered"
+          name="name"
+          defaultValue={name}
+          disabled={isLoading}
+          required
+        />
+      </div>
 
-      <FormItem label="团队描述" required layout="vertical">
-        <TextArea
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">团队描述</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
           name="description"
           defaultValue={description}
           disabled={isLoading}
-          autoSize={{
-            minRows: 3,
-            maxRows: 10,
-          }}
         />
-      </FormItem>
+      </div>
 
-      <FormItem label="邀请制" required layout="vertical">
-        <input
-          type="hidden"
-          name="invitation"
-          value={invitationType}
-          required
-        />
-        <Space>
-          <Select
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">邀请制</span>
+        </label>
+        <div className="flex gap-4">
+          <select
+            className="select select-bordered"
+            name="invitation"
             value={invitationType}
-            onChange={(value) => setInvitationType(value)}
-            style={{ width: 150 }}
+            onChange={(event) =>
+              setInvitationType(event.target.value as InvitationType)
+            }
             disabled={isLoading}
           >
-            {Object.values(InvitationType).map((type) => (
-              <Option key={type} value={type}>
-                {invitationType2Description[type]}
-              </Option>
-            ))}
-          </Select>
+            <option value={InvitationType.FREE}>所有人均可加入</option>
+            <option value={InvitationType.CODE}>需要填写邀请码</option>
+            <option value={InvitationType.NONE}>禁止任何人加入</option>
+          </select>
           {invitationType === InvitationType.CODE && (
-            <Input
+            <input
+              className="input input-bordered"
               name="code"
               defaultValue={code}
               placeholder="邀请码"
@@ -221,31 +212,33 @@ function EditProfile({
               required
             />
           )}
-        </Space>
-      </FormItem>
+        </div>
+      </div>
 
-      <FormItem>
-        <input type="hidden" name="allow_invite" value={String(allow)} />
-        <Checkbox
-          checked={allowMembersInvite}
-          onChange={(allow) => setAllowMembersInvite(allow)}
-        >
-          允许团队成员邀请其他用户直接加入
-        </Checkbox>
-      </FormItem>
+      <div className="form-control">
+        <label className="label cursor-pointer justify-start gap-2">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="allow_invite"
+            defaultChecked={allow}
+            disabled={isLoading}
+          />
+          <span className="label-text">允许团队成员邀请其他用户直接加入</span>
+        </label>
+      </div>
 
-      <FormItem>
-        <Button
-          type="primary"
-          htmlType="submit"
-          icon={<IconCheck />}
-          loading={isLoading}
+      <div className="form-control w-full max-w-xs">
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={isLoading}
           name="_action"
           value={ActionType.EditProfile}
         >
           确认更新
-        </Button>
-      </FormItem>
+        </button>
+      </div>
     </fetcher.Form>
   );
 }
@@ -254,39 +247,31 @@ function ExitTeam() {
   const fetcher = useFetcher();
   const isActionSubmit =
     fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
-  const [confirm, setConfirm] = useState(false);
+  const isActionRedirect =
+    fetcher.state === "loading" && fetcher.type === "actionRedirect";
+  const isLoading = isActionSubmit || isActionRedirect;
+
+  const Toasts = useContext(ToastContext);
+
+  useEffect(() => {
+    if (isActionRedirect) {
+      Toasts.success("成功退出团队");
+    }
+  }, [isActionRedirect]);
 
   return (
-    <Typography>
-      <Typography.Title heading={5}>退出团队</Typography.Title>
-      <Typography.Paragraph>
-        <Checkbox
-          onChange={() => setConfirm((confirm) => !confirm)}
-          checked={confirm}
-          disabled={isLoading}
-        >
-          我知道我在干什么
-        </Checkbox>
-      </Typography.Paragraph>
-      <Typography.Paragraph>
-        <fetcher.Form method="post">
-          <Button
-            htmlType="submit"
-            type="primary"
-            status="danger"
-            loading={isLoading}
-            disabled={!confirm}
-            name="_action"
-            value={ActionType.ExitTeam}
-          >
-            退出团队
-          </Button>
-        </fetcher.Form>
-      </Typography.Paragraph>
-    </Typography>
+    <fetcher.Form method="post">
+      <button
+        className="btn btn-error gap-2"
+        type="submit"
+        disabled={isLoading}
+        name="_action"
+        value={ActionType.ExitTeam}
+      >
+        <HiOutlineLogout />
+        <span>退出团队</span>
+      </button>
+    </fetcher.Form>
   );
 }
 
@@ -294,24 +279,20 @@ export default function TeamSettings() {
   const { profile, hasLeavePerm, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
+    <>
       {hasEditPerm && (
         <>
-          <Typography.Title heading={4}>团队设置</Typography.Title>
-          <Typography.Paragraph>
-            <EditProfile {...profile} />
-          </Typography.Paragraph>
+          <h2>团队设置</h2>
+          <EditProfile {...profile} />
         </>
       )}
       {hasLeavePerm && (
         <>
-          <Typography.Title heading={4}>危险区域</Typography.Title>
-          <Typography.Paragraph>
-            <ExitTeam />
-          </Typography.Paragraph>
+          <h2>危险区域</h2>
+          <ExitTeam />
         </>
       )}
-    </Typography>
+    </>
   );
 }
 

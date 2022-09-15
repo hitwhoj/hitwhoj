@@ -4,19 +4,12 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
-import {
-  Button,
-  Input,
-  Form as ArcoForm,
-  Typography,
-  Message,
-} from "@arco-design/web-react";
 import { findRequestUser } from "~/utils/permission";
 import { Form, useTransition } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
-const FormItem = ArcoForm.Item;
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -61,25 +54,45 @@ export default function NewTeam() {
   const isActionRedirect = state === "loading" && type === "actionReload";
   const isLoading = isActionSubmit || isActionRedirect;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
-    if (isActionRedirect) Message.success("创建成功");
+    if (isActionRedirect) {
+      Toasts.success("创建成功");
+    }
   }, [isActionRedirect]);
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>创建团队</Typography.Title>
-      <Typography.Paragraph>创建一个新的团队！</Typography.Paragraph>
-      <Form method="post">
-        <FormItem label="名称" required layout="vertical" disabled={isLoading}>
-          <Input type="text" name="name" placeholder="团队名称" required />
-        </FormItem>
-        <FormItem>
-          <Button type="primary" htmlType="submit" loading={isLoading}>
+    <>
+      <h1>创建团队</h1>
+
+      <p>创建一个新的团队！</p>
+
+      <Form method="post" className="form-control w-full max-w-xs gap-4">
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">团队名称</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="name"
+            required
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-control">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isLoading}
+          >
             创建团队
-          </Button>
-        </FormItem>
+          </button>
+        </div>
       </Form>
-    </Typography>
+    </>
   );
 }
 

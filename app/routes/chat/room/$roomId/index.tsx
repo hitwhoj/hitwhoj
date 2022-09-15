@@ -1,41 +1,38 @@
-import type {
-  ActionArgs,
-  LinksFunction,
-  LoaderArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useRef, useState } from "react";
-import { Button, Input, Typography } from "@arco-design/web-react";
+import { useEffect, useRef, useState } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
 import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
-import { UserContext } from "~/utils/context/user";
-import { ChatMessage } from "~/src/chat/ChatMessage";
-import { ChatAvatar } from "~/src/chat/ChatAvatar";
-import ChatBubble from "~/src/chat/ChatBubble";
-import ChatTime from "~/src/chat/ChatTime";
-
-import style from "~/styles/simplify.css";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: style }];
+import Fullscreen from "~/src/Fullscreen";
+import { formatDateTime, formatTime } from "~/utils/tools";
+import {
+  HiOutlineChevronLeft,
+  HiOutlineLogout,
+  HiOutlinePaperAirplane,
+} from "react-icons/hi";
+import { ChatRoomPermission } from "~/utils/permission/permission/room";
+import { selectUserData } from "~/utils/db/user";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
-  const _room = self.room(roomId);
-  const [hasReadPerm] = await _room.hasPermission(
-    Permissions.PERM_VIEW_CHATROOM_MESSAGE
-  );
+  const [hasReadPerm, isMember] = await self
+    .room(roomId)
+    .hasPermission(
+      Permissions.PERM_VIEW_CHATROOM_MESSAGE,
+      ChatRoomPermission.Members
+    );
+
   if (!hasReadPerm) {
     throw redirect(`/chat/room/${roomId}/enter`);
   }
@@ -47,19 +44,13 @@ export async function loader({ request, params }: LoaderArgs) {
       name: true,
       chatMessage: {
         orderBy: { sentAt: "asc" },
-        include: {
-          sender: {
-            select: {
-              id: true,
-              avatar: true,
-              nickname: true,
-              username: true,
-              enteredChatRoom: {
-                where: { roomId },
-                select: { role: true },
-              },
-            },
-          },
+        select: {
+          id: true,
+          role: true,
+          content: true,
+          sentAt: true,
+          roomId: true,
+          sender: { select: { ...selectUserData } },
         },
       },
     },
@@ -69,7 +60,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Room not found", { status: 404 });
   }
 
-  return json({ room });
+  return json({ room, isMember });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -77,13 +68,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ChatRoomIndex() {
-  const { room } = useLoaderData<typeof loader>();
+  const { room, isMember } = useLoaderData<typeof loader>();
   const [messages, setMessages] = useState(room.chatMessage);
 
-  useEffect(() => {
-    setMessages(room.chatMessage);
-  }, [room.chatMessage]);
-
+  useEffect(() => setMessages(room.chatMessage), [room.chatMessage]);
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${room.id}/events`
@@ -93,95 +81,146 @@ export default function ChatRoomIndex() {
     return () => subscription.unsubscribe();
   }, [room.id]);
 
-  const submitRef = useRef<HTMLButtonElement>(null);
-  const [content, setContent] = useState<string>("");
-  const { state } = useTransition();
-  const isFetching = state !== "idle";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!isFetching) {
-      setContent("");
+    if (isActionReload) {
+      formRef.current?.reset();
     }
-  }, [isFetching]);
-
-  const self = useContext(UserContext);
+  }, [isActionReload]);
 
   return (
-    <Typography className="flex flex-col h-full gap-2">
-      <Typography.Title heading={4}>{room.name}</Typography.Title>
-      <div className="flex-1 overflow-auto min-h-0">
-        {messages.map((message, index, array) => {
-          const role = message.sender.enteredChatRoom.at(0)?.role;
-          // 是同一个人的连续第一次发言
-          const isFirst =
-            index === 0 || message.sender.id !== array[index - 1].sender.id;
-          // 是同一个人的连续最后一次发言
-          const isLast =
-            index === array.length - 1 ||
-            message.sender.id !== array[index + 1].sender.id;
-          const isSelf = message.sender.id === self;
+    <Fullscreen visible={true} className="not-prose">
+      <div className="drawer drawer-mobile">
+        <input type="checkbox" className="drawer-toggle" />
+        <div className="drawer-content bg-base-100 px-4 not-prose min-h-full flex flex-col overflow-auto">
+          <header className="sticky top-0 py-4 z-10 bg-base-100">
+            <h1 className="font-bold text-2xl">{room.name}</h1>
+          </header>
 
-          return (
-            <ChatMessage self={isSelf} key={message.id}>
-              <ChatAvatar visible={isLast}>
-                <Link to={`/user/${message.sender.id}`}>
-                  <UserAvatar user={message.sender} size={35} />
-                </Link>
-              </ChatAvatar>
-              <ChatBubble self={isSelf}>
-                {isFirst && (
-                  <header className="flex gap-2 justify-between">
-                    <Link
-                      to={`/user/${message.sender.id}`}
-                      className="font-bold"
+          <div className="flex-1">
+            {messages.map((message, index, array) => {
+              // 是否是同一个人在连续五分钟内发送的第一条消息
+              const isFirst =
+                index === 0 ||
+                array[index - 1].sender.id !== message.sender.id ||
+                new Date(message.sentAt).getTime() -
+                  new Date(array[index - 1].sentAt).getTime() >
+                  1000 * 60 * 5;
+
+              return isFirst ? (
+                <div
+                  className="flex gap-4 pt-2 px-2 hover:bg-base-200 transition"
+                  key={message.id}
+                >
+                  <UserAvatar
+                    className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
+                    user={message.sender}
+                  />
+                  <div className="flex-1">
+                    <div className="w-full flex justify-between">
+                      <span className="inline-flex gap-2 items-center">
+                        <span className="text-primary">
+                          {message.sender.nickname || message.sender.username}
+                        </span>
+                        {message.role === "Owner" && (
+                          <span className="badge badge-primary">所有人</span>
+                        )}
+                        {message.role === "Admin" && (
+                          <span className="badge badge-primary">管理员</span>
+                        )}
+                        {!message.role && <span className="badge">游客</span>}
+                      </span>
+                    </div>
+                    <div className="break-words min-w-0">{message.content}</div>
+                  </div>
+                  <div>
+                    <span
+                      className="tooltip tooltip-left"
+                      data-tip={formatDateTime(message.sentAt)}
                     >
-                      {message.sender.nickname || message.sender.username}
-                    </Link>
-                    {(role === "Owner" || role === "Admin") && (
-                      <span>{role}</span>
-                    )}
-                  </header>
-                )}
-                <span>{message.content}</span>
-              </ChatBubble>
-              <ChatTime time={message.sentAt} />
-            </ChatMessage>
-          );
-        })}
-      </div>
+                      <time className="text-base-content text-sm opacity-60">
+                        {formatTime(message.sentAt)}
+                      </time>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex gap-4 px-2 hover:bg-base-200 transition group"
+                  key={message.id}
+                >
+                  <div className="w-12 h-0 flex-shrink-0" />
+                  <span className="flex-1 break-words min-w-0">
+                    {message.content}
+                  </span>
+                  <div>
+                    <span
+                      className="tooltip tooltip-left"
+                      data-tip={formatDateTime(message.sentAt)}
+                    >
+                      <time className="text-sm opacity-0 group-hover:opacity-60 transition">
+                        {formatTime(message.sentAt)}
+                      </time>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-      <Form method="post" className="flex gap-2 items-end">
-        <input type="hidden" name="roomId" value={room.id} />
-        <Input.TextArea
-          placeholder="输入消息..."
-          name="content"
-          maxLength={255}
-          showWordLimit
-          autoSize={{ minRows: 1, maxRows: 5 }}
-          style={{ flex: 1, height: "32px" }}
-          value={content}
-          onChange={(v) => setContent(v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (!e.ctrlKey) submitRef.current?.click();
-              else setContent((content) => content + "\n");
-            }
-          }}
-          disabled={isFetching}
-          required
-        />
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          ref={submitRef}
-          style={{ height: "32px" }}
-          loading={isFetching}
-        >
-          发送
-        </Button>
-      </Form>
-    </Typography>
+          <Form
+            method="post"
+            className="sticky bottom-0 z-10 flex gap-4 py-4 bg-base-100"
+            ref={formRef}
+            autoComplete="off"
+          >
+            <input type="hidden" name="roomId" value={room.id} />
+            <input
+              className="input input-bordered flex-1"
+              type="text"
+              placeholder="输入消息..."
+              name="content"
+              disabled={isLoading}
+              required
+              autoComplete="false"
+            />
+            <button
+              className="btn btn-primary gap-2"
+              type="submit"
+              disabled={isLoading}
+            >
+              <HiOutlinePaperAirplane className="rotate-90" />
+              <span>发送</span>
+            </button>
+          </Form>
+        </div>
+        <div className="drawer-side">
+          <div className="drawer-overlay" />
+          <aside className="w-72 bg-base-200 p-4 flex flex-col justify-between">
+            <div>
+              <Link className="btn btn-ghost gap-2" to="/">
+                <HiOutlineChevronLeft />
+                <span>返回上一页</span>
+              </Link>
+            </div>
+            {isMember && (
+              <Form method="post" action="exit">
+                <button className="btn btn-error gap-2 w-full">
+                  <HiOutlineLogout />
+                  <span>退出群组</span>
+                </button>
+              </Form>
+            )}
+          </aside>
+        </div>
+      </div>
+    </Fullscreen>
   );
 }
 
@@ -196,31 +235,23 @@ export async function action({ request, params }: ActionArgs) {
   const form = await request.formData();
   const content = invariant(contentScheme, form.get("content"));
 
+  const user = await db.chatRoomUser.findUnique({
+    where: { roomId_userId: { roomId, userId: self.userId! } },
+    select: { role: true },
+  });
+
   const message = await db.chatMessage.create({
     data: {
       roomId: roomId,
       senderId: self.userId!,
       content,
+      role: user?.role,
     },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          nickname: true,
-          username: true,
-          avatar: true,
-          enteredChatRoom: {
-            select: {
-              role: true,
-            },
-          },
-        },
-      },
-    },
+    select: { id: true },
   });
 
   // 推送新的消息
-  chatMessageSubject.next(message);
+  chatMessageSubject.next(message.id);
 
   return null;
 }

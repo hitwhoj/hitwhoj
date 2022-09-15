@@ -1,24 +1,20 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Button, Empty, Input, Typography } from "@arco-design/web-react";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState, useRef, useContext } from "react";
+import { useEffect, useState, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
 import { privateMessageSubject } from "~/utils/serverEvents";
 import { findRequestUser } from "~/utils/permission";
 import { selectUserData } from "~/utils/db/user";
-import { UserContext } from "~/utils/context/user";
 import { fromEventSource } from "~/utils/eventSource";
-import ChatBubble from "~/src/chat/ChatBubble";
-import ChatTime from "~/src/chat/ChatTime";
-import { ChatAvatar } from "~/src/chat/ChatAvatar";
-import { ChatMessage } from "~/src/chat/ChatMessage";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
+import { HiOutlinePaperAirplane } from "react-icons/hi";
+import { formatDateTime, formatTime } from "~/utils/tools";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -30,12 +26,18 @@ export async function loader({ request, params }: LoaderArgs) {
   await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
   const userId = invariant(idScheme, params.userId, { status: 404 });
-  const target = await db.user.findUnique({
-    where: { id: userId },
-    select: { nickname: true, username: true, id: true },
-  });
+  const [target, source] = await db.$transaction([
+    db.user.findUnique({
+      where: { id: userId },
+      select: { ...selectUserData },
+    }),
+    db.user.findUnique({
+      where: { id: self.userId },
+      select: { ...selectUserData },
+    }),
+  ]);
 
-  if (!target) {
+  if (!target || !source) {
     throw new Response("User not exists", { status: 404 });
   }
 
@@ -49,13 +51,16 @@ export async function loader({ request, params }: LoaderArgs) {
     orderBy: {
       sentAt: "asc",
     },
-    include: {
-      from: { select: selectUserData },
-      to: { select: selectUserData },
+    select: {
+      id: true,
+      fromId: true,
+      toId: true,
+      content: true,
+      sentAt: true,
     },
   });
 
-  return json({ target, msgs });
+  return json({ source, target, msgs });
 }
 
 export async function action({ request }: ActionArgs) {
@@ -74,19 +79,17 @@ export async function action({ request }: ActionArgs) {
       to: { connect: { id: to } },
       content: content,
     },
-    include: {
-      from: { select: selectUserData },
-      to: { select: selectUserData },
-    },
+    select: { id: true },
   });
 
-  privateMessageSubject.next(message);
+  // 推送新消息
+  privateMessageSubject.next(message.id);
 
   return null;
 }
 
 export default function ChatIndex() {
-  const { target, msgs } = useLoaderData<typeof loader>();
+  const { target, source, msgs } = useLoaderData<typeof loader>();
   const [messages, setMessages] = useState(msgs);
 
   useEffect(() => {
@@ -104,81 +107,120 @@ export default function ChatIndex() {
   }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const submitRef = useRef<HTMLButtonElement>(null);
-  const { state } = useTransition();
-  const isFetching = state !== "idle";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
 
-  const [message, setMessage] = useState("");
   useEffect(() => {
-    if (!isFetching) {
-      setMessage("");
+    if (!isActionReload) {
+      formRef.current?.reset();
     }
-  }, [isFetching]);
-
-  const self = useContext(UserContext);
+  }, [isActionReload]);
 
   return (
-    <Typography className="px-4 flex flex-col h-full gap-2">
-      <Typography.Title heading={4}>
-        用户：{target.nickname || target.username}
-      </Typography.Title>
+    <div className="w-full h-full flex flex-col">
+      <header className="py-4 sticky top-0 z-10 bg-base-100">
+        <h1 className="font-bold text-2xl">
+          {target.nickname || target.username}
+        </h1>
+      </header>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1">
         {messages.length > 0 ? (
           messages.map((message, index, array) => {
-            // 是否是连续同一个人发送的最后一条消息
-            const isLast =
-              index === array.length - 1 ||
-              array[index + 1].fromId !== message.fromId;
-            const isSelf = message.fromId === self;
+            // 是否是同一个人在连续五分钟内发送的第一条消息
+            const isFirst =
+              index === 0 ||
+              array[index - 1].fromId !== message.fromId ||
+              new Date(message.sentAt).getTime() -
+                new Date(array[index - 1].sentAt).getTime() >
+                1000 * 60 * 5;
+            const from = message.fromId === target.id ? target : source;
 
-            return (
-              <ChatMessage self={isSelf} key={message.id}>
-                <ChatAvatar visible={isLast}>
-                  <UserAvatar user={message.from} size={35} />
-                </ChatAvatar>
-                <ChatBubble self={isSelf}>{message.content}</ChatBubble>
-                <ChatTime time={message.sentAt} />
-              </ChatMessage>
+            return isFirst ? (
+              <div
+                className="flex gap-4 pt-2 px-2 hover:bg-base-200 transition"
+                key={message.id}
+              >
+                <UserAvatar
+                  className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
+                  user={from}
+                />
+                <div className="flex-1">
+                  <div className="w-full flex justify-between">
+                    <span className="text-primary">
+                      {from.nickname || from.username}
+                    </span>
+                  </div>
+                  <div className="break-words min-w-0">{message.content}</div>
+                </div>
+                <div>
+                  <span
+                    className="tooltip tooltip-left"
+                    data-tip={formatDateTime(message.sentAt)}
+                  >
+                    <time className="text-base-content text-sm opacity-60">
+                      {formatTime(message.sentAt)}
+                    </time>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="flex gap-4 px-2 hover:bg-base-200 transition group"
+                key={message.id}
+              >
+                <div className="w-12 h-0 flex-shrink-0" />
+                <span className="flex-1 break-words min-w-0">
+                  {message.content}
+                </span>
+                <div>
+                  <span
+                    className="tooltip tooltip-left"
+                    data-tip={formatDateTime(message.sentAt)}
+                  >
+                    <time className="text-sm opacity-0 group-hover:opacity-60 transition">
+                      {formatTime(message.sentAt)}
+                    </time>
+                  </span>
+                </div>
+              </div>
             );
           })
         ) : (
-          <Empty description="快来跟 TA 打个招呼吧" />
+          <div className="grid w-full h-full place-items-center">
+            <span className="text-base-content">快来跟 TA 打个招呼吧</span>
+          </div>
         )}
       </div>
 
-      <Form method="post" ref={formRef} className="flex gap-2 items-end">
+      <Form
+        method="post"
+        ref={formRef}
+        className="sticky bottom-0 py-4 bg-base-100 z-10 flex gap-4"
+        autoComplete="off"
+      >
         <input type="hidden" name="to" value={target.id} />
-        <Input.TextArea
+        <input
+          className="input input-bordered flex-1"
+          type="text"
           placeholder="输入消息..."
           name="content"
-          maxLength={255}
-          showWordLimit
-          autoSize={{ minRows: 1, maxRows: 5 }}
-          value={message}
-          onChange={(msg) => setMessage(msg)}
-          style={{ flex: 1, height: "32px" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (!e.ctrlKey) submitRef.current?.click();
-              else setMessage((message) => message + "\n");
-            }
-          }}
-          disabled={isFetching}
           required
+          disabled={isLoading}
+          autoComplete="false"
         />
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          ref={submitRef}
-          style={{ height: "32px" }}
-          loading={isFetching}
+        <button
+          className="btn btn-primary gap-2"
+          type="submit"
+          disabled={isLoading}
         >
-          发送
-        </Button>
+          <HiOutlinePaperAirplane className="rotate-90" />
+          <span>发送</span>
+        </button>
       </Form>
-    </Typography>
+    </div>
   );
 }
 

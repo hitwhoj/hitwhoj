@@ -1,11 +1,15 @@
-import { Message, Space, Tag, Typography } from "@arco-design/web-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { Navigator } from "~/src/Navigator";
 import {
   findContestPrivacy,
   findContestStatus,
@@ -13,20 +17,17 @@ import {
 } from "~/utils/db/contest";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
-import {
-  IconEyeInvisible,
-  IconTag,
-  IconTrophy,
-} from "@arco-design/web-react/icon";
-import { TagSpace } from "~/src/TagSpace";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext, useEffect } from "react";
-import { fromEventSource } from "~/utils/eventSource";
-import type { MessageType } from "./$contestId/clarificationEvents";
-import { filter } from "rxjs";
-import { UserContext } from "~/utils/context/user";
 import { ContestPermission } from "~/utils/permission/permission/contest";
+import { AiOutlineTrophy } from "react-icons/ai";
+import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType as ResolveMessageType } from "./$contestId/clarification/events/resolve";
+import type { MessageType as ReplyMessageType } from "./$contestId/clarification/events/reply";
+import type { MessageType as AssignMessageType } from "./$contestId/clarification/events/reply";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -48,10 +49,10 @@ export async function loader({ request, params }: LoaderArgs) {
         : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
       ContestPermission.Contestants
     );
-
-  const [canReply] = await perm.hasPermission(
-    Permissions.PERM_REPLY_CONTEST_CLARIFICATION
-  );
+  // const [canSubmit, canReply] = perm.hasPermission(
+  //   Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION,
+  //   Permissions.PERM_REPLY_CONTEST_CLARIFICATION
+  // );
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -77,7 +78,6 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({
     contest,
     hasEditPerm,
-    canReply,
     hasViewProblemPerm,
     isContestants,
   });
@@ -88,93 +88,83 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm, canReply, hasViewProblemPerm, isContestants } =
+  const { contest, hasEditPerm, hasViewProblemPerm, isContestants } =
     useLoaderData<typeof loader>();
   const { contestId } = useParams();
-  const self = useContext(UserContext);
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
-    const observable = fromEventSource<MessageType>(
-      `/contest/${contestId}/clarificationEvents`
-    );
-    const subscription = canReply
-      ? observable
-          .pipe(filter((message) => message.type === "judge"))
-          .subscribe((message) => {
-            Message.info({
-              content: `用户对题目${String.fromCharCode(
-                0x40 + message.rank
-              )}的反馈${message.content}需要您的回复`,
-              duration: 0,
-              closable: true,
-            });
-          })
-      : observable
-          .pipe(
-            filter(
-              (message) => message.type === "user" && message.userId === self
-            )
-          )
-          .subscribe((message) => {
-            Message.info({
-              content: message.resolved
-                ? `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
-                    message.content
-                  }已被解决`
-                : `您对题目${String.fromCharCode(0x40 + message.rank)}的反馈${
-                    message.content
-                  }已被回复`,
-              duration: 0,
-              closable: true,
-            });
-          });
+    const subsctiption = fromEventSource<ResolveMessageType>(
+      `/contest/${contestId}/clarification/events/resolve`
+    ).subscribe(() => Toasts.info("您提交的反馈已经被标记为解决"));
+    return () => subsctiption.unsubscribe();
+  }, []);
 
-    return () => subscription.unsubscribe();
+  useEffect(() => {
+    const subsctiption = fromEventSource<ReplyMessageType>(
+      `/contest/${contestId}/clarification/events/reply`
+    ).subscribe(({ content }) => Toasts.info(`收到新的反馈回复：${content}`));
+    return () => subsctiption.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subsctiption = fromEventSource<AssignMessageType>(
+      `/contest/${contestId}/clarification/events/assign`
+    ).subscribe(() => Toasts.info("您提交的反馈正在被审理"));
+    return () => subsctiption.unsubscribe();
   }, []);
 
   return (
-    <Typography className="contest-problem-container">
-      <Typography.Title heading={3} className="contest-problem-hide">
-        <Space>
-          <IconTrophy />
-          {contest.title}
-        </Space>
-      </Typography.Title>
+    <>
+      <h1 className="flex gap-4">
+        <AiOutlineTrophy className="flex-shrink-0" />
+        <span>{contest.title}</span>
+      </h1>
 
-      <Typography.Paragraph className="contest-problem-hide">
-        <TagSpace>
-          <ContestStateTag
-            beginTime={contest.beginTime}
-            endTime={contest.endTime}
-          />
-          <ContestSystemTag system={contest.system} />
-          {contest.private && (
-            <Tag icon={<IconEyeInvisible />} color="gold">
-              隐藏
-            </Tag>
-          )}
-          {contest.tags.map(({ name }) => (
-            <Link to={`/contest/tag/${name}`} key={name}>
-              <Tag icon={<IconTag />}>{name}</Tag>
-            </Link>
-          ))}
-        </TagSpace>
-      </Typography.Paragraph>
-
-      <Typography.Paragraph className="contest-problem-hide">
-        <Navigator
-          routes={[
-            { title: "详情", key: "." },
-            ...(hasViewProblemPerm || isContestants
-              ? [{ title: "题目", key: "problem" }]
-              : []),
-            { title: canReply ? "用户反馈" : "我的反馈", key: "clarification" },
-            ...(hasEditPerm ? [{ title: "编辑", key: "edit" }] : []),
-          ]}
+      <p className="flex flex-wrap gap-2 not-prose">
+        <ContestStateTag
+          beginTime={contest.beginTime}
+          endTime={contest.endTime}
         />
-      </Typography.Paragraph>
+        <ContestSystemTag system={contest.system} />
+        {contest.private && (
+          <span className="badge badge-warning gap-1">
+            <HiOutlineEyeOff />
+            <span>隐藏</span>
+          </span>
+        )}
+        {contest.tags.map(({ name }) => (
+          <Link className="badge gap-1" to={`/contest/tag/${name}`} key={name}>
+            <HiOutlineTag />
+            <span>{name}</span>
+          </Link>
+        ))}
+      </p>
+
+      <p className="tabs tabs-boxed bg-base-100 not-prose">
+        <NavLink className="tab" to="desc">
+          详情
+        </NavLink>
+        {(hasViewProblemPerm || isContestants) && (
+          <NavLink className="tab" to="problem">
+            题目
+          </NavLink>
+        )}
+        {hasEditPerm && (
+          <NavLink className="tab" to="edit">
+            编辑
+          </NavLink>
+        )}
+        <NavLink className="tab" to="rank">
+          排行榜
+        </NavLink>
+        <NavLink className="tab" to="clarification">
+          反馈
+        </NavLink>
+      </p>
+
       <Outlet />
-    </Typography>
+    </>
   );
 }
 

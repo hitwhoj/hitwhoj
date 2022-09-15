@@ -1,10 +1,3 @@
-import {
-  Button,
-  Form as ArcoForm,
-  Input,
-  Message,
-  Typography,
-} from "@arco-design/web-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
@@ -22,7 +15,8 @@ import {
 import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -112,8 +106,6 @@ export async function action({ request, params }: ActionArgs) {
   return null;
 }
 
-const FormItem = ArcoForm.Item;
-
 export default function UserEdit() {
   const { user } = useLoaderData<typeof loader>();
   const { state, type } = useTransition();
@@ -121,74 +113,116 @@ export default function UserEdit() {
   const isActionReload = state === "loading" && type === "actionReload";
   const isUpdating = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("更新成功");
+      Toasts.success("更新成功");
     }
   }, [isActionReload]);
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>编辑个人资料</Typography.Title>
-      <Typography.Paragraph>
-        <Form method="post">
-          <FormItem label="用户名 (字母数字下划线)" required layout="vertical">
-            <Input
-              name="username"
-              defaultValue={user.username}
-              disabled={isUpdating}
-              required
-              pattern="[a-zA-Z0-9_]+"
-            />
-          </FormItem>
-          <FormItem label="用户昵称" layout="vertical">
-            <Input
-              name="nickname"
-              defaultValue={user.nickname}
-              disabled={isUpdating}
-            />
-          </FormItem>
-          <FormItem label="个性签名" layout="vertical">
-            <Input name="bio" defaultValue={user.bio} disabled={isUpdating} />
-          </FormItem>
-          <FormItem label="电子邮箱" layout="vertical">
-            <Input
-              name="email"
-              type="email"
-              defaultValue={user.email}
-              disabled={isUpdating}
-            />
-          </FormItem>
-          <FormItem label="头像地址" layout="vertical">
-            <Input
-              name="avatar"
-              defaultValue={user.avatar}
-              placeholder="https://"
-              disabled={isUpdating}
-            />
-          </FormItem>
-          <FormItem label="工作单位" layout="vertical">
-            <Input
-              name="department"
-              defaultValue={user.department}
-              disabled={isUpdating}
-            />
-          </FormItem>
-          <FormItem label="学号" layout="vertical">
-            <Input
-              name="studentId"
-              defaultValue={user.studentId}
-              disabled={isUpdating}
-            />
-          </FormItem>
-          <FormItem layout="vertical">
-            <Button type="primary" htmlType="submit" loading={isUpdating}>
-              确认修改
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
-    </Typography>
+    <Form method="post" className="form-control w-full max-w-lg mx-auto gap-4">
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">用户名 (字母数字下划线)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="username"
+          defaultValue={user.username}
+          disabled={isUpdating}
+          required
+          pattern="\w+"
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">用户昵称</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="nickname"
+          defaultValue={user.nickname}
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">个性签名</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="bio"
+          defaultValue={user.bio}
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">电子邮箱</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="email"
+          name="email"
+          defaultValue={user.email}
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">头像地址 (比较诡异，估计要改)</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="avatar"
+          defaultValue={user.avatar}
+          placeholder="https://"
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">工作单位</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="department"
+          defaultValue={user.department}
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">学号</span>
+        </label>
+        <input
+          className="input input-bordered"
+          type="text"
+          name="studentId"
+          defaultValue={user.studentId}
+          disabled={isUpdating}
+        />
+      </div>
+
+      <div className="form-control">
+        <button className="btn btn-primary" type="submit" disabled={isUpdating}>
+          确认修改
+        </button>
+      </div>
+    </Form>
   );
 }
 

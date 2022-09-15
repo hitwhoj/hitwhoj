@@ -1,19 +1,29 @@
-import { Button, Result } from "@arco-design/web-react";
 import { useNavigate } from "@remix-run/react";
 
-export function ErrorBoundary({ error }: { error: Error }) {
+type ErrorBoundaryProps = {
+  error: Error;
+};
+
+export function ErrorBoundary({ error }: ErrorBoundaryProps) {
   const navigate = useNavigate();
 
   return (
-    <Result
-      status="error"
-      title="出错啦"
-      subTitle={`错误: ${error.message}`}
-      extra={
-        <Button type="primary" onClick={() => navigate(-1)}>
-          重试
-        </Button>
-      }
-    />
+    <div className="grid place-items-center w-full h-full">
+      <div className="card card-compact w-96 bg-error text-error-content shadow-lg not-prose">
+        <figure>
+          <img src="/error.png" alt="error" />
+        </figure>
+        <div className="card-body">
+          <h2 className="card-title">网站貌似出现了一些异常</h2>
+          <p>{error.message}</p>
+          <p>您可以尝试向管理员反馈此问题</p>
+          <div className="card-actions justify-end">
+            <button className="btn btn-primary" onClick={() => navigate(-1)}>
+              返回上一页
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

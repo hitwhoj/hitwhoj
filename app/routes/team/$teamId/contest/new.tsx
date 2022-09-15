@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useFetcher } from "@remix-run/react";
+import { Form, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -11,26 +11,13 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
-import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
+import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
-import {
-  Form,
-  Input,
-  DatePicker,
-  Select,
-  Button,
-  Typography,
-  Message,
-} from "@arco-design/web-react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-
-const FormItem = Form.Item;
-const TextArea = Input.TextArea;
-const RangePicker = DatePicker.RangePicker;
-const Option = Select.Option;
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -45,7 +32,7 @@ export async function action({ request, params }: ActionArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
+  await self.team(teamId).checkPermission(Permissions.PERM_CREATE_CONTEST);
 
   const form = await request.formData();
 
@@ -85,93 +72,121 @@ export const meta: MetaFunction = () => ({
   title: "创建团队比赛 - HITwh OJ",
 });
 
-export default function ContestNew() {
-  const [beginTime, setBeginTime] = useState(Date.now());
-  const [endTime, setEndTime] = useState(Date.now() + 5 * 60 * 60 * 1000);
-  const [system, setSystem] = useState<ContestSystem>(ContestSystem.Homework);
-  const fetcher = useFetcher();
+export default function TeamContestNew() {
+  const { state, type } = useTransition();
 
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionRedirect =
-    fetcher.state === "loading" && fetcher.type === "actionRedirect";
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionRedirect;
+
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
     if (isActionRedirect) {
-      Message.success("创建成功");
+      Toasts.success("创建成功");
     }
   }, [isActionRedirect]);
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>创建团队比赛</Typography.Title>
+    <>
+      <h2>创建团队比赛</h2>
 
-      <fetcher.Form method="post" style={{ maxWidth: 600 }}>
-        <FormItem label="标题" required layout="vertical">
-          <Input name="title" id="title" required />
-        </FormItem>
-        <FormItem label="描述" required layout="vertical">
-          <TextArea
+      <Form method="post" className="form-control gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="title"
+            required
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">比赛介绍</span>
+          </label>
+          <textarea
             name="description"
-            id="description"
+            className="textarea textarea-bordered"
             required
-            autoSize={{
-              minRows: 3,
-              maxRows: 10,
-            }}
+            disabled={isLoading}
           />
-        </FormItem>
-        <FormItem label="时间" required layout="vertical">
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛开始时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
+          </label>
           <input
-            type="hidden"
+            className="input input-bordered"
+            type="datetime-local"
             name="beginTime"
-            value={getDatetimeLocal(beginTime)}
             required
+            disabled={isLoading}
           />
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛结束时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
+          </label>
           <input
-            type="hidden"
+            className="input input-bordered"
+            type="datetime-local"
             name="endTime"
-            value={getDatetimeLocal(endTime)}
             required
+            disabled={isLoading}
           />
           <input
             type="hidden"
             name="timezone"
             value={new Date().getTimezoneOffset()}
           />
-          <RangePicker
-            defaultValue={[beginTime, endTime]}
-            showTime={{ format: "HH:mm" }}
-            format="YYYY-MM-DD HH:mm"
-            allowClear={false}
-            onChange={(dates) => {
-              setBeginTime(new Date(dates[0]).valueOf());
-              setEndTime(new Date(dates[1]).valueOf());
-            }}
-          />
-        </FormItem>
-        <FormItem label="赛制" required layout="vertical">
-          <input type="hidden" name="system" value={system} required />
-          <Select
-            value={system}
-            onChange={(value) => {
-              setSystem(value as ContestSystem);
-            }}
-            style={{ width: 150 }}
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">比赛赛制</span>
+          </label>
+          <select
+            className="select select-bordered"
+            name="system"
+            required
+            disabled={isLoading}
+            defaultValue=""
           >
-            {Object.values(ContestSystem).map((system) => (
-              <Option key={system} value={system} />
+            <option value="" disabled>
+              请选择比赛的赛制
+            </option>
+            {Object.keys(ContestSystem).map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
             ))}
-          </Select>
-        </FormItem>
-        <FormItem layout="vertical">
-          <Button type="primary" htmlType="submit" loading={isLoading}>
+          </select>
+        </div>
+
+        <div className="form-control w-full max-w-xs">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isLoading}
+          >
             创建比赛
-          </Button>
-        </FormItem>
-      </fetcher.Form>
-    </Typography>
+          </button>
+        </div>
+      </Form>
+    </>
   );
 }
 

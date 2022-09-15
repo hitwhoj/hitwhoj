@@ -1,43 +1,22 @@
-import type { ActionArgs, LoaderArgs, SerializeFrom } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import {
-  Button,
-  Card,
-  Dropdown,
-  Grid,
-  Input,
-  Menu,
-  Message,
-  Modal,
-  Space,
-  Tooltip,
-  Typography,
-} from "@arco-design/web-react";
-import {
-  IconDelete,
-  IconPlus,
-  IconSettings,
-} from "@arco-design/web-react/icon";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { findRequestUser } from "~/utils/permission";
-import { TeamMemberRoleTag } from "~/src/team/TeamMemberRoleTag";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import {
   findTeamAllowMembersInvite,
   findTeamMemberRole,
 } from "~/utils/db/team";
-import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
-const Row = Grid.Row;
-const Col = Grid.Col;
-const MenuItem = Menu.Item;
+import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -71,8 +50,6 @@ export async function loader({ request, params }: LoaderArgs) {
     hasKickMemberPerm,
   });
 }
-
-type Member = SerializeFrom<typeof loader>["members"][number];
 
 enum ActionType {
   AddMember = "AddMember",
@@ -178,26 +155,30 @@ function DeleteMember({ id }: { id: number }) {
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("踢出成功");
+      Toasts.success("踢出成功");
     }
   }, [isActionReload]);
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form
+      method="post"
+      className="tooltip tooltip-error"
+      data-tip="踢出团队"
+    >
       <input type="hidden" name="member" value={id} />
-      <Tooltip content="踢出团队">
-        <Button
-          type="primary"
-          status="danger"
-          icon={<IconDelete />}
-          htmlType="submit"
-          name="_action"
-          value={ActionType.DeleteMember}
-          loading={isLoading}
-        />
-      </Tooltip>
+      <button
+        className="btn btn-error btn-square"
+        type="submit"
+        name="_action"
+        value={ActionType.DeleteMember}
+        disabled={isLoading}
+      >
+        <HiOutlineLogout className="w-6 h-6" />
+      </button>
     </fetcher.Form>
   );
 }
@@ -210,137 +191,66 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
     fetcher.state === "loading" && fetcher.type === "actionReload";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("设定成员角色成功");
+      Toasts.success("设定成员角色成功");
     }
   }, [isActionReload]);
 
-  const setOwnerRef = useRef<HTMLButtonElement>(null);
-  const setAdminRef = useRef<HTMLButtonElement>(null);
-  const setMemberRef = useRef<HTMLButtonElement>(null);
+  const isOwner = role === "Owner";
+  const isAdmin = role === "Admin";
+  const isMember = role === "Member";
 
   return (
-    <fetcher.Form method="post">
+    <fetcher.Form method="post" className="dropdown">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
-      <button
-        hidden
-        type="submit"
-        name="role"
-        value={TeamMemberRole.Owner}
-        ref={setOwnerRef}
-      />
-      <button
-        hidden
-        type="submit"
-        name="role"
-        value={TeamMemberRole.Admin}
-        ref={setAdminRef}
-      />
-      <button
-        hidden
-        type="submit"
-        name="role"
-        value={TeamMemberRole.Member}
-        ref={setMemberRef}
-      />
-
-      <Dropdown
-        droplist={
-          <Menu>
-            <MenuItem
-              key={TeamMemberRole.Owner}
-              onClick={() => setOwnerRef.current?.click()}
-              disabled={role === TeamMemberRole.Owner}
-            >
-              设为所有人
-            </MenuItem>
-            <MenuItem
-              key={TeamMemberRole.Admin}
-              onClick={() => setAdminRef.current?.click()}
-              disabled={role === TeamMemberRole.Admin}
-            >
-              设为管理员
-            </MenuItem>
-            <MenuItem
-              key={TeamMemberRole.Member}
-              onClick={() => setMemberRef.current?.click()}
-              disabled={role === TeamMemberRole.Member}
-            >
-              设为成员
-            </MenuItem>
-          </Menu>
-        }
-      >
-        <Button type="primary" icon={<IconSettings />} loading={isLoading} />
-      </Dropdown>
+      <label tabIndex={0} className="btn btn-square">
+        <HiOutlineCog className="w-6 h-6" />
+      </label>
+      <ul className="dropdown-content shadow-2xl menu p-2 bg-base-300 w-72 rounded-box">
+        <li className={isOwner ? "disabled" : ""}>
+          <button
+            type="submit"
+            name="role"
+            value={TeamMemberRole.Owner}
+            disabled={isOwner || isLoading}
+          >
+            设置为所有人
+          </button>
+        </li>
+        <li className={isAdmin ? "disabled" : ""}>
+          <button
+            type="submit"
+            name="role"
+            value={TeamMemberRole.Admin}
+            disabled={isAdmin || isLoading}
+          >
+            设置为管理员
+          </button>
+        </li>
+        <li className={isMember ? "disabled" : ""}>
+          <button
+            type="submit"
+            name="role"
+            value={TeamMemberRole.Member}
+            disabled={isMember || isLoading}
+          >
+            设置为成员
+          </button>
+        </li>
+      </ul>
     </fetcher.Form>
   );
 }
 
-type MemberCardProps = {
-  member: Member;
-  hasEditPerm: boolean;
-  hasKickAdminPerm: boolean;
-  hasKickMemberPerm: boolean;
+const memberRoleTranslation: Record<TeamMemberRole, string> = {
+  Owner: "所有人",
+  Admin: "管理员",
+  Member: "成员",
 };
-
-function MemberCard({
-  member,
-  hasEditPerm,
-  hasKickAdminPerm,
-  hasKickMemberPerm,
-}: MemberCardProps) {
-  return (
-    <Card hoverable>
-      <Row justify="space-between" align="center">
-        <Link to={`/user/${member.user.id}`}>
-          <Space>
-            <UserAvatar
-              user={member.user}
-              style={{ marginRight: 10 }}
-              size={32}
-            />
-            <Typography.Text>
-              <UserLink user={member.user} />
-            </Typography.Text>
-            <Typography.Text>
-              <TeamMemberRoleTag role={member.role} />
-            </Typography.Text>
-          </Space>
-        </Link>
-        <Space>
-          {hasEditPerm && (
-            <SetMemberRole id={member.user.id} role={member.role} />
-          )}
-          {(member.role === TeamMemberRole.Member
-            ? hasKickMemberPerm
-            : hasKickAdminPerm) && <DeleteMember id={member.user.id} />}
-        </Space>
-      </Row>
-    </Card>
-  );
-}
-
-type MembersProps = {
-  members: Member[];
-  hasEditPerm: boolean;
-  hasKickAdminPerm: boolean;
-  hasKickMemberPerm: boolean;
-};
-
-function Members({ members, ...perms }: MembersProps) {
-  return (
-    <Row justify="space-between" gutter={20}>
-      {members.map((member) => (
-        <Col key={member.user.id} xs={24} sm={12} style={{ margin: "10px 0" }}>
-          <MemberCard member={member} {...perms} />
-        </Col>
-      ))}
-    </Row>
-  );
-}
 
 export default function MemberList() {
   const {
@@ -350,78 +260,69 @@ export default function MemberList() {
     hasKickAdminPerm,
     hasKickMemberPerm,
   } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [userIdInput, setUserIdInput] = useState("");
-  useEffect(() => {
-    if (fetcher.state === "idle") {
-      setModalVisible(false);
-      setUserIdInput("");
-    }
-  }, [fetcher]);
+
   return (
-    <Typography>
-      <Typography.Title heading={4}>
-        <Row justify="space-between" align="center">
-          <span>团队成员</span>
-          {hasInvitePerm && (
-            <Button
-              type="primary"
-              icon={<IconPlus />}
-              onClick={() => setModalVisible(true)}
-            >
-              添加成员
-            </Button>
-          )}
-        </Row>
-      </Typography.Title>
+    <>
+      <h2 className="flex justify-between items-center">
+        <span>团队成员</span>
+        {hasInvitePerm && (
+          <button className="btn btn-primary gap-2">
+            <HiOutlinePlus />
+            <span>添加成员</span>
+          </button>
+        )}
+      </h2>
 
-      <Typography.Paragraph>
-        <Members
-          members={members}
-          hasEditPerm={hasEditPerm}
-          hasKickAdminPerm={hasKickAdminPerm}
-          hasKickMemberPerm={hasKickMemberPerm}
-        />
-      </Typography.Paragraph>
-
-      <Modal
-        title="添加成员"
-        visible={modalVisible}
-        footer={null}
-        autoFocus
-        onCancel={() => setModalVisible(false)}
-        style={{ width: "350px" }}
-      >
-        <fetcher.Form method="post">
-          <Space
-            style={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-around",
-            }}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose">
+        {members.map((member) => (
+          <div
+            key={member.user.id}
+            className="card bg-base-200 overflow-visible"
           >
-            <Input
-              type="text"
-              name="member"
-              placeholder="用户 ID"
-              required
-              value={userIdInput}
-              onChange={(userId) => setUserIdInput(userId)}
-            />
-            <Button
-              type="primary"
-              htmlType="submit"
-              name="_action"
-              value={ActionType.AddMember}
-              loading={fetcher.state != "idle"}
-            >
-              提交
-            </Button>
-          </Space>
-        </fetcher.Form>
-      </Modal>
-    </Typography>
+            <div className="card-body">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-4 items-center">
+                  <UserAvatar
+                    user={member.user}
+                    className="w-16 h-16 bg-base-100 text-2xl shrink-0"
+                  />
+                  <div>
+                    <Link
+                      to={`/user/${member.user.id}`}
+                      className="block link link-hover font-bold"
+                    >
+                      {member.user.nickname || member.user.username}
+                    </Link>
+                    <div
+                      className={`badge ${
+                        member.role === "Owner"
+                          ? "badge-primary"
+                          : member.role === "Admin"
+                          ? "badge-secondary"
+                          : ""
+                      }`}
+                    >
+                      {memberRoleTranslation[member.role]}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-4 items-center shrink-0">
+                  {hasEditPerm && (
+                    <SetMemberRole id={member.user.id} role={member.role} />
+                  )}
+                  {hasKickAdminPerm && member.role === "Admin" && (
+                    <DeleteMember id={member.user.id} />
+                  )}
+                  {hasKickMemberPerm && member.role === "Member" && (
+                    <DeleteMember id={member.user.id} />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

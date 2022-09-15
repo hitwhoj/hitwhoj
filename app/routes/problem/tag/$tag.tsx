@@ -1,12 +1,10 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
-import { Grid, Typography } from "@arco-design/web-react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { selectProblemListData } from "~/utils/db/problem";
-import { TableList } from "~/src/TableList";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -50,37 +48,30 @@ export default function ProblemIndex() {
   const params = useParams();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Grid.Row justify="space-between" align="center">
-          题目标签：{params.tag}
-        </Grid.Row>
-      </Typography.Title>
+    <>
+      <h1>题目标签：{params.tag}</h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={problems}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "题目",
-              render: (problem) => <ProblemLink problem={problem} />,
-            },
-            {
-              title: "提交",
-              render: ({ _count: { relatedRecords } }) => relatedRecords,
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题目</th>
+            <th>提交</th>
+          </tr>
+        </thead>
+        <tbody>
+          {problems.map((problem) => (
+            <tr key={problem.id}>
+              <th className="text-center">{problem.id}</th>
+              <td>
+                <ProblemLink problem={problem} />
+              </td>
+              <td>{problem._count.relatedRecords}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 

@@ -1,27 +1,42 @@
-import type { LoaderArgs } from "@remix-run/node";
-import { filter } from "rxjs";
+import type { LoaderArgs, SerializeFrom } from "@remix-run/node";
+import { filter, from, mergeMap } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { idScheme } from "~/utils/scheme";
-import type { PrivateMessageWithUser } from "~/utils/serverEvents";
+import { db } from "~/utils/server/db.server";
 import { privateMessageSubject } from "~/utils/serverEvents";
+import { isNotNull } from "~/utils/tools";
 
-export type MessageType = PrivateMessageWithUser;
+const observer = privateMessageSubject.pipe(
+  mergeMap((id) =>
+    from(
+      db.privateMessage.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          fromId: true,
+          toId: true,
+          content: true,
+          sentAt: true,
+        },
+      })
+    )
+  ),
+  filter(isNotNull)
+);
 
-/**
- * 订阅当前用户与目标用户之间的所有私信
- */
+/** 订阅当前用户与目标用户之间的所有私信 */
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
   const self = await findRequestUser(request);
   if (!self.userId) throw new Response("Unauthorized", { status: 401 });
   await self.checkPermission(Permissions.PERM_VIEW_USER_PM_SELF);
 
-  return createEventSource<MessageType>(
+  return createEventSource(
     request,
-    privateMessageSubject.pipe(
+    observer.pipe(
       // 筛选来源和目标用户
       filter(
         (message) =>
@@ -31,3 +46,5 @@ export async function loader({ request, params }: LoaderArgs) {
     )
   );
 }
+
+export type MessageType = SerializeFrom<typeof loader>;

@@ -9,25 +9,15 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import {
-  Form as ArcoForm,
-  Input,
-  Button,
-  Typography,
-  Checkbox,
-  Message,
-} from "@arco-design/web-react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
-import { TagEditor } from "~/src/TagEditor";
-import { ProblemEditor } from "~/src/ProblemEditor";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
-
-const FormItem = ArcoForm.Item;
-const TextArea = Input.TextArea;
+import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { ProblemEditor } from "~/src/problem/ProblemEditor";
+import { ToastContext } from "~/utils/context/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -68,13 +58,11 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 enum ActionType {
-  CreateTag = "createTag",
-  DeleteTag = "deleteTag",
   CreateProblem = "createProblem",
   DeleteProblem = "deleteProblem",
-  UpdateInformation = "updateInformation",
   MoveProblemUp = "moveProblemUp",
   MoveProblemDown = "moveProblemDown",
+  UpdateInformation = "updateInformation",
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -206,53 +194,39 @@ export async function action({ request, params }: ActionArgs) {
       return null;
     }
 
-    case ActionType.CreateTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          tags: {
-            connectOrCreate: {
-              where: { name: tag },
-              create: { name: tag },
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
-    case ActionType.DeleteTag: {
-      const tag = invariant(tagScheme, form.get("tag"));
-
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          tags: {
-            disconnect: {
-              name: tag,
-            },
-          },
-        },
-      });
-
-      return null;
-    }
-
     case ActionType.UpdateInformation: {
       const title = invariant(titleScheme, form.get("title"));
       const description = invariant(descriptionScheme, form.get("description"));
-      const priv = form.get("private") === "true";
+      const priv = form.has("private");
+      const tags = form.getAll("tag").map((tag) => invariant(tagScheme, tag));
 
-      await db.problemSet.update({
-        where: { id: problemSetId },
-        data: {
-          title,
-          description,
-          private: priv,
-        },
+      await db.$transaction(async (db) => {
+        const problemset = await db.problemSet.update({
+          where: { id: problemSetId },
+          data: {
+            title,
+            description,
+            private: priv,
+          },
+          select: { tags: { select: { name: true } } },
+        });
+
+        await db.problemSet.update({
+          where: { id: problemSetId },
+          data: {
+            tags: {
+              connectOrCreate: tags
+                .filter((tag) => !problemset.tags.some((t) => t.name === tag))
+                .map((tag) => ({
+                  where: { name: tag },
+                  create: { name: tag },
+                })),
+              disconnect: problemset.tags
+                .filter((tag) => !tags.includes(tag.name))
+                .map((tag) => ({ name: tag.name })),
+            },
+          },
+        });
       });
 
       return null;
@@ -268,88 +242,130 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function ProblemSetEdit() {
   const { problemSet } = useLoaderData<typeof loader>();
-
-  const [priv, setPriv] = useState(problemSet.private);
-
   const { state, type } = useTransition();
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isUpdating = state === "submitting" || isActionReload;
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionRedirect = state === "loading" && type === "actionRedirect";
+  const isUpdating = isActionSubmit || isActionRedirect;
+
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
-    if (isActionReload) {
-      Message.success("更新成功");
+    if (isActionRedirect) {
+      Toasts.success("更新成功");
     }
-  }, [isActionReload]);
+  }, [isActionRedirect]);
+
+  const [tags, setTags] = useState(problemSet.tags.map(({ name }) => name));
+  const [tag, setTag] = useState("");
+
+  const handleRemoveTag = (name: string) =>
+    setTags(tags.filter((tag) => tag !== name));
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>编辑题单</Typography.Title>
-      <Typography.Paragraph>
-        <Form method="post">
-          <FormItem label="标签" layout="vertical">
-            <TagEditor
-              tags={problemSet.tags.map(({ name }) => name)}
-              createAction={ActionType.CreateTag}
-              deleteAction={ActionType.DeleteTag}
-            />
-          </FormItem>
+    <>
+      <h2>编辑题单信息</h2>
 
-          <FormItem label="标题" layout="vertical" required>
-            <Input
-              id="title"
-              name="title"
+      <Form method="post" className="form-control gap-4">
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">标题</span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="text"
+            name="title"
+            defaultValue={problemSet.title}
+            disabled={isUpdating}
+            required
+          />
+        </div>
+
+        <div className="form-control gap-2">
+          <label className="label">
+            <span className="label-text">题单标签</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((name) => (
+              <div className="badge inline-flex gap-1" key={name}>
+                <input type="hidden" name="tag" value={name} />
+                <HiOutlineTag />
+                {name}
+                <HiOutlineX
+                  className="cursor-pointer"
+                  onClick={() => handleRemoveTag(name)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <input
               type="text"
-              defaultValue={problemSet.title}
-              disabled={isUpdating}
-              required
+              className="input input-bordered"
+              value={tag}
+              onChange={(event) => setTag(event.target.value)}
             />
-          </FormItem>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => {
+                tag && setTags((tags) => [...tags, tag]);
+                setTag("");
+              }}
+            >
+              添加标签
+            </button>
+          </div>
+        </div>
 
-          <FormItem label="描述" layout="vertical">
-            <TextArea
-              id="description"
-              name="description"
-              defaultValue={problemSet.description}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">简介</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered"
+            name="description"
+            defaultValue={problemSet.description}
+            disabled={isUpdating}
+            required
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="private"
+              defaultChecked={problemSet.private}
               disabled={isUpdating}
-              autoSize={{ minRows: 3, maxRows: 10 }}
             />
-          </FormItem>
+            <span className="label-text">保持题单隐藏</span>
+          </label>
+        </div>
 
-          <FormItem>
-            <input type="hidden" name="private" value={String(priv)} />
-            <Checkbox
-              checked={priv}
-              onChange={(checked) => setPriv(checked)}
-              disabled={isUpdating}
-            >
-              首页隐藏
-            </Checkbox>
-          </FormItem>
+        <div className="form-control w-full max-w-xs">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            name="_action"
+            value={ActionType.UpdateInformation}
+            disabled={isUpdating}
+          >
+            确认修改
+          </button>
+        </div>
+      </Form>
 
-          <FormItem>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isUpdating}
-              name="_action"
-              value={ActionType.UpdateInformation}
-            >
-              确认修改
-            </Button>
-          </FormItem>
-        </Form>
-      </Typography.Paragraph>
+      <h2>题目</h2>
 
-      <Typography.Title heading={4}>题目</Typography.Title>
-      <Typography.Paragraph>
-        <ProblemEditor
-          problems={problemSet.problems.map(({ problem }) => problem)}
-          createAction={ActionType.CreateProblem}
-          deleteAction={ActionType.DeleteProblem}
-          moveUpAction={ActionType.MoveProblemUp}
-          moveDownAction={ActionType.MoveProblemDown}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <ProblemEditor
+        problems={problemSet.problems.map(({ problem }) => problem)}
+        createAction={ActionType.CreateProblem}
+        deleteAction={ActionType.DeleteProblem}
+        moveUpAction={ActionType.MoveProblemUp}
+        moveDownAction={ActionType.MoveProblemDown}
+      />
+    </>
   );
 }
 

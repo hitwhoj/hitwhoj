@@ -1,5 +1,5 @@
-import { Space } from "@arco-design/web-react";
-import { IconClockCircle } from "@arco-design/web-react/icon";
+import { HiOutlineClock } from "react-icons/hi";
+import { formatNumber } from "~/utils/tools";
 
 type Props = {
   time: number;
@@ -7,9 +7,9 @@ type Props = {
 
 export function RecordTime({ time }: Props) {
   return (
-    <Space size="mini">
-      <IconClockCircle />
-      <span>{time < 0 ? "N/A" : `${time}ms`}</span>
-    </Space>
+    <span className="badge gap-1">
+      <HiOutlineClock />
+      <span>{time < 0 ? "N/A" : `${formatNumber(time)} ms`}</span>
+    </span>
   );
 }

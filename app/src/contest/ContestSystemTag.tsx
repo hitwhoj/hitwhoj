@@ -1,22 +1,22 @@
-import { Tag } from "@arco-design/web-react";
-import { IconTrophy } from "@arco-design/web-react/icon";
 import type { ContestSystem } from "@prisma/client";
+import { AiOutlineTrophy } from "react-icons/ai";
 
 type Props = {
   system: ContestSystem;
 };
 
-const systemColor: Record<ContestSystem, string> = {
-  ACM: "blue",
-  OI: "green",
-  IOI: "orange",
-  Homework: "gray",
+const BADGE_COLOR: Record<ContestSystem, string> = {
+  ACM: "badge-primary",
+  OI: "badge-secondary",
+  IOI: "badge-accent",
+  Homework: "badge-neutral",
 };
 
 export function ContestSystemTag({ system }: Props) {
   return (
-    <Tag color={systemColor[system]} icon={<IconTrophy />}>
-      {system}
-    </Tag>
+    <span className={`badge ${BADGE_COLOR[system]} gap-1`}>
+      <AiOutlineTrophy />
+      <span>{system}</span>
+    </span>
   );
 }

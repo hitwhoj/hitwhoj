@@ -1,17 +1,10 @@
-import {
-  Alert,
-  Button,
-  Input,
-  Message,
-  Space,
-  Typography,
-} from "@arco-design/web-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { ToastContext } from "~/utils/context/toast";
 import {
   findContestParticipantRole,
   findContestStatus,
@@ -118,42 +111,34 @@ export default function ContestRegisteration() {
   const isActionReload = state === "loading" && type === "actionRedirect";
   const isLoading = isActionSubmit || isActionReload;
 
+  const Toasts = useContext(ToastContext);
+
   useEffect(() => {
     if (isActionReload) {
-      Message.success("报名成功");
+      Toasts.success("报名成功");
     }
   }, [isActionReload]);
 
   return (
-    <Typography>
-      <Typography.Title heading={4}>报名比赛</Typography.Title>
-      <Typography.Paragraph>
-        {/* TODO 添加说明 */}
-        <Alert type="warning" content="TODO: 诚信参赛" />
-      </Typography.Paragraph>
+    <>
+      <h2>报名比赛</h2>
+      {/* TODO 添加说明（下面这句话是 copilot 生成的） */}
+      <p>请注意诚信参赛，不要使用任何外挂、作弊工具参赛。</p>
 
-      <Typography.Paragraph>
-        <Form method="post">
-          {contest.registrationType === "Password" ? (
-            <Space>
-              <Input
-                placeholder="密码"
-                name="password"
-                required
-                style={{ width: 150 }}
-              />
-              <Button type="primary" htmlType="submit" loading={isLoading}>
-                报名
-              </Button>
-            </Space>
-          ) : (
-            <Button type="primary" htmlType="submit" loading={isLoading}>
-              同意并报名
-            </Button>
-          )}
-        </Form>
-      </Typography.Paragraph>
-    </Typography>
+      <Form method="post" className="flex gap-4">
+        {contest.registrationType === "Password" && (
+          <input
+            className="input input-bordered"
+            placeholder="密码"
+            name="password"
+            required
+          />
+        )}
+        <button className="btn btn-primary" type="submit" disabled={isLoading}>
+          同意并报名
+        </button>
+      </Form>
+    </>
   );
 }
 

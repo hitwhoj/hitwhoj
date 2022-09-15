@@ -1,11 +1,9 @@
-import { Button, Grid, Typography } from "@arco-design/web-react";
-import { IconPlus } from "@arco-design/web-react/icon";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { HiOutlinePlus } from "react-icons/hi";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
-import { TableList } from "~/src/TableList";
 import { selectContestListData } from "~/utils/db/contest";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -48,50 +46,44 @@ export default function ContestListIndex() {
   const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Grid.Row justify="space-between" align="center">
-          比赛列表
-          {hasCreatePerm && (
-            <Link to="/contest/new">
-              <Button type="primary" icon={<IconPlus />}>
-                新建比赛
-              </Button>
-            </Link>
-          )}
-        </Grid.Row>
-      </Typography.Title>
+    <>
+      <h1 className="flex justify-between items-center">
+        <span>比赛列表</span>
+        {hasCreatePerm && (
+          <Link className="btn btn-primary gap-2" to="/contest/new">
+            <HiOutlinePlus className="w-4 h-4" />
+            <span>新建比赛</span>
+          </Link>
+        )}
+      </h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={contests}
-          columns={[
-            {
-              title: "标题",
-              render: (contest) => <ContestLink contest={contest} />,
-            },
-            {
-              title: "赛制",
-              render: ({ system }) => <ContestSystemTag system={system} />,
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "开始时间",
-              render: ({ beginTime }) => formatDateTime(beginTime),
-              align: "center",
-              minimize: true,
-            },
-            {
-              title: "结束时间",
-              render: ({ endTime }) => formatDateTime(endTime),
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>标题</th>
+            <th>赛制</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {contests.map((contest) => (
+            <tr key={contest.id}>
+              <th className="text-center">{contest.id}</th>
+              <td>
+                <ContestLink contest={contest} />
+              </td>
+              <td>
+                <ContestSystemTag system={contest.system} />
+              </td>
+              <td>{formatDateTime(contest.beginTime)}</td>
+              <td>{formatDateTime(contest.endTime)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 

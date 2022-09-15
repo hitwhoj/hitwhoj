@@ -2,12 +2,10 @@ import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { Grid, Button, Typography } from "@arco-design/web-react";
-import { IconPlus } from "@arco-design/web-react/icon";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { TableList } from "~/src/TableList";
-import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { HiOutlinePlus } from "react-icons/hi";
+import { findRequestUser } from "~/utils/permission";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -49,46 +47,39 @@ export default function ProblemsetList() {
   const { problemSets, hasEditPerm } = useLoaderData<typeof loader>();
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Grid.Row justify="space-between" align="center">
-          <span>题单列表</span>
+    <>
+      <h1 className="flex justify-between items-center">
+        <span>题单列表</span>
 
-          {hasEditPerm && (
-            <Link to="new">
-              <Button type="primary" icon={<IconPlus />}>
-                创建题单
-              </Button>
-            </Link>
-          )}
-        </Grid.Row>
-      </Typography.Title>
+        {hasEditPerm && (
+          <Link className="btn btn-primary gap-2" to="new">
+            <HiOutlinePlus className="w-4 h-4" />
+            <span>新建题单</span>
+          </Link>
+        )}
+      </h1>
 
-      <Typography.Paragraph>
-        <TableList
-          data={problemSets}
-          columns={[
-            {
-              title: "#",
-              render: ({ id }) => id,
-              minimize: true,
-            },
-            {
-              title: "题单",
-              render: (problemset) => (
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题单</th>
+            <th>题目数量</th>
+          </tr>
+        </thead>
+        <tbody>
+          {problemSets.map((problemset) => (
+            <tr key={problemset.id}>
+              <th className="text-center">{problemset.id}</th>
+              <td>
                 <ProblemSetLink problemset={problemset} />
-              ),
-            },
-            {
-              title: "题目数",
-              render: ({ _count: { problems } }) => problems,
-              align: "center",
-              minimize: true,
-            },
-          ]}
-        />
-      </Typography.Paragraph>
-    </Typography>
+              </td>
+              <td>{problemset._count.problems}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 

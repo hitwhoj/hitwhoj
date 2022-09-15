@@ -36,6 +36,34 @@ export function formatDateTime(time: Date | string) {
   return dateTimeFormatter.format(new Date(time));
 }
 
+/**
+ * Format time to HH:mm:ss
+ */
+export function formatTime(time: Date | string) {
+  return new Date(time).toLocaleTimeString("zh-CN");
+}
+
+const numberFormatter = new Intl.NumberFormat("zh-CN");
+
+export function formatNumber(number: number) {
+  return numberFormatter.format(number);
+}
+
+/**
+ * Format time to XX 秒 / XX分钟 / XX小时
+ */
+export function formatDurationTime(ms: number) {
+  if (ms < 1000) {
+    return `${formatNumber(ms)}毫秒`;
+  } else if (ms < 60000) {
+    return `${formatNumber(ms / 1000)}秒`;
+  } else if (ms < 3600000) {
+    return `${formatNumber(ms / 60000)}分钟`;
+  } else {
+    return `${formatNumber(ms / 3600000)}小时`;
+  }
+}
+
 const relativeDateTimeFormatter = new Intl.RelativeTimeFormat("zh-CN", {
   numeric: "auto",
 });
@@ -47,7 +75,7 @@ export function formatRelativeDateTime(time: Date | string) {
   const date = new Date(time).getTime();
   const now = Date.now();
 
-  const relativeSeconds = (now - date) / 1000;
+  const relativeSeconds = (date - now) / 1000;
   if (Math.abs(relativeSeconds) < 60) {
     return relativeDateTimeFormatter.format(
       Math.floor(relativeSeconds),
@@ -92,4 +120,9 @@ export function formatRelativeDateTime(time: Date | string) {
  */
 export function passwordHash(password: string): string {
   return sha256().update(`TODO: hitwhoj-first-test{${password}}`).digest("hex");
+}
+
+/** 因为 typescript 没有 is not 这种关键字 */
+export function isNotNull<T>(value: T | null): value is T {
+  return value !== null;
 }

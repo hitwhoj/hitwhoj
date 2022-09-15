@@ -1,16 +1,34 @@
-import type { LoaderArgs } from "@remix-run/node";
-import { filter, map } from "rxjs";
+import type { LoaderArgs, SerializeFrom } from "@remix-run/node";
+import { filter, from, mergeMap } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
-import type { RecordUpdateMessage } from "~/utils/serverEvents";
+import { db } from "~/utils/server/db.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
+import { isNotNull } from "~/utils/tools";
 
-export type MessageType = Pick<
-  RecordUpdateMessage,
-  "id" | "status" | "problemId" | "time" | "score" | "memory"
->;
+const observer = recordUpdateSubject.pipe(
+  mergeMap((id) =>
+    from(
+      db.record.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          time: true,
+          score: true,
+          memory: true,
+          status: true,
+          problemId: true,
+          contestId: true,
+          submitterId: true,
+          submittedAt: true,
+        },
+      })
+    )
+  ),
+  filter(isNotNull)
+);
 
 /** 订阅用户自己在某场比赛中的提交，只保留最基础的信息 */
 export async function loader({ request, params }: LoaderArgs) {
@@ -25,19 +43,14 @@ export async function loader({ request, params }: LoaderArgs) {
 
   return createEventSource(
     request,
-    recordUpdateSubject.pipe(
+    observer.pipe(
+      // 筛选比赛和用户
       filter(
         (message) =>
           message.contestId === contestId && message.submitterId === self.userId
-      ),
-      map((message) => ({
-        id: message.id,
-        time: message.time,
-        score: message.score,
-        memory: message.memory,
-        status: message.status,
-        problemId: message.problemId,
-      }))
+      )
     )
   );
 }
+
+export type MessageType = SerializeFrom<typeof loader>;

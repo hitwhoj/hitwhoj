@@ -1,7 +1,6 @@
-import { Button } from "@arco-design/web-react";
-import { IconUpload } from "@arco-design/web-react/icon";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef } from "react";
+import { HiOutlineUpload } from "react-icons/hi";
 
 type FileUploaderProps = {
   uploadAction: string;
@@ -38,14 +37,15 @@ export function FileUploader({ uploadAction }: FileUploaderProps) {
         onInput={() => fetcher.submit(formRef.current)}
       />
       <input type="hidden" name="_action" value={uploadAction} />
-      <Button
-        type="primary"
-        icon={<IconUpload />}
+      <button
+        className="btn btn-primary gap-2"
+        type="button"
         onClick={() => inputRef.current?.click()}
-        loading={isUploading}
+        disabled={isUploading}
       >
-        上传文件捏
-      </Button>
+        <HiOutlineUpload />
+        <span>上传文件捏</span>
+      </button>
     </fetcher.Form>
   );
 }

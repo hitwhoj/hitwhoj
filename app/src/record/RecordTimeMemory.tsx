@@ -1,4 +1,3 @@
-import { Space } from "@arco-design/web-react";
 import { RecordMemory } from "./RecordMemory";
 import { RecordTime } from "./RecordTime";
 
@@ -9,9 +8,9 @@ type Props = {
 
 export function RecordTimeMemory({ time, memory }: Props) {
   return (
-    <Space size="large">
+    <span className="inline-flex gap-2">
       <RecordTime time={time} />
       <RecordMemory memory={memory} />
-    </Space>
+    </span>
   );
 }

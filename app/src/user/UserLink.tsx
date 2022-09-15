@@ -1,4 +1,3 @@
-import { Popover, Space, Tag, Typography } from "@arco-design/web-react";
 import { Link } from "@remix-run/react";
 import type { UserData } from "~/utils/db/user";
 import { UserAvatar } from "./UserAvatar";
@@ -9,28 +8,8 @@ type Props = {
 
 export function UserLink({ user }: Props) {
   return (
-    <Popover
-      trigger="hover"
-      content={
-        <Space align="start" size="medium">
-          <UserAvatar user={user} />
-          <Space direction="vertical" size="mini">
-            <Typography.Text>
-              <Space>
-                <b>{user.nickname || user.username}</b>
-                {user.premium && <Tag color="magenta">大会员</Tag>}
-              </Space>
-            </Typography.Text>
-            <Typography.Text>
-              {user.bio || (
-                <i style={{ color: "rgb(var(--gray-6))" }}>没有签名</i>
-              )}
-            </Typography.Text>
-          </Space>
-        </Space>
-      }
-    >
-      <Link to={`/user/${user.id}`}>
+    <div className="dropdown dropdown-hover dropdown-top">
+      <Link tabIndex={0} className="link" to={`/user/${user.id}`}>
         {user.nickname ? (
           <>
             {user.nickname}{" "}
@@ -42,6 +21,23 @@ export function UserLink({ user }: Props) {
           user.username
         )}
       </Link>
-    </Popover>
+      <div
+        tabIndex={0}
+        className="dropdown-content p-4 shadow-2xl bg-base-300 rounded-box w-72 flex gap-4"
+      >
+        <UserAvatar
+          user={user}
+          className="w-16 h-16 flex-shrink-0 bg-base-100 text-3xl"
+        />
+        <div className="whitespace-normal">
+          <div className="font-bold text-lg">
+            {user.nickname || user.username}
+          </div>
+          <div className="text-base-content">
+            {user.bio || <span className="italic">没有签名</span>}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,12 +1,12 @@
-import { Button, Input, Space, Typography } from "@arco-design/web-react";
-import { IconLock, IconUnlock } from "@arco-design/web-react/icon";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { HiOutlineLockClosed } from "react-icons/hi";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 import { idScheme, weakPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
@@ -46,47 +46,40 @@ export default function EnterRoom() {
   const isSubmitting = state !== "idle";
 
   return (
-    <Typography>
-      <Typography.Title heading={3}>
-        <Space>
-          {room.private && <IconLock />}
-          {room.name}
-        </Space>
-      </Typography.Title>
-      <Typography.Paragraph>{room.description}</Typography.Paragraph>
-      <Typography.Paragraph>
-        <Form method="post">
-          {room.private ? (
-            <Space>
-              <Input.Password
-                name="password"
-                placeholder="请输入房间密码"
-                disabled={isSubmitting}
-              />
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<IconUnlock />}
-                loading={isSubmitting}
-              >
-                加入房间
-              </Button>
-            </Space>
-          ) : (
-            <Button type="primary" htmlType="submit" loading={isSubmitting}>
-              加入房间
-            </Button>
-          )}
-        </Form>
-      </Typography.Paragraph>
-    </Typography>
+    <>
+      <h1 className="flex gap-4">
+        {room.private && <HiOutlineLockClosed className="shrink-0" />}
+        <span>{room.name}</span>
+      </h1>
+
+      <p>{room.description}</p>
+
+      <Form method="post" className="flex gap-4">
+        {room.private && (
+          <input
+            className="input input-bordered"
+            type="password"
+            name="password"
+            placeholder="请输入房间密码"
+            disabled={isSubmitting}
+          />
+        )}
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          加入房间
+        </button>
+      </Form>
+    </>
   );
 }
 
 export async function action({ request, params }: ActionArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
   const self = await findRequestUser(request);
-  if (!self.userId) throw new Response("Unauthorized", { status: 401 });
+  await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
     .room(roomId)
     .checkPermission(Permissions.PERM_JOIN_CHATROOM_MESSAGE);

@@ -1,24 +1,12 @@
-import {
-  Alert,
-  Button,
-  Drawer,
-  Grid,
-  List,
-  Message,
-  ResizeBox,
-  Select,
-  Space,
-  Spin,
-  Typography,
-  Link as ArcoLink,
-} from "@arco-design/web-react";
-import Editor, { loader as monacoLoader } from "@monaco-editor/react";
-import type { ActionArgs, LinksFunction, LoaderArgs } from "@remix-run/node";
+import Editor, {
+  loader as monacoLoader,
+  useMonaco,
+} from "@monaco-editor/react";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   Form,
   Link,
-  useActionData,
   useLoaderData,
   useParams,
   useTransition,
@@ -32,15 +20,10 @@ import {
   languageScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import contestStyle from "~/styles/contest.css";
-import { IconHistory, IconSend } from "@arco-design/web-react/icon";
 import { s3 } from "~/utils/server/s3.server";
 import { useContext, useEffect, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
-import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { ThemeContext } from "~/utils/context/theme";
 import type { MessageType } from "../events";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import {
   findContestProblemIdByRank,
@@ -51,11 +34,14 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
-
-// 加载特殊页面样式
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: contestStyle },
-];
+import Fullscreen from "~/src/Fullscreen";
+import { AiOutlineHistory } from "react-icons/ai";
+import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
+import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
+import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
+import { ToastContext } from "~/utils/context/toast";
+import { judge } from "~/utils/server/judge/manager.server";
+import { recordUpdateSubject } from "~/utils/serverEvents";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -139,6 +125,10 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 }
 
+export const meta: MetaFunction<typeof loader> = ({ data, params }) => ({
+  title: `${params.rank}. ${data?.problem.title} - HITwh OJ`,
+});
+
 export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const rank =
@@ -164,7 +154,7 @@ export async function action({ request, params }: ActionArgs) {
   const code = invariant(codeScheme, form.get("code"));
   const language = invariant(languageScheme, form.get("language"));
 
-  const { id: recordId } = await db.record.create({
+  const record = await db.record.create({
     data: {
       language,
       problemId,
@@ -174,10 +164,11 @@ export async function action({ request, params }: ActionArgs) {
     select: { id: true },
   });
 
-  await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  judge.push(recordId);
+  await s3.writeFile(`/record/${record.id}`, Buffer.from(code));
+  judge.push(record.id);
+  recordUpdateSubject.next(record.id);
 
-  return json({ recordId });
+  return null;
 }
 
 // override monaco loader
@@ -189,33 +180,54 @@ export default function ContestProblemView() {
     records: _records,
     contest,
   } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-  const { theme } = useContext(ThemeContext);
   const { contestId, rank } = useParams();
 
-  const { state } = useTransition();
-  const isSubmitting = state === "submitting";
+  const { state, type } = useTransition();
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isLoading = isActionSubmit || isActionReload;
+
+  const [visible, setVisible] = useState(false);
+
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
-    if (actionData?.recordId) {
-      Message.success("提交成功");
+    if (isActionReload) {
+      Toasts.success("提交成功");
       setVisible(true);
     }
-  }, [actionData?.recordId]);
+  }, [isActionReload]);
+
+  const monaco = useMonaco();
+  // 设置 monaco 主题
+  useEffect(() => {
+    if (monaco) {
+      const color = defaultThemeColor[theme];
+      monaco.editor.defineTheme(theme, {
+        base: darkThemes.includes(theme) ? "vs-dark" : "vs",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": color.base100,
+          "editor.foreground": color.baseContent,
+          "editor.lineHighlightBackground": color.base200,
+        },
+      });
+      monaco.editor.setTheme(theme);
+    }
+  }, [monaco]);
 
   const [language, setLanguage] = useState("cpp");
   const [code, setCode] = useState(
     "#include <bits/stdc++.h>\n" +
-      "using namespace std;\n" +
       "\n" +
       "int main() {\n" +
       "  int a, b;\n" +
-      "  cin >> a >> b;\n" +
-      "  cout << a + b << endl;\n" +
+      "  std::cin >> a >> b;\n" +
+      "  std::cout << a + b << std::endl;\n" +
       "  return 0;\n" +
       "}\n"
   );
-  const [visible, setVisible] = useState(false);
 
   // load code from local storage
   useEffect(() => {
@@ -272,146 +284,140 @@ export default function ContestProblemView() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return (
-    <>
-      <ResizeBox.Split
-        style={{ height: "100%" }}
-        panes={[
-          <Typography key={1} style={{ padding: "0 5%" }}>
-            <Typography.Title heading={3}>
-              {rank}. {problem.title}
-            </Typography.Title>
+  const theme = useContext(ThemeContext);
 
-            <Typography.Paragraph>
+  return (
+    <Fullscreen
+      visible={true}
+      className="drawer drawer-end w-full h-full bg-base-100"
+    >
+      <input
+        type="checkbox"
+        id="records"
+        className="drawer-toggle"
+        checked={visible}
+        readOnly
+      />
+      <div className="drawer-content grid grid-cols-2 grid-rows-1">
+        <div className="flex flex-col overflow-y-auto">
+          <nav className="p-4 sticky top-0 z-10 bg-base-100 flex-shrink-0">
+            <Link
+              className="btn btn-ghost gap-2"
+              to={`/contest/${contest.id}/problem`}
+            >
+              <HiOutlineChevronLeft className="" />
+              <span>返回题目列表</span>
+            </Link>
+          </nav>
+          <article className="p-4">
+            <h1>
+              {rank}. {problem.title}
+            </h1>
+            <p>
               <RecordTimeMemory
                 time={problem.timeLimit}
                 memory={problem.memoryLimit}
               />
-            </Typography.Paragraph>
-
+            </p>
             {isNotStarted && (
-              <Typography.Paragraph>
-                <Alert type="warning" content="比赛还没有开始" />
-              </Typography.Paragraph>
+              <p className="alert alert-warning shadow-lg">比赛还没有开始</p>
             )}
-
             {isEnded && (
-              <Typography.Paragraph>
-                <Alert
-                  type="warning"
-                  content="比赛已经结束，当前页面仅供查看"
-                />
-              </Typography.Paragraph>
+              <p className="alert alert-warning shadow-lg">
+                比赛已经结束，本页面仅供查看
+              </p>
             )}
-
             <Markdown>{problem.description}</Markdown>
-
             {problem.files.length > 0 && (
               <>
-                <Typography.Title heading={4}>附件</Typography.Title>
-                <Typography.Paragraph>
-                  <ul>
-                    {problem.files.map((file) => (
-                      <li key={file.id}>
-                        <ArcoLink>
-                          <Link to={`/file/${file.id}`} target="_blank">
-                            {file.filename}
-                          </Link>
-                        </ArcoLink>
-                      </li>
-                    ))}
-                  </ul>
-                </Typography.Paragraph>
+                <h2>可供下载的文件</h2>
+                <ol>
+                  {problem.files.map((file) => (
+                    <li key={file.id}>
+                      <Link to={`/file/${file.id}`} target="_blank">
+                        {file.filename}
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
               </>
             )}
-
-            <Typography.Paragraph>
-              <Link to="clarification">
-                <Button type="primary">反馈</Button>
-              </Link>
-            </Typography.Paragraph>
-          </Typography>,
-
-          <Form
-            key={2}
-            method="post"
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
-            <textarea hidden name="code" value={code} readOnly />
-            <Editor
-              loading={<Spin />}
-              onChange={(code) => setCode(code ?? "")}
-              value={code}
-              language={language}
-              theme={theme === "light" ? "light" : "vs-dark"}
-              options={{
-                cursorSmoothCaretAnimation: true,
-                smoothScrolling: true,
-                fontSize: 16,
-              }}
-            />
-            <input type="hidden" name="language" value={language} />
-            <Grid.Row justify="space-between" style={{ padding: 10 }}>
-              <Select
+          </article>
+        </div>
+        <Form method="post" className="flex flex-col">
+          <Editor
+            value={code}
+            language={language}
+            theme={theme}
+            onChange={(code) => setCode(code ?? "")}
+            options={{
+              cursorSmoothCaretAnimation: true,
+              smoothScrolling: true,
+              fontSize: 16,
+            }}
+          />
+          <textarea name="code" hidden value={code} readOnly />
+          <div className="flex-shrink-0 flex justify-between p-2">
+            <div>
+              <select
+                className="select select-bordered"
+                name="language"
                 value={language}
-                onChange={(language) => setLanguage(language)}
-                style={{ width: 150 }}
-                disabled={isSubmitting}
+                onChange={(event) => setLanguage(event.target.value)}
+                disabled={isLoading}
               >
-                <Select.Option value="c">C</Select.Option>
-                <Select.Option value="cpp">C++</Select.Option>
-                <Select.Option value="java">Java</Select.Option>
-              </Select>
-              <Space>
-                <Button icon={<IconHistory />} onClick={() => setVisible(true)}>
-                  查看记录
-                </Button>
-                {isNotStarted || isEnded ? (
-                  <Link to={`/problem/${problem.id}`}>
-                    <Button type="primary" icon={<IconSend />}>
-                      跳转到题目页面
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    icon={<IconSend />}
-                    loading={isSubmitting}
-                  >
-                    提交
-                  </Button>
-                )}
-              </Space>
-            </Grid.Row>
-          </Form>,
-        ]}
-      />
-
-      <Drawer
-        visible={visible}
-        width={400}
-        footer={null}
-        onOk={() => setVisible(false)}
-        onCancel={() => setVisible(false)}
-        title="提交记录"
-      >
-        <List
-          dataSource={records}
-          bordered={false}
-          render={(record) => (
-            <List.Item key={record.id}>
-              <Grid.Row justify="space-between">
-                <Link to={`/record/${record.id}`} target="_blank">
+                <option value="c">C</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+              </select>
+            </div>
+            <div className="inline-flex gap-4">
+              <button
+                className="btn btn-ghost gap-2"
+                type="button"
+                onClick={() => setVisible(true)}
+              >
+                <AiOutlineHistory />
+                <span>查看提交记录</span>
+              </button>
+              {!isNotStarted && !isEnded ? (
+                <button
+                  className="btn btn-primary gap-2"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  <HiOutlinePaperAirplane className="rotate-90" />
+                  <span>提交</span>
+                </button>
+              ) : (
+                <Link className="btn btn-primary" to={`/problem/${problem.id}`}>
+                  跳转到题目页面
+                </Link>
+              )}
+            </div>
+          </div>
+        </Form>
+      </div>
+      <div className="drawer-side">
+        <label className="drawer-overlay" onClick={() => setVisible(false)} />
+        <aside className="bg-base-200 p-4 not-prose">
+          <h3 className="font-bold text-lg">提交记录</h3>
+          <ul className="menu menu-compact w-96 my-4">
+            {records.map((record) => (
+              <li key={record.id}>
+                <Link
+                  to={`/record/${record.id}`}
+                  className="block p-4"
+                  target="_blank"
+                >
                   <RecordStatus status={record.status} />
                 </Link>
-                <RecordTimeMemory time={record.time} memory={record.memory} />
-              </Grid.Row>
-            </List.Item>
-          )}
-        />
-      </Drawer>
-    </>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
+    </Fullscreen>
   );
 }
 

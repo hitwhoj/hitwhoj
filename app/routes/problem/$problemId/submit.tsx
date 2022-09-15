@@ -6,15 +6,11 @@ import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
-import { Button, Input, Space, Select } from "@arco-design/web-react";
-import { useState } from "react";
-import { judge } from "~/utils/server/judge.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
-
-const TextArea = Input.TextArea;
+import { judge } from "~/utils/server/judge/manager.server";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -93,41 +89,44 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ProblemSubmit() {
-  const [language, setLanguage] = useState("");
-
   return (
-    <Form method="post" style={{ marginTop: "25px" }}>
-      <Space
-        direction="vertical"
-        size="medium"
-        style={{ display: "flex", marginTop: "10px" }}
-      >
-        <Space direction="horizontal" size="medium" style={{ display: "flex" }}>
-          <Select
-            placeholder="Select a language"
-            style={{ width: "10rem" }}
-            options={[
-              { value: "c", label: "C" },
-              { value: "cpp", label: "C++" },
-              { value: "java", label: "Java" },
-            ]}
-            onChange={(value) => setLanguage(value)}
-          />
-          <Button type="primary" htmlType="submit">
-            提交捏
-          </Button>
-          <input type="hidden" name="language" value={language} />
-        </Space>
-        <TextArea
+    <Form method="post" className="form-control gap-4">
+      <div className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">语言</span>
+        </label>
+        <select
+          className="select select-bordered"
+          name="language"
+          defaultValue=""
+          required
+        >
+          <option value="" disabled>
+            选择代码语言
+          </option>
+          <option value="c">C</option>
+          <option value="cpp">C++</option>
+          <option value="java">Java</option>
+        </select>
+      </div>
+
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">代码</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
           name="code"
           placeholder="Paste your code here desu~"
           required
-          autoSize={{
-            minRows: 10,
-            maxRows: 20,
-          }}
         />
-      </Space>
+      </div>
+
+      <div className="form-control w-full max-w-xs">
+        <button className="btn btn-primary" type="submit">
+          提交
+        </button>
+      </div>
     </Form>
   );
 }

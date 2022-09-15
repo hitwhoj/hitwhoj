@@ -1,24 +1,43 @@
-import type { LoaderArgs } from "@remix-run/node";
-import { filter } from "rxjs";
+import type { LoaderArgs, SerializeFrom } from "@remix-run/node";
+import { filter, from, mergeMap } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import type { RecordUpdateMessage } from "~/utils/serverEvents";
+import { db } from "~/utils/server/db.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
+import { isNotNull } from "~/utils/tools";
 
-export type MessageType = RecordUpdateMessage;
+const observer = recordUpdateSubject.pipe(
+  mergeMap((id) =>
+    from(
+      db.record.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          time: true,
+          memory: true,
+          status: true,
+          message: true,
+          subtasks: true,
+        },
+      })
+    )
+  ),
+  filter(isNotNull)
+);
 
-export function loader({ request, params }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
 
   // FIXME: 权限检查
 
-  return createEventSource<MessageType>(
+  return createEventSource(
     request,
-    recordUpdateSubject.pipe(
-      // 过滤掉不是该 Record 的消息
-      filter((message) => message.id === recordId)
-      // FIXME: 应该再按照权限筛选一遍字段
+    observer.pipe(
+      // 过滤掉不是当前记录的更新
+      filter(({ id }) => id === recordId)
     )
   );
 }
+
+export type MessageType = SerializeFrom<typeof loader>;
