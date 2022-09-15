@@ -201,7 +201,7 @@ export function timeSummary(subtasks: SubtaskResult[]) {
 export function memorySummary(subtasks: SubtaskResult[]) {
   return subtasks.reduce((max, subtask) => {
     const tasktimes = subtask.tasks.reduce((max, task) => {
-      return Math.max(max, task.time);
+      return Math.max(max, task.memory);
     }, 0);
     return Math.max(max, tasktimes);
   }, 0);

@@ -127,37 +127,35 @@ export function ProblemEditor(props: ProblemEditorProps) {
     <>
       <ProblemEditorCreator createAction={props.createAction} />
 
-      <div className="not-prose overflow-x-auto mt-4">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th className="w-16" />
-              <th>题目</th>
-              <th className="w-16 text-center">操作</th>
+      <table className="table w-full not-prose">
+        <thead>
+          <tr>
+            <th className="w-16" />
+            <th>题目</th>
+            <th className="w-16 text-center">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.problems.map((problem, index) => (
+            <tr key={problem.id}>
+              <th className="text-center">{problem.id}</th>
+              <td>
+                <ProblemLink problem={problem} />
+              </td>
+              <td>
+                <ProblemEditorOperations
+                  pid={problem.id}
+                  first={index === 0}
+                  last={index === props.problems.length - 1}
+                  deleteAction={props.deleteAction}
+                  moveUpAction={props.moveUpAction}
+                  moveDownAction={props.moveDownAction}
+                />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {props.problems.map((problem, index) => (
-              <tr key={problem.id}>
-                <th className="text-center">{problem.id}</th>
-                <td>
-                  <ProblemLink problem={problem} />
-                </td>
-                <td>
-                  <ProblemEditorOperations
-                    pid={problem.id}
-                    first={index === 0}
-                    last={index === props.problems.length - 1}
-                    deleteAction={props.deleteAction}
-                    moveUpAction={props.moveUpAction}
-                    moveDownAction={props.moveDownAction}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }
