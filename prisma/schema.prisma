@@ -104,13 +104,13 @@ model Problem {
   description String @default("")
 
   private     Boolean @default(true)
-  allowSubmit Boolean @default(true)
+  allowSubmit Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   timeLimit   Int @default(1000)
-  memoryLimit Int @default(134217728)
+  memoryLimit Int @default(268435456)
 
   tags ProblemTag[]
 
