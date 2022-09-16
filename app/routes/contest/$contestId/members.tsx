@@ -185,6 +185,12 @@ function SetMemberRole({
   );
 }
 
+const roleTranslation = {
+  [ContestParticipantRole.Mod]: "管理员",
+  [ContestParticipantRole.Jury]: "裁判",
+  [ContestParticipantRole.Contestant]: "参赛选手",
+};
+
 export default function ContestMembers() {
   const { members } = useLoaderData<typeof loader>();
 
@@ -204,22 +210,24 @@ export default function ContestMembers() {
               <tr key={userId}>
                 <td>
                   <Link
-                    className="link inline-flex gap-2 items-center space-x-1"
+                    className="inline-flex gap-4 items-center"
                     to={`/user/${userId}`}
                   >
                     <UserAvatar
                       user={{ username, avatar, nickname }}
-                      className="w-8 h-8 text-2xl"
+                      className="w-8 h-8 text-lg bg-base-200"
                     />
-                    <span>{nickname}</span>
+                    <span className="link">{nickname}</span>
                   </Link>
                 </td>
-                <td>{role}</td>
-                {role != ContestParticipantRole.Mod && (
+                <td>{roleTranslation[role]}</td>
+                {role != ContestParticipantRole.Mod ? (
                   <td className="space-x-3">
                     <SetMemberRole id={userId} role={role} />
                     <DeleteMember id={userId} />
                   </td>
+                ) : (
+                  <td />
                 )}
               </tr>
             );
