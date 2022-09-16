@@ -204,7 +204,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
   const isMember = role === "Member";
 
   return (
-    <fetcher.Form method="post" className="dropdown">
+    <fetcher.Form method="post" className="dropdown dropdown-hover">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <label tabIndex={0} className="btn btn-square">

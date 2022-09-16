@@ -5,6 +5,7 @@ import {
   ReportType,
   TeamMemberRole,
   SystemUserRole,
+  ContestParticipantRole,
 } from "@prisma/client";
 
 /**
@@ -138,6 +139,15 @@ export const timezoneScheme = z
  * @example "ACM"
  */
 export const systemScheme = z.nativeEnum(ContestSystem);
+
+/**
+ * 比赛成员角色
+ *
+ * @example "Mod"
+ */
+export const contestParticipantRoleScheme = z.nativeEnum(
+  ContestParticipantRole
+);
 
 /**
  * 提交的代码
