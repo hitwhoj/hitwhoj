@@ -1,13 +1,11 @@
 import { useFetcher } from "@remix-run/react";
-import { useContext, useEffect } from "react";
 import {
   HiOutlineChevronDown,
   HiOutlineChevronUp,
-  HiOutlinePlus,
   HiOutlineTrash,
 } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import type { ProblemListData } from "~/utils/db/problem";
+import ProblemEditorCreator from "./ProblemEditorCreator";
 import { ProblemLink } from "./ProblemLink";
 
 type ProblemEditorOperationsProps = {
@@ -61,49 +59,6 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
   );
 }
 
-type ProblemEditorCreatorProps = {
-  createAction: string;
-};
-
-function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
-  const Toasts = useContext(ToastContext);
-
-  useEffect(() => {
-    if (isActionReload) {
-      Toasts.success("更新成功");
-    }
-  }, [isActionReload]);
-
-  return (
-    <fetcher.Form method="post" className="inline-flex gap-4">
-      <input
-        className="input input-bordered"
-        type="number"
-        name="pid"
-        disabled={isLoading}
-        placeholder="题目 ID"
-        required
-      />
-      <button
-        className="btn btn-primary gap-2"
-        type="submit"
-        name="_action"
-        value={props.createAction}
-        disabled={isLoading}
-      >
-        <HiOutlinePlus className="w-4 h-4" />
-        <span>添加捏</span>
-      </button>
-    </fetcher.Form>
-  );
-}
-
 type ProblemEditorProps = {
   problems: ProblemListData[];
   createAction: string;
@@ -125,7 +80,10 @@ type ProblemEditorProps = {
 export function ProblemEditor(props: ProblemEditorProps) {
   return (
     <>
-      <ProblemEditorCreator createAction={props.createAction} />
+      <ProblemEditorCreator
+        createAction={props.createAction}
+        existProblem={props.problems.map(({ id }) => id)}
+      />
 
       <table className="table w-full not-prose">
         <thead>
