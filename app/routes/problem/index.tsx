@@ -57,7 +57,7 @@ export default function ProblemIndex() {
         )}
       </h1>
 
-      <table className="table w-full not-prose">
+      <table className="table table-compact w-full not-prose">
         <thead>
           <tr>
             <th className="w-16" />

@@ -157,8 +157,8 @@ export default function App() {
                 <div className="dropdown dropdown-end">
                   <div className="btn gap-2 normal-case btn-ghost" tabIndex={0}>
                     <HiOutlineColorSwatch className="w-6 h-6" />
-                    主题
-                    <HiOutlineChevronDown className="w-3 h-3" />
+                    <span className="hidden md:inline-block">主题</span>
+                    <HiOutlineChevronDown className="w-3 h-3 hidden md:block" />
                   </div>
                   <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
                     <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>

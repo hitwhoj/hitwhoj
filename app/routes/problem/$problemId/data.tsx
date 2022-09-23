@@ -662,7 +662,11 @@ export default function ProblemData() {
           <FileUploader uploadAction={ActionType.UploadData} />
         </span>
       </h2>
-      <p>用于评测的数据文件</p>
+      <p>用于评测的数据文件。</p>
+      <p>
+        关于评测的配置文件 <code>config.json</code>
+        ，您可以选择使用我们提供的在线编辑工具，也可以选择手动编辑好后上传。
+      </p>
       <FileList
         files={dataWithoutConfig}
         deleteAction={ActionType.RemoveData}

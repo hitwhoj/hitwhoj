@@ -160,7 +160,7 @@ export default function ContestView() {
             成员
           </NavLink>
         )}
-        <NavLink className="tab" to="rank">
+        <NavLink className="tab" to="board">
           排行榜
         </NavLink>
         <NavLink className="tab" to="clarification">

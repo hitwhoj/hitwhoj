@@ -128,12 +128,14 @@ export default function RankView() {
     <table className="table w-full not-prose">
       <thead>
         <tr>
-          <th></th>
+          <th className="w-16 text-center">排名</th>
           <th>选手</th>
-          <th>解题数</th>
-          <th>总罚时</th>
+          <th className="w-16 text-center">解题数</th>
+          <th className="w-16 text-center">总罚时</th>
           {contest.problems.map((problem) => (
-            <th key={problem.problemId}>{problem.rank}</th>
+            <th key={problem.problemId} className="w-16 text-center">
+              {String.fromCharCode(0x40 + problem.rank)}
+            </th>
           ))}
         </tr>
       </thead>
@@ -141,23 +143,28 @@ export default function RankView() {
         {users.map((user) => {
           return (
             <tr key={user.submitter.id}>
-              <th>{user.rank}</th>
+              <th className="text-center">{user.rank}</th>
               <td>
                 <UserLink user={user.submitter} />
               </td>
-              <td>{user.solved}</td>
-              <td>{user.penalty}</td>
+              <td className="text-center">{user.solved}</td>
+              <td className="text-center">{user.penalty}</td>
               {contest.problems.map(({ problemId }) => {
                 const problem = user.problems.get(problemId);
-                if (!problem) return <td key={problemId}>-</td>;
+                if (!problem)
+                  return (
+                    <td key={problemId} className="text-center">
+                      -
+                    </td>
+                  );
 
                 return (
                   <td
                     key={problemId}
                     className={
                       problem.solved
-                        ? "bg-success text-success-content"
-                        : "bg-error text-error-content"
+                        ? "bg-success text-success-content text-center"
+                        : "bg-error text-error-content text-center"
                     }
                   >
                     {problem.solved

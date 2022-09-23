@@ -126,7 +126,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => ({
-  title: `${params.rank}. ${data?.problem.title} - HITwh OJ`,
+  title: `${params.rank} - ${data?.problem.title} - HITwh OJ`,
 });
 
 export async function action({ request, params }: ActionArgs) {
@@ -311,7 +311,7 @@ export default function ContestProblemView() {
           </nav>
           <article className="p-4">
             <h1>
-              {rank}. {problem.title}
+              {rank} - {problem.title}
             </h1>
             <p>
               <RecordTimeMemory

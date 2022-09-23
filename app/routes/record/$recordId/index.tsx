@@ -109,9 +109,22 @@ export default function RecordView() {
         <RecordTimeMemory time={time} memory={memory} />
       </p>
 
-      <UserLink user={record.submitter} />
-      <ProblemLink problem={record.problem} />
-      {record.contest && <ContestLink contest={record.contest} />}
+      <p className="flex gap-4 flex-wrap">
+        <span>
+          <span className="opacity-60">用户：</span>
+          <UserLink user={record.submitter} />
+        </span>
+        <span>
+          <span className="opacity-60">题目：</span>
+          <ProblemLink problem={record.problem} />
+        </span>
+        {record.contest && (
+          <span>
+            <span className="opacity-60">比赛：</span>
+            <ContestLink contest={record.contest} />
+          </span>
+        )}
+      </p>
 
       {message && (
         <>

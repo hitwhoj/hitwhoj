@@ -32,6 +32,19 @@ export async function loader({ request, params }: LoaderArgs) {
       ContestPermission.Contestants
     );
 
+  // show a count down page for contestants
+  if (isContestants && status === "Pending") {
+    const contest = await db.contest.findUnique({
+      where: { id: contestId },
+      select: {
+        beginTime: true,
+        endTime: true,
+      },
+    });
+    if (!contest) throw new Response("Contest not found", { status: 404 });
+    return json({ countdown: true as const, contest });
+  }
+
   // if problem is ok to see
   if (hasViewProblemPerm) {
     const contest = await db.contest.findUnique({
@@ -58,18 +71,6 @@ export async function loader({ request, params }: LoaderArgs) {
     });
     if (!contest) throw new Response("Contest not found", { status: 404 });
     return json({ countdown: false as const, contest });
-  }
-  // or show a counting down page for user
-  else if (isContestants) {
-    const contest = await db.contest.findUnique({
-      where: { id: contestId },
-      select: {
-        beginTime: true,
-        endTime: true,
-      },
-    });
-    if (!contest) throw new Response("Contest not found", { status: 404 });
-    return json({ countdown: true as const, contest });
   }
   // or throw 403
   else {
