@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
-import { HiOutlineSearch } from "react-icons/hi";
+import { HiOutlinePlus } from "react-icons/hi";
 import type { LoaderData } from "~/routes/problem/data";
 import { ToastContext } from "~/utils/context/toast";
 
@@ -93,8 +93,8 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
           value={props.createAction}
           disabled={isLoading}
         >
-          <HiOutlineSearch />
-          搜索
+          <HiOutlinePlus />
+          添加
         </button>
       </label>
     </fetcher.Form>
