@@ -99,6 +99,9 @@ export default function ProblemView() {
             编辑
           </NavLink>
         )}
+        <NavLink className="tab" to="board">
+          榜单
+        </NavLink>
       </p>
 
       <Outlet />
