@@ -30,6 +30,18 @@ export class JudgeManager {
       console.log(`Connecting to ws://${ip}:${port}/`);
       judge.connect();
     }
+
+    const records = await db.record.findMany({
+      where: { status: "Pending" },
+      orderBy: { id: "desc" },
+      select: { id: true },
+    });
+
+    console.log(`Rejudge ${records.length} tasks`);
+
+    for (const record of records) {
+      await this.push(record.id);
+    }
   }
 
   getState() {
