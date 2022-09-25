@@ -229,6 +229,7 @@ export class Judge {
     const timeout = setTimeout(() => {
       if (this.#workings.delete(task.id)) {
         this.#mark(task.id, "System Error", "[judge] judge timeout (60s)");
+        this.status.occupied--;
       }
     }, 60000);
 
