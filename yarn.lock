@@ -1537,6 +1537,11 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@juggle/resize-observer@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.npmmirror.com/@juggle/resize-observer/-/resize-observer-3.4.0.tgz#08d6c5e20cf7e4cc02fd181c4b0c225cd31dbb60"
+  integrity sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==
+
 "@monaco-editor/loader@^1.3.2":
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/@monaco-editor/loader/-/loader-1.3.2.tgz#04effbb87052d19cd7d3c9d81c0635490f9bb6d8"
@@ -8077,6 +8082,13 @@ safe-regex@^1.1.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
+
+sakana-widget@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.npmmirror.com/sakana-widget/-/sakana-widget-2.3.2.tgz#5f949b13ca5effff5c54153435ccf846e417917d"
+  integrity sha512-dVo0QOoDdldBTrHYDjQI+WMHM316q7ezv0Kuw8tKYL0+gmQM8JXFjBSBc1+L0MHo/I7cV4ewol8CVaIMo0seOQ==
+  dependencies:
+    "@juggle/resize-observer" "^3.4.0"
 
 sax@>=0.6.0:
   version "1.2.4"
