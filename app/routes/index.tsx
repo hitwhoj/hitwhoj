@@ -36,9 +36,9 @@ export default function Index() {
     <>
       <h1>Welcome to Remix</h1>
       <div className="w-full h-60 flex justify-between">
-        <div className="takina"></div>
-        <div className="paimon"></div>
-        <div className="chisato"></div>
+        <div className="takina border shadow"></div>
+        <div className="paimon border shadow"></div>
+        <div className="chisato border shadow"></div>
       </div>
       <ul>
         <li>
