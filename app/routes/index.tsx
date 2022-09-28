@@ -34,29 +34,21 @@ export default function Index() {
   });
   return (
     <>
-      <h1>Welcome to Remix</h1>
+      <h1>Welcome to HITwh OJ</h1>
       <div className="w-full h-60 flex justify-between">
-        <div className="takina border shadow"></div>
-        <div className="paimon border shadow"></div>
-        <div className="chisato border shadow"></div>
+        <div className="flex flex-col gap-8 items-center">
+          <div className="takina"></div>
+          <Link to="/register">注册</Link>
+        </div>
+        <div className="flex flex-col gap-8 items-center">
+          <div className="paimon"></div>
+          <Link to="/docs">文档</Link>
+        </div>
+        <div className="flex flex-col gap-8 items-center">
+          <div className="chisato"></div>
+          <Link to="/login">登录</Link>
+        </div>
       </div>
-      <ul>
-        <li>
-          <Link className="link" to="/docs">
-            Documents
-          </Link>
-        </li>
-        <li>
-          <Link className="link" to="/login">
-            Sign in
-          </Link>
-        </li>
-        <li>
-          <Link className="link" to="/register">
-            Sign up
-          </Link>
-        </li>
-      </ul>
     </>
   );
 }

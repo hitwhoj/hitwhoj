@@ -78,3 +78,7 @@ code[class*="language-"] ::selection {
 .hljs-link {
   text-decoration: underline;
 }
+
+.sakana-widget-img {
+  filter: drop-shadow(0 0 0.5rem rgba(0, 0, 0, 0.3));
+}
