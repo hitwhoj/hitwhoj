@@ -1,14 +1,14 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
-import { pageScheme } from "~/utils/scheme";
-import { useMemo } from "react";
+import { descriptionScheme, pageScheme } from "~/utils/scheme";
+import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 
 const pageSize = 15;
@@ -25,23 +25,33 @@ export async function loader({ request }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const keyword = invariant(
+    descriptionScheme,
+    url.searchParams.get("keyword") || ""
+  );
   const totalProblemSets = await db.problemSet.count({
-    where: viewAll
-      ? { team: null }
-      : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+    where: Object.assign(
+      viewAll
+        ? { team: null }
+        : viewPublic
+        ? { team: null, private: false }
+        : { id: -1 },
+      { title: { contains: keyword } }
+    ),
   });
   if (totalProblemSets && page > Math.ceil(totalProblemSets / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
   const problemSets = await db.problemSet.findMany({
-    where: viewAll
-      ? { team: null }
-      : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+    where: Object.assign(
+      viewAll
+        ? { team: null }
+        : viewPublic
+        ? { team: null, private: false }
+        : { id: -1 },
+      { title: { contains: keyword } }
+    ),
     orderBy: [{ id: "asc" }],
     select: {
       id: true,
@@ -75,6 +85,10 @@ export default function ProblemsetList() {
     () => Math.ceil(totalProblemSets / pageSize),
     [totalProblemSets]
   );
+  const [problemsetIdInput, setProblemsetIdInput] = useState("");
+  const [problemsetNameInput, setProblemsetNameInput] = useState(
+    useParams().keyword || ""
+  );
 
   return (
     <>
@@ -88,6 +102,51 @@ export default function ProblemsetList() {
           </Link>
         )}
       </h1>
+
+      <div className="flex flex-row justify-between flex-wrap">
+        <div className="space-x-2 mt-1">
+          <input
+            type="text"
+            className="input input-bordered"
+            placeholder="题单 ID"
+            value={problemsetIdInput}
+            onChange={(e) => setProblemsetIdInput(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && navigate(`${problemsetIdInput}`)
+            }
+          />
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`${problemsetIdInput}`)}
+          >
+            前往
+          </button>
+        </div>
+        <div className="space-x-2 mt-1">
+          <span>
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="标题"
+              value={problemsetNameInput}
+              onChange={(e) => setProblemsetNameInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                navigate(`?page=1&keyword=${problemsetNameInput}`)
+              }
+            />
+          </span>
+
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              navigate(`?page=${currentPage}&keyword=${problemsetNameInput}`)
+            }
+          >
+            搜索
+          </button>
+        </div>
+      </div>
 
       <table className="table table-compact w-full not-prose">
         <thead>

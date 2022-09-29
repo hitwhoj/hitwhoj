@@ -1,12 +1,12 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamLink } from "~/src/team/TeamLink";
 import { HiOutlinePlus } from "react-icons/hi";
 import { invariant } from "~/utils/invariant";
-import { pageScheme } from "~/utils/scheme";
-import { useMemo } from "react";
+import { descriptionScheme, pageScheme } from "~/utils/scheme";
+import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 
 export const meta: MetaFunction = () => ({
@@ -18,12 +18,20 @@ const pageSize = 15;
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
-  const totalTeams = await db.team.count();
+  const keyword = invariant(
+    descriptionScheme,
+    url.searchParams.get("keyword") || ""
+  );
+
+  const totalTeams = await db.team.count({
+    where: { name: { contains: keyword } },
+  });
   if (totalTeams && page > Math.ceil(totalTeams / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
   const teams = await db.team.findMany({
+    where: { name: { contains: keyword } },
     orderBy: { name: "asc" },
     skip: (page - 1) * pageSize,
     take: pageSize,
@@ -39,6 +47,8 @@ export default function TeamList() {
     () => Math.ceil(totalTeams / pageSize),
     [totalTeams]
   );
+  const [teamIdInput, setTeamIdInput] = useState("");
+  const [teamNameInput, setTeamNameInput] = useState(useParams().keyword || "");
 
   return (
     <>
@@ -49,6 +59,49 @@ export default function TeamList() {
           <span>新建团队</span>
         </Link>
       </h1>
+
+      <div className="flex flex-row justify-between flex-wrap">
+        <div className="space-x-2 mt-1">
+          <input
+            type="text"
+            className="input input-bordered"
+            placeholder="团队 ID"
+            value={teamIdInput}
+            onChange={(e) => setTeamIdInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && navigate(`${teamIdInput}`)}
+          />
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`${teamIdInput}`)}
+          >
+            前往
+          </button>
+        </div>
+        <div className="space-x-2 mt-1">
+          <span>
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="标题"
+              value={teamNameInput}
+              onChange={(e) => setTeamNameInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                navigate(`?page=1&keyword=${teamNameInput}`)
+              }
+            />
+          </span>
+
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              navigate(`?page=${currentPage}&keyword=${teamNameInput}`)
+            }
+          >
+            搜索
+          </button>
+        </div>
+      </div>
 
       <table className="table table-compact w-full not-prose">
         <thead>

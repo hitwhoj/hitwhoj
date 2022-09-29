@@ -26,6 +26,7 @@ export async function loader({ request }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  // FIXME: urlencode处理(例如A%20+%20B -> 获取到的是A   B), 特殊符号似乎不能自动处理
   const keyword = invariant(
     descriptionScheme,
     url.searchParams.get("keyword") || ""

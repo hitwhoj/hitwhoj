@@ -1,9 +1,9 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { idScheme, pageScheme } from "~/utils/scheme";
+import { descriptionScheme, idScheme, pageScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -13,7 +13,7 @@ import {
   findProblemSetPrivacy,
   findProblemSetTeam,
 } from "~/utils/db/problemset";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 
 const pageSize = 15;
@@ -33,6 +33,10 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const keyword = invariant(
+    descriptionScheme,
+    url.searchParams.get("keyword") || ""
+  );
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -48,6 +52,13 @@ export async function loader({ request, params }: LoaderArgs) {
       },
       problems: {
         orderBy: { rank: "asc" },
+        where: {
+          problem: {
+            title: {
+              contains: keyword,
+            },
+          },
+        },
         select: {
           rank: true,
           problem: {
@@ -87,10 +98,59 @@ export default function ProblemSetIndex() {
     () => Math.ceil(totalProblems / pageSize),
     [totalProblems]
   );
+  const [problemIdInput, setProblemIdInput] = useState("");
+  const [problemNameInput, setProblemNameInput] = useState(
+    useParams().keyword || ""
+  );
 
   return (
     <>
       <Markdown>{problemSet.description}</Markdown>
+
+      <div className="flex flex-row justify-between flex-wrap">
+        <div className="space-x-2 mt-1">
+          <input
+            type="text"
+            className="input input-bordered"
+            placeholder="题目 ID"
+            value={problemIdInput}
+            onChange={(e) => setProblemIdInput(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && navigate(`${problemIdInput}`)
+            }
+          />
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`${problemIdInput}`)}
+          >
+            前往
+          </button>
+        </div>
+        <div className="space-x-2 mt-1">
+          <span>
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="标题"
+              value={problemNameInput}
+              onChange={(e) => setProblemNameInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                navigate(`?page=1&keyword=${problemNameInput}`)
+              }
+            />
+          </span>
+
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              navigate(`?page=${currentPage}&keyword=${problemNameInput}`)
+            }
+          >
+            搜索
+          </button>
+        </div>
+      </div>
 
       <table className="table table-compact w-full not-prose">
         <thead>
