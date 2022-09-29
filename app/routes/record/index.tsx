@@ -30,8 +30,7 @@ export async function loader({ request }: LoaderArgs) {
       problemId: pid || undefined,
     },
   });
-  // FIXME: 没有记录的时候会报错
-  if (page > Math.ceil(totalRecords / pageSize)) {
+  if (totalRecords && page > Math.ceil(totalRecords / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 

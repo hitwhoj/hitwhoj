@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderArgs) {
       ? { team: null, private: false }
       : { id: -1 },
   });
-  if (page > Math.ceil(totalProblems / pageSize)) {
+  if (totalProblems && page > Math.ceil(totalProblems / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 

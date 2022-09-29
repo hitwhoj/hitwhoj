@@ -63,7 +63,7 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 
   const totalProblems = problemSet?._count?.problems || 0;
-  if (page > Math.ceil(totalProblems / pageSize)) {
+  if (totalProblems && page > Math.ceil(totalProblems / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 

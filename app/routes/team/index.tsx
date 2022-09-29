@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
   const totalTeams = await db.team.count();
-  if (page > Math.ceil(totalTeams / pageSize)) {
+  if (totalTeams && page > Math.ceil(totalTeams / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
