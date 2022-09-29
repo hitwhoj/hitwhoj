@@ -17,7 +17,7 @@ export function Pagination({
   onPageChange: (page: number) => void;
 }) {
   const [pageInput, setPageInput] = useState(currentPage.toString());
-  // if (totalPages <= 1) return null;
+  if (totalPages <= 1) return null;
   const pageArray =
     totalPages >= 7
       ? Array.from(

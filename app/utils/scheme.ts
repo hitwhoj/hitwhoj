@@ -19,6 +19,19 @@ export const idScheme = z
   .transform((x) => parseInt(x, 10));
 
 /**
+ * 可空数字 ID，非负整数或空字符串（用于搜索参数）
+ *
+ * @example 114514 | ""
+ */
+export const nullableIdScheme = z.union([
+  z
+    .string()
+    .regex(/^\d*$/, "Id must be a positive integer")
+    .transform((x) => parseInt(x, 10)),
+  z.null().transform(() => null),
+]);
+
+/**
  * UUID
  *
  * @example "f0e4c2f3-e249-4fe5-ab22-fa49aafcc74e"

@@ -1,14 +1,14 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { useMemo } from "react";
+import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { invariant } from "~/utils/invariant";
-import { pageScheme } from "~/utils/scheme";
+import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
@@ -16,14 +16,31 @@ const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
+
+  console.log(url.searchParams);
+
+  const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
+  const pid = invariant(nullableIdScheme, url.searchParams.get("pid"));
+
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
-  const totalRecords = await db.record.count();
+  const totalRecords = await db.record.count({
+    where: {
+      contest: null,
+      submitterId: uid || undefined,
+      problemId: pid || undefined,
+    },
+  });
+  // FIXME: 没有记录的时候会报错
   if (page > Math.ceil(totalRecords / pageSize)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
   const records = await db.record.findMany({
-    where: { contest: null },
+    where: {
+      contest: null,
+      submitterId: uid || undefined,
+      problemId: pid || undefined,
+    },
     orderBy: [{ id: "desc" }],
     skip: (page - 1) * pageSize,
     take: pageSize,
@@ -60,11 +77,72 @@ export default function RecordList() {
     () => Math.ceil(totalRecords / pageSize),
     [totalRecords]
   );
+  const [recordIdInput, setRecordIdInput] = useState("");
+  const [userIdInput, setUserIdInput] = useState(useParams().uid || "");
+  const [problemIdInput, setProblemIdInput] = useState(useParams().pid || "");
 
   return (
     <>
       <h1>评测记录</h1>
+      <div className="flex flex-row justify-between flex-wrap">
+        <div className="space-x-2 mt-1">
+          <input
+            type="text"
+            className="input input-bordered"
+            placeholder="记录 ID"
+            value={recordIdInput}
+            onChange={(e) => setRecordIdInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && navigate(`${recordIdInput}`)}
+          />
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`${recordIdInput}`)}
+          >
+            前往
+          </button>
+        </div>
+        <div className="space-x-2 mt-1">
+          <span>
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="用户 ID"
+              value={userIdInput}
+              onChange={(e) => setUserIdInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                navigate(
+                  `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
+                )
+              }
+            />
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="题目 ID"
+              value={problemIdInput}
+              onChange={(e) => setProblemIdInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                navigate(
+                  `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
+                )
+              }
+            />
+          </span>
 
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              navigate(
+                `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
+              )
+            }
+          >
+            查询
+          </button>
+        </div>
+      </div>
       <table className="table table-compact w-full not-prose">
         <thead>
           <tr>
