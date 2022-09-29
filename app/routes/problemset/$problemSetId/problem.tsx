@@ -1,9 +1,9 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { idScheme } from "~/utils/scheme";
+import { idScheme, pageScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -13,6 +13,10 @@ import {
   findProblemSetPrivacy,
   findProblemSetTeam,
 } from "~/utils/db/problemset";
+import { useMemo } from "react";
+import { Pagination } from "~/src/Pagination";
+
+const pageSize = 15;
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -27,6 +31,9 @@ export async function loader({ request, params }: LoaderArgs) {
         : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
     );
 
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
     select: {
@@ -34,6 +41,11 @@ export async function loader({ request, params }: LoaderArgs) {
       title: true,
       description: true,
       tags: true,
+      _count: {
+        select: {
+          problems: true,
+        },
+      },
       problems: {
         orderBy: { rank: "asc" },
         select: {
@@ -44,15 +56,22 @@ export async function loader({ request, params }: LoaderArgs) {
             },
           },
         },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       },
     },
   });
+
+  const totalProblems = problemSet?._count?.problems || 0;
+  if (page > Math.ceil(totalProblems / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
 
   if (!problemSet) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet });
+  return json({ problemSet, totalProblems, currentPage: page });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -61,7 +80,13 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemSetIndex() {
-  const { problemSet } = useLoaderData<typeof loader>();
+  const { problemSet, totalProblems, currentPage } =
+    useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const totalPages = useMemo(
+    () => Math.ceil(totalProblems / pageSize),
+    [totalProblems]
+  );
 
   return (
     <>
@@ -85,6 +110,12 @@ export default function ProblemSetIndex() {
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => navigate(`?page=${page}`)}
+      />
     </>
   );
 }

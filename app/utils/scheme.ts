@@ -73,6 +73,16 @@ export const nicknameScheme = z.string().nonempty("Nickname must be nonempty");
 export const bioScheme = z.string();
 
 /**
+ * 页码，正整数
+ *
+ * @example 114514
+ */
+export const pageScheme = z
+  .string()
+  .regex(/^[1-9]\d*$/, "Page must be a positive integer")
+  .transform((x) => parseInt(x, 10));
+
+/**
  * 各类标签
  *
  * @example "math"

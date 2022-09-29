@@ -1,11 +1,17 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
 import { findRequestUser } from "~/utils/permission";
+import { invariant } from "~/utils/invariant";
+import { pageScheme } from "~/utils/scheme";
+import { useMemo } from "react";
+import { Pagination } from "~/src/Pagination";
+
+const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -16,6 +22,19 @@ export async function loader({ request }: LoaderArgs) {
       Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC,
       Permissions.PERM_EDIT_PROBLEM_SET
     );
+
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const totalProblemSets = await db.problemSet.count({
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
+  });
+  if (page > Math.ceil(totalProblemSets / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
 
   const problemSets = await db.problemSet.findMany({
     where: viewAll
@@ -34,9 +53,14 @@ export async function loader({ request }: LoaderArgs) {
         },
       },
     },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
-  return json({ problemSets, hasEditPerm });
+  return json(
+    { problemSets, hasEditPerm, totalProblemSets, currentPage: page },
+    { status: 200 }
+  );
 }
 
 export const meta: MetaFunction = () => ({
@@ -44,7 +68,13 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemsetList() {
-  const { problemSets, hasEditPerm } = useLoaderData<typeof loader>();
+  const { problemSets, hasEditPerm, totalProblemSets, currentPage } =
+    useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const totalPages = useMemo(
+    () => Math.ceil(totalProblemSets / pageSize),
+    [totalProblemSets]
+  );
 
   return (
     <>
@@ -79,6 +109,12 @@ export default function ProblemsetList() {
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={(page) => navigate(`?page=${page}`)}
+      />
     </>
   );
 }

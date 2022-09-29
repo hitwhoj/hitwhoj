@@ -1,18 +1,32 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { useMemo } from "react";
+import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { invariant } from "~/utils/invariant";
+import { pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
-export async function loader(_: LoaderArgs) {
+const pageSize = 15;
+
+export async function loader({ request }: LoaderArgs) {
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const totalRecords = await db.record.count();
+  if (page > Math.ceil(totalRecords / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
+
   const records = await db.record.findMany({
     where: { contest: null },
     orderBy: [{ id: "desc" }],
-    take: 100,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
     select: {
       id: true,
       status: true,
@@ -32,7 +46,7 @@ export async function loader(_: LoaderArgs) {
     },
   });
 
-  return json({ records });
+  return json({ records, totalRecords, currentPage: page }, { status: 200 });
 }
 
 export const meta: MetaFunction = () => ({
@@ -40,12 +54,16 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function RecordList() {
-  const { records } = useLoaderData<typeof loader>();
+  const { records, totalRecords, currentPage } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const totalPages = useMemo(
+    () => Math.ceil(totalRecords / pageSize),
+    [totalRecords]
+  );
 
   return (
     <>
       <h1>评测记录</h1>
-      <p>您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。</p>
 
       <table className="table table-compact w-full not-prose">
         <thead>
@@ -84,6 +102,11 @@ export default function RecordList() {
           ))}
         </tbody>
       </table>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => navigate(`?page=${page}`)}
+      />
     </>
   );
 }
