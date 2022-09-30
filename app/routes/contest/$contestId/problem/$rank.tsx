@@ -21,9 +21,8 @@ import {
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
-import type { MessageType } from "../events";
 import { findRequestUser } from "~/utils/permission";
 import {
   findContestProblemIdByRank,
@@ -32,7 +31,6 @@ import {
 } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { filter } from "rxjs";
 import { fromEventSource } from "~/utils/eventSource";
 import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
@@ -42,6 +40,7 @@ import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
+import type { MessageType } from "~/routes/record/$recordId/events";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -161,12 +160,20 @@ export async function action({ request, params }: ActionArgs) {
       contestId,
       submitterId: self.userId!,
     },
-    select: { id: true },
+    select: {
+      id: true,
+      status: true,
+      message: true,
+      time: true,
+      memory: true,
+      score: true,
+      subtasks: true,
+    },
   });
 
   await s3.writeFile(`/record/${record.id}`, Buffer.from(code));
   judge.push(record.id);
-  recordUpdateSubject.next(record.id);
+  recordUpdateSubject.next(record);
 
   return null;
 }
@@ -248,41 +255,36 @@ export default function ContestProblemView() {
   const isEnded = now > new Date(contest.endTime);
 
   const [records, setRecords] = useState(_records);
+  useEffect(() => setRecords(_records), [_records]);
+
+  const pending = useMemo(() => {
+    return _records
+      .filter((record) => record.status === "Pending")
+      .map(({ id }) => id);
+  }, [_records]);
 
   useEffect(() => {
-    const subscription = fromEventSource<MessageType>(
-      `/contest/${contestId}/events`
-    )
-      .pipe(filter((message) => message.problemId === problem.id))
-      .subscribe((message) => {
-        setRecords((records) => {
-          const found = records.find((record) => record.id === message.id);
-          if (found) {
-            // 如果 record id 已经存在，则更新现有的记录
-            found.time = message.time;
-            found.score = message.score;
-            found.memory = message.memory;
-            found.status = message.status;
-            // 如果返回原来的 records，React 就不会重新渲染
+    const subscriptions = pending.map((id) => {
+      return fromEventSource<MessageType>(`/record/${id}/events`).subscribe(
+        (message) => {
+          setRecords((records) => {
+            const found = records.find((record) => record.id === message.id);
+            if (found) {
+              found.time = message.time;
+              found.score = message.score;
+              found.memory = message.memory;
+              found.status = message.status;
+            }
             return [...records];
-          } else {
-            // 否则添加新的记录
-            return [
-              {
-                id: message.id,
-                time: message.time,
-                score: message.score,
-                memory: message.memory,
-                status: message.status,
-              },
-              ...records,
-            ];
-          }
-        });
-      });
+          });
+        }
+      );
+    });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      subscriptions.forEach((subscription) => subscription.unsubscribe());
+    };
+  }, [JSON.stringify(pending)]);
 
   const theme = useContext(ThemeContext);
 
