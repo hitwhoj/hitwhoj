@@ -59,7 +59,7 @@ jobs:
           export S3_ACCESS_KEY="testadmin"
           export S3_SECRET_KEY="testpassword"
           export S3_BUCKET="hitwhoj"
-          node prisma db seed
+          yarn prisma db seed
           yarn test
 
       - name: Build
