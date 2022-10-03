@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useMemo, useState } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { ContestLink } from "~/src/contest/ContestLink";
@@ -66,7 +66,13 @@ export async function loader({ request }: LoaderArgs) {
     take: pageSize,
   });
 
-  return json({ contests, hasCreatePerm, totalTeams, currentPage: page });
+  return json({
+    contests,
+    hasCreatePerm,
+    totalTeams,
+    currentPage: page,
+    keyword,
+  });
 }
 
 export const meta: MetaFunction = () => ({
@@ -74,7 +80,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestListIndex() {
-  const { contests, hasCreatePerm, totalTeams, currentPage } =
+  const { contests, hasCreatePerm, totalTeams, currentPage, keyword } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const totalPages = useMemo(
@@ -84,9 +90,7 @@ export default function ContestListIndex() {
   const [contestIdInput, setContestIdInput] = useState("");
   // FIXME: useParams不能获取后面的searchParams, 所有搜索框同理
   // const urlParams = new URLSearchParams(window.location.href);
-  const [contestNameInput, setContestNameInput] = useState(
-    useParams().keyword || ""
-  );
+  const [contestNameInput, setContestNameInput] = useState(keyword);
 
   return (
     <>

@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { descriptionScheme, idScheme, pageScheme } from "~/utils/scheme";
@@ -82,7 +82,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet, totalProblems, currentPage: page });
+  return json({ problemSet, totalProblems, currentPage: page, keyword });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -91,7 +91,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemSetIndex() {
-  const { problemSet, totalProblems, currentPage } =
+  const { problemSet, totalProblems, currentPage, keyword } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const totalPages = useMemo(
@@ -99,9 +99,7 @@ export default function ProblemSetIndex() {
     [totalProblems]
   );
   const [problemIdInput, setProblemIdInput] = useState("");
-  const [problemNameInput, setProblemNameInput] = useState(
-    useParams().keyword || ""
-  );
+  const [problemNameInput, setProblemNameInput] = useState(keyword);
 
   return (
     <>

@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -68,7 +68,7 @@ export async function loader({ request }: LoaderArgs) {
   });
 
   return json(
-    { problems, hasCreatePerm, totalProblems, currentPage: page },
+    { problems, hasCreatePerm, totalProblems, currentPage: page, keyword },
     { status: 200 }
   );
 }
@@ -78,7 +78,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemIndex() {
-  const { problems, hasCreatePerm, totalProblems, currentPage } =
+  const { problems, hasCreatePerm, totalProblems, currentPage, keyword } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const totalPages = useMemo(
@@ -86,9 +86,7 @@ export default function ProblemIndex() {
     [totalProblems]
   );
   const [problemIdInput, setProblemIdInput] = useState("");
-  const [problemNameInput, setProblemNameInput] = useState(
-    useParams().keyword || ""
-  );
+  const [problemNameInput, setProblemNameInput] = useState(keyword);
 
   return (
     <>

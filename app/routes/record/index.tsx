@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -62,7 +62,10 @@ export async function loader({ request }: LoaderArgs) {
     },
   });
 
-  return json({ records, totalRecords, currentPage: page }, { status: 200 });
+  return json(
+    { records, totalRecords, currentPage: page, uid, pid },
+    { status: 200 }
+  );
 }
 
 export const meta: MetaFunction = () => ({
@@ -70,15 +73,16 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function RecordList() {
-  const { records, totalRecords, currentPage } = useLoaderData<typeof loader>();
+  const { records, totalRecords, currentPage, uid, pid } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const totalPages = useMemo(
     () => Math.ceil(totalRecords / pageSize),
     [totalRecords]
   );
   const [recordIdInput, setRecordIdInput] = useState("");
-  const [userIdInput, setUserIdInput] = useState(useParams().uid || "");
-  const [problemIdInput, setProblemIdInput] = useState(useParams().pid || "");
+  const [userIdInput, setUserIdInput] = useState(uid || "");
+  const [problemIdInput, setProblemIdInput] = useState(pid || "");
 
   return (
     <>

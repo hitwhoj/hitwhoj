@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamLink } from "~/src/team/TeamLink";
 import { HiOutlinePlus } from "react-icons/hi";
@@ -37,18 +37,19 @@ export async function loader({ request }: LoaderArgs) {
     take: pageSize,
   });
 
-  return json({ teams, totalTeams, currentPage: page });
+  return json({ teams, totalTeams, currentPage: page, keyword });
 }
 
 export default function TeamList() {
-  const { teams, totalTeams, currentPage } = useLoaderData<typeof loader>();
+  const { teams, totalTeams, currentPage, keyword } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const totalPages = useMemo(
     () => Math.ceil(totalTeams / pageSize),
     [totalTeams]
   );
   const [teamIdInput, setTeamIdInput] = useState("");
-  const [teamNameInput, setTeamNameInput] = useState(useParams().keyword || "");
+  const [teamNameInput, setTeamNameInput] = useState(keyword);
 
   return (
     <>
