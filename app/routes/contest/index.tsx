@@ -62,6 +62,8 @@ export async function loader({ request }: LoaderArgs) {
     select: {
       ...selectContestListData,
     },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
   return json({ contests, hasCreatePerm, totalTeams, currentPage: page });
