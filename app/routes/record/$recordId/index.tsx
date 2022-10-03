@@ -109,7 +109,7 @@ export default function RecordView() {
         <RecordTimeMemory time={time} memory={memory} />
       </p>
 
-      <p className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap my-4">
         <span>
           <span className="opacity-60">用户：</span>
           <UserLink user={record.submitter} />
@@ -124,7 +124,7 @@ export default function RecordView() {
             <ContestLink contest={record.contest} />
           </span>
         )}
-      </p>
+      </div>
 
       {message && (
         <>

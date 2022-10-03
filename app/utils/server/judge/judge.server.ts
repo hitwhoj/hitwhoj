@@ -130,29 +130,38 @@ export class Judge {
           return;
         }
 
+        const id = data.id;
+        const status = data.result.status;
+        const score = data.result.score;
+        const message = data.result.message;
+        const time = timeSummary(data.result.subtasks);
+        const memory = memorySummary(data.result.subtasks);
+        const subtasks = data.result.subtasks;
+
         // 如果任务已经结束就标记为结束
         if (data.type === "finish") {
           this.#workings.delete(data.id);
           clearTimeout(callback.timeout);
           this.status.occupied--;
+
+          // 更新到数据库
+          await db.record.update({
+            where: { id: data.id },
+            data: { status, score, message, time, memory, subtasks },
+            select: { id: true },
+          });
         }
 
-        // 更新到数据库
-        const record = await db.record.update({
-          where: { id: data.id },
-          data: {
-            status: data.result.status,
-            score: data.result.score,
-            message: data.result.message,
-            time: timeSummary(data.result.subtasks),
-            memory: memorySummary(data.result.subtasks),
-            subtasks: data.result.subtasks,
-          },
-          select: { id: true },
-        });
-
         // 推送到事件中心
-        recordUpdateSubject.next(record.id);
+        recordUpdateSubject.next({
+          id,
+          status,
+          score,
+          message,
+          time,
+          memory,
+          subtasks,
+        });
       });
   }
 
@@ -165,8 +174,8 @@ export class Judge {
     this.#ws.onopen = () => (this.status.status = "Online");
     this.#ws.onclose = () => (this.status.status = "Offline");
     this.#ws.onmessage = ({ data }) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log("recieved", data.toString());
+      if (process.env.RUST_LOG === "debug") {
+        console.log(`[recieved] ${data.toString()}`);
       }
       try {
         this.#subject.next(JSON.parse(data.toString()));
@@ -184,8 +193,8 @@ export class Judge {
       this.#ws?.readyState === WebSocket.OPEN &&
       this.status.status === "Online"
     ) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("send", JSON.stringify(data));
+      if (process.env.RUST_LOG === "debug") {
+        console.log(`[send] ${JSON.stringify(data)}`);
       }
       this.#ws.send(JSON.stringify(data));
     } else {
@@ -194,7 +203,7 @@ export class Judge {
   }
 
   async #mark(id: number, status: JudgeStatus, reason: string) {
-    const record = await db.record.update({
+    let result = await db.record.update({
       where: { id },
       data: {
         status,
@@ -204,10 +213,19 @@ export class Judge {
         memory: -1,
         subtasks: [],
       },
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        score: true,
+        message: true,
+        time: true,
+        memory: true,
+        subtasks: true,
+      },
     });
+
     // 推送到事件中心
-    recordUpdateSubject.next(record.id);
+    recordUpdateSubject.next(result);
   }
 
   /**

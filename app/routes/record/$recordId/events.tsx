@@ -1,30 +1,11 @@
 import type { LoaderArgs, SerializeFrom } from "@remix-run/node";
-import { filter, from, mergeMap } from "rxjs";
+import { filter } from "rxjs";
 import { createEventSource } from "~/utils/eventSource";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
-import { db } from "~/utils/server/db.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
-import { isNotNull } from "~/utils/tools";
 
-const observer = recordUpdateSubject.pipe(
-  mergeMap((id) =>
-    from(
-      db.record.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          time: true,
-          memory: true,
-          status: true,
-          message: true,
-          subtasks: true,
-        },
-      })
-    )
-  ),
-  filter(isNotNull)
-);
+const observer = recordUpdateSubject.asObservable();
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });

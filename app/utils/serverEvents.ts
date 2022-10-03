@@ -3,11 +3,16 @@
 // 如果采用 RabbitMQ 之类的技术，也许可以实现边缘化计算。
 
 import { Subject } from "rxjs";
+import type { Record } from "@prisma/client";
+
+export type RecordUpdateMessage = Pick<
+  Record,
+  "id" | "status" | "score" | "message" | "time" | "memory" | "subtasks"
+>;
 
 export const privateMessageSubject = new Subject<number>();
 export const chatMessageSubject = new Subject<number>();
-/** 有更新的评测记录 id 流 */
-export const recordUpdateSubject = new Subject<number>();
+export const recordUpdateSubject = new Subject<RecordUpdateMessage>();
 export const clarificationResolveSubject = new Subject<number>();
 export const clarificationAssignSubject = new Subject<number>();
 export const clarificationReplySubject = new Subject<number>();
