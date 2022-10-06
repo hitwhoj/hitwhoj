@@ -317,7 +317,7 @@ export default function App() {
                 <li>
                   <NavLink
                     className="flex gap-4"
-                    to={`/record?uid=${user?.id}`}
+                    to={user ? `/record?uid=${user.id}` : "/record"}
                   >
                     <AiOutlineHistory className="w-6 h-6" />
                     <span>评测</span>
