@@ -102,6 +102,9 @@ export default function ProblemView() {
         <NavLink className="tab" to="board">
           榜单
         </NavLink>
+        <Link className="tab" to={`/record?pid=${problem.id}`}>
+          提交记录
+        </Link>
       </p>
 
       <Outlet />
