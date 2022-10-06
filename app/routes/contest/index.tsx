@@ -4,11 +4,16 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
+import { Pagination } from "~/src/Pagination";
 import { selectContestListData } from "~/utils/db/contest";
+import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
+
+const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -23,6 +28,19 @@ export async function loader({ request }: LoaderArgs) {
       Permissions.PERM_VIEW_CONTEST_PUBLIC
     );
 
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const totalTeams = await db.contest.count({
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
+  });
+  if (totalTeams && page > Math.ceil(totalTeams / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
+
   const contests = await db.contest.findMany({
     where: viewAll
       ? { team: null }
@@ -33,9 +51,16 @@ export async function loader({ request }: LoaderArgs) {
     select: {
       ...selectContestListData,
     },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
-  return json({ contests, hasCreatePerm });
+  return json({
+    contests,
+    hasCreatePerm,
+    totalTeams,
+    currentPage: page,
+  });
 }
 
 export const meta: MetaFunction = () => ({
@@ -43,7 +68,9 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestListIndex() {
-  const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
+  const { contests, hasCreatePerm, totalTeams, currentPage } =
+    useLoaderData<typeof loader>();
+  const totalPages = Math.ceil(totalTeams / pageSize);
 
   return (
     <>
@@ -83,6 +110,11 @@ export default function ContestListIndex() {
           ))}
         </tbody>
       </table>
+      <Pagination
+        action="/contest"
+        totalPages={totalPages}
+        currentPage={currentPage}
+      />
     </>
   );
 }

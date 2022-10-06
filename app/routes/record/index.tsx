@@ -1,18 +1,46 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
+import { HiOutlineFilter } from "react-icons/hi";
+import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { invariant } from "~/utils/invariant";
+import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
-export async function loader(_: LoaderArgs) {
+const pageSize = 15;
+
+export async function loader({ request }: LoaderArgs) {
+  const url = new URL(request.url);
+
+  const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
+  const pid = invariant(nullableIdScheme, url.searchParams.get("pid"));
+
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const totalRecords = await db.record.count({
+    where: {
+      contest: null,
+      submitterId: uid || undefined,
+      problemId: pid || undefined,
+    },
+  });
+  if (totalRecords && page > Math.ceil(totalRecords / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
+
   const records = await db.record.findMany({
-    where: { contest: null },
+    where: {
+      contest: null,
+      submitterId: uid || undefined,
+      problemId: pid || undefined,
+    },
     orderBy: [{ id: "desc" }],
-    take: 100,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
     select: {
       id: true,
       status: true,
@@ -32,7 +60,10 @@ export async function loader(_: LoaderArgs) {
     },
   });
 
-  return json({ records });
+  return json(
+    { records, totalRecords, currentPage: page, uid, pid },
+    { status: 200 }
+  );
 }
 
 export const meta: MetaFunction = () => ({
@@ -40,13 +71,46 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function RecordList() {
-  const { records } = useLoaderData<typeof loader>();
+  const { records, totalRecords, currentPage, uid, pid } =
+    useLoaderData<typeof loader>();
+  const totalPages = Math.ceil(totalRecords / pageSize);
 
   return (
     <>
       <h1>评测记录</h1>
-      <p>您只能查询到最近的 100 条评测记录（因为我们懒得写分页）。</p>
 
+      <Form
+        className="flex flex-row flex-wrap justify-between items-end gap-4"
+        method="get"
+        action="/record"
+      >
+        <div className="form-control flex-1">
+          <label className="label">
+            <span className="label-text">由用户</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered"
+            name="uid"
+            defaultValue={uid || ""}
+          />
+        </div>
+        <div className="form-control flex-1">
+          <label className="label">
+            <span className="label-text">由题目</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered"
+            name="pid"
+            defaultValue={pid || ""}
+          />
+        </div>
+        <button className="btn btn-primary gap-2">
+          <HiOutlineFilter />
+          <span>过滤</span>
+        </button>
+      </Form>
       <table className="table table-compact w-full not-prose">
         <thead>
           <tr>
@@ -84,6 +148,11 @@ export default function RecordList() {
           ))}
         </tbody>
       </table>
+      <Pagination
+        action={`/record?uid=${uid}&pid=${pid}`}
+        totalPages={totalPages}
+        currentPage={currentPage}
+      />
     </>
   );
 }

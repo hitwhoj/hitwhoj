@@ -6,6 +6,11 @@ import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
 import { findRequestUser } from "~/utils/permission";
+import { invariant } from "~/utils/invariant";
+import { pageScheme } from "~/utils/scheme";
+import { Pagination } from "~/src/Pagination";
+
+const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -17,12 +22,26 @@ export async function loader({ request }: LoaderArgs) {
       Permissions.PERM_EDIT_PROBLEM_SET
     );
 
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const totalProblemSets = await db.problemSet.count({
+    where: viewAll
+      ? { team: null }
+      : viewPublic
+      ? { team: null, private: false }
+      : { id: -1 },
+  });
+  if (totalProblemSets && page > Math.ceil(totalProblemSets / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
+
   const problemSets = await db.problemSet.findMany({
     where: viewAll
       ? { team: null }
       : viewPublic
       ? { team: null, private: false }
       : { id: -1 },
+
     orderBy: [{ id: "asc" }],
     select: {
       id: true,
@@ -34,9 +53,16 @@ export async function loader({ request }: LoaderArgs) {
         },
       },
     },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
-  return json({ problemSets, hasEditPerm });
+  return json({
+    problemSets,
+    hasEditPerm,
+    totalProblemSets,
+    currentPage: page,
+  });
 }
 
 export const meta: MetaFunction = () => ({
@@ -44,7 +70,9 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemsetList() {
-  const { problemSets, hasEditPerm } = useLoaderData<typeof loader>();
+  const { problemSets, hasEditPerm, totalProblemSets, currentPage } =
+    useLoaderData<typeof loader>();
+  const totalPages = Math.ceil(totalProblemSets / pageSize);
 
   return (
     <>
@@ -79,6 +107,12 @@ export default function ProblemsetList() {
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        action="/problemset"
+        totalPages={totalPages}
+        currentPage={currentPage}
+      />
     </>
   );
 }

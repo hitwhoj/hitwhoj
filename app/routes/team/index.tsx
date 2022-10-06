@@ -4,22 +4,37 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamLink } from "~/src/team/TeamLink";
 import { HiOutlinePlus } from "react-icons/hi";
+import { invariant } from "~/utils/invariant";
+import { pageScheme } from "~/utils/scheme";
+import { Pagination } from "~/src/Pagination";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
 });
 
-export async function loader(_: LoaderArgs) {
+const pageSize = 15;
+
+export async function loader({ request }: LoaderArgs) {
+  const url = new URL(request.url);
+  const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+
+  const totalTeams = await db.team.count({});
+  if (totalTeams && page > Math.ceil(totalTeams / pageSize)) {
+    throw new Response("Page is out of range", { status: 404 });
+  }
+
   const teams = await db.team.findMany({
-    take: 20,
     orderBy: { name: "asc" },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
-  return json({ teams });
+  return json({ teams, totalTeams, currentPage: page });
 }
 
 export default function TeamList() {
-  const { teams } = useLoaderData<typeof loader>();
+  const { teams, totalTeams, currentPage } = useLoaderData<typeof loader>();
+  const totalPages = Math.ceil(totalTeams / pageSize);
 
   return (
     <>
@@ -49,6 +64,12 @@ export default function TeamList() {
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        action="/team"
+        totalPages={totalPages}
+        currentPage={currentPage}
+      />
     </>
   );
 }
