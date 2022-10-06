@@ -254,9 +254,13 @@ export default function App() {
                   >
                     <FaTelegramPlane className="w-6 h-6" />
                   </a>
-                  <span>
+                  <a
+                    href="https://matrix.to/#/#hitwh:mozilla.org"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <SiElement className="w-6 h-6" />
-                  </span>
+                  </a>
                 </div>
               </div>
             </footer>
