@@ -63,7 +63,11 @@ export default function Index() {
           </div>
           <div className="flex flex-col gap-8 items-center">
             <div className="chino"></div>
-            <a href="https://github.com/hitwhoj/hitwhoj" target="_blank">
+            <a
+              href="https://github.com/hitwhoj/hitwhoj"
+              target="_blank"
+              rel="noreferrer"
+            >
               仓库
             </a>
           </div>

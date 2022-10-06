@@ -1,9 +1,9 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { descriptionScheme, idScheme, pageScheme } from "~/utils/scheme";
+import { idScheme, pageScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -13,7 +13,6 @@ import {
   findProblemSetPrivacy,
   findProblemSetTeam,
 } from "~/utils/db/problemset";
-import { useMemo, useState } from "react";
 import { Pagination } from "~/src/Pagination";
 
 const pageSize = 15;
@@ -33,10 +32,6 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
-  const keyword = invariant(
-    descriptionScheme,
-    url.searchParams.get("keyword") || ""
-  );
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -52,13 +47,6 @@ export async function loader({ request, params }: LoaderArgs) {
       },
       problems: {
         orderBy: { rank: "asc" },
-        where: {
-          problem: {
-            title: {
-              contains: keyword,
-            },
-          },
-        },
         select: {
           rank: true,
           problem: {
@@ -82,7 +70,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet, totalProblems, currentPage: page, keyword });
+  return json({ problemSet, totalProblems, currentPage: page });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -91,64 +79,13 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemSetIndex() {
-  const { problemSet, totalProblems, currentPage, keyword } =
+  const { problemSet, totalProblems, currentPage } =
     useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const totalPages = useMemo(
-    () => Math.ceil(totalProblems / pageSize),
-    [totalProblems]
-  );
-  const [problemIdInput, setProblemIdInput] = useState("");
-  const [problemNameInput, setProblemNameInput] = useState(keyword);
+  const totalPages = Math.ceil(totalProblems / pageSize);
 
   return (
     <>
       <Markdown>{problemSet.description}</Markdown>
-
-      <div className="flex flex-row justify-between flex-wrap">
-        <div className="space-x-2 mt-1">
-          <input
-            type="text"
-            className="input input-bordered"
-            placeholder="题目 ID"
-            value={problemIdInput}
-            onChange={(e) => setProblemIdInput(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && navigate(`${problemIdInput}`)
-            }
-          />
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate(`${problemIdInput}`)}
-          >
-            前往
-          </button>
-        </div>
-        <div className="space-x-2 mt-1">
-          <span>
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="标题"
-              value={problemNameInput}
-              onChange={(e) => setProblemNameInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                navigate(`?page=1&keyword=${problemNameInput}`)
-              }
-            />
-          </span>
-
-          <button
-            className="btn btn-primary"
-            onClick={() =>
-              navigate(`?page=${currentPage}&keyword=${problemNameInput}`)
-            }
-          >
-            搜索
-          </button>
-        </div>
-      </div>
 
       <table className="table table-compact w-full not-prose">
         <thead>
@@ -170,9 +107,9 @@ export default function ProblemSetIndex() {
       </table>
 
       <Pagination
-        currentPage={currentPage}
+        action={`/problemset/${problemSet.id}/problem`}
         totalPages={totalPages}
-        onPageChange={(page) => navigate(`?page=${page}`)}
+        currentPage={currentPage}
       />
     </>
   );

@@ -1,7 +1,7 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
+import { HiOutlineFilter } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
@@ -16,8 +16,6 @@ const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
-
-  console.log(url.searchParams);
 
   const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
   const pid = invariant(nullableIdScheme, url.searchParams.get("pid"));
@@ -75,77 +73,44 @@ export const meta: MetaFunction = () => ({
 export default function RecordList() {
   const { records, totalRecords, currentPage, uid, pid } =
     useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const totalPages = useMemo(
-    () => Math.ceil(totalRecords / pageSize),
-    [totalRecords]
-  );
-  const [recordIdInput, setRecordIdInput] = useState("");
-  const [userIdInput, setUserIdInput] = useState(uid || "");
-  const [problemIdInput, setProblemIdInput] = useState(pid || "");
+  const totalPages = Math.ceil(totalRecords / pageSize);
 
   return (
     <>
       <h1>评测记录</h1>
-      <div className="flex flex-row justify-between flex-wrap">
-        <div className="space-x-2 mt-1">
+
+      <Form
+        className="flex flex-row flex-wrap justify-between items-end gap-4"
+        method="get"
+        action="/record"
+      >
+        <div className="form-control flex-1">
+          <label className="label">
+            <span className="label-text">由用户</span>
+          </label>
           <input
             type="text"
             className="input input-bordered"
-            placeholder="记录 ID"
-            value={recordIdInput}
-            onChange={(e) => setRecordIdInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && navigate(`${recordIdInput}`)}
+            name="uid"
+            defaultValue={uid || ""}
           />
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate(`${recordIdInput}`)}
-          >
-            前往
-          </button>
         </div>
-        <div className="space-x-2 mt-1">
-          <span>
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="用户 ID"
-              value={userIdInput}
-              onChange={(e) => setUserIdInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                navigate(
-                  `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
-                )
-              }
-            />
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="题目 ID"
-              value={problemIdInput}
-              onChange={(e) => setProblemIdInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                navigate(
-                  `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
-                )
-              }
-            />
-          </span>
-
-          <button
-            className="btn btn-primary"
-            onClick={() =>
-              navigate(
-                `?page=${currentPage}&uid=${userIdInput}&pid=${problemIdInput}`
-              )
-            }
-          >
-            查询
-          </button>
+        <div className="form-control flex-1">
+          <label className="label">
+            <span className="label-text">由题目</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered"
+            name="pid"
+            defaultValue={pid || ""}
+          />
         </div>
-      </div>
+        <button className="btn btn-primary gap-2">
+          <HiOutlineFilter />
+          <span>过滤</span>
+        </button>
+      </Form>
       <table className="table table-compact w-full not-prose">
         <thead>
           <tr>
@@ -184,9 +149,9 @@ export default function RecordList() {
         </tbody>
       </table>
       <Pagination
-        currentPage={currentPage}
+        action={`/record?uid=${uid}&pid=${pid}`}
         totalPages={totalPages}
-        onPageChange={(page) => navigate(`?page=${page}`)}
+        currentPage={currentPage}
       />
     </>
   );
