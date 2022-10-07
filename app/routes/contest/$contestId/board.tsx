@@ -112,13 +112,10 @@ export default function RankView() {
       .map((user, index, array) => {
         if (!index) return user;
         const prev = array[index - 1];
-        return {
-          ...user,
-          rank:
-            prev.solved === user.solved && prev.penalty === user.penalty
-              ? prev.rank
-              : user.rank,
-        };
+        if (prev.solved === user.solved && prev.penalty === user.penalty) {
+          user.rank = prev.rank;
+        }
+        return user;
       });
 
     return [users];
