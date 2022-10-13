@@ -161,7 +161,7 @@ export default function RecordList() {
         </tbody>
       </table>
       <Pagination
-        action={`/record?uid=${uid || ""}&pid=${pid || ""}`}
+        action={`/record?uid=${uid || ""}&pid=${pid || ""}&cid=${cid || ""}`}
         totalPages={totalPages}
         currentPage={currentPage}
       />
