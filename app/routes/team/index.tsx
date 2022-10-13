@@ -7,6 +7,8 @@ import { HiOutlinePlus } from "react-icons/hi";
 import { invariant } from "~/utils/invariant";
 import { pageScheme } from "~/utils/scheme";
 import { Pagination } from "~/src/Pagination";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
@@ -15,6 +17,11 @@ export const meta: MetaFunction = () => ({
 const pageSize = 15;
 
 export async function loader({ request }: LoaderArgs) {
+  const self = await findRequestUser(request);
+  const [hasCreatePerm] = await self.hasPermission(
+    Permissions.PERM_TEAM_CREATE
+  );
+
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
 
@@ -29,21 +36,24 @@ export async function loader({ request }: LoaderArgs) {
     take: pageSize,
   });
 
-  return json({ teams, totalTeams, currentPage: page });
+  return json({ teams, totalTeams, currentPage: page, hasCreatePerm });
 }
 
 export default function TeamList() {
-  const { teams, totalTeams, currentPage } = useLoaderData<typeof loader>();
+  const { teams, totalTeams, currentPage, hasCreatePerm } =
+    useLoaderData<typeof loader>();
   const totalPages = Math.ceil(totalTeams / pageSize);
 
   return (
     <>
       <h1 className="flex justify-between items-center">
         <span>团队列表</span>
-        <Link className="btn btn-primary" to="new">
-          <HiOutlinePlus />
-          <span>新建团队</span>
-        </Link>
+        {hasCreatePerm && (
+          <Link className="btn btn-primary" to="new">
+            <HiOutlinePlus />
+            <span>新建团队</span>
+          </Link>
+        )}
       </h1>
 
       <table className="table table-compact w-full not-prose">

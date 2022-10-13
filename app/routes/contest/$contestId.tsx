@@ -166,6 +166,9 @@ export default function ContestView() {
         <NavLink className="tab" to="clarification">
           反馈
         </NavLink>
+        <NavLink className="tab" to={`/record?cid=${contest.id}`}>
+          提交记录
+        </NavLink>
       </p>
 
       <Outlet />

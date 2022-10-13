@@ -103,7 +103,7 @@ export const Permissions = {
   ),
 
   /** 创建团队的权限 */
-  PERM_TEAM_CREATE: UserPermission.Users,
+  PERM_TEAM_CREATE: UserPermission.Admins,
   /** 团队修改成员的角色 */
   PERM_TEAM_EDIT_MEMBER_ROLE: TeamPermission.Owners.with(UserPermission.Admins),
   /** 查看团队内部信息 */

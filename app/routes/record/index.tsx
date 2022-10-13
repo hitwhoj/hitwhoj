@@ -19,11 +19,12 @@ export async function loader({ request }: LoaderArgs) {
 
   const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
   const pid = invariant(nullableIdScheme, url.searchParams.get("pid"));
+  const cid = invariant(nullableIdScheme, url.searchParams.get("cid"));
 
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
   const totalRecords = await db.record.count({
     where: {
-      contest: null,
+      contestId: cid || null,
       submitterId: uid || undefined,
       problemId: pid || undefined,
     },
@@ -34,7 +35,7 @@ export async function loader({ request }: LoaderArgs) {
 
   const records = await db.record.findMany({
     where: {
-      contest: null,
+      contestId: cid || null,
       submitterId: uid || undefined,
       problemId: pid || undefined,
     },
@@ -61,7 +62,7 @@ export async function loader({ request }: LoaderArgs) {
   });
 
   return json(
-    { records, totalRecords, currentPage: page, uid, pid },
+    { records, totalRecords, currentPage: page, uid, pid, cid },
     { status: 200 }
   );
 }
@@ -71,7 +72,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function RecordList() {
-  const { records, totalRecords, currentPage, uid, pid } =
+  const { records, totalRecords, currentPage, uid, pid, cid } =
     useLoaderData<typeof loader>();
   const totalPages = Math.ceil(totalRecords / pageSize);
 
@@ -104,6 +105,17 @@ export default function RecordList() {
             className="input input-bordered"
             name="pid"
             defaultValue={pid || ""}
+          />
+        </div>
+        <div className="form-control flex-1">
+          <label className="label">
+            <span className="label-text">由比赛</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered"
+            name="cid"
+            defaultValue={cid || ""}
           />
         </div>
         <button className="btn btn-primary gap-2">
