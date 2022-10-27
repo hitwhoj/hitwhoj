@@ -54,6 +54,8 @@ export class ContestUser {
           return permission.contestant;
         case "Guest":
           return permission.guest;
+        default:
+          return false;
       }
     });
   }

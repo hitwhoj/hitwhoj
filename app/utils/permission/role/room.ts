@@ -58,6 +58,8 @@ export class ChatRoomUser {
           return permission.member;
         case "Guest":
           return permission.guest;
+        default:
+          return false;
       }
     });
   }

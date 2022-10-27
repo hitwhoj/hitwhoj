@@ -48,6 +48,8 @@ export class User {
           return perm.user;
         case "Guest":
           return perm.guest;
+        default:
+          return false;
       }
     });
   }
