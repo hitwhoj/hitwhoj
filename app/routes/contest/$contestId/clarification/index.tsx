@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const clarifications = await db.clarification.findMany({
     where: {
       contestId: contestId,
-      userId: canReply ? undefined : self.userId!,
+      userId: canReply ? undefined : self.userId ?? undefined,
     },
     orderBy: { createdAt: "desc" },
     select: {
