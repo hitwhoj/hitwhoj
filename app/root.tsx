@@ -24,12 +24,15 @@ import {
   HiOutlineBookOpen,
   HiOutlineChat,
   HiOutlineChevronDown,
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight,
   HiOutlineCollection,
   HiOutlineColorSwatch,
   HiOutlineHome,
   HiOutlineMenu,
   HiOutlineQuestionMarkCircle,
   HiOutlineUserGroup,
+  HiX,
 } from "react-icons/hi";
 import {
   AiOutlineHistory,
@@ -39,7 +42,7 @@ import {
   AiOutlineWechat,
 } from "react-icons/ai";
 import { FaTelegramPlane } from "react-icons/fa";
-import { SiElement, SiNiconico } from "react-icons/si";
+import { SiElement } from "react-icons/si";
 import { version } from "../package.json";
 
 import style from "./styles/app.css";
@@ -134,6 +137,30 @@ export default function App() {
       }
     }
   }, [isLogoutSubmit]);
+
+  const [adFooterShow, setAdFooterShow] = useState(true);
+  const [adAsideShow, setAdAsideShow] = useState(true);
+  const ads = [
+    {
+      title: "广告位招租",
+      content: "广告位滞销，救救我们😭",
+      image:
+        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+    },
+    {
+      title: "广告位1招租",
+      content: "广告位1滞销，救救我们😭",
+      image:
+        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+    },
+    {
+      title: "广告位2招租",
+      content: "广告位2滞销，救救我们😭",
+      image:
+        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+    },
+  ];
+  const [nowAd, setNowAd] = useState(0);
 
   return (
     <html lang="zh-Hans" data-theme={theme}>
@@ -252,27 +279,107 @@ export default function App() {
             </div>
             {/* 底部 */}
             <footer className="footer p-10 bg-neutral text-neutral-content">
+              {/* About */}
               <div>
-                <SiNiconico className="w-16 h-16" />
+                <span className="footer-title">About</span>
+                <a
+                  href="https://www.hitwh.edu.cn/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src="https://www.hitwh.edu.cn/_upload/tpl/00/e7/231/template231/images/logo.png"
+                    alt="hitwh"
+                    className="h-12"
+                  />
+                </a>
                 <p>
                   HITwh OJ Dev Team. Presents
                   <br />
                   Providing unstable service since 2022
                 </p>
               </div>
+              {/* Advertisement */}
+              {adFooterShow && (
+                <div>
+                  <span className="footer-title">
+                    Advertisement
+                    <button
+                      className="btn btn-circle btn-xs ml-3"
+                      onClick={() => setAdFooterShow(false)}
+                    >
+                      <HiX />
+                    </button>
+                  </span>
+                  <div className="card w-96 bg-base-100 text-base-content shadow-xl">
+                    <div className="card-body">
+                      <div className="carousel w-full p-4">
+                        {ads.map((ad, idx) => (
+                          <div
+                            key={idx}
+                            id={`${idx}`}
+                            className="carousel-item card card-side h-24 bg-base-200"
+                          >
+                            <figure>
+                              <img src={ad.image} alt="ad" className="h-24" />
+                            </figure>
+                            <div className="card-body">
+                              <div className="card-title">{ad.title}</div>
+                              <p>{ad.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="card-actions justify-end">
+                        {/* FIXME 跳转顺序奇怪 */}
+                        <a
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            setNowAd((nowAd - 1 + ads.length) % ads.length)
+                          }
+                          href={`#${(nowAd - 1 + ads.length) % ads.length}`}
+                        >
+                          <HiOutlineChevronLeft />
+                        </a>
+                        <a
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setNowAd((nowAd + 1) % ads.length);
+                          }}
+                          href={`#${(nowAd + 1) % ads.length}`}
+                        >
+                          <HiOutlineChevronRight />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Contact */}
               <div>
                 <span className="footer-title">Contact</span>
                 <div className="grid grid-flow-col gap-4">
-                  <span>
-                    <AiOutlineWechat className="w-6 h-6" />
-                  </span>
-                  <span>
+                  <a
+                    target="_blank"
+                    href="https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx"
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="加入QQ群: HITwh OJ 反馈×吹水"
+                    rel="noreferrer"
+                  >
                     <AiOutlineQq className="w-6 h-6" />
+                  </a>
+                  <span
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="很遗憾，我们并没有微信反馈群~"
+                  >
+                    <AiOutlineWechat className="w-6 h-6" />
                   </span>
                   <a
                     href="https://t.me/hitwhmoe"
                     target="_blank"
                     rel="noreferrer"
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="加入Telegram: hitwhmoe"
                   >
                     <FaTelegramPlane className="w-6 h-6" />
                   </a>
@@ -280,6 +387,8 @@ export default function App() {
                     href="https://matrix.to/#/#hitwh:mozilla.org"
                     target="_blank"
                     rel="noreferrer"
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="加入Matrix: #hitwh:mozilla.org"
                   >
                     <SiElement className="w-6 h-6" />
                   </a>
@@ -352,6 +461,28 @@ export default function App() {
                   </NavLink>
                 </li>
               </ul>
+              {/* Advertisement */}
+              {adAsideShow && (
+                <div className="card w-72 h-72 bg-base-100 text-base-content shadow-xl m-auto">
+                  <div className="card-body">
+                    <div className="flex justify-between content-center">
+                      <h2 className="card-title">至尊广告位招租</h2>
+                      <button
+                        className="btn btn-primary btn-circle btn-xs"
+                        onClick={() => setAdAsideShow(false)}
+                      >
+                        <HiX />
+                      </button>
+                    </div>
+                    <p>至尊广告位滞销，救救我们😭</p>
+                    <img
+                      src="https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0"
+                      alt="hitwh"
+                      className="h-24 w-24 m-auto"
+                    />
+                  </div>
+                </div>
+              )}
             </aside>
           </div>
         </div>
