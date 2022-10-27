@@ -10,6 +10,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useFetcher,
   useLoaderData,
 } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -19,6 +20,7 @@ import { selectUserData } from "./utils/db/user";
 import { UserContext } from "./utils/context/user";
 import { fromEventSource } from "./utils/eventSource";
 import {
+  HiLogout,
   HiOutlineBookOpen,
   HiOutlineChat,
   HiOutlineChevronDown,
@@ -50,6 +52,7 @@ import { MenuDrawerContext } from "./utils/context/menu";
 import { UserAvatar } from "./src/user/UserAvatar";
 import type { Toast } from "./utils/context/toast";
 import { ToastContext } from "./utils/context/toast";
+import type { ActionData } from "./routes/logout";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
@@ -118,6 +121,19 @@ export default function App() {
       return () => subscription.unsubscribe();
     }
   }, [user?.id]);
+
+  const fetcher = useFetcher<ActionData>();
+  const isLogoutSubmit =
+    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
+  useEffect(() => {
+    if (!isLogoutSubmit && fetcher.data) {
+      if (fetcher.data.success) {
+        success("退出登录成功");
+      } else {
+        error(fetcher.data.reason ?? "退出登录失败");
+      }
+    }
+  }, [isLogoutSubmit]);
 
   return (
     <html lang="zh-Hans" data-theme={theme}>
@@ -197,6 +213,12 @@ export default function App() {
                           <HiOutlineChat />
                           <span>聊天</span>
                         </Link>
+                      </li>
+                      <li>
+                        <fetcher.Form action="/logout" method="post">
+                          <HiLogout />
+                          <button type="submit">退出登录</button>
+                        </fetcher.Form>
                       </li>
                     </ul>
                   </div>
@@ -334,9 +356,18 @@ export default function App() {
           </div>
         </div>
         {toasts.length > 0 && (
-          <div className="toast toast-center toast-top w-full items-center">
+          <div
+            className="toast toast-center toast-top w-full items-center"
+            // 屏蔽外部盒子的点击事件
+            style={{ pointerEvents: "none" }}
+          >
             {toasts.map((toast, index) => (
-              <div className="max-w-sm" key={index}>
+              <div
+                className="max-w-sm"
+                key={index}
+                // 恢复内部元素的点击事件
+                style={{ pointerEvents: "auto" }}
+              >
                 <div className={`alert ${alertClassName[toast.type]}`}>
                   <span>{toast.message}</span>
                 </div>
