@@ -40,7 +40,8 @@ export default function Index() {
       genernateCharacter("paimon", "Paimon_emoji.png", SakanaWidget);
       genernateCharacter("chino", "Chino_emoji.png", SakanaWidget);
     });
-  });
+  }, []);
+
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>

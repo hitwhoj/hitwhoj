@@ -57,9 +57,14 @@ import type { Toast } from "./utils/context/toast";
 import { ToastContext } from "./utils/context/toast";
 import type { ActionData } from "./routes/logout";
 
+import adimg from "./assets/ad.jpg";
+import hitwh from "./assets/hitwh.png";
+
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
   { rel: "stylesheet", href: katexStyle },
+  { rel: "preload", href: adimg, as: "image" },
+  { rel: "preload", href: hitwh, as: "image" },
 ];
 
 export async function loader({ request }: LoaderArgs) {
@@ -139,28 +144,23 @@ export default function App() {
   }, [isLogoutSubmit]);
 
   const [adFooterShow, setAdFooterShow] = useState(true);
-  const [adAsideShow, setAdAsideShow] = useState(true);
   const ads = [
     {
-      title: "广告位招租",
+      title: "广告位0招租",
       content: "广告位滞销，救救我们😭",
-      image:
-        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+      image: adimg,
     },
     {
       title: "广告位1招租",
       content: "广告位1滞销，救救我们😭",
-      image:
-        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+      image: adimg,
     },
     {
       title: "广告位2招租",
       content: "广告位2滞销，救救我们😭",
-      image:
-        "https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0",
+      image: adimg,
     },
   ];
-  const [nowAd, setNowAd] = useState(0);
 
   return (
     <html lang="zh-Hans" data-theme={theme}>
@@ -287,10 +287,9 @@ export default function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img
-                    src="https://www.hitwh.edu.cn/_upload/tpl/00/e7/231/template231/images/logo.png"
-                    alt="hitwh"
-                    className="h-12"
+                  <div
+                    className="w-[221px] h-[48px] bg-neutral-content"
+                    style={{ mask: `url(${hitwh})`, maskSize: "cover" }}
                   />
                 </a>
                 <p>
@@ -300,61 +299,55 @@ export default function App() {
                 </p>
               </div>
               {/* Advertisement */}
-              {adFooterShow && (
-                <div>
-                  <span className="footer-title">
-                    Advertisement
-                    <button
-                      className="btn btn-circle btn-xs ml-3"
-                      onClick={() => setAdFooterShow(false)}
+              <div className={!adFooterShow ? "hidden" : "max-w-sm"}>
+                <span className="footer-title">
+                  Advertisement
+                  <button
+                    className="btn btn-circle btn-xs ml-3"
+                    onClick={() => setAdFooterShow(false)}
+                  >
+                    <HiX />
+                  </button>
+                </span>
+                <div className="carousel w-full">
+                  {ads.map((ad, idx) => (
+                    <div
+                      key={idx}
+                      id={`advertise-${idx}`}
+                      className="carousel-item card card-side w-full"
                     >
-                      <HiX />
-                    </button>
-                  </span>
-                  <div className="card w-96 bg-base-100 text-base-content shadow-xl">
-                    <div className="card-body">
-                      <div className="carousel w-full p-4">
-                        {ads.map((ad, idx) => (
-                          <div
-                            key={idx}
-                            id={`${idx}`}
-                            className="carousel-item card card-side h-24 bg-base-200"
+                      <figure>
+                        <img
+                          src={ad.image}
+                          alt="ad"
+                          className="h-24 w-24 cursor-pointer"
+                          onClick={() => info("您获得了「屠龙宝刀」*1")}
+                        />
+                      </figure>
+                      <div className="card-body">
+                        <div className="card-title">{ad.title}</div>
+                        <p>{ad.content}</p>
+                        <div className="card-actions justify-end">
+                          <a
+                            className="btn btn-sm btn-circle"
+                            href={`#advertise-${
+                              (idx - 1 + ads.length) % ads.length
+                            }`}
                           >
-                            <figure>
-                              <img src={ad.image} alt="ad" className="h-24" />
-                            </figure>
-                            <div className="card-body">
-                              <div className="card-title">{ad.title}</div>
-                              <p>{ad.content}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="card-actions justify-end">
-                        {/* FIXME 跳转顺序奇怪 */}
-                        <a
-                          className="btn btn-secondary btn-sm"
-                          onClick={() =>
-                            setNowAd((nowAd - 1 + ads.length) % ads.length)
-                          }
-                          href={`#${(nowAd - 1 + ads.length) % ads.length}`}
-                        >
-                          <HiOutlineChevronLeft />
-                        </a>
-                        <a
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setNowAd((nowAd + 1) % ads.length);
-                          }}
-                          href={`#${(nowAd + 1) % ads.length}`}
-                        >
-                          <HiOutlineChevronRight />
-                        </a>
+                            <HiOutlineChevronLeft />
+                          </a>
+                          <a
+                            className="btn btn-sm btn-circle"
+                            href={`#advertise-${(idx + 1) % ads.length}`}
+                          >
+                            <HiOutlineChevronRight />
+                          </a>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
               {/* Contact */}
               <div>
                 <span className="footer-title">Contact</span>
@@ -363,7 +356,7 @@ export default function App() {
                     target="_blank"
                     href="https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx"
                     className="tooltip tooltip-bottom tooltip-info"
-                    data-tip="加入QQ群: HITwh OJ 反馈×吹水"
+                    data-tip="HITwh OJ 反馈×吹水"
                     rel="noreferrer"
                   >
                     <AiOutlineQq className="w-6 h-6" />
@@ -379,7 +372,7 @@ export default function App() {
                     target="_blank"
                     rel="noreferrer"
                     className="tooltip tooltip-bottom tooltip-info"
-                    data-tip="加入Telegram: hitwhmoe"
+                    data-tip="@hitwhmoe"
                   >
                     <FaTelegramPlane className="w-6 h-6" />
                   </a>
@@ -388,7 +381,7 @@ export default function App() {
                     target="_blank"
                     rel="noreferrer"
                     className="tooltip tooltip-bottom tooltip-info"
-                    data-tip="加入Matrix: #hitwh:mozilla.org"
+                    data-tip="#hitwh:mozilla.org"
                   >
                     <SiElement className="w-6 h-6" />
                   </a>
@@ -399,7 +392,7 @@ export default function App() {
           {/* 左侧目录部分 */}
           <div className="drawer-side">
             <label htmlFor="drawer-menu" className="drawer-overlay" />
-            <aside className="w-80 h-full bg-base-200">
+            <aside className="w-80 h-full bg-base-200 flex flex-col">
               <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
                 <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
                   <span className="lowercase text-primary">hitwh</span>
@@ -414,7 +407,7 @@ export default function App() {
                   {version}
                 </a>
               </div>
-              <ul className="menu p-4 overflow-y-auto w-80 text-base-content">
+              <ul className="menu p-4 overflow-y-auto w-80 text-base-content flex-1">
                 <li>
                   <NavLink className="flex gap-4" to="/">
                     <HiOutlineHome className="w-6 h-6" />
@@ -461,28 +454,19 @@ export default function App() {
                   </NavLink>
                 </li>
               </ul>
-              {/* Advertisement */}
-              {adAsideShow && (
-                <div className="card w-72 h-72 bg-base-100 text-base-content shadow-xl m-auto">
-                  <div className="card-body">
-                    <div className="flex justify-between content-center">
-                      <h2 className="card-title">至尊广告位招租</h2>
-                      <button
-                        className="btn btn-primary btn-circle btn-xs"
-                        onClick={() => setAdAsideShow(false)}
-                      >
-                        <HiX />
-                      </button>
-                    </div>
-                    <p>至尊广告位滞销，救救我们😭</p>
-                    <img
-                      src="https://th.bing.com/th/id/R.b069d196526ac1ec0924016679b3cd37?rik=C707h6Fb%2fLdJuw&riu=http%3a%2f%2fwww.youqu5.net%2fd%2ffile%2f2019-08-09%2f7cdceb13f279bb8ad242804a212bb281.jpg&ehk=X8yIyJjf0NDc4A7V4VY2ThqUUJmjYvIm66s6HVxGMFA%3d&risl=&pid=ImgRaw&r=0"
-                      alt="hitwh"
-                      className="h-24 w-24 m-auto"
-                    />
-                  </div>
+              {/* Advertisement Premium */}
+              <div className="mockup-window bg-base-300 m-4">
+                <div className="px-4 pb-4">
+                  <h2 className="text-2xl font-bold">至尊广告位招租</h2>
+                  <p>至尊广告位滞销，救救我们😭</p>
+                  <img
+                    src={adimg}
+                    alt="advertise"
+                    className="h-24 w-24 m-auto cursor-pointer"
+                    onClick={() => info("您获得了「屠龙宝刀」*1")}
+                  />
                 </div>
-              )}
+              </div>
             </aside>
           </div>
         </div>
