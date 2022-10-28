@@ -1,6 +1,6 @@
 import { filter, Subject } from "rxjs";
 import WebSocket from "ws";
-import { recordUpdateSubject } from "~/utils/serverEvents";
+import { recordFinishSubject, recordUpdateSubject } from "~/utils/serverEvents";
 import { db } from "../db.server";
 import { s3 } from "../s3.server";
 import type {
@@ -145,11 +145,13 @@ export class Judge {
           this.status.occupied--;
 
           // 更新到数据库
-          await db.record.update({
+          const result = await db.record.update({
             where: { id: data.id },
             data: { status, score, message, time, memory, subtasks },
             select: { id: true },
           });
+          // 推送更新
+          recordFinishSubject.next(result.id);
         }
 
         // 推送到事件中心

@@ -1,7 +1,3 @@
-import Editor, {
-  loader as monacoLoader,
-  useMonaco,
-} from "@monaco-editor/react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
@@ -36,17 +32,15 @@ import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
 import type { MessageType } from "~/routes/record/$recordId/events";
+import { VscodeEditor } from "~/src/VscodeEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const rank =
-    invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
-    0x40;
+  const rank = invariant(problemRankScheme, params.rank, { status: 404 });
   const self = await findRequestUser(request);
   const status = await findContestStatus(contestId);
   await self
@@ -130,9 +124,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => ({
 
 export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-  const rank =
-    invariant(problemRankScheme, params.rank, { status: 404 }).charCodeAt(0) -
-    0x40;
+  const rank = invariant(problemRankScheme, params.rank, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   const status = await findContestStatus(contestId);
@@ -178,9 +170,6 @@ export async function action({ request, params }: ActionArgs) {
   return null;
 }
 
-// override monaco loader
-monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
-
 export default function ContestProblemView() {
   const {
     problem,
@@ -205,33 +194,15 @@ export default function ContestProblemView() {
     }
   }, [isActionReload]);
 
-  const monaco = useMonaco();
-  // 设置 monaco 主题
-  useEffect(() => {
-    if (monaco) {
-      const color = defaultThemeColor[theme];
-      monaco.editor.defineTheme(theme, {
-        base: darkThemes.includes(theme) ? "vs-dark" : "vs",
-        inherit: true,
-        rules: [],
-        colors: {
-          "editor.background": color.base100,
-          "editor.foreground": color.baseContent,
-          "editor.lineHighlightBackground": color.base200,
-        },
-      });
-      monaco.editor.setTheme(theme);
-    }
-  }, [monaco]);
-
   const [language, setLanguage] = useState("cpp");
   const [code, setCode] = useState(
     "#include <bits/stdc++.h>\n" +
+      "using namespace std;\n" +
       "\n" +
       "int main() {\n" +
       "  int a, b;\n" +
-      "  std::cin >> a >> b;\n" +
-      "  std::cout << a + b << std::endl;\n" +
+      "  cin >> a >> b;\n" +
+      "  cout << a + b << endl;\n" +
       "  return 0;\n" +
       "}\n"
   );
@@ -285,8 +256,6 @@ export default function ContestProblemView() {
       subscriptions.forEach((subscription) => subscription.unsubscribe());
     };
   }, [JSON.stringify(pending)]);
-
-  const theme = useContext(ThemeContext);
 
   return (
     <Fullscreen
@@ -346,20 +315,17 @@ export default function ContestProblemView() {
             )}
           </article>
         </div>
-        <Form method="post" className="flex flex-col">
-          <Editor
-            value={code}
+        <div className="flex flex-col">
+          <VscodeEditor
+            code={code}
             language={language}
-            theme={theme}
             onChange={(code) => setCode(code ?? "")}
-            options={{
-              cursorSmoothCaretAnimation: true,
-              smoothScrolling: true,
-              fontSize: 16,
-            }}
           />
-          <textarea name="code" hidden value={code} readOnly />
-          <div className="flex-shrink-0 flex justify-between p-2">
+          <Form
+            method="post"
+            className="flex-shrink-0 flex justify-between p-2"
+          >
+            <textarea name="code" hidden value={code} readOnly />
             <div>
               <select
                 className="select select-bordered"
@@ -397,8 +363,8 @@ export default function ContestProblemView() {
                 </Link>
               )}
             </div>
-          </div>
-        </Form>
+          </Form>
+        </div>
       </div>
       <div className="drawer-side">
         <label className="drawer-overlay" onClick={() => setVisible(false)} />

@@ -184,13 +184,17 @@ export default function App() {
       </head>
       <body className="font-sans relative">
         <div
-          className={`bg-base-100 drawer${menuEnable ? " drawer-mobile" : ""}`}
+          className={`bg-base-100 drawer ${menuEnable ? "drawer-mobile" : ""}`}
         >
           <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
           {/* 整个网站右边部分 */}
           <div className="drawer-content flex flex-col h-full">
             {/* 顶部导航栏 */}
-            <div className="sticky top-0 z-30 backdrop-blur">
+            <div
+              className={`sticky top-0 z-30 backdrop-blur transition-all ${
+                menuEnable ? "" : "-translate-y-full"
+              }`}
+            >
               <nav className="navbar w-full flex justify-end gap-4">
                 <div className="flex-1 flex gap-2 lg:hidden">
                   <label

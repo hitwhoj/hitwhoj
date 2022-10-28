@@ -6,8 +6,10 @@ import { db } from "~/utils/server/db.server";
 import { idScheme } from "~/utils/scheme";
 import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UserLink } from "~/src/user/UserLink";
+import { fromEventSource } from "~/utils/eventSource";
+import type { MessageType } from "./events";
 
 interface Problem {
   count: number;
@@ -21,6 +23,7 @@ export async function loader({ params }: LoaderArgs) {
   const contest = await db.contest.findUnique({
     where: { id: contestId },
     select: {
+      id: true,
       beginTime: true,
       problems: {
         orderBy: { rank: "asc" },
@@ -48,8 +51,17 @@ export async function loader({ params }: LoaderArgs) {
 export default function RankView() {
   const { contest } = useLoaderData<typeof loader>();
 
-  // TODO 推送更新榜单
-  const [records, _setRecords] = useState(contest.relatedRecords);
+  const [records, setRecords] = useState(contest.relatedRecords);
+
+  useEffect(() => {
+    const subscription = fromEventSource<MessageType>(
+      `/contest/${contest.id}/board/events`
+    ).subscribe((record) => {
+      setRecords((records) => [...records, record]);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const [users] = useMemo(() => {
     // contestant user data cache
@@ -58,7 +70,7 @@ export default function RankView() {
     const userMap = new Map<number, Map<number, Problem>>();
     const beginTime = new Date(contest.beginTime).getTime();
 
-    for (const record of contest.relatedRecords) {
+    for (const record of records) {
       const submittedAt = new Date(record.submittedAt).getTime();
       const penalty = Math.floor((submittedAt - beginTime) / 60_000);
 
