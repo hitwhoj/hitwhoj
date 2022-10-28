@@ -102,6 +102,14 @@ export default function App() {
   const [menuEnable, setMenuEnable] = useState(true);
 
   useEffect(() => {
+    // if did not set theme ever
+    if (!document.cookie.includes("theme=")) {
+      // and if system theme is dark
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        setTheme("dark");
+      }
+    }
+
     document.cookie = `theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax;`;
   }, [theme]);
 
@@ -182,7 +190,7 @@ export default function App() {
           {/* 整个网站右边部分 */}
           <div className="drawer-content flex flex-col h-full">
             {/* 顶部导航栏 */}
-            <div className="sticky top-0 bg-base-100 z-10">
+            <div className="sticky top-0 z-30 backdrop-blur">
               <nav className="navbar w-full flex justify-end gap-4">
                 <div className="flex-1 flex gap-2 lg:hidden">
                   <label
