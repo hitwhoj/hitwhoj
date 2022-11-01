@@ -301,7 +301,12 @@ export default function App() {
                 >
                   <div
                     className="w-[221px] h-[48px] bg-neutral-content"
-                    style={{ mask: `url(${hitwh})`, maskSize: "cover" }}
+                    style={{
+                      maskImage: `url(${hitwh})`,
+                      maskSize: "cover",
+                      WebkitMaskImage: `url(${hitwh})`,
+                      WebkitMaskSize: "cover",
+                    }}
                   />
                 </a>
                 <p>
