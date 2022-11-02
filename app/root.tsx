@@ -59,13 +59,18 @@ import type { ActionData } from "./routes/logout";
 
 import adimg from "./assets/ad.jpg";
 import hitwh from "./assets/hitwh.png";
+import qqgroup from "./assets/qq.svg";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
   { rel: "stylesheet", href: katexStyle },
   { rel: "preload", href: adimg, as: "image" },
   { rel: "preload", href: hitwh, as: "image" },
+  { rel: "preload", href: qqgroup, as: "image" },
 ];
+
+const qqlink =
+  "https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx";
 
 export async function loader({ request }: LoaderArgs) {
   let theme = getCookie(request, "theme") ?? "light";
@@ -371,7 +376,7 @@ export default function App() {
                 <div className="grid grid-flow-col gap-4">
                   <a
                     target="_blank"
-                    href="https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx"
+                    href={qqlink}
                     className="tooltip tooltip-bottom tooltip-info"
                     data-tip="HITwh OJ 反馈×吹水"
                     rel="noreferrer"
@@ -473,14 +478,21 @@ export default function App() {
               </ul>
               {/* Advertisement Premium */}
               <div className="mockup-window bg-base-300 m-4">
-                <div className="px-4 pb-4">
-                  <h2 className="text-2xl font-bold">至尊广告位招租</h2>
-                  <p>至尊广告位滞销，救救我们😭</p>
-                  <img
-                    src={adimg}
-                    alt="advertise"
-                    className="h-24 w-24 m-auto cursor-pointer"
-                    onClick={() => info("您获得了「屠龙宝刀」*1")}
+                <div className="px-4 pb-4 text-center">
+                  <h2 className="text-xl font-bold">HITwh OJ 反馈 QQ 群</h2>
+                  <p className="opacity-60">721141362</p>
+                  <a
+                    href={qqlink}
+                    title="HITwh OJ 反馈×吹水"
+                    className="w-64 h-64 bg-base-content block"
+                    target="_blank"
+                    style={{
+                      maskImage: `url(${qqgroup})`,
+                      maskSize: "cover",
+                      WebkitMaskImage: `url(${qqgroup})`,
+                      WebkitMaskSize: "cover",
+                    }}
+                    rel="noreferrer"
                   />
                 </div>
               </div>

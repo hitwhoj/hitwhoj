@@ -1,6 +1,12 @@
-import type { MetaFunction } from "@remix-run/node";
+import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { useEffect } from "react";
+
+import klee from "~/assets/klee.webp";
+
+export const links: LinksFunction = () => [
+  { rel: "preload", href: klee, as: "image" },
+];
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -74,6 +80,15 @@ export default function Index() {
           </div>
         </div>
       </div>
+
+      <a
+        href="https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues"
+        target="_blank"
+        title="Issue 滞销，帮帮我们"
+        rel="noreferrer"
+      >
+        <img src={klee} alt="hiring" />
+      </a>
     </>
   );
 }
