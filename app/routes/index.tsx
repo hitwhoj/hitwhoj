@@ -76,7 +76,7 @@ export default function Index() {
     <>
       <h1>Welcome to HITwh OJ</h1>
       <div className="w-full place-content-between grid grid-cols-8 md:grid-cols-12 gap-4">
-        <div className="h-72 col-span-8 shadow rounded-2xl bg-slate-100">
+        <div className="h-72 col-span-8 shadow rounded-2xl bg-base-200">
           <div className="card-body py-0">
             <h2 className="card-title">通知公告</h2>
             <p>
@@ -94,7 +94,7 @@ export default function Index() {
         </div>
         <div className="w-full col-span-8 md:col-span-4 grid grid-cols-2 gap-2 md:grid-cols-1">
           <div className="h-35 w-full">
-            <div className="stats shadow h-full w-full bg-slate-100">
+            <div className="stats shadow h-full w-full bg-base-200">
               <div className="stat">
                 <div className="stat-title">Today Date</div>
                 <div className="stat-value">
@@ -108,7 +108,7 @@ export default function Index() {
             </div>
           </div>
           <div className="h-35 w-full">
-            <div className="stats shadow h-full w-full bg-slate-100">
+            <div className="stats shadow h-full w-full bg-base-200">
               <div className="stat">
                 <div className="stat-title">快速跳题</div>
                 <Form className="flex w-full justify-between" method="post">
@@ -129,12 +129,12 @@ export default function Index() {
         </div>
       </div>
       <div className="w-full grid grid-cols-7 md:grid-cols-12 gap-4 my-6 place-content-between">
-        <div className="col-span-7 rounded-2xl p-4 shadow bg-slate-100">
+        <div className="col-span-7 rounded-2xl p-4 shadow bg-base-200">
           <h2 className="card-title mt-0 mb-2"> 近期比赛 </h2>
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
             {contests.map((contest) => (
               <Link
-                className="h-40 overflow-hidden inline-block border-2 border-gray-200 rounded-xl bg-white no-underline "
+                className="h-40 overflow-hidden inline-block border-2 border-gray-200 bg-base-100 rounded-xl no-underline "
                 key={contest.id}
                 to={`/contest/${contest.id}`}
               >
@@ -160,7 +160,7 @@ export default function Index() {
             ))}
           </div>
         </div>
-        <div className="h-96 col-span-7 md:col-span-5 p-4 rounded-2xl shadow bg-slate-100">
+        <div className="h-96 col-span-7 md:col-span-5 p-4 rounded-2xl shadow bg-base-200">
           <div className="card-body p-0 h-full w-full">
             <h2 className="card-title mt-0"> 推荐题目 </h2>
             <table className="table table-compact w-full not-prose">
