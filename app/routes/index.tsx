@@ -10,6 +10,7 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
+import { ContestStateTag } from "~/src/contest/ContestStateTag";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -74,8 +75,8 @@ export default function Index() {
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>
-      <div className="w-full h-72 flex place-content-between">
-        <div className="h-full w-4/6 rounded-2xl bg-slate-100">
+      <div className="w-full place-content-between grid grid-cols-8 md:grid-cols-12 gap-4">
+        <div className="h-72 col-span-8 shadow rounded-2xl bg-slate-100">
           <div className="card-body py-0">
             <h2 className="card-title">通知公告</h2>
             <p>
@@ -91,11 +92,8 @@ export default function Index() {
             </p>
           </div>
         </div>
-        <div
-          className="h-full flex flex-col justify-between"
-          style={{ width: "30%" }}
-        >
-          <div className="h-5/12 w-full">
+        <div className="w-full col-span-8 md:col-span-4 grid grid-cols-2 gap-2 md:grid-cols-1">
+          <div className="h-35 w-full">
             <div className="stats shadow h-full w-full bg-slate-100">
               <div className="stat">
                 <div className="stat-title">Today Date</div>
@@ -109,7 +107,7 @@ export default function Index() {
               </div>
             </div>
           </div>
-          <div className="h-1/2 w-full">
+          <div className="h-35 w-full">
             <div className="stats shadow h-full w-full bg-slate-100">
               <div className="stat">
                 <div className="stat-title">快速跳题</div>
@@ -130,40 +128,39 @@ export default function Index() {
           </div>
         </div>
       </div>
-      <div className="w-full h-96 flex place-content-between mt-6">
-        <div className="h-full w-7/12 rounded-2xl p-4 bg-slate-100">
+      <div className="w-full grid grid-cols-7 md:grid-cols-12 gap-4 my-6 place-content-between">
+        <div className="col-span-7 rounded-2xl p-4 shadow bg-slate-100">
           <h2 className="card-title mt-0 mb-2"> 近期比赛 </h2>
-          <div className="h-full w-full">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
             {contests.map((contest) => (
-              <>
-                <div className="h-40 w-60 overflow-hidden inline-block border-2 border-gray-200 rounded-xl bg-white">
-                  <div className="w-full border-b-2 px-2">
-                    <span className="text-lg font-bold mr-2">
-                      {contest.title}
-                    </span>
-                    <ContestSystemTag system={contest.system} />
+              <Link
+                className="h-40 overflow-hidden inline-block border-2 border-gray-200 rounded-xl bg-white no-underline "
+                key={contest.id}
+                to={`/contest/${contest.id}`}
+              >
+                <div className="w-full border-b-2 pl-4 py-1 flex items-center">
+                  <span className="text-lg font-bold mr-2">
+                    {contest.title}
+                  </span>
+                  <ContestStateTag
+                    beginTime={contest.beginTime}
+                    endTime={contest.endTime}
+                  />
+                </div>
+                <div className="w-full p-2">
+                  <div>
+                    Begin: {new Date(contest.beginTime).toLocaleString()}
                   </div>
-                  <div className="w-full p-2">
-                    <div>
-                      Begin: {new Date(contest.beginTime).toLocaleString()}
-                    </div>
-                    <div>End: {new Date(contest.endTime).toLocaleString()}</div>
-                    <Link
-                      to={`/contest/${contest.id}`}
-                      className="btn btn-primary w-full mt-2"
-                    >
-                      进入
-                    </Link>
+                  <div>End: {new Date(contest.endTime).toLocaleString()}</div>
+                  <div>
+                    System: <ContestSystemTag system={contest.system} />
                   </div>
                 </div>
-              </>
+              </Link>
             ))}
           </div>
         </div>
-        <div
-          className="h-full p-4 rounded-2xl bg-slate-100"
-          style={{ width: "37.5%" }}
-        >
+        <div className="h-96 col-span-7 md:col-span-5 p-4 rounded-2xl shadow bg-slate-100">
           <div className="card-body p-0 h-full w-full">
             <h2 className="card-title mt-0"> 推荐题目 </h2>
             <table className="table table-compact w-full not-prose">
