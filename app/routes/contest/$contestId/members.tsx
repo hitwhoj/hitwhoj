@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -9,10 +9,11 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
-import { UserAvatar } from "~/src/user/UserAvatar";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
+import { UserLink } from "~/src/user/UserLink";
+import { selectUserData } from "~/utils/db/user";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -28,14 +29,7 @@ export async function loader({ request, params }: LoaderArgs) {
       contestId,
     },
     select: {
-      user: {
-        select: {
-          id: true,
-          username: true,
-          avatar: true,
-          nickname: true,
-        },
-      },
+      user: { select: selectUserData },
       role: true,
     },
   });
@@ -120,8 +114,9 @@ function DeleteMember({ id }: { id: number }) {
         name="_action"
         value={ActionType.DeleteMember}
         disabled={isLoading}
+        className="btn btn-square btn-sm btn-error"
       >
-        <HiOutlineLogout className="w-6 h-6" />
+        <HiOutlineLogout />
       </button>
     </fetcher.Form>
   );
@@ -156,9 +151,9 @@ function SetMemberRole({
     <fetcher.Form method="post" className="dropdown dropdown-hover">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
-      <label tabIndex={0} className="hover:cursor-pointer">
-        <HiOutlineCog className="w-6 h-6" />
-      </label>
+      <span className="btn btn-square btn-sm">
+        <HiOutlineCog />
+      </span>
       <ul className="dropdown-content shadow-2xl menu p-2 bg-base-300 w-72 rounded-box">
         <li className={isJury ? "disabled" : ""}>
           <button
@@ -185,17 +180,24 @@ function SetMemberRole({
   );
 }
 
-const roleTranslation = {
-  [ContestParticipantRole.Mod]: "管理员",
-  [ContestParticipantRole.Jury]: "裁判",
-  [ContestParticipantRole.Contestant]: "参赛选手",
-};
-
 export default function ContestMembers() {
   const { members } = useLoaderData<typeof loader>();
 
+  const sortMembers = useMemo(() => {
+    const mods = members.filter(
+      ({ role }) => role === ContestParticipantRole.Mod
+    );
+    const juries = members.filter(
+      ({ role }) => role === ContestParticipantRole.Jury
+    );
+    const contestants = members.filter(
+      ({ role }) => role === ContestParticipantRole.Contestant
+    );
+    return [...mods, ...juries, ...contestants];
+  }, [members]);
+
   return (
-    <table className="table w-full not-prose">
+    <table className="table table-compact w-full not-prose">
       <thead>
         <tr>
           <th>成员</th>
@@ -204,35 +206,32 @@ export default function ContestMembers() {
         </tr>
       </thead>
       <tbody>
-        {members.map(
-          ({ user: { id: userId, username, nickname, avatar }, role }) => {
-            return (
-              <tr key={userId}>
-                <td>
-                  <Link
-                    className="inline-flex gap-4 items-center"
-                    to={`/user/${userId}`}
-                  >
-                    <UserAvatar
-                      user={{ username, avatar, nickname }}
-                      className="w-8 h-8 text-lg bg-base-200"
-                    />
-                    <span className="link">{nickname}</span>
-                  </Link>
-                </td>
-                <td>{roleTranslation[role]}</td>
-                {role != ContestParticipantRole.Mod ? (
-                  <td className="space-x-3">
-                    <SetMemberRole id={userId} role={role} />
-                    <DeleteMember id={userId} />
-                  </td>
+        {sortMembers.map(({ user, role }) => {
+          return (
+            <tr key={user.id}>
+              <td>
+                <UserLink user={user} />
+              </td>
+              <td>
+                {role === ContestParticipantRole.Mod ? (
+                  <span className="badge badge-primary">管理员</span>
+                ) : role === ContestParticipantRole.Jury ? (
+                  <span className="badge badge-secondary">裁判</span>
                 ) : (
-                  <td />
+                  <span className="badge">参赛选手</span>
                 )}
-              </tr>
-            );
-          }
-        )}
+              </td>
+              {role != ContestParticipantRole.Mod ? (
+                <td className="space-x-3">
+                  <SetMemberRole id={user.id} role={role} />
+                  <DeleteMember id={user.id} />
+                </td>
+              ) : (
+                <td>-</td>
+              )}
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

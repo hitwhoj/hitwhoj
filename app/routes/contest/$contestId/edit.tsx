@@ -276,7 +276,6 @@ export default function ContestEdit() {
   const [registrationType, setRegistrationType] = useState(
     contest.registrationType
   );
-  console.log(registrationType, contest.registrationType);
   const [tags, setTags] = useState(contest.tags.map(({ name }) => name));
   const [tag, setTag] = useState("");
 

@@ -19,11 +19,7 @@ import {
   findContestStatus,
   findContestTeam,
 } from "~/utils/db/contest";
-import {
-  HiOutlineBookOpen,
-  HiOutlineClock,
-  HiOutlineUserGroup,
-} from "react-icons/hi";
+import { HiOutlineBookOpen, HiOutlineClock } from "react-icons/hi";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -87,7 +83,7 @@ export default function ContestIndex() {
 
   return (
     <>
-      <div className="stats w-full">
+      <div className="stats w-full bg-base-200 text-base-content">
         <div className="stat">
           <div className="stat-figure text-secondary">
             <HiOutlineClock className="w-8 h-8" />
@@ -122,15 +118,6 @@ export default function ContestIndex() {
             {formatNumber(contest._count.problems)}
           </div>
           <div className="stat-desc">这里可以说什么</div>
-        </div>
-
-        <div className="stat">
-          <div className="stat-figure text-secondary">
-            <HiOutlineUserGroup className="w-8 h-8" />
-          </div>
-          <div className="stat-title">报名人数</div>
-          <div className="stat-value">{formatNumber(114514)}</div>
-          <div className="stat-desc">这个数字是假的</div>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
 import type { LoaderData } from "~/routes/problem/data";
 import { ToastContext } from "~/utils/context/toast";
@@ -21,7 +21,6 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   useEffect(() => {
     if (isActionReload) {
       Toasts.success("更新成功");
-      setSelected(0);
       setFilter("");
     }
   }, [isActionReload]);
@@ -38,16 +37,27 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   }, []);
 
   const [filter, setFilter] = useState("");
-  const [selected, setSelected] = useState(0);
 
-  const placeholder = problems
-    .filter(({ id }) => !props.existProblem.includes(id))
-    .filter(
-      (problem) =>
-        `${problem.id} - ${problem.title}`.includes(filter) ||
-        problem.tags.some((tag) => tag.name.includes(filter))
-    )
-    .slice(0, 10);
+  const available = useMemo(() => {
+    return problems.filter(({ id }) => !props.existProblem.includes(id));
+  }, [problems]);
+
+  const datalist = useMemo(() => {
+    return available.filter(
+      ({ title, tags, id }) =>
+        id.toString().includes(filter) ||
+        title.includes(filter) ||
+        tags.some(({ name }) => name.includes(filter))
+    );
+  }, [available, filter]);
+
+  const selected = useMemo(() => {
+    const index = filter.indexOf(".");
+    if (index === -1) return 0;
+    const id = parseInt(filter.slice(0, index));
+    if (!available.some((p) => p.id === id)) return 0;
+    return id;
+  }, [filter]);
 
   return (
     <fetcher.Form method="post" className="inline-flex not-prose gap-4">
@@ -57,41 +67,23 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
           <input
             className="input input-bordered"
             placeholder="搜索题目..."
+            list="search-problem"
             value={filter}
             disabled={isLoading}
             onChange={(event) => setFilter(event.target.value)}
           />
-          <ul
-            tabIndex={0}
-            className="dropdown-content menu p-4 bg-base-100 shadow-2xl rounded-box"
-          >
-            {placeholder.length > 0 ? (
-              placeholder.map((problem) => (
-                <li
-                  key={problem.id}
-                  onClick={() => {
-                    setSelected(problem.id);
-                    setFilter(`${problem.id} - ${problem.title}`);
-                  }}
-                >
-                  <span className="bg-base-100 hover:bg-base-200">
-                    {problem.id} - {problem.title}
-                  </span>
-                </li>
-              ))
-            ) : (
-              <li className="disabled">
-                <span className="bg-base-100">无结果</span>
-              </li>
-            )}
-          </ul>
+          <datalist id="search-problem">
+            {datalist.map(({ id, title }) => (
+              <option key={id} value={`${id}. ${title}`} />
+            ))}
+          </datalist>
         </div>
         <button
           className="btn gap-2"
           type="submit"
           name="_action"
           value={props.createAction}
-          disabled={isLoading}
+          disabled={isLoading || !selected}
         >
           <HiOutlinePlus />
           添加
