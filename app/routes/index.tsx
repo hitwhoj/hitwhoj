@@ -77,9 +77,9 @@ export default function Index() {
       <h1>Welcome to HITwh OJ</h1>
       <div className="w-full place-content-between grid grid-cols-8 md:grid-cols-12 gap-4">
         <div className="h-72 col-span-8 shadow rounded-2xl bg-base-200">
-          <div className="card-body py-0">
+          <div className="card-body py-0 h-full w-full">
             <h2 className="card-title">通知公告</h2>
-            <p>
+            <p className="flex items-center">
               欢迎加入HITwh OJ 反馈 QQ 群：
               <a href={qqlink} target="_blank">
                 721141362
@@ -91,17 +91,34 @@ export default function Index() {
               </a>
             </p>
           </div>
+          {/* 这里是padding与下面题目、比赛一致的代码 */}
+          {/* <div className="w-full h-full rounded-2xl card-body p-4 shadow bg-base-200">
+            <h2 className="card-title mt-0 mb-2"> 通知公告 </h2>
+            <div className="h-full w-full flex flex-col justify-around">
+              <p className="flex items-center">
+                欢迎加入HITwh OJ 反馈 QQ 群：
+                <a href={qqlink} target="_blank">
+                  721141362
+                </a>
+              </p>
+              <p className="flex items-center">
+                <a href={issuelink} target="_blank">
+                  Issue滞销，帮帮我们
+                </a>
+              </p>
+            </div>
+          </div> */}
         </div>
         <div className="w-full col-span-8 md:col-span-4 grid grid-cols-2 gap-2 md:grid-cols-1">
           <div className="h-35 w-full">
             <div className="stats shadow h-full w-full bg-base-200">
               <div className="stat">
-                <div className="stat-title">Today Date</div>
-                <div className="stat-value">
+                <div className="stat-title">Calendar</div>
+                <div className="stat-value text-2xl">
                   {" "}
                   {new Date().toLocaleDateString()}{" "}
                 </div>
-                <div className="stat-title">
+                <div className="stat-title font-bold text-base-content">
                   {new Date().toLocaleDateString("en-US", { weekday: "long" })}
                 </div>
               </div>
