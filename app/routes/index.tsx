@@ -11,6 +11,7 @@ import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
+import { formatDateTime, formatDurationTime } from "~/utils/tools";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -18,10 +19,8 @@ export const meta: MetaFunction = () => ({
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
-  const problemIdInput = invariant(idScheme, form.get("problemIdInput"));
-  console.log(problemIdInput);
-
-  return redirect(`/problem/${problemIdInput}`);
+  const pid = invariant(idScheme, form.get("pid"));
+  return redirect(`/problem/${pid}`);
 }
 
 const problemPageSize = 7;
@@ -64,126 +63,111 @@ export async function loader({ request }: LoaderArgs) {
   return json({ problems, contests });
 }
 
+const QQ_LINK =
+  "https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx";
+const ISSUE_LINK = "https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues";
+
 export default function Index() {
   const { problems, contests } = useLoaderData<typeof loader>();
-
-  const qqlink =
-    "https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx";
-
-  const issuelink = "https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues";
 
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>
-      <div className="w-full place-content-between grid grid-cols-8 md:grid-cols-12 gap-4">
-        <div className="h-72 col-span-8 shadow rounded-2xl bg-base-200">
-          <div className="card-body py-0 h-full w-full">
+      <div className="place-content-between grid grid-cols-8 md:grid-cols-12 gap-4 not-prose">
+        <div className="card col-span-8 row-span-2 bg-base-200">
+          <div className="card-body">
             <h2 className="card-title">通知公告</h2>
             <p className="flex items-center">
-              欢迎加入HITwh OJ 反馈 QQ 群：
-              <a href={qqlink} target="_blank">
+              欢迎加入 HITwh OJ 反馈 QQ 群：
+              <a
+                className="underline"
+                href={QQ_LINK}
+                target="_blank"
+                rel="noreferrer"
+              >
                 721141362
               </a>
             </p>
             <p>
-              <a href={issuelink} target="_blank">
-                Issue滞销，帮帮我们
+              <a
+                className="underline"
+                href={ISSUE_LINK}
+                target="_blank"
+                rel="noreferrer"
+              >
+                如果您发现有什么 BUG，可以在这里提交 issue
               </a>
             </p>
           </div>
-          {/* 这里是padding与下面题目、比赛一致的代码 */}
-          {/* <div className="w-full h-full rounded-2xl card-body p-4 shadow bg-base-200">
-            <h2 className="card-title mt-0 mb-2"> 通知公告 </h2>
-            <div className="h-full w-full flex flex-col justify-around">
-              <p className="flex items-center">
-                欢迎加入HITwh OJ 反馈 QQ 群：
-                <a href={qqlink} target="_blank">
-                  721141362
-                </a>
-              </p>
-              <p className="flex items-center">
-                <a href={issuelink} target="_blank">
-                  Issue滞销，帮帮我们
-                </a>
-              </p>
-            </div>
-          </div> */}
         </div>
-        <div className="w-full col-span-8 md:col-span-4 grid grid-cols-2 gap-2 md:grid-cols-1">
-          <div className="h-35 w-full">
-            <div className="stats shadow h-full w-full bg-base-200">
-              <div className="stat">
-                <div className="stat-title">Calendar</div>
-                <div className="stat-value text-2xl">
-                  {" "}
-                  {new Date().toLocaleDateString()}{" "}
-                </div>
-                <div className="stat-title font-bold text-base-content">
-                  {new Date().toLocaleDateString("en-US", { weekday: "long" })}
-                </div>
-              </div>
+        <div className="stats col-span-4 bg-base-200">
+          <div className="stat">
+            <div className="stat-title">今天</div>
+            <div className="stat-value">
+              {new Date().toLocaleDateString("zh-CN")}
             </div>
-          </div>
-          <div className="h-35 w-full">
-            <div className="stats shadow h-full w-full bg-base-200">
-              <div className="stat">
-                <div className="stat-title">快速跳题</div>
-                <Form className="flex w-full justify-between" method="post">
-                  <input
-                    className="input input-bordered w-7/12"
-                    type="text"
-                    name="problemIdInput"
-                    required
-                    placeholder="Input pid"
-                  />
-                  <button className="btn btn-primary w-1/3" type="submit">
-                    跳转
-                  </button>
-                </Form>
-              </div>
+            <div className="stat-desc">
+              {new Date().toLocaleDateString("zh-CN", { weekday: "long" })}
             </div>
           </div>
         </div>
-      </div>
-      <div className="w-full grid grid-cols-7 md:grid-cols-12 gap-4 my-6 place-content-between">
-        <div className="col-span-7 rounded-2xl p-4 shadow bg-base-200">
-          <h2 className="card-title mt-0 mb-2"> 近期比赛 </h2>
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-            {contests.map((contest) => (
-              <Link
-                className="h-40 overflow-hidden inline-block border-2 border-gray-200 bg-base-100 rounded-xl no-underline "
-                key={contest.id}
-                to={`/contest/${contest.id}`}
-              >
-                <div className="w-full border-b-2 pl-4 py-1 flex items-center">
-                  <span className="text-lg font-bold mr-2">
-                    {contest.title}
-                  </span>
-                  <ContestStateTag
-                    beginTime={contest.beginTime}
-                    endTime={contest.endTime}
-                  />
-                </div>
-                <div className="w-full p-2">
-                  <div>
-                    Begin: {new Date(contest.beginTime).toLocaleString()}
+        <div className="stats col-span-4 bg-base-200">
+          <div className="stat">
+            <div className="stat-title">快速跳题</div>
+            <Form className="input-group" method="post">
+              <input
+                className="input input-bordered input-sm w-2/3"
+                type="text"
+                name="pid"
+                required
+                placeholder="请输入题目编号"
+              />
+              <button className="btn btn-primary btn-sm w-1/3" type="submit">
+                跳转
+              </button>
+            </Form>
+          </div>
+        </div>
+        <div className="card col-span-6 bg-base-200">
+          <div className="card-body">
+            <h2 className="card-title">近期比赛</h2>
+            <div className="flex flex-col gap-4">
+              {contests.map((contest) => (
+                <Link
+                  className="card bg-base-100"
+                  key={contest.id}
+                  to={`/contest/${contest.id}`}
+                >
+                  <div className="card-body">
+                    <h2 className="card-title">
+                      {contest.title}
+                      <ContestStateTag
+                        beginTime={contest.beginTime}
+                        endTime={contest.endTime}
+                      />
+                      <ContestSystemTag system={contest.system} />
+                    </h2>
+                    <p>
+                      开始时间：{formatDateTime(contest.beginTime)}
+                      <br />
+                      比赛时长：
+                      {formatDurationTime(
+                        new Date(contest.endTime).getTime() -
+                          new Date(contest.beginTime).getTime()
+                      )}
+                    </p>
                   </div>
-                  <div>End: {new Date(contest.endTime).toLocaleString()}</div>
-                  <div>
-                    System: <ContestSystemTag system={contest.system} />
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="h-96 col-span-7 md:col-span-5 p-4 rounded-2xl shadow bg-base-200">
-          <div className="card-body p-0 h-full w-full">
-            <h2 className="card-title mt-0"> 推荐题目 </h2>
-            <table className="table table-compact w-full not-prose">
+        <div className="card col-span-6 bg-base-200">
+          <div className="card-body">
+            <h2 className="card-title">推荐题目</h2>
+            <table className="table table-compact">
               <thead>
                 <tr>
-                  <th>pid</th>
                   <th>题目</th>
                   <th>提交数</th>
                 </tr>
@@ -191,7 +175,6 @@ export default function Index() {
               <tbody>
                 {problems.map((problem) => (
                   <tr key={problem.id}>
-                    <th className="text-center">{problem.id}</th>
                     <td>
                       <ProblemLink problem={problem} />
                     </td>
