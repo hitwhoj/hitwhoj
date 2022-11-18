@@ -36,9 +36,9 @@ export async function loader({ request }: LoaderArgs) {
     .contest(null)
     .hasPermission(Permissions.PERM_VIEW_CONTEST_PUBLIC);
 
+  // TODO: 这里的推荐算法非常暴力，需要优化
   const problems = await db.problem.findMany({
     where: viewPublicProblems ? { team: null, private: false } : { id: -1 },
-    // TODO: order by recent commit count
     orderBy: [{ id: "asc" }],
     select: {
       ...selectProblemListData,
