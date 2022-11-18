@@ -476,26 +476,6 @@ export default function App() {
                   </NavLink>
                 </li>
               </ul>
-              {/* Advertisement Premium */}
-              <div className="mockup-window bg-base-300 m-4">
-                <div className="px-4 pb-4 text-center">
-                  <h2 className="text-xl font-bold">HITwh OJ 反馈 QQ 群</h2>
-                  <p className="opacity-60">721141362</p>
-                  <a
-                    href={qqlink}
-                    title="HITwh OJ 反馈×吹水"
-                    className="w-64 h-64 bg-base-content block"
-                    target="_blank"
-                    style={{
-                      maskImage: `url(${qqgroup})`,
-                      maskSize: "cover",
-                      WebkitMaskImage: `url(${qqgroup})`,
-                      WebkitMaskSize: "cover",
-                    }}
-                    rel="noreferrer"
-                  />
-                </div>
-              </div>
             </aside>
           </div>
         </div>
