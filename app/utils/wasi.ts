@@ -42,6 +42,7 @@ interface WapmConfig {
 
 const CLANG_PACKAGE_URL = "/wapm/clang-0.1.0.tar";
 const RUNNO_PACKAGE_URL = "/wapm/runno-clang-0.1.2.tar";
+const PYTHON_PACKAGE_URL = "/wapm/python-0.1.0.tar";
 
 const wasmfs = new WasmFs();
 wasmfs.volume.mkdirSync("/sandbox");
@@ -66,6 +67,10 @@ async function extractContents(url: string) {
     if (file.type === "5") {
       wasmfs.volume.mkdirpSync(filepath);
     } else if (file.type === "0") {
+      // fix for python-0.1.0.tar
+      wasmfs.volume.mkdirpSync(
+        filepath.substring(0, filepath.lastIndexOf("/"))
+      );
       wasmfs.volume.writeFileSync(filepath, new Uint8Array(file.buffer));
     } else {
       throw new Error("unexpected file");
@@ -218,6 +223,18 @@ async function runCppCode(code: string, stdin: string) {
   else return program.stdout;
 }
 
-async function runPythonCode(_code: string, _input: string) {
-  return "unimplemented";
+async function runPythonCode(code: string, stdin: string) {
+  await preload(PYTHON_PACKAGE_URL);
+
+  wasmfs.volume.writeFileSync("/sandbox/main.py", code);
+
+  const { exit, stdout } = await runCommand(
+    "python ./main.py",
+    // I don't know why it must need a \n in trailing
+    // but don't worry, everything just get to work
+    stdin + "\n"
+  );
+
+  if (exit) return `${stdout}\nProgram exited with code ${exit}`.trim();
+  else return stdout;
 }

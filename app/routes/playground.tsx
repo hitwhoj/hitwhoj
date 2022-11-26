@@ -18,6 +18,24 @@ int main() {
   const [runCode, setRunCode] = useState<RunCode>(async () => "Loading...");
   const [language, setLanguage] = useState("cpp");
 
+  useEffect(() => {
+    const code = localStorage.getItem("playground.code");
+    if (typeof code === "string") {
+      setCode(code);
+    }
+    const language = localStorage.getItem("playground.language");
+    if (typeof language === "string") {
+      setLanguage(language);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("playground.code", code);
+  }, [code]);
+  useEffect(() => {
+    localStorage.setItem("playground.language", language);
+  }, [language]);
+
   // lazyload
   useEffect(() => {
     import("~/utils/wasi").then(({ runCode }) => {
