@@ -106,7 +106,6 @@ async function preload(url: string) {
 }
 
 async function runModule(
-  wasmfs: WasmFs,
   module: WebAssembly.Module,
   preopens: Record<string, string>,
   args: string[],
@@ -160,23 +159,36 @@ async function runModule(
   return { exit, stdout, stderr };
 }
 
-async function runCommand(wasmfs: WasmFs, command: string, stdin: string = "") {
+async function runCommand(command: string, stdin: string = "") {
   const args = command.split(" ");
   const { module, preopens } = commands.get(args[0])!;
-  return await runModule(wasmfs, module, preopens, args, stdin);
+  return await runModule(module, preopens, args, stdin);
 }
 
-async function runCCode(code: string, _input: string) {
+async function runCCode(code: string, stdin: string) {
   await preload(CLANG_PACKAGE_URL);
 
   wasmfs.volume.writeFileSync("/sandbox/main.c", code);
 
-  await runCommand(
-    wasmfs,
-    "clang -cc1 -triple wasm32-unkown-wasi -isysroot /sys -internal-isystem /sys/include -emit-obj -o ./main.o ./main.c"
-  );
+  for (const command of [
+    "clang -cc1 -Werror -triple wasm32-unkown-wasi -isysroot /sys -internal-isystem /sys/include -emit-obj -o ./main.o ./main.c",
 
-  return "unimplemented";
+    "wasm-ld -L/sys/lib/wasm32-wasi /sys/lib/wasm32-wasi/crt1.o ./main.o -lc -o ./main.wasm",
+  ]) {
+    const { exit, stderr } = await runCommand(command);
+    if (exit !== 0) {
+      return stderr || `Program exited with code ${exit}`;
+    }
+  }
+
+  const wasm = wasmfs.volume.readFileSync("/sandbox/main.wasm") as Uint8Array;
+  const module = await WebAssembly.compile(await lowerI64Imports(wasm));
+
+  const program = await runModule(module, {}, ["/sandbox/main.wasm"], stdin);
+
+  if (program.exit)
+    return `${program.stdout}\nProgram exited with code ${program.exit}`.trim();
+  else return program.stdout;
 }
 
 async function runCppCode(code: string, stdin: string) {
@@ -185,10 +197,10 @@ async function runCppCode(code: string, stdin: string) {
   wasmfs.volume.writeFileSync("/sandbox/program.cpp", code);
 
   for (const command of [
-    "runno-clang -cc1 -Werror -emit-obj -disable-free -isysroot /sys -internal-isystem /sys/include/c++/v1 -internal-isystem /sys/include -internal-isystem /sys/lib/clang/8.0.1/include -ferror-limit 4 -fmessage-length 80 -O2 -o ./program.o -x c++ ./program.cpp -v",
+    "runno-clang -cc1 -Werror -emit-obj -disable-free -isysroot /sys -internal-isystem /sys/include/c++/v1 -internal-isystem /sys/include -internal-isystem /sys/lib/clang/8.0.1/include -ferror-limit 4 -fmessage-length 80 -O2 -o ./program.o -x c++ ./program.cpp",
     "runno-wasm-ld --no-threads --export-dynamic -z stack-size=1048576 -L/sys/lib/wasm32-wasi /sys/lib/wasm32-wasi/crt1.o ./program.o -lc -lc++ -lc++abi -o ./program.wasm",
   ]) {
-    const { exit, stderr } = await runCommand(wasmfs, command);
+    const { exit, stderr } = await runCommand(command);
     if (exit !== 0) {
       return stderr || `Program exited with code ${exit}`;
     }
@@ -199,16 +211,10 @@ async function runCppCode(code: string, stdin: string) {
   ) as Uint8Array;
   const module = await WebAssembly.compile(await lowerI64Imports(wasm));
 
-  const program = await runModule(
-    wasmfs,
-    module,
-    {},
-    ["/sandbox/program.wasm"],
-    stdin
-  );
+  const program = await runModule(module, {}, ["/sandbox/program.wasm"], stdin);
 
   if (program.exit)
-    return `${program.stdout}\nprogram exited with code ${program.exit}`.trim();
+    return `${program.stdout}\nProgram exited with code ${program.exit}`.trim();
   else return program.stdout;
 }
 

@@ -16,6 +16,7 @@ int main() {
   const [stdin, setStdin] = useState("114 514");
   const [stdout, setStdout] = useState("");
   const [runCode, setRunCode] = useState<RunCode>(async () => "Loading...");
+  const [language, setLanguage] = useState("cpp");
 
   // lazyload
   useEffect(() => {
@@ -26,8 +27,21 @@ int main() {
 
   return (
     <Fullscreen visible className="bg-base-100">
-      <div className="flex flex-row gap-4 h-full">
+      <div className="flex flex-row h-full">
         <div className="flex-1">
+          <VscodeEditor code={code} onChange={setCode} language={language} />
+        </div>
+        <div className="w-96 p-4 overflow-auto">
+          <h2>选择语言</h2>
+          <select
+            className="select select-bordered"
+            value={language}
+            onChange={(e) => setLanguage(e.currentTarget.value)}
+          >
+            <option value="c">C</option>
+            <option value="cpp">C++</option>
+            <option value="python">Python</option>
+          </select>
           <h2>输入</h2>
           <textarea
             className="textarea textarea-bordered w-full"
@@ -38,16 +52,22 @@ int main() {
             className="btn"
             onClick={() => {
               setStdout("[INFO] Compiling...");
-              runCode(code, stdin, "cpp").then((stdout) => setStdout(stdout));
+              runCode(code, stdin, language).then((stdout) =>
+                setStdout(stdout)
+              );
             }}
           >
             点击运行
           </button>
-          <h2>输出</h2>
-          <pre>{stdout}</pre>
-        </div>
-        <div className="flex-1">
-          <VscodeEditor code={code} onChange={setCode} language={"cpp"} />
+          {stdout && (
+            <>
+              <h2>输出</h2>
+              <pre>{stdout}</pre>
+            </>
+          )}
+          <div className="alert alert-info mt-4">
+            注意：实验性功能，目前暂不支持 bits/stdc++.h 头文件
+          </div>
         </div>
       </div>
     </Fullscreen>
