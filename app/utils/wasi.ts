@@ -21,6 +21,7 @@ export async function runCode(code: string, input: string, language: string) {
       throw new Error("Language not supported");
   }
 }
+
 interface WapmConfig {
   command: { name: string; module: string }[];
   fs: Record<string, string>;
@@ -42,8 +43,9 @@ interface WapmConfig {
 const CLANG_PACKAGE_URL = "/wapm/clang-0.1.0.tar";
 const RUNNO_PACKAGE_URL = "/wapm/runno-clang-0.1.2.tar";
 
+const wasmfs = new WasmFs();
+wasmfs.volume.mkdirSync("/sandbox");
 const preloaded = new Array<string>();
-const preloadfs = new WasmFs();
 
 type Preopens = WapmConfig["fs"];
 type Command = {
@@ -51,28 +53,9 @@ type Command = {
   preopens: Preopens;
 };
 const commands = new Map<string, Command>();
-const cachePackage = new Map<string, ArrayBuffer>();
 
-function memcpy(src: ArrayBuffer) {
-  const dst = new ArrayBuffer(src.byteLength);
-  new Uint8Array(dst).set(new Uint8Array(src));
-  return dst;
-}
-
-async function fetchPackage(url: string) {
-  if (cachePackage.has(url)) {
-    const buffer = cachePackage.get(url)!;
-    return memcpy(buffer);
-  }
-
-  const response = await fetch(url);
-  const buffer = await response.arrayBuffer();
-  cachePackage.set(url, buffer);
-  return memcpy(buffer);
-}
-
-async function extractContents(wasmfs: WasmFs, url: string) {
-  const buffer = await fetchPackage(url);
+async function extractContents(url: string) {
+  const buffer = await fetch(url).then((res) => res.arrayBuffer());
 
   // untar into fs
   wasmfs.volume.mkdirpSync(url);
@@ -90,7 +73,7 @@ async function extractContents(wasmfs: WasmFs, url: string) {
   }
 }
 
-async function preloadPackage(wasmfs: WasmFs, url: string) {
+async function preloadPackage(url: string) {
   const config = wasmfs.volume.readFileSync(`${url}/wapm.toml`) as Uint8Array;
   const decoder = new TextDecoder().decode(config.buffer);
   const cfg = toml.parse(decoder) as WapmConfig;
@@ -117,8 +100,8 @@ async function preloadPackage(wasmfs: WasmFs, url: string) {
 async function preload(url: string) {
   if (!preloaded.includes(url)) {
     preloaded.push(url);
-    await extractContents(preloadfs, url);
-    await preloadPackage(preloadfs, url);
+    await extractContents(url);
+    await preloadPackage(url);
   }
 }
 
@@ -146,6 +129,9 @@ async function runModule(
     ...wasi.getImports(module),
   });
 
+  wasmfs.volume.fds[0].position = 0;
+  wasmfs.volume.fds[1].position = 0;
+  wasmfs.volume.fds[2].position = 0;
   wasmfs.fs.writeFileSync("/dev/stdin", stdin);
   console.log(`running ${args.join(" ")}`);
 
@@ -183,9 +169,6 @@ async function runCommand(wasmfs: WasmFs, command: string, stdin: string = "") {
 async function runCCode(code: string, _input: string) {
   await preload(CLANG_PACKAGE_URL);
 
-  const wasmfs = new WasmFs();
-  await extractContents(wasmfs, CLANG_PACKAGE_URL);
-  wasmfs.volume.mkdirpSync("/sandbox");
   wasmfs.volume.writeFileSync("/sandbox/main.c", code);
 
   await runCommand(
@@ -199,9 +182,6 @@ async function runCCode(code: string, _input: string) {
 async function runCppCode(code: string, stdin: string) {
   await preload(RUNNO_PACKAGE_URL);
 
-  const wasmfs = new WasmFs();
-  await extractContents(wasmfs, RUNNO_PACKAGE_URL);
-  wasmfs.volume.mkdirSync("/sandbox");
   wasmfs.volume.writeFileSync("/sandbox/program.cpp", code);
 
   for (const command of [
