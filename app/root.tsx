@@ -26,6 +26,7 @@ import {
   HiOutlineChevronDown,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
+  HiOutlineCode,
   HiOutlineCollection,
   HiOutlineColorSwatch,
   HiOutlineHome,
@@ -473,6 +474,12 @@ export default function App() {
                   <NavLink className="flex gap-4" to="/docs">
                     <HiOutlineQuestionMarkCircle className="w-6 h-6" />
                     <span>文档</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/playground">
+                    <HiOutlineCode className="w-6 h-6" />
+                    <span>在线编程</span>
                   </NavLink>
                 </li>
               </ul>
