@@ -128,7 +128,7 @@ export default function Index() {
             </Form>
           </div>
         </div>
-        <div className="card col-span-6 bg-base-200">
+        <div className="card col-span-8 md:col-span-6 bg-base-200">
           <div className="card-body">
             <h2 className="card-title">近期比赛</h2>
             <div className="flex flex-col gap-4">
@@ -162,7 +162,7 @@ export default function Index() {
             </div>
           </div>
         </div>
-        <div className="card col-span-6 bg-base-200">
+        <div className="card col-span-8 md:col-span-6 bg-base-200">
           <div className="card-body">
             <h2 className="card-title">推荐题目</h2>
             <table className="table table-compact">
