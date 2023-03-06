@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "hitwhoj",
-  "version": "v0.0.1-alpha.20221129",
+  "version": "v0.0.1-alpha.20230306",
   "license": "Apache 2.0",
   "scripts": {
     "build": "run-s build:*",
