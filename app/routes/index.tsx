@@ -74,6 +74,17 @@ export default function Index() {
     <>
       <h1>Welcome to HITwh OJ</h1>
       <div className="place-content-between grid grid-cols-8 md:grid-cols-12 gap-4 not-prose">
+        <div className="card col-span-8 md:col-span-12 bg-info text-info-content">
+          <div className="card-body">
+            <h2 className="card-title">纳新公告</h2>
+            <p>HITwh OJ 项目组和 HITwh FP 项目组绝赞纳新中！！！</p>
+            <p>
+              需要熟悉 nodejs 开发环境，有 React
+              开发经验，有热情学习最新最前沿的前端技术栈。
+            </p>
+            <p>详情请联系 QQ 3224177294 或者发送邮件到 contact#hitwh.moe。</p>
+          </div>
+        </div>
         <div className="card col-span-8 row-span-2 bg-base-200">
           <div className="card-body">
             <h2 className="card-title">通知公告</h2>

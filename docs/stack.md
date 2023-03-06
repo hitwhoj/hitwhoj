@@ -8,19 +8,13 @@
 
 [React](https://reactjs.org/) 是最著名的前端框架之一，它的核心思想是将 UI 界面抽象成一个个组件，每个组件都是一个独立的模块，可以复用，也可以嵌套组合。
 
-### Arco Design
-
-[Arco Design](https://arco.design/) 是由字节跳动公司开发的一套基于 React 的前端组件库，它提供了一套完整的前端组件，包括了表单、表格、图表、布局等等。
-
-但是由于 Arco Design 的组件对于 Web 标准的改动比较大，以至于在 Remix 框架下面直接使用的时候会遇到许多标准被覆盖的问题。因此我们正在考虑将整个前端框架替换成基于 Tailwind CSS 的 DaisyUI。
-
 ### Tailwind CSS
 
 [Tailwind CSS](https://tailwindcss.com/) 是一个基于类名的 CSS 框架，它的主要特点是提供了一套完整的 CSS 类名，同时提供了一套完整的配置文件，可以让开发者自定义这些类名的样式。
 
 简单来说以前可能需要写很多的 CSS 样式，现在只需要写很少的类名就可以了。
 
-```tsx
+```jsx
 // old
 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
   <span style={{ width: '4rem', height: '4rem' }}>
@@ -40,7 +34,7 @@
 
 [DaisyUI](https://daisyui.com/) 是一个基于 Tailwind CSS 开发的一套前端样式库，它仅仅提供了一套完整的 UI 框架的样式，并且不包含任何 JavaScript 代码。因此我们可以基于 DaisyUI 完全发挥 Remix 与原生 Web 标准贴合的优势。
 
-```tsx
+```jsx
 // 要搞按钮样式直接加类名就可以了
 <label className="btn btn-primary btn-square">
   <HiOutlinePlus />
@@ -75,6 +69,6 @@ Remix 设计理念为贴近 Web 标准，由于前后端都为 JavaScript 运行
 
 ## 评测机
 
-评测机使用 Rust 语言实现。
+~~评测机使用 Rust 语言实现。~~
 
 TODO @zhuodarui
