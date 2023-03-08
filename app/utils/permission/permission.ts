@@ -102,6 +102,11 @@ export const Permissions = {
     TeamPermission.Admins.with(UserPermission.Admins)
   ),
 
+  /** 导出比赛榜单 */
+  PERM_EXPORT_CONTEST_BOARD: ContestPermission.Juries.with(
+    TeamPermission.Admins.with(UserPermission.Admins)
+  ),
+
   /** 创建团队的权限 */
   PERM_TEAM_CREATE: UserPermission.Admins,
   /** 团队修改成员的角色 */
