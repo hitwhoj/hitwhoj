@@ -152,11 +152,6 @@ function EditProfile({
 
   const Toasts = useContext(ToastContext);
 
-  const [desc, setDesc] = useState(description);
-  useEffect(() => {
-    setDesc(description);
-  }, [description]);
-
   useEffect(() => {
     if (isActionReload) {
       Toasts.success("更新团队信息成功");
@@ -182,13 +177,7 @@ function EditProfile({
         <label className="label">
           <span className="label-text">团队描述</span>
         </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          value={desc}
-          hidden
-        />
-        <MarkdownEditor code={desc} onChange={(code) => setDesc(code)} />
+        <MarkdownEditor name="description" defaultValue={description} />
       </div>
 
       <div className="form-control">

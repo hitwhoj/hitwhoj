@@ -296,11 +296,6 @@ export default function ContestEdit() {
     }
   }, [isActionReload]);
 
-  const [description, setDescription] = useState(() => contest.description);
-  useEffect(() => {
-    setDescription(contest.description);
-  }, [contest.description]);
-
   return (
     <>
       <h2>修改比赛信息</h2>
@@ -361,16 +356,9 @@ export default function ContestEdit() {
           <label className="label">
             <span className="label-text">介绍</span>
           </label>
-          <textarea
-            className="textarea textarea-bordered"
-            name="description"
-            value={description}
-            required
-            hidden
-          />
           <MarkdownEditor
-            code={description}
-            onChange={(code) => setDescription(code)}
+            name="description"
+            defaultValue={contest.description}
           />
         </div>
 

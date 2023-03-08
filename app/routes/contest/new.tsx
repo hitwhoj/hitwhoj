@@ -12,7 +12,7 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
@@ -87,8 +87,6 @@ export default function ContestNew() {
     }
   }, [isActionRedirect]);
 
-  const [description, setDescription] = useState("");
-
   return (
     <>
       <h1>创建比赛</h1>
@@ -111,11 +109,7 @@ export default function ContestNew() {
           <label className="label">
             <span className="label-text">比赛介绍</span>
           </label>
-          <textarea name="description" value={description} required hidden />
-          <MarkdownEditor
-            code={description}
-            onChange={(code) => setDescription(code)}
-          />
+          <MarkdownEditor name="description" />
         </div>
 
         <div className="form-control w-full max-w-xs">

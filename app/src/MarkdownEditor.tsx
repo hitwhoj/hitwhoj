@@ -1,12 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
+import { ToastContext } from "~/utils/context/toast";
 import { UserContext } from "~/utils/context/user";
 import { Markdown } from "./Markdown";
 import { VscodeEditor } from "./VscodeEditor";
 
 type Props = {
-  code: string;
-  onChange: (code: string) => void;
+  defaultValue?: string;
+  name?: string;
 };
 
 export function MarkdownEditor(props: Props) {
@@ -16,18 +17,21 @@ export function MarkdownEditor(props: Props) {
   const [insertText, setInsertText] = useState("");
 
   const userId = useContext(UserContext);
+  const Toasts = useContext(ToastContext);
 
-  const [code, setCode] = useState(() => props.code);
+  const [code, setCode] = useState(() => props.defaultValue || "");
 
   useEffect(() => {
     if (fetcher.data) {
       const markdown = `\n![image.png](/file/${fetcher.data[0]}/image.png)\n`;
       setInsertText(markdown);
+      Toasts.success("上传图片成功");
     }
   }, [fetcher.data]);
 
   return (
     <div className="border border-base-300 rounded-box">
+      {props.name && <textarea name={props.name} value={code} hidden />}
       <div className="tabs">
         <span
           className={`tab tab-bordered ${preview ? "" : "tab-active"}`}
@@ -62,15 +66,14 @@ export function MarkdownEditor(props: Props) {
                   encType: "multipart/form-data",
                   method: "post",
                 });
+
+                Toasts.info("上传图片中...");
               }
             }}
           >
             <VscodeEditor
               code={code}
-              onChange={(code) => {
-                setCode(code ?? "");
-                props.onChange(code ?? "");
-              }}
+              onChange={(code) => setCode(code ?? "")}
               language="markdown"
               insertText={insertText}
             />

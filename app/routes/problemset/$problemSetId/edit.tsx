@@ -262,11 +262,6 @@ export default function ProblemSetEdit() {
   const handleRemoveTag = (name: string) =>
     setTags(tags.filter((tag) => tag !== name));
 
-  const [description, setDescription] = useState(() => problemSet.description);
-  useEffect(() => {
-    setDescription(problemSet.description);
-  }, [problemSet.description]);
-
   return (
     <>
       <h2>编辑题单信息</h2>
@@ -327,16 +322,9 @@ export default function ProblemSetEdit() {
           <label className="label">
             <span className="label-text">简介</span>
           </label>
-          <textarea
-            className="textarea textarea-bordered"
-            name="description"
-            value={description}
-            required
-            hidden
-          />
           <MarkdownEditor
-            code={description}
-            onChange={(code) => setDescription(code)}
+            name="description"
+            defaultValue={problemSet.description}
           />
         </div>
 

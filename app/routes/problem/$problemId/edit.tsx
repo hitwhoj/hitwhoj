@@ -130,8 +130,6 @@ export default function ProblemEdit() {
   const handleRemoveTag = (name: string) =>
     setTags((tags) => tags.filter((tag) => tag !== name));
 
-  const [description, setDescription] = useState(() => problem.description);
-
   return (
     <Form method="post" className="form-control gap-4">
       <div className="form-control w-full max-w-xs">
@@ -188,17 +186,7 @@ export default function ProblemEdit() {
         <label className="label">
           <span className="label-text">题目正文</span>
         </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          value={description}
-          required
-          hidden
-        />
-        <MarkdownEditor
-          code={description}
-          onChange={(description) => setDescription(description)}
-        />
+        <MarkdownEditor name="description" defaultValue={problem.description} />
       </div>
 
       <div className="form-control w-full max-w-xs">
