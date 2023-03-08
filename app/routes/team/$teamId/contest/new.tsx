@@ -13,11 +13,12 @@ import {
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -87,6 +88,8 @@ export default function TeamContestNew() {
     }
   }, [isActionRedirect]);
 
+  const [description, setDescription] = useState("");
+
   return (
     <>
       <h2>创建团队比赛</h2>
@@ -113,7 +116,12 @@ export default function TeamContestNew() {
             name="description"
             className="textarea textarea-bordered"
             required
-            disabled={isLoading}
+            hidden
+            value={description}
+          />
+          <MarkdownEditor
+            code={description}
+            onChange={(code) => setDescription(code)}
           />
         </div>
 

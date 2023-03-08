@@ -18,6 +18,7 @@ import { findProblemSetTeam } from "~/utils/db/problemset";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -261,6 +262,11 @@ export default function ProblemSetEdit() {
   const handleRemoveTag = (name: string) =>
     setTags(tags.filter((tag) => tag !== name));
 
+  const [description, setDescription] = useState(() => problemSet.description);
+  useEffect(() => {
+    setDescription(problemSet.description);
+  }, [problemSet.description]);
+
   return (
     <>
       <h2>编辑题单信息</h2>
@@ -324,9 +330,13 @@ export default function ProblemSetEdit() {
           <textarea
             className="textarea textarea-bordered"
             name="description"
-            defaultValue={problemSet.description}
-            disabled={isUpdating}
+            value={description}
             required
+            hidden
+          />
+          <MarkdownEditor
+            code={description}
+            onChange={(code) => setDescription(code)}
           />
         </div>
 

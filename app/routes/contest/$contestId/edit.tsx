@@ -25,6 +25,7 @@ import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -295,6 +296,11 @@ export default function ContestEdit() {
     }
   }, [isActionReload]);
 
+  const [description, setDescription] = useState(() => contest.description);
+  useEffect(() => {
+    setDescription(contest.description);
+  }, [contest.description]);
+
   return (
     <>
       <h2>修改比赛信息</h2>
@@ -358,9 +364,13 @@ export default function ContestEdit() {
           <textarea
             className="textarea textarea-bordered"
             name="description"
-            defaultValue={contest.description}
+            value={description}
             required
-            disabled={isUpdating}
+            hidden
+          />
+          <MarkdownEditor
+            code={description}
+            onChange={(code) => setDescription(code)}
           />
         </div>
 

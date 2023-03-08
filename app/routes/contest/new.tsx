@@ -12,11 +12,12 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -86,6 +87,8 @@ export default function ContestNew() {
     }
   }, [isActionRedirect]);
 
+  const [description, setDescription] = useState("");
+
   return (
     <>
       <h1>创建比赛</h1>
@@ -108,11 +111,10 @@ export default function ContestNew() {
           <label className="label">
             <span className="label-text">比赛介绍</span>
           </label>
-          <textarea
-            name="description"
-            className="textarea textarea-bordered"
-            required
-            disabled={isLoading}
+          <textarea name="description" value={description} required hidden />
+          <MarkdownEditor
+            code={description}
+            onChange={(code) => setDescription(code)}
           />
         </div>
 

@@ -20,6 +20,7 @@ import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -151,6 +152,11 @@ function EditProfile({
 
   const Toasts = useContext(ToastContext);
 
+  const [desc, setDesc] = useState(description);
+  useEffect(() => {
+    setDesc(description);
+  }, [description]);
+
   useEffect(() => {
     if (isActionReload) {
       Toasts.success("更新团队信息成功");
@@ -179,9 +185,10 @@ function EditProfile({
         <textarea
           className="textarea textarea-bordered"
           name="description"
-          defaultValue={description}
-          disabled={isLoading}
+          value={desc}
+          hidden
         />
+        <MarkdownEditor code={desc} onChange={(code) => setDesc(code)} />
       </div>
 
       <div className="form-control">

@@ -191,9 +191,8 @@ export default function ProblemEdit() {
         <textarea
           className="textarea textarea-bordered"
           name="description"
-          required
-          readOnly
           value={description}
+          required
           hidden
         />
         <MarkdownEditor

@@ -44,7 +44,7 @@ export function MarkdownEditor(props: Props) {
       </div>
       <div className="h-96 overflow-auto">
         {preview ? (
-          <div className="border border-base-300 p-4">
+          <div className="p-4">
             <Markdown>{code}</Markdown>
           </div>
         ) : (
