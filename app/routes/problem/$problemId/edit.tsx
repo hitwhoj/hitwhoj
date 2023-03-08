@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { ToastContext } from "~/utils/context/toast";
 import { findProblemTeam } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
@@ -129,6 +130,8 @@ export default function ProblemEdit() {
   const handleRemoveTag = (name: string) =>
     setTags((tags) => tags.filter((tag) => tag !== name));
 
+  const [description, setDescription] = useState(() => problem.description);
+
   return (
     <Form method="post" className="form-control gap-4">
       <div className="form-control w-full max-w-xs">
@@ -189,8 +192,13 @@ export default function ProblemEdit() {
           className="textarea textarea-bordered"
           name="description"
           required
-          defaultValue={problem.description}
-          disabled={isLoading}
+          readOnly
+          value={description}
+          hidden
+        />
+        <MarkdownEditor
+          code={description}
+          onChange={(description) => setDescription(description)}
         />
       </div>
 
