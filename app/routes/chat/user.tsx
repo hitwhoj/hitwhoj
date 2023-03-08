@@ -68,34 +68,34 @@ export default function UserChatIndex() {
   useEffect(() => setMsgs(messages), [messages]);
 
   return (
-    <Fullscreen visible={true} className="bg-base-100 flex not-prose">
-      <div className="drawer drawer-mobile">
+    <Fullscreen visible={true} className="not-prose flex bg-base-100">
+      <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
         <div className="drawer-content overflow-hidden px-4">
           <Outlet />
         </div>
         <div className="drawer-side">
           <div className="drawer-overlay"></div>
-          <aside className="p-4 bg-base-200">
+          <aside className="bg-base-200 p-4">
             {/* FIXME 这个是假的上一页 */}
             <Link className="btn btn-ghost gap-2" to="/">
               <HiOutlineChevronLeft />
               <span>返回到上一页</span>
             </Link>
-            <ul className="p-0 menu w-72 mt-4">
+            <ul className="menu mt-4 w-72 p-0">
               {users.map(({ user, message }) => (
                 <li key={user.id}>
-                  <NavLink to={`/chat/user/${user.id}`} className="p-4 w-full">
-                    <div className="flex w-full gap-3 items-center">
+                  <NavLink to={`/chat/user/${user.id}`} className="w-full p-4">
+                    <div className="flex w-full items-center gap-3">
                       <UserAvatar
                         user={user}
-                        className="w-16 h-16 flex-shrink-0 bg-base-300 text-3xl"
+                        className="h-16 w-16 flex-shrink-0 bg-base-300 text-3xl"
                       />
                       <div className="overflow-hidden">
-                        <div className="font-bold text-xl text-ellipsis whitespace-nowrap overflow-hidden">
+                        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-xl font-bold">
                           {user.nickname || user.username}
                         </div>
-                        <div className="text-ellipsis whitespace-nowrap overflow-hidden">
+                        <div className="overflow-hidden text-ellipsis whitespace-nowrap">
                           {message.content}
                         </div>
                       </div>

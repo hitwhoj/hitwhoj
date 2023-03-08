@@ -58,16 +58,16 @@ export default function UserProfile() {
 
   return (
     <div>
-      <header className="text-center my-4 not-prose">
+      <header className="not-prose my-4 text-center">
         <UserAvatar
           user={user}
-          className="w-20 h-20 bg-base-200 mx-auto text-3xl"
+          className="mx-auto h-20 w-20 bg-base-200 text-3xl"
         />
-        <h1 className="font-bold text-lg mt-4">
+        <h1 className="mt-4 text-lg font-bold">
           {user.nickname || user.username}
         </h1>
         {user.bio && <p className="mt-3 text-sm">{user.bio}</p>}
-        <div className="tabs tabs-boxed bg-base-100 justify-center mt-5">
+        <div className="tabs tabs-boxed mt-5 justify-center bg-base-100">
           <NavLink className="tab" to="profile">
             资料
           </NavLink>

@@ -260,7 +260,7 @@ export default function ContestProblemView() {
   return (
     <Fullscreen
       visible={true}
-      className="drawer drawer-end w-full h-full bg-base-100"
+      className="drawer drawer-end h-full w-full bg-base-100"
     >
       <input
         type="checkbox"
@@ -271,7 +271,7 @@ export default function ContestProblemView() {
       />
       <div className="drawer-content grid grid-cols-2 grid-rows-1">
         <div className="flex flex-col overflow-y-auto">
-          <nav className="p-4 sticky top-0 z-10 bg-base-100 flex-shrink-0">
+          <nav className="sticky top-0 z-10 flex-shrink-0 bg-base-100 p-4">
             <Link
               className="btn btn-ghost gap-2"
               to={`/contest/${contest.id}/problem`}
@@ -323,7 +323,7 @@ export default function ContestProblemView() {
           />
           <Form
             method="post"
-            className="flex-shrink-0 flex justify-between p-2"
+            className="flex flex-shrink-0 justify-between p-2"
           >
             <textarea name="code" hidden value={code} readOnly />
             <div>
@@ -368,9 +368,9 @@ export default function ContestProblemView() {
       </div>
       <div className="drawer-side">
         <label className="drawer-overlay" onClick={() => setVisible(false)} />
-        <aside className="bg-base-200 p-4 not-prose">
-          <h3 className="font-bold text-lg">提交记录</h3>
-          <ul className="menu menu-compact w-96 my-4">
+        <aside className="not-prose bg-base-200 p-4">
+          <h3 className="text-lg font-bold">提交记录</h3>
+          <ul className="menu menu-compact my-4 w-96">
             {records.map((record) => (
               <li key={record.id}>
                 <Link

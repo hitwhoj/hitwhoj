@@ -19,13 +19,13 @@ export function FileRemoveButton({
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <button
-        className="btn btn-error btn-square btn-sm"
+        className="btn btn-square btn-error btn-sm"
         type="submit"
         name="_action"
         value={deleteAction}
         disabled={isDeleting}
       >
-        <HiOutlineTrash className="w-4 h-4" />
+        <HiOutlineTrash className="h-4 w-4" />
       </button>
     </fetcher.Form>
   );

@@ -29,7 +29,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
     <fetcher.Form method="post" className="inline-flex gap-2">
       <input type="hidden" name="pid" value={props.pid} />
       <button
-        className="btn btn-primary btn-error btn-sm btn-square"
+        className="btn btn-square btn-primary btn-error btn-sm"
         type="submit"
         name="_action"
         value={props.deleteAction}
@@ -38,7 +38,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineTrash />
       </button>
       <button
-        className="btn btn-ghost btn-sm btn-square"
+        className="btn btn-square btn-ghost btn-sm"
         type="submit"
         name="_action"
         value={props.moveUpAction}
@@ -47,7 +47,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineChevronUp />
       </button>
       <button
-        className="btn btn-ghost btn-sm btn-square"
+        className="btn btn-square btn-ghost btn-sm"
         type="submit"
         name="_action"
         value={props.moveDownAction}
@@ -85,7 +85,7 @@ export function ProblemEditor(props: ProblemEditorProps) {
         existProblem={props.problems.map(({ id }) => id)}
       />
 
-      <table className="table w-full not-prose">
+      <table className="not-prose table w-full">
         <thead>
           <tr>
             <th className="w-16" />

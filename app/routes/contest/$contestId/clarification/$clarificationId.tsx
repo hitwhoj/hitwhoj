@@ -87,8 +87,8 @@ export default function ClarificationDetail() {
   const isSubmitting = state === "submitting" || type === "actionReload";
 
   return (
-    <Fullscreen visible={true} className="bg-base-100 overflow-auto">
-      <div className="w-full max-w-2xl mx-auto p-4">
+    <Fullscreen visible={true} className="overflow-auto bg-base-100">
+      <div className="mx-auto w-full max-w-2xl p-4">
         <div>
           <Link
             className="btn btn-ghost gap-2"
@@ -128,7 +128,7 @@ export default function ClarificationDetail() {
           <p className="italic opacity-60">暂无回复</p>
         ) : (
           clarification.replies.map((reply) => (
-            <p key={reply.id} className="break-words flex flex-col">
+            <p key={reply.id} className="flex flex-col break-words">
               <span>{reply.content}</span>
               <span className="text-xs opacity-60">
                 {formatRelativeDateTime(reply.createdAt)}
@@ -176,7 +176,7 @@ export default function ClarificationDetail() {
                       <span className="label-text">回复内容</span>
                     </label>
                     <textarea
-                      className="textarea h-24 textarea-bordered"
+                      className="textarea textarea-bordered h-24"
                       name="content"
                       required
                     />

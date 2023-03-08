@@ -57,7 +57,7 @@ export default function Problemset() {
       <h1>{problemSet.title}</h1>
 
       {(problemSet.tags.length > 0 || problemSet.private) && (
-        <div className="flex flex-wrap gap-2 not-prose">
+        <div className="not-prose flex flex-wrap gap-2">
           {problemSet.private && (
             <span className="badge badge-warning gap-1">
               <HiOutlineEyeOff />
@@ -77,7 +77,7 @@ export default function Problemset() {
         </div>
       )}
 
-      <p className="tabs tabs-boxed bg-base-100 not-prose">
+      <p className="not-prose tabs tabs-boxed bg-base-100">
         <NavLink className="tab" to="problem">
           详情
         </NavLink>

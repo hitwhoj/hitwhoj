@@ -114,7 +114,7 @@ function DeleteMember({ id }: { id: number }) {
         name="_action"
         value={ActionType.DeleteMember}
         disabled={isLoading}
-        className="btn btn-square btn-sm btn-error"
+        className="btn btn-square btn-error btn-sm"
       >
         <HiOutlineLogout />
       </button>
@@ -154,7 +154,7 @@ function SetMemberRole({
       <span className="btn btn-square btn-sm">
         <HiOutlineCog />
       </span>
-      <ul className="dropdown-content shadow-2xl menu p-2 bg-base-300 w-72 rounded-box">
+      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
         <li className={isJury ? "disabled" : ""}>
           <button
             type="submit"
@@ -197,7 +197,7 @@ export default function ContestMembers() {
   }, [members]);
 
   return (
-    <table className="table table-compact w-full not-prose">
+    <table className="not-prose table-compact table w-full">
       <thead>
         <tr>
           <th>成员</th>

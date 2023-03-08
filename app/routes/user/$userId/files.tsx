@@ -110,7 +110,7 @@ export default function UserFilePage() {
 
   return (
     <>
-      <h2 className="flex justify-between items-center">
+      <h2 className="flex items-center justify-between">
         <span>用户文件</span>
         <FileUploader uploadAction={ActionType.UploadFile} />
       </h2>

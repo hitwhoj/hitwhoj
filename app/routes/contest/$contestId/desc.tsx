@@ -86,7 +86,7 @@ export default function ContestIndex() {
       <div className="stats w-full bg-base-200 text-base-content">
         <div className="stat">
           <div className="stat-figure text-secondary">
-            <HiOutlineClock className="w-8 h-8" />
+            <HiOutlineClock className="h-8 w-8" />
           </div>
           <div className="stat-title">开始时间</div>
           <div className="stat-value">
@@ -97,7 +97,7 @@ export default function ContestIndex() {
 
         <div className="stat">
           <div className="stat-figure text-secondary">
-            <HiOutlineClock className="w-8 h-8" />
+            <HiOutlineClock className="h-8 w-8" />
           </div>
           <div className="stat-title">比赛时长</div>
           <div className="stat-value">
@@ -111,7 +111,7 @@ export default function ContestIndex() {
 
         <div className="stat">
           <div className="stat-figure text-secondary">
-            <HiOutlineBookOpen className="w-8 h-8" />
+            <HiOutlineBookOpen className="h-8 w-8" />
           </div>
           <div className="stat-title">题目数量</div>
           <div className="stat-value">

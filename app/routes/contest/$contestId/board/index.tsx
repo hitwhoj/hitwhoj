@@ -185,9 +185,9 @@ export default function RankView() {
   return (
     <>
       {canExport && (
-        <div className="w-full flex justify-end items-center">
+        <div className="flex w-full items-center justify-end">
           <button
-            className="btn btn-sm btn-primary font-normal gap-2"
+            className="btn btn-primary btn-sm gap-2 font-normal"
             onClick={exportData}
           >
             <HiOutlineSave />
@@ -195,7 +195,7 @@ export default function RankView() {
           </button>
         </div>
       )}
-      <table className="table w-full not-prose">
+      <table className="not-prose table w-full">
         <thead>
           <tr>
             <th className="w-16 text-center">排名</th>
@@ -233,8 +233,8 @@ export default function RankView() {
                       key={problemId}
                       className={
                         problem.solved
-                          ? "bg-success text-success-content text-center"
-                          : "bg-error text-error-content text-center"
+                          ? "bg-success text-center text-success-content"
+                          : "bg-error text-center text-error-content"
                       }
                     >
                       {problem.solved

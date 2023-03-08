@@ -171,13 +171,13 @@ function DeleteMember({ id }: { id: number }) {
     >
       <input type="hidden" name="member" value={id} />
       <button
-        className="btn btn-error btn-square"
+        className="btn btn-square btn-error"
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
         disabled={isLoading}
       >
-        <HiOutlineLogout className="w-6 h-6" />
+        <HiOutlineLogout className="h-6 w-6" />
       </button>
     </fetcher.Form>
   );
@@ -208,9 +208,9 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <label tabIndex={0} className="btn btn-square">
-        <HiOutlineCog className="w-6 h-6" />
+        <HiOutlineCog className="h-6 w-6" />
       </label>
-      <ul className="dropdown-content shadow-2xl menu p-2 bg-base-300 w-72 rounded-box">
+      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
         <li className={isOwner ? "disabled" : ""}>
           <button
             type="submit"
@@ -263,7 +263,7 @@ export default function MemberList() {
 
   return (
     <>
-      <h2 className="flex justify-between items-center">
+      <h2 className="flex items-center justify-between">
         <span>团队成员</span>
         {hasInvitePerm && (
           <button className="btn btn-primary gap-2">
@@ -273,23 +273,23 @@ export default function MemberList() {
         )}
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose">
+      <div className="not-prose grid grid-cols-1 gap-4 md:grid-cols-2">
         {members.map((member) => (
           <div
             key={member.user.id}
-            className="card bg-base-200 overflow-visible"
+            className="card overflow-visible bg-base-200"
           >
             <div className="card-body">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-4 items-center">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
                   <UserAvatar
                     user={member.user}
-                    className="w-16 h-16 bg-base-100 text-2xl shrink-0"
+                    className="h-16 w-16 shrink-0 bg-base-100 text-2xl"
                   />
                   <div>
                     <Link
                       to={`/user/${member.user.id}`}
-                      className="block link link-hover font-bold"
+                      className="link link-hover block font-bold"
                     >
                       {member.user.nickname || member.user.username}
                     </Link>
@@ -306,7 +306,7 @@ export default function MemberList() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-4 items-center shrink-0">
+                <div className="flex shrink-0 items-center gap-4">
                   {hasEditPerm && (
                     <SetMemberRole id={member.user.id} role={member.role} />
                   )}

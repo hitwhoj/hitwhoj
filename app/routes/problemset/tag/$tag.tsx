@@ -56,7 +56,7 @@ export default function ProblemSetTag() {
     <>
       <h1>题单标签：{tag}</h1>
 
-      <table className="table table-compact w-full not-prose">
+      <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />

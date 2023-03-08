@@ -66,7 +66,7 @@ export default function Register() {
 
       <Form
         method="post"
-        className="form-control w-full max-w-xs gap-4 not-prose"
+        className="not-prose form-control w-full max-w-xs gap-4"
       >
         <div className="form-control">
           <label className="label">

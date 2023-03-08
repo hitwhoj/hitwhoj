@@ -81,7 +81,7 @@ export default function RecordList() {
       <h1>评测记录</h1>
 
       <Form
-        className="flex flex-row flex-wrap justify-between items-end gap-4"
+        className="flex flex-row flex-wrap items-end justify-between gap-4"
         method="get"
         action="/record"
       >
@@ -123,7 +123,7 @@ export default function RecordList() {
           <span>过滤</span>
         </button>
       </Form>
-      <table className="table table-compact w-full not-prose">
+      <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />

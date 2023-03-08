@@ -104,7 +104,7 @@ export default function ClarificationSubmit() {
               <span className="label-text">反馈内容</span>
             </label>
             <textarea
-              className="textarea h-24 textarea-bordered"
+              className="textarea textarea-bordered h-24"
               name="content"
               required
             />

@@ -46,7 +46,7 @@ export default function TeamList() {
 
   return (
     <>
-      <h1 className="flex justify-between items-center">
+      <h1 className="flex items-center justify-between">
         <span>团队列表</span>
         {hasCreatePerm && (
           <Link className="btn btn-primary" to="new">
@@ -56,7 +56,7 @@ export default function TeamList() {
         )}
       </h1>
 
-      <table className="table table-compact w-full not-prose">
+      <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />

@@ -9,9 +9,9 @@ export function CatchBoundary() {
     // 一般是用户提交的表单数据有问题
     case 400:
       return (
-        <div className="alert alert-error not-prose mt-4">
+        <div className="not-prose alert alert-error mt-4">
           <div>
-            <HiOutlineXCircle className="w-6 h-6" />
+            <HiOutlineXCircle className="h-6 w-6" />
             <div>
               <h3 className="font-bold">错误</h3>
               <div className="text-xs">{caught.data}</div>
@@ -21,9 +21,9 @@ export function CatchBoundary() {
       );
     case 401:
       return (
-        <div className="alert alert-error not-prose mt-4">
+        <div className="not-prose alert alert-error mt-4">
           <div>
-            <HiOutlineXCircle className="w-6 h-6" />
+            <HiOutlineXCircle className="h-6 w-6" />
             <div>
               <h3 className="font-bold">未登录</h3>
               <div className="text-xs">请登录后再进行尝试</div>
@@ -36,9 +36,9 @@ export function CatchBoundary() {
       );
     case 403:
       return (
-        <div className="alert alert-error not-prose mt-4">
+        <div className="not-prose alert alert-error mt-4">
           <div>
-            <HiOutlineXCircle className="w-6 h-6" />
+            <HiOutlineXCircle className="h-6 w-6" />
             <div>
               <h3 className="font-bold">权限不足</h3>
               <div className="text-xs">{caught.data}</div>
@@ -48,9 +48,9 @@ export function CatchBoundary() {
       );
     case 404:
       return (
-        <div className="alert alert-error not-prose mt-4">
+        <div className="not-prose alert alert-error mt-4">
           <div>
-            <HiOutlineXCircle className="w-6 h-6" />
+            <HiOutlineXCircle className="h-6 w-6" />
             <div>
               <h3 className="font-bold">未找到</h3>
               <div className="text-xs">{caught.data}</div>
@@ -60,9 +60,9 @@ export function CatchBoundary() {
       );
     default:
       return (
-        <div className="alert alert-error not-prose mt-4">
+        <div className="not-prose alert alert-error mt-4">
           <div>
-            <HiOutlineXCircle className="w-6 h-6" />
+            <HiOutlineXCircle className="h-6 w-6" />
             <div>
               <h3 className="font-bold">
                 {caught.status} {caught.statusText}

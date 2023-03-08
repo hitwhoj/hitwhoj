@@ -45,11 +45,11 @@ int main() {
 
   return (
     <Fullscreen visible className="bg-base-100">
-      <div className="flex flex-row h-full">
+      <div className="flex h-full flex-row">
         <div className="flex-1">
           <VscodeEditor code={code} onChange={setCode} language={language} />
         </div>
-        <div className="w-96 p-4 overflow-auto">
+        <div className="w-96 overflow-auto p-4">
           <h2>选择语言</h2>
           <select
             className="select select-bordered"

@@ -30,7 +30,7 @@ export function MarkdownEditor(props: Props) {
   }, [fetcher.data]);
 
   return (
-    <div className="border border-base-300 rounded-box">
+    <div className="rounded-box border border-base-300">
       {props.name && <textarea name={props.name} value={code} hidden />}
       <div className="tabs">
         <span

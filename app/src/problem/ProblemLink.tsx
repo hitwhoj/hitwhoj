@@ -10,7 +10,7 @@ export function ProblemLink({ problem }: Props) {
   return (
     <Link
       to={`/problem/${problem.id}`}
-      className="link inline-flex gap-2 items-center"
+      className="link inline-flex items-center gap-2"
     >
       <span>{problem.title}</span>
       {problem.private && <HiOutlineEyeOff className="inline-block" />}

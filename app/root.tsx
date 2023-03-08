@@ -188,26 +188,26 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="font-sans relative">
+      <body className="relative font-sans">
         <div
-          className={`bg-base-100 drawer ${menuEnable ? "drawer-mobile" : ""}`}
+          className={`drawer bg-base-100 ${menuEnable ? "drawer-mobile" : ""}`}
         >
           <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
           {/* 整个网站右边部分 */}
-          <div className="drawer-content flex flex-col h-full">
+          <div className="drawer-content flex h-full flex-col">
             {/* 顶部导航栏 */}
             <div
               className={`sticky top-0 z-30 backdrop-blur transition-all ${
                 menuEnable ? "" : "-translate-y-full"
               }`}
             >
-              <nav className="navbar w-full flex justify-end gap-4">
-                <div className="flex-1 flex gap-2 lg:hidden">
+              <nav className="navbar flex w-full justify-end gap-4">
+                <div className="flex flex-1 gap-2 lg:hidden">
                   <label
                     className="btn btn-ghost btn-square"
                     htmlFor="drawer-menu"
                   >
-                    <HiOutlineMenu className="w-6 h-6" />
+                    <HiOutlineMenu className="h-6 w-6" />
                   </label>
                   <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
                     <span className="lowercase text-primary">hitwh</span>
@@ -216,18 +216,18 @@ export default function App() {
                 </div>
                 {/* 主题切换按钮 */}
                 <div className="dropdown dropdown-end">
-                  <div className="btn gap-2 normal-case btn-ghost" tabIndex={0}>
-                    <HiOutlineColorSwatch className="w-6 h-6" />
+                  <div className="btn btn-ghost gap-2 normal-case" tabIndex={0}>
+                    <HiOutlineColorSwatch className="h-6 w-6" />
                     <span className="hidden md:inline-block">主题</span>
-                    <HiOutlineChevronDown className="w-3 h-3 hidden md:block" />
+                    <HiOutlineChevronDown className="hidden h-3 w-3 md:block" />
                   </div>
-                  <div className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box top-0 max-h-96 h-[70vh] w-52 overflow-y-auto shadow-2xl mt-16">
+                  <div className="dropdown-content rounded-t-box rounded-b-box top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto bg-base-200 text-base-content shadow-2xl">
                     <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
                       {themes.map((iter) => (
                         <div
                           key={iter}
                           data-theme={iter}
-                          className={`p-3 rounded-lg text-base-content font-sans font-bold cursor-pointer outline-2 outline-offset-2${
+                          className={`cursor-pointer rounded-lg p-3 font-sans font-bold text-base-content outline-2 outline-offset-2${
                             theme === iter ? " outline" : ""
                           }`}
                           onClick={() => setTheme(iter)}
@@ -240,13 +240,13 @@ export default function App() {
                 </div>
                 {/* 用户头像 */}
                 {user ? (
-                  <div className="dropdown dropdown-end w-12 h-12">
+                  <div className="dropdown-end dropdown h-12 w-12">
                     <UserAvatar
                       user={user}
                       tabIndex={0}
-                      className="w-12 h-12 cursor-pointer bg-base-300 text-2xl"
+                      className="h-12 w-12 cursor-pointer bg-base-300 text-2xl"
                     />
-                    <ul className="dropdown-content bg-base-200 text-base-content rounded-t-box rounded-b-box w-52 shadow-2xl top-0 mt-16 p-4 menu">
+                    <ul className="dropdown-content menu rounded-t-box rounded-b-box top-0 mt-16 w-52 bg-base-200 p-4 text-base-content shadow-2xl">
                       <li>
                         <Link to={`/user/${user.id}`}>
                           <AiOutlineProfile />
@@ -280,7 +280,7 @@ export default function App() {
               </nav>
             </div>
             {/* 中间部分 */}
-            <div className="p-6 flex-1">
+            <div className="flex-1 p-6">
               <div className="prose w-full max-w-4xl">
                 <ThemeContext.Provider value={theme}>
                   <ToastContext.Provider
@@ -296,7 +296,7 @@ export default function App() {
               </div>
             </div>
             {/* 底部 */}
-            <footer className="footer p-10 bg-neutral text-neutral-content">
+            <footer className="footer bg-neutral p-10 text-neutral-content">
               {/* About */}
               <div>
                 <span className="footer-title">About</span>
@@ -306,7 +306,7 @@ export default function App() {
                   rel="noreferrer"
                 >
                   <div
-                    className="w-[221px] h-[48px] bg-neutral-content"
+                    className="h-[48px] w-[221px] bg-neutral-content"
                     style={{
                       maskImage: `url(${hitwh})`,
                       maskSize: "cover",
@@ -337,7 +337,7 @@ export default function App() {
                     <div
                       key={idx}
                       id={`advertise-${idx}`}
-                      className="carousel-item card card-side w-full"
+                      className="card carousel-item card-side w-full"
                     >
                       <figure>
                         <img
@@ -352,7 +352,7 @@ export default function App() {
                         <p>{ad.content}</p>
                         <div className="card-actions justify-end">
                           <a
-                            className="btn btn-sm btn-circle"
+                            className="btn btn-circle btn-sm"
                             href={`#advertise-${
                               (idx - 1 + ads.length) % ads.length
                             }`}
@@ -360,7 +360,7 @@ export default function App() {
                             <HiOutlineChevronLeft />
                           </a>
                           <a
-                            className="btn btn-sm btn-circle"
+                            className="btn btn-circle btn-sm"
                             href={`#advertise-${(idx + 1) % ads.length}`}
                           >
                             <HiOutlineChevronRight />
@@ -382,13 +382,13 @@ export default function App() {
                     data-tip="HITwh OJ 反馈×吹水"
                     rel="noreferrer"
                   >
-                    <AiOutlineQq className="w-6 h-6" />
+                    <AiOutlineQq className="h-6 w-6" />
                   </a>
                   <span
                     className="tooltip tooltip-bottom tooltip-info"
                     data-tip="很遗憾，我们并没有微信反馈群~"
                   >
-                    <AiOutlineWechat className="w-6 h-6" />
+                    <AiOutlineWechat className="h-6 w-6" />
                   </span>
                   <a
                     href="https://t.me/hitwhmoe"
@@ -397,7 +397,7 @@ export default function App() {
                     className="tooltip tooltip-bottom tooltip-info"
                     data-tip="@hitwhmoe"
                   >
-                    <FaTelegramPlane className="w-6 h-6" />
+                    <FaTelegramPlane className="h-6 w-6" />
                   </a>
                   <a
                     href="https://matrix.to/#/#hitwh:mozilla.org"
@@ -406,7 +406,7 @@ export default function App() {
                     className="tooltip tooltip-bottom tooltip-info"
                     data-tip="#hitwh:mozilla.org"
                   >
-                    <SiElement className="w-6 h-6" />
+                    <SiElement className="h-6 w-6" />
                   </a>
                 </div>
               </div>
@@ -415,8 +415,8 @@ export default function App() {
           {/* 左侧目录部分 */}
           <div className="drawer-side">
             <label htmlFor="drawer-menu" className="drawer-overlay" />
-            <aside className="w-80 h-full bg-base-200 flex flex-col">
-              <div className="sticky top-0 items-center gap-2 px-4 py-2 hidden lg:flex">
+            <aside className="flex h-full w-80 flex-col bg-base-200">
+              <div className="sticky top-0 hidden items-center gap-2 px-4 py-2 lg:flex">
                 <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
                   <span className="lowercase text-primary">hitwh</span>
                   <span>OJ</span>
@@ -430,34 +430,34 @@ export default function App() {
                   {version}
                 </a>
               </div>
-              <ul className="menu p-4 overflow-y-auto w-80 text-base-content flex-1">
+              <ul className="menu w-80 flex-1 overflow-y-auto p-4 text-base-content">
                 <li>
                   <NavLink className="flex gap-4" to="/">
-                    <HiOutlineHome className="w-6 h-6" />
+                    <HiOutlineHome className="h-6 w-6" />
                     <span>首页</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/problem">
-                    <HiOutlineBookOpen className="w-6 h-6" />
+                    <HiOutlineBookOpen className="h-6 w-6" />
                     <span>题目</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/problemset">
-                    <HiOutlineCollection className="w-6 h-6" />
+                    <HiOutlineCollection className="h-6 w-6" />
                     <span>题单</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/contest">
-                    <AiOutlineTrophy className="w-6 h-6" />
+                    <AiOutlineTrophy className="h-6 w-6" />
                     <span>比赛</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/team">
-                    <HiOutlineUserGroup className="w-6 h-6" />
+                    <HiOutlineUserGroup className="h-6 w-6" />
                     <span>团队</span>
                   </NavLink>
                 </li>
@@ -466,19 +466,19 @@ export default function App() {
                     className="flex gap-4"
                     to={user ? `/record?uid=${user.id}` : "/record"}
                   >
-                    <AiOutlineHistory className="w-6 h-6" />
+                    <AiOutlineHistory className="h-6 w-6" />
                     <span>评测</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/docs">
-                    <HiOutlineQuestionMarkCircle className="w-6 h-6" />
+                    <HiOutlineQuestionMarkCircle className="h-6 w-6" />
                     <span>文档</span>
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="flex gap-4" to="/playground">
-                    <HiOutlineCode className="w-6 h-6" />
+                    <HiOutlineCode className="h-6 w-6" />
                     <span>在线编程</span>
                   </NavLink>
                 </li>

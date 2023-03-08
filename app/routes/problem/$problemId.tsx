@@ -56,7 +56,7 @@ export default function ProblemView() {
       <h1>{problem.title}</h1>
 
       {(problem.tags.length > 0 || problem.private) && (
-        <div className="flex not-prose gap-2 flex-wrap">
+        <div className="not-prose flex flex-wrap gap-2">
           {problem.private && (
             <span className="badge badge-warning gap-1">
               <HiOutlineEyeOff />
@@ -82,7 +82,7 @@ export default function ProblemView() {
         </div>
       )}
 
-      <p className="tabs tabs-boxed bg-base-100 not-prose">
+      <p className="not-prose tabs tabs-boxed bg-base-100">
         <NavLink className="tab" to="desc">
           题面
         </NavLink>

@@ -119,9 +119,9 @@ export default function ChatIndex() {
   }, [isActionReload]);
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <header className="py-4 sticky top-0 z-10 bg-base-100">
-        <h1 className="font-bold text-2xl">
+    <div className="flex h-full w-full flex-col">
+      <header className="sticky top-0 z-10 bg-base-100 py-4">
+        <h1 className="text-2xl font-bold">
           {target.nickname || target.username}
         </h1>
       </header>
@@ -140,27 +140,27 @@ export default function ChatIndex() {
 
             return isFirst ? (
               <div
-                className="flex gap-4 pt-2 px-2 hover:bg-base-200 transition"
+                className="flex gap-4 px-2 pt-2 transition hover:bg-base-200"
                 key={message.id}
               >
                 <UserAvatar
-                  className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
+                  className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
                   user={from}
                 />
                 <div className="flex-1">
-                  <div className="w-full flex justify-between">
+                  <div className="flex w-full justify-between">
                     <span className="text-primary">
                       {from.nickname || from.username}
                     </span>
                   </div>
-                  <div className="break-words min-w-0">{message.content}</div>
+                  <div className="min-w-0 break-words">{message.content}</div>
                 </div>
                 <div>
                   <span
                     className="tooltip tooltip-left"
                     data-tip={formatDateTime(message.sentAt)}
                   >
-                    <time className="text-base-content text-sm opacity-60">
+                    <time className="text-sm text-base-content opacity-60">
                       {formatTime(message.sentAt)}
                     </time>
                   </span>
@@ -168,11 +168,11 @@ export default function ChatIndex() {
               </div>
             ) : (
               <div
-                className="flex gap-4 px-2 hover:bg-base-200 transition group"
+                className="group flex gap-4 px-2 transition hover:bg-base-200"
                 key={message.id}
               >
-                <div className="w-12 h-0 flex-shrink-0" />
-                <span className="flex-1 break-words min-w-0">
+                <div className="h-0 w-12 flex-shrink-0" />
+                <span className="min-w-0 flex-1 break-words">
                   {message.content}
                 </span>
                 <div>
@@ -180,7 +180,7 @@ export default function ChatIndex() {
                     className="tooltip tooltip-left"
                     data-tip={formatDateTime(message.sentAt)}
                   >
-                    <time className="text-sm opacity-0 group-hover:opacity-60 transition">
+                    <time className="text-sm opacity-0 transition group-hover:opacity-60">
                       {formatTime(message.sentAt)}
                     </time>
                   </span>
@@ -189,7 +189,7 @@ export default function ChatIndex() {
             );
           })
         ) : (
-          <div className="grid w-full h-full place-items-center">
+          <div className="grid h-full w-full place-items-center">
             <span className="text-base-content">快来跟 TA 打个招呼吧</span>
           </div>
         )}
@@ -198,7 +198,7 @@ export default function ChatIndex() {
       <Form
         method="post"
         ref={formRef}
-        className="sticky bottom-0 py-4 bg-base-100 z-10 flex gap-4"
+        className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
         autoComplete="off"
       >
         <input type="hidden" name="to" value={target.id} />

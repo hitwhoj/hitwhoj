@@ -96,11 +96,11 @@ export default function ChatRoomIndex() {
 
   return (
     <Fullscreen visible={true} className="not-prose">
-      <div className="drawer drawer-mobile">
+      <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
-        <div className="drawer-content bg-base-100 px-4 not-prose min-h-full flex flex-col overflow-auto">
-          <header className="sticky top-0 py-4 z-10 bg-base-100">
-            <h1 className="font-bold text-2xl">{room.name}</h1>
+        <div className="not-prose drawer-content flex min-h-full flex-col overflow-auto bg-base-100 px-4">
+          <header className="sticky top-0 z-10 bg-base-100 py-4">
+            <h1 className="text-2xl font-bold">{room.name}</h1>
           </header>
 
           <div className="flex-1">
@@ -115,16 +115,16 @@ export default function ChatRoomIndex() {
 
               return isFirst ? (
                 <div
-                  className="flex gap-4 pt-2 px-2 hover:bg-base-200 transition"
+                  className="flex gap-4 px-2 pt-2 transition hover:bg-base-200"
                   key={message.id}
                 >
                   <UserAvatar
-                    className="w-12 h-12 flex-shrink-0 bg-base-300 text-2xl"
+                    className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
                     user={message.sender}
                   />
                   <div className="flex-1">
-                    <div className="w-full flex justify-between">
-                      <span className="inline-flex gap-2 items-center">
+                    <div className="flex w-full justify-between">
+                      <span className="inline-flex items-center gap-2">
                         <span className="text-primary">
                           {message.sender.nickname || message.sender.username}
                         </span>
@@ -137,14 +137,14 @@ export default function ChatRoomIndex() {
                         {!message.role && <span className="badge">游客</span>}
                       </span>
                     </div>
-                    <div className="break-words min-w-0">{message.content}</div>
+                    <div className="min-w-0 break-words">{message.content}</div>
                   </div>
                   <div>
                     <span
                       className="tooltip tooltip-left"
                       data-tip={formatDateTime(message.sentAt)}
                     >
-                      <time className="text-base-content text-sm opacity-60">
+                      <time className="text-sm text-base-content opacity-60">
                         {formatTime(message.sentAt)}
                       </time>
                     </span>
@@ -152,11 +152,11 @@ export default function ChatRoomIndex() {
                 </div>
               ) : (
                 <div
-                  className="flex gap-4 px-2 hover:bg-base-200 transition group"
+                  className="group flex gap-4 px-2 transition hover:bg-base-200"
                   key={message.id}
                 >
-                  <div className="w-12 h-0 flex-shrink-0" />
-                  <span className="flex-1 break-words min-w-0">
+                  <div className="h-0 w-12 flex-shrink-0" />
+                  <span className="min-w-0 flex-1 break-words">
                     {message.content}
                   </span>
                   <div>
@@ -164,7 +164,7 @@ export default function ChatRoomIndex() {
                       className="tooltip tooltip-left"
                       data-tip={formatDateTime(message.sentAt)}
                     >
-                      <time className="text-sm opacity-0 group-hover:opacity-60 transition">
+                      <time className="text-sm opacity-0 transition group-hover:opacity-60">
                         {formatTime(message.sentAt)}
                       </time>
                     </span>
@@ -176,7 +176,7 @@ export default function ChatRoomIndex() {
 
           <Form
             method="post"
-            className="sticky bottom-0 z-10 flex gap-4 py-4 bg-base-100"
+            className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
             ref={formRef}
             autoComplete="off"
           >
@@ -202,7 +202,7 @@ export default function ChatRoomIndex() {
         </div>
         <div className="drawer-side">
           <div className="drawer-overlay" />
-          <aside className="w-72 bg-base-200 p-4 flex flex-col justify-between">
+          <aside className="flex w-72 flex-col justify-between bg-base-200 p-4">
             <div>
               <Link className="btn btn-ghost gap-2" to="/">
                 <HiOutlineChevronLeft />
@@ -211,7 +211,7 @@ export default function ChatRoomIndex() {
             </div>
             {isMember && (
               <Form method="post" action="exit">
-                <button className="btn btn-error gap-2 w-full">
+                <button className="btn btn-error w-full gap-2">
                   <HiOutlineLogout />
                   <span>退出群组</span>
                 </button>

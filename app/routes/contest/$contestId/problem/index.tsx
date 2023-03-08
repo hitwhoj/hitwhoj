@@ -152,7 +152,7 @@ export default function ContestProblemIndex() {
   const { contest } = data;
 
   return (
-    <table className="table w-full not-prose">
+    <table className="not-prose table w-full">
       <thead>
         <tr>
           <th className="w-16" />
@@ -175,7 +175,7 @@ export default function ContestProblemIndex() {
               <th className="text-center">{charCode}</th>
               <td>
                 <Link
-                  className="link inline-flex gap-2 items-center"
+                  className="link inline-flex items-center gap-2"
                   to={charCode}
                 >
                   <span>{problem.title}</span>
@@ -184,9 +184,9 @@ export default function ContestProblemIndex() {
               </td>
               <td>
                 {accepted && (
-                  <HiOutlineCheck className="text-success w-6 h-6" />
+                  <HiOutlineCheck className="h-6 w-6 text-success" />
                 )}
-                {failed && <HiOutlineX className="text-error w-6 h-6" />}
+                {failed && <HiOutlineX className="h-6 w-6 text-error" />}
               </td>
             </tr>
           );

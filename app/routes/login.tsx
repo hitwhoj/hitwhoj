@@ -65,7 +65,7 @@ export default function Register() {
 
       <Form
         method="post"
-        className="form-control w-full max-w-xs gap-4 not-prose"
+        className="not-prose form-control w-full max-w-xs gap-4"
       >
         <div className="form-control">
           <label className="label">
@@ -101,10 +101,10 @@ export default function Register() {
             登录
           </button>
           <label className="label">
-            <Link className="label-text-alt link link-hover" to="/register">
+            <Link className="link link-hover label-text-alt" to="/register">
               注册
             </Link>
-            <Link className="label-text-alt link link-hover" to="/reset">
+            <Link className="link link-hover label-text-alt" to="/reset">
               忘记密码
             </Link>
           </label>

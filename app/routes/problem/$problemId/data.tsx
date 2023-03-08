@@ -248,7 +248,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
         />
       </div>
 
-      <h3 className="flex justify-between items-center">
+      <h3 className="flex items-center justify-between">
         <span>子任务配置</span>
         <button className="btn btn-primary gap-2" onClick={handleAddSubtask}>
           <HiOutlinePlus />
@@ -296,8 +296,8 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
             key={index}
             tabIndex={0}
           >
-            <div className="collapse-title flex justify-between items-center">
-              <span className="inline-flex gap-2 items-center">
+            <div className="collapse-title flex items-center justify-between">
+              <span className="inline-flex items-center gap-2">
                 <span>子任务 {index + 1}</span>
                 <div className="tooltip" data-tip="分值">
                   <input
@@ -313,11 +313,11 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                   />
                 </div>
               </span>
-              <span className="inline-flex gap-2 items-center">
+              <span className="inline-flex items-center gap-2">
                 {/* 添加新的测试点 */}
                 <div className="tooltip" data-tip="新建测试点">
                   <button
-                    className="btn btn-ghost btn-success btn-square btn-sm"
+                    className="btn btn-square btn-success btn-ghost btn-sm"
                     onClick={handleAddCase}
                   >
                     <HiOutlinePlus className="text-success" />
@@ -326,7 +326,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                 {/* 删除当前子任务 */}
                 <div className="tooltip" data-tip="删除子任务">
                   <button
-                    className="btn btn-ghost btn-error btn-square btn-sm"
+                    className="btn btn-square btn-error btn-ghost btn-sm"
                     onClick={handleRemoveSubtask}
                   >
                     <HiOutlineX className="text-error" />
@@ -348,7 +348,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                 };
 
                 return (
-                  <div className="flex gap-2 items-center" key={index}>
+                  <div className="flex items-center gap-2" key={index}>
                     <span>测试点 {index + 1}</span>
                     <HiOutlineChevronLeft />
                     <div className="tooltip" data-tip="输入文件">
@@ -364,7 +364,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                     <HiOutlineChevronRight />
                     <div className="tooltip" data-tip="输出文件">
                       <DataSelect
-                        className="select select-bordered select-sm tooltip"
+                        className="select tooltip select-bordered select-sm"
                         value={task.output}
                         options={props.data}
                         onChange={(event) => {
@@ -374,9 +374,9 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                     </div>
                     {/* 删除当前测试点 */}
                     <div className="tooltip" data-tip="删除测试点">
-                      <button className="btn btn-ghost btn-error btn-square btn-sm">
+                      <button className="btn btn-square btn-error btn-ghost btn-sm">
                         <HiOutlineX
-                          className="text-error cursor-pointer"
+                          className="cursor-pointer text-error"
                           onClick={() => handleRemoveCase(index)}
                         />
                       </button>
@@ -389,7 +389,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
         );
       })}
 
-      <div className="flex flex-col gap-2 my-4">
+      <div className="my-4 flex flex-col gap-2">
         {!props.config.subtasks.length && (
           <div className="alert alert-warning">还没有任何子任务</div>
         )}
@@ -432,7 +432,7 @@ function InteractiveConfigEditor(props: InteractiveConfigEditorProps) {
         />
       </div>
 
-      <div className="flex flex-col gap-2 my-4">
+      <div className="my-4 flex flex-col gap-2">
         {!props.config.interactive && (
           <div className="alert alert-warning">请选择交互代码</div>
         )}
@@ -479,7 +479,7 @@ function DynamicConfigEditor(props: DynamicConfigEditorProps) {
         />
       </div>
 
-      <div className="flex flex-col gap-2 my-4">
+      <div className="my-4 flex flex-col gap-2">
         {(!props.config.mkdata || !props.config.std) && (
           <div className="alert alert-warning">
             请选择数据构造代码和标准代码
@@ -514,7 +514,7 @@ function SubmitAnswerConfigEditor(props: SubmitAnswerConfigEditorProps) {
         />
       </div>
 
-      <div className="flex flex-col gap-2 my-4">
+      <div className="my-4 flex flex-col gap-2">
         {!props.config.answer && (
           <div className="alert alert-warning">请输入答案</div>
         )}
@@ -548,7 +548,7 @@ function ConfigJSONEditor({
   }, [isActionReload]);
 
   return (
-    <div className="flex flex-col gap-2 mb-24">
+    <div className="mb-24 flex flex-col gap-2">
       <div className="form-control">
         <label className="label">
           <span className="label-text">评测方式</span>
@@ -649,9 +649,9 @@ export default function ProblemData() {
         </div>
       )}
 
-      <h2 className="flex justify-between items-center">
+      <h2 className="flex items-center justify-between">
         <span>测试数据</span>
-        <span className="inline-flex gap-4 items-center">
+        <span className="inline-flex items-center gap-4">
           <button
             className="btn btn-primary gap-2"
             onClick={() => setVisible(true)}
@@ -672,15 +672,15 @@ export default function ProblemData() {
         deleteAction={ActionType.RemoveData}
       />
 
-      <h2 className="flex justify-between items-center">
+      <h2 className="flex items-center justify-between">
         <span>附加文件</span>
         <FileUploader uploadAction={ActionType.UploadFile} />
       </h2>
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
       <FileList files={files} deleteAction={ActionType.RemoveFile} />
 
-      <Fullscreen visible={visible} className="bg-base-100 overflow-auto">
-        <div className="w-full max-w-xl p-4 mx-auto">
+      <Fullscreen visible={visible} className="overflow-auto bg-base-100">
+        <div className="mx-auto w-full max-w-xl p-4">
           <button
             className="btn btn-ghost gap-2"
             onClick={() => setVisible(false)}

@@ -11,7 +11,7 @@ type FileListProps = {
 
 export function FileList({ files, deleteAction }: FileListProps) {
   return (
-    <table className="table table-compact">
+    <table className="table-compact table">
       <thead>
         <tr>
           <td>文件名</td>

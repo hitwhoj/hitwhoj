@@ -56,7 +56,7 @@ export default function JudgeAdmin() {
         const state = states.find((s) => s.id === judge.id)?.state;
 
         return (
-          <div className="card bg-base-200 my-4 not-prose" key={judge.id}>
+          <div className="not-prose card my-4 bg-base-200" key={judge.id}>
             <div className="card-body">
               <h2 className="card-title">{judge.name}</h2>
               <p className="flex gap-4">

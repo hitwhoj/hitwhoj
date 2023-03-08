@@ -35,12 +35,12 @@ export default function Record() {
 
   return (
     <>
-      <h1 className="flex gap-4 items-center">
+      <h1 className="flex items-center gap-4">
         <HiOutlineUserGroup className="shrink-0" />
         <span>{team.name}</span>
       </h1>
 
-      <div className="tabs tabs-boxed bg-base-100 not-prose">
+      <div className="not-prose tabs tabs-boxed bg-base-100">
         <NavLink className="tab" to="profile">
           信息
         </NavLink>

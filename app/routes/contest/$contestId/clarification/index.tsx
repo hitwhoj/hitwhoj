@@ -75,7 +75,7 @@ export default function ContestClarification() {
 
   return (
     <>
-      <table className="table w-full not-prose">
+      <table className="not-prose table w-full">
         <thead>
           <tr>
             <th>用户</th>
@@ -107,7 +107,7 @@ export default function ContestClarification() {
                 <td>{clarification.replies.length}</td>
                 <td>
                   <Link
-                    className="link inline-flex gap-2 items-center"
+                    className="link inline-flex items-center gap-2"
                     to={clarification.id.toString()}
                   >
                     <span>查看详情</span>

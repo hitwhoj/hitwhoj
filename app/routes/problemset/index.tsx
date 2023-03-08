@@ -76,18 +76,18 @@ export default function ProblemsetList() {
 
   return (
     <>
-      <h1 className="flex justify-between items-center">
+      <h1 className="flex items-center justify-between">
         <span>题单列表</span>
 
         {hasEditPerm && (
           <Link className="btn btn-primary gap-2" to="new">
-            <HiOutlinePlus className="w-4 h-4" />
+            <HiOutlinePlus className="h-4 w-4" />
             <span>新建题单</span>
           </Link>
         )}
       </h1>
 
-      <table className="table table-compact w-full not-prose">
+      <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />

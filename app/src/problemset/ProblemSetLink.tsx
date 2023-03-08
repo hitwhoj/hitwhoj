@@ -9,7 +9,7 @@ type Props = {
 export function ProblemSetLink({ problemset }: Props) {
   return (
     <Link
-      className="link inline-flex gap-2 items-center"
+      className="link inline-flex items-center gap-2"
       to={`/problemset/${problemset.id}`}
     >
       <span>{problemset.title}</span>

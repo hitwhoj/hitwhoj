@@ -121,7 +121,7 @@ export default function ContestView() {
         <span>{contest.title}</span>
       </h1>
 
-      <p className="flex flex-wrap gap-2 not-prose">
+      <p className="not-prose flex flex-wrap gap-2">
         <ContestStateTag
           beginTime={contest.beginTime}
           endTime={contest.endTime}
@@ -141,7 +141,7 @@ export default function ContestView() {
         ))}
       </p>
 
-      <p className="tabs tabs-boxed bg-base-100 not-prose">
+      <p className="not-prose tabs tabs-boxed bg-base-100">
         <NavLink className="tab" to="desc">
           详情
         </NavLink>

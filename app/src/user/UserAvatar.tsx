@@ -14,8 +14,8 @@ export function UserAvatar({
 
   return (
     <div
-      className={`avatar placeholder overflow-hidden flex justify-center items-center rounded-box ${
-        className ?? "w-16 h-16 text-3xl"
+      className={`avatar placeholder rounded-box flex items-center justify-center overflow-hidden ${
+        className ?? "h-16 w-16 text-3xl"
       }`}
       {...props}
     >

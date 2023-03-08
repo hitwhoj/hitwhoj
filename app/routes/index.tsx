@@ -73,8 +73,8 @@ export default function Index() {
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>
-      <div className="place-content-between grid grid-cols-8 md:grid-cols-12 gap-4 not-prose">
-        <div className="card col-span-8 md:col-span-12 bg-info text-info-content">
+      <div className="not-prose grid grid-cols-8 place-content-between gap-4 md:grid-cols-12">
+        <div className="card col-span-8 bg-info text-info-content md:col-span-12">
           <div className="card-body">
             <h2 className="card-title">纳新公告</h2>
             <p>HITwh OJ 项目组和 HITwh FP 项目组绝赞纳新中！！！</p>
@@ -139,7 +139,7 @@ export default function Index() {
             </Form>
           </div>
         </div>
-        <div className="card col-span-8 md:col-span-6 bg-base-200">
+        <div className="card col-span-8 bg-base-200 md:col-span-6">
           <div className="card-body">
             <h2 className="card-title">近期比赛</h2>
             <div className="flex flex-col gap-4">
@@ -173,10 +173,10 @@ export default function Index() {
             </div>
           </div>
         </div>
-        <div className="card col-span-8 md:col-span-6 bg-base-200">
+        <div className="card col-span-8 bg-base-200 md:col-span-6">
           <div className="card-body">
             <h2 className="card-title">推荐题目</h2>
-            <table className="table table-compact">
+            <table className="table-compact table">
               <thead>
                 <tr>
                   <th>题目</th>

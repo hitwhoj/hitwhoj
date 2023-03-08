@@ -122,7 +122,7 @@ export default function UserEdit() {
   }, [isActionReload]);
 
   return (
-    <Form method="post" className="form-control w-full max-w-lg mx-auto gap-4">
+    <Form method="post" className="form-control mx-auto w-full max-w-lg gap-4">
       <div className="form-control">
         <label className="label">
           <span className="label-text">用户名 (字母数字下划线)</span>

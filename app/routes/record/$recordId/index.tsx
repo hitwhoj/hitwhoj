@@ -109,7 +109,7 @@ export default function RecordView() {
         <RecordTimeMemory time={time} memory={memory} />
       </p>
 
-      <div className="flex gap-4 flex-wrap my-4">
+      <div className="my-4 flex flex-wrap gap-4">
         <span>
           <span className="opacity-60">用户：</span>
           <UserLink user={record.submitter} />
@@ -137,7 +137,7 @@ export default function RecordView() {
         <>
           <h2>测试点结果</h2>
           {subtasks.map((subtask, index) => (
-            <div className="collapse collapse-open" key={index} tabIndex={0}>
+            <div className="collapse-open collapse" key={index} tabIndex={0}>
               <div className="collapse-title flex gap-2">
                 <span>子任务 {index + 1}</span>
                 <RecordStatus status={subtask.status} />
@@ -145,7 +145,7 @@ export default function RecordView() {
               </div>
               <div className="collapse-content">
                 {subtask.tasks.map((task, index) => (
-                  <div className="flex gap-2 items-center" key={index}>
+                  <div className="flex items-center gap-2" key={index}>
                     <HiOutlineChevronRight />
                     <span>测试点 {index + 1}</span>
                     <RecordStatus status={task.status} />
@@ -164,7 +164,7 @@ export default function RecordView() {
           <h2 className="flex gap-2">
             <span>源代码</span>
             <button
-              className="btn btn-ghost btn-sm btn-square"
+              className="btn btn-square btn-ghost btn-sm"
               onClick={() =>
                 navigator.clipboard.writeText(code).then(
                   () => Toasts.success("复制成功"),
@@ -172,7 +172,7 @@ export default function RecordView() {
                 )
               }
             >
-              <AiOutlineCopy className="w-4 h-4 text-info" />
+              <AiOutlineCopy className="h-4 w-4 text-info" />
             </button>
           </h2>
           <Highlighter language={record.language} children={code} />

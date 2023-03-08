@@ -8,8 +8,8 @@ export function ErrorBoundary({ error }: ErrorBoundaryProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="grid place-items-center w-full h-full">
-      <div className="card card-compact w-96 bg-error text-error-content shadow-lg not-prose">
+    <div className="grid h-full w-full place-items-center">
+      <div className="not-prose card card-compact w-96 bg-error text-error-content shadow-lg">
         <figure>
           <img src="/error.png" alt="error" />
         </figure>

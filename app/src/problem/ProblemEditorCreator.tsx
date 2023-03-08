@@ -60,7 +60,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   }, [filter]);
 
   return (
-    <fetcher.Form method="post" className="inline-flex not-prose gap-4">
+    <fetcher.Form method="post" className="not-prose inline-flex gap-4">
       <input type="hidden" name="pid" value={selected} required />
       <label className="input-group">
         <div className="dropdown">

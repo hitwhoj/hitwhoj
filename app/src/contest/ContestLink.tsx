@@ -12,7 +12,7 @@ type Props = {
 export function ContestLink({ contest }: Props) {
   return (
     <Link
-      className="link inline-flex gap-2 items-center"
+      className="link inline-flex items-center gap-2"
       to={`/contest/${contest.id}`}
     >
       <AiOutlineTrophy />

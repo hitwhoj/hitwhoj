@@ -36,7 +36,7 @@
 
 ```jsx
 // 要搞按钮样式直接加类名就可以了
-<label className="btn btn-primary btn-square">
+<label className="btn btn-square btn-primary">
   <HiOutlinePlus />
 </label>
 ```

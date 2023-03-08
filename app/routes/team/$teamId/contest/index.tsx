@@ -51,7 +51,7 @@ export default function HomeworkList() {
 
   return (
     <>
-      <h2 className="flex justify-between items-center">
+      <h2 className="flex items-center justify-between">
         <span>团队比赛</span>
         {hasCreatePerm && (
           <Link className="btn btn-primary gap-2" to="new">
@@ -61,7 +61,7 @@ export default function HomeworkList() {
         )}
       </h2>
 
-      <table className="table table-compact w-full not-prose">
+      <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />

@@ -24,7 +24,7 @@ export function Pagination(props: PaginationProps) {
       : Array.from({ length: props.totalPages }, (_, i) => i + 1);
 
   return (
-    <div className="flex justify-end items-center gap-2 flex-wrap">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Form method="get" action={props.action} className="space-x-2">
         <span>前往第</span>
         <input
