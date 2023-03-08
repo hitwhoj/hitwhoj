@@ -1,6 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useContext, useEffect, useRef, useState } from "react";
-import { FaImage } from "react-icons/fa";
+import { useContext, useEffect, useState } from "react";
 import { UserContext } from "~/utils/context/user";
 import { Markdown } from "./Markdown";
 import { VscodeEditor } from "./VscodeEditor";

@@ -2,8 +2,8 @@ import Editor, {
   useMonaco,
   loader as monacoLoader,
 } from "@monaco-editor/react";
-import { editor } from "monaco-editor";
-import { useContext, useEffect, useRef, useState } from "react";
+import type { editor } from "monaco-editor";
+import { useContext, useEffect, useState } from "react";
 import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 
 type VscodeEditorProps = {
