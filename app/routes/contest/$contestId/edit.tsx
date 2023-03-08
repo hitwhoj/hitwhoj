@@ -25,6 +25,7 @@ import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -355,12 +356,9 @@ export default function ContestEdit() {
           <label className="label">
             <span className="label-text">介绍</span>
           </label>
-          <textarea
-            className="textarea textarea-bordered"
+          <MarkdownEditor
             name="description"
             defaultValue={contest.description}
-            required
-            disabled={isUpdating}
           />
         </div>
 

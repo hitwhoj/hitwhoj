@@ -2,13 +2,15 @@ import Editor, {
   useMonaco,
   loader as monacoLoader,
 } from "@monaco-editor/react";
-import { useContext, useEffect } from "react";
+import type { editor } from "monaco-editor";
+import { useContext, useEffect, useState } from "react";
 import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
 
 type VscodeEditorProps = {
   code: string;
   onChange: (code: string) => void;
   language: string;
+  insertText?: string;
 };
 
 // override monaco loader
@@ -38,19 +40,43 @@ export function VscodeEditor(props: VscodeEditorProps) {
       });
       monaco.editor.setTheme(theme);
     }
-  }, [monaco]);
+  }, [monaco, theme]);
+
+  const [editor, setEditor] = useState<editor.ICodeEditor | null>(null);
+
+  // 插入代码
+  // @see https://github.com/microsoft/monaco-editor/issues/584
+  useEffect(() => {
+    if (editor && props.insertText) {
+      const p = editor.getPosition()!;
+      editor.executeEdits("", [
+        {
+          range: {
+            startLineNumber: p.lineNumber,
+            startColumn: p.column,
+            endLineNumber: p.lineNumber,
+            endColumn: p.column,
+          },
+          text: props.insertText,
+        },
+      ]);
+    }
+  }, [props.insertText]);
 
   return (
     <Editor
       value={props.code}
       language={props.language}
       theme={theme}
-      onChange={(code) => props.onChange(code ?? "")}
+      onChange={(code) => {
+        props.onChange(code ?? "");
+      }}
       options={{
         cursorSmoothCaretAnimation: true,
         smoothScrolling: true,
         fontSize: 16,
       }}
+      onMount={(editor) => setEditor(editor)}
     />
   );
 }

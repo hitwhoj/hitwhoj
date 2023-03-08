@@ -17,6 +17,7 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -108,12 +109,7 @@ export default function ContestNew() {
           <label className="label">
             <span className="label-text">比赛介绍</span>
           </label>
-          <textarea
-            name="description"
-            className="textarea textarea-bordered"
-            required
-            disabled={isLoading}
-          />
+          <MarkdownEditor name="description" />
         </div>
 
         <div className="form-control w-full max-w-xs">

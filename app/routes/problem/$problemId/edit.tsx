@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { ToastContext } from "~/utils/context/toast";
 import { findProblemTeam } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
@@ -185,13 +186,7 @@ export default function ProblemEdit() {
         <label className="label">
           <span className="label-text">题目正文</span>
         </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          required
-          defaultValue={problem.description}
-          disabled={isLoading}
-        />
+        <MarkdownEditor name="description" defaultValue={problem.description} />
       </div>
 
       <div className="form-control w-full max-w-xs">

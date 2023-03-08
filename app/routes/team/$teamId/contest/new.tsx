@@ -18,6 +18,7 @@ import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -109,12 +110,7 @@ export default function TeamContestNew() {
           <label className="label">
             <span className="label-text">比赛介绍</span>
           </label>
-          <textarea
-            name="description"
-            className="textarea textarea-bordered"
-            required
-            disabled={isLoading}
-          />
+          <MarkdownEditor name="description" />
         </div>
 
         <div className="form-control w-full max-w-xs">

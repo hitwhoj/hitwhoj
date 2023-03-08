@@ -20,6 +20,7 @@ import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -176,12 +177,7 @@ function EditProfile({
         <label className="label">
           <span className="label-text">团队描述</span>
         </label>
-        <textarea
-          className="textarea textarea-bordered"
-          name="description"
-          defaultValue={description}
-          disabled={isLoading}
-        />
+        <MarkdownEditor name="description" defaultValue={description} />
       </div>
 
       <div className="form-control">

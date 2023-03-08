@@ -18,6 +18,7 @@ import { findProblemSetTeam } from "~/utils/db/problemset";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { ToastContext } from "~/utils/context/toast";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -321,12 +322,9 @@ export default function ProblemSetEdit() {
           <label className="label">
             <span className="label-text">简介</span>
           </label>
-          <textarea
-            className="textarea textarea-bordered"
+          <MarkdownEditor
             name="description"
             defaultValue={problemSet.description}
-            disabled={isUpdating}
-            required
           />
         </div>
 

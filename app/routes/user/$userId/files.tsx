@@ -74,9 +74,11 @@ export async function action({ request, params }: ActionArgs) {
         throw new Response("File missing", { status: 400 });
       }
 
-      await Promise.all(files.map((file) => createUserFile(file, userId)));
+      const result = await Promise.all(
+        files.map((file) => createUserFile(file, userId))
+      );
 
-      return null;
+      return json(result);
     }
 
     case ActionType.RemoveFile: {
