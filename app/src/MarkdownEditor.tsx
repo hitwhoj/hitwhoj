@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import { UserContext } from "~/utils/context/user";
@@ -30,21 +30,30 @@ export function MarkdownEditor(props: Props) {
   }, [fetcher.data]);
 
   return (
-    <div className="rounded-box border border-base-300">
-      {props.name && <textarea name={props.name} value={code} hidden />}
-      <div className="tabs">
-        <span
-          className={`tab tab-bordered ${preview ? "" : "tab-active"}`}
-          onClick={() => setPreview(false)}
-        >
-          代码
-        </span>
-        <span
-          className={`tab tab-bordered ${preview ? "tab-active" : ""}`}
-          onClick={() => setPreview(true)}
-        >
-          预览
-        </span>
+    <div className="rounded-box overflow-hidden border border-base-300">
+      {props.name && (
+        <textarea name={props.name} value={code} hidden readOnly />
+      )}
+      <div className="flex items-center">
+        <div className="tabs flex-1">
+          <span
+            className={`tab tab-bordered ${preview ? "" : "tab-active"}`}
+            onClick={() => setPreview(false)}
+          >
+            代码
+          </span>
+          <span
+            className={`tab tab-bordered ${preview ? "tab-active" : ""}`}
+            onClick={() => setPreview(true)}
+          >
+            预览
+          </span>
+        </div>
+        <div className="px-4">
+          <Link to="/docs/help/markdown.md" target="_blank">
+            使用说明
+          </Link>
+        </div>
       </div>
       <div className="h-96 overflow-auto">
         {preview ? (

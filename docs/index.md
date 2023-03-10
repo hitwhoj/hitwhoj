@@ -7,6 +7,7 @@
 - [评测相关说明](/docs/judge.md)
 - [开源协议](/docs/license.md)
 - [技术栈说明](/docs/stack.md)
+- [Markdown 编辑器使用帮助](/docs/help/markdown.md)
 
 ## 技术相关
 
