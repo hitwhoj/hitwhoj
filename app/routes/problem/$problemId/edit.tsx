@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionArgs) {
     select: { lockedBy: { select: { id: true } } },
   });
 
-  if (problem?.lockedBy?.id !== self.userId) {
+  if (problem?.lockedBy?.id && problem?.lockedBy?.id !== self.userId) {
     throw new Response("题目已被锁定", { status: 403 });
   }
 
