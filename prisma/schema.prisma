@@ -54,6 +54,8 @@ model User {
   submitedClarifacation Clarification[]      @relation("submit")
   appliedClarification  Clarification[]      @relation("apply")
   clarificationReply    ClarificationReply[]
+
+  lockedProblems Problem[] @relation("lockedBy")
 }
 
 enum SystemUserRole {
@@ -122,6 +124,10 @@ model Problem {
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
+
+  /// 题目上锁后，只有上锁的用户可以修改
+  lockedBy    User? @relation("lockedBy", fields: [lockedByUid], references: [id])
+  lockedByUid Int?
 }
 
 model ProblemTag {

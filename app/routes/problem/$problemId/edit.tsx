@@ -4,8 +4,11 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { UserLink } from "~/src/user/UserLink";
 import { ToastContext } from "~/utils/context/toast";
+import { UserContext } from "~/utils/context/user";
 import { findProblemTeam } from "~/utils/db/problem";
+import { selectUserData } from "~/utils/db/user";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -42,6 +45,9 @@ export async function loader({ request, params }: LoaderArgs) {
           name: true,
         },
       },
+      lockedBy: {
+        select: selectUserData,
+      },
     },
   });
 
@@ -72,6 +78,16 @@ export async function action({ request, params }: ActionArgs) {
   const priv = form.has("private");
   const submit = form.has("allowSubmit");
   const tags = form.getAll("tag").map((value) => invariant(tagScheme, value));
+  const lock = form.has("lock");
+
+  const problem = await db.problem.findUnique({
+    where: { id: problemId },
+    select: { lockedBy: { select: { id: true } } },
+  });
+
+  if (problem?.lockedBy?.id !== self.userId) {
+    throw new Response("题目已被锁定", { status: 403 });
+  }
 
   await db.$transaction(async (db) => {
     const problem = await db.problem.update({
@@ -83,6 +99,9 @@ export async function action({ request, params }: ActionArgs) {
         memoryLimit,
         private: priv,
         allowSubmit: submit,
+        lockedBy: lock
+          ? { connect: { id: self.userId! } }
+          : { disconnect: true },
       },
       select: { tags: { select: { name: true } } },
     });
@@ -129,6 +148,11 @@ export default function ProblemEdit() {
 
   const handleRemoveTag = (name: string) =>
     setTags((tags) => tags.filter((tag) => tag !== name));
+
+  const userId = useContext(UserContext);
+
+  const isLocked = problem.lockedBy !== null;
+  const isLockedBySelf = userId && problem.lockedBy?.id === userId;
 
   return (
     <Form method="post" className="form-control gap-4">
@@ -239,10 +263,43 @@ export default function ProblemEdit() {
           />
           <span className="label-text">允许用户提交</span>
         </label>
+
+        <label className="label cursor-pointer justify-start gap-2">
+          <input
+            className="checkbox checkbox-primary"
+            type="checkbox"
+            name="lock"
+            defaultChecked={isLocked}
+            disabled={isLoading || (isLocked && !isLockedBySelf)}
+          />
+          <span className="label-text">锁定题目</span>
+          <div
+            className="tooltip h-10"
+            data-tip="锁定后，只有锁定人可以编辑本题"
+          >
+            <button className="btn-link h-10 p-0" type="button">
+              ?
+            </button>
+          </div>
+          {isLocked &&
+            (isLockedBySelf ? (
+              <span className="label-text text-success">您已锁定该题目</span>
+            ) : (
+              <span className="label-text text-error">
+                该题目已被
+                <UserLink user={problem.lockedBy!} />
+                锁定
+              </span>
+            ))}
+        </label>
       </div>
 
       <div className="form-control w-full max-w-xs">
-        <button className="btn btn-primary" type="submit" disabled={isLoading}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={isLoading || (isLocked && !isLockedBySelf)}
+        >
           确认修改
         </button>
       </div>
