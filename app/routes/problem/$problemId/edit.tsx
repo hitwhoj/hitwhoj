@@ -4,8 +4,11 @@ import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { useContext, useEffect, useState } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { UserLink } from "~/src/user/UserLink";
 import { ToastContext } from "~/utils/context/toast";
+import { UserContext } from "~/utils/context/user";
 import { findProblemTeam } from "~/utils/db/problem";
+import { selectUserData } from "~/utils/db/user";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -43,10 +46,7 @@ export async function loader({ request, params }: LoaderArgs) {
         },
       },
       lockedBy: {
-        select: {
-          id: true,
-          nickname: true,
-        },
+        select: selectUserData,
       },
     },
   });
@@ -55,16 +55,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("题目未找到", { status: 404 });
   }
 
-  return json({
-    problem: {
-      ...problem,
-      isLocked: !!problem.lockedBy,
-      lockedBy: {
-        ...problem.lockedBy,
-        self: problem.lockedBy?.id === self.userId,
-      },
-    },
-  });
+  return json({ problem });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -157,6 +148,11 @@ export default function ProblemEdit() {
 
   const handleRemoveTag = (name: string) =>
     setTags((tags) => tags.filter((tag) => tag !== name));
+
+  const userId = useContext(UserContext);
+
+  const isLocked = problem.lockedBy !== null;
+  const isLockedBySelf = userId && problem.lockedBy?.id === userId;
 
   return (
     <Form method="post" className="form-control gap-4">
@@ -273,8 +269,8 @@ export default function ProblemEdit() {
             className="checkbox checkbox-primary"
             type="checkbox"
             name="lock"
-            defaultChecked={problem.isLocked}
-            disabled={isLoading || (problem.isLocked && !problem.lockedBy.self)}
+            defaultChecked={isLocked}
+            disabled={isLoading || (isLocked && !isLockedBySelf)}
           />
           <span className="label-text">锁定题目</span>
           <div
@@ -285,15 +281,13 @@ export default function ProblemEdit() {
               ?
             </button>
           </div>
-          {problem.isLocked &&
-            (problem.lockedBy.self ? (
-              <span className="label-text text-slate-500">您已锁定该题目</span>
+          {isLocked &&
+            (isLockedBySelf ? (
+              <span className="label-text text-success">您已锁定该题目</span>
             ) : (
-              <span className="label-text text-slate-500">
+              <span className="label-text text-error">
                 该题目已被
-                <a href={`/user/${problem.lockedBy.id}`}>
-                  {problem.lockedBy.nickname}
-                </a>
+                <UserLink user={problem.lockedBy!} />
                 锁定
               </span>
             ))}
@@ -304,7 +298,7 @@ export default function ProblemEdit() {
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={isLoading || (problem.isLocked && !problem.lockedBy.self)}
+          disabled={isLoading || (isLocked && !isLockedBySelf)}
         >
           确认修改
         </button>
