@@ -3,10 +3,5 @@ node_modules
 /.vscode
 /.idea
 
-/.cache
-/build
-/public/build
-/app/styles
-.env
 *.log
 /.nyc_output
