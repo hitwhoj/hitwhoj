@@ -4,7 +4,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "patch-package && husky install && yarn workspace hitwhoj prisma generate"
+    "postinstall": "husky install && patch-package && yarn workspaces run postinstall"
   },
   "resolutions": {
     "katex": "^0.15.3",
@@ -12,6 +12,8 @@
     "got": "^11.8.5"
   },
   "devDependencies": {
-    "husky": "^8.0.3"
+    "husky": "^8.0.3",
+    "patch-package": "^6.5.1",
+    "postinstall-postinstall": "^2.1.0"
   }
 }
