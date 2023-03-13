@@ -13,19 +13,19 @@ variables:
 
 cache:
   paths:
-    - .cache/yarn
+    - .cache
     - node_modules/
 
 test_build:
   script:
     - node --version
     - yarn --version
-    - yarn install --cache-folder "$(realpath .)/.cache/yarn"
+    - yarn install --cache-folder "$(realpath .)/.cache"
 
     # check format and type
-    - yarn fmt:check
-    - yarn lint:check
-    - yarn tsc
+    - yarn workspace hitwhoj run fmt:check
+    - yarn workspace hitwhoj run lint:check
+    - yarn workspace hitwhoj run tsc
 
     # prisma & minio
     - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
@@ -33,11 +33,11 @@ test_build:
     - export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
     - export S3_SECRET_KEY=$MINIO_SECRET_KEY
     - export S3_BUCKET=hitwhoj
-    - yarn prisma db push
+    - yarn workspace hitwhoj run prisma db push
 
     # test
-    - yarn prisma db seed
-    - yarn test
+    - yarn workspace hitwhoj run prisma db seed
+    - yarn workspace hitwhoj run test
 
     # build
-    - yarn build
+    - yarn workspace hitwhoj run build
