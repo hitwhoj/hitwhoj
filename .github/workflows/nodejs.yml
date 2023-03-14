@@ -2,9 +2,9 @@ name: GitHub CI
 
 on:
   push:
-    branches: [master, dev]
+    branches: [dev]
   pull_request:
-    branches: [master, dev]
+    branches: [dev]
 
 jobs:
   build:
@@ -41,9 +41,9 @@ jobs:
 
       - name: Check formats and types
         run: |
-          yarn fmt:check
-          yarn lint:check
-          yarn tsc
+          yarn workspace hitwhoj run fmt:check
+          yarn workspace hitwhoj run lint:check
+          yarn workspace hitwhoj run tsc
 
       - name: Configure Postgres & MinIO
         run: |
@@ -51,7 +51,7 @@ jobs:
           export S3_ACCESS_KEY="testadmin"
           export S3_SECRET_KEY="testpassword"
           export S3_BUCKET="hitwhoj"
-          yarn prisma db push
+          yarn workspace hitwhoj run prisma db push
 
       - name: Test
         run: |
@@ -59,8 +59,8 @@ jobs:
           export S3_ACCESS_KEY="testadmin"
           export S3_SECRET_KEY="testpassword"
           export S3_BUCKET="hitwhoj"
-          yarn prisma db seed
-          yarn test
+          yarn workspace hitwhoj run prisma db seed
+          yarn workspace hitwhoj run test
 
       - name: Build
-        run: yarn build
+        run: yarn workspace hitwhoj run build

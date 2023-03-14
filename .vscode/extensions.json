@@ -3,6 +3,7 @@
     "bradlc.vscode-tailwindcss",
     "gruntfuggly.todo-tree",
     "prisma.prisma-insider",
+    "eamodio.gitlens",
     "esbenp.prettier-vscode"
   ]
 }
