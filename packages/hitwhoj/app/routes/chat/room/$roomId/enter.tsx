@@ -1,8 +1,9 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import { HiOutlineLockClosed } from "react-icons/hi";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -42,8 +43,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function EnterRoom() {
   const { room } = useLoaderData<typeof loader>();
-  const { state } = useTransition();
-  const isSubmitting = state !== "idle";
+  const { loading } = useSignalTransition();
 
   return (
     <>
@@ -61,13 +61,13 @@ export default function EnterRoom() {
             type="password"
             name="password"
             placeholder="请输入房间密码"
-            disabled={isSubmitting}
+            disabled={loading.value}
           />
         )}
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={isSubmitting}
+          disabled={loading.value}
         >
           加入房间
         </button>

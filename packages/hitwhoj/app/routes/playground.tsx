@@ -1,5 +1,6 @@
-import { useSignal, useSignalEffect } from "@preact/signals-react";
-import { useEffect } from "react";
+import { useSignal } from "@preact/signals-react";
+import { useBeforeUnload } from "@remix-run/react";
+import { useCallback, useEffect } from "react";
 import Fullscreen from "~/src/Fullscreen";
 import { VscodeEditor } from "~/src/VscodeEditor";
 
@@ -26,12 +27,12 @@ int main() {
     }
   }, []);
 
-  useSignalEffect(() => {
-    localStorage.setItem("playground.code", code.value);
-  });
-  useSignalEffect(() => {
-    localStorage.setItem("playground.language", language.value);
-  });
+  useBeforeUnload(
+    useCallback(() => {
+      localStorage.setItem("playground.code", code.value);
+      localStorage.setItem("playground.language", language.value);
+    }, [code.value, language.value])
+  );
 
   return (
     <Fullscreen visible className="bg-base-100">

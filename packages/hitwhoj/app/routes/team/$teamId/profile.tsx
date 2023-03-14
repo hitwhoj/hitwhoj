@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
@@ -10,9 +10,11 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { UserContext } from "~/utils/context/user";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignalTransition } from "~/utils/hooks";
+import { useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -107,20 +109,17 @@ export default function TeamDetail() {
   const { team, hasViewPerm } = useLoaderData<typeof loader>();
   const self = useContext(UserContext);
 
-  const { state, type } = useTransition();
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isLoading = isActionReload && isActionSubmit;
+  const { success, loading } = useSignalTransition();
 
   const isNotMember = self && !hasViewPerm;
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("成功加入团队");
     }
-  }, [isActionReload]);
+  });
 
   return (
     <>
@@ -167,13 +166,13 @@ export default function TeamDetail() {
                 name="code"
                 placeholder="请输入邀请码"
                 required
-                disabled={isLoading}
+                disabled={loading.value}
               />
             )}
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={isLoading}
+              disabled={loading.value}
             >
               加入团队
             </button>

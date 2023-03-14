@@ -1,12 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useLoaderData,
-  useParams,
-  useTransition,
-} from "@remix-run/react";
+import { Form, Link, useLoaderData, useParams } from "@remix-run/react";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { json } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
@@ -16,8 +10,10 @@ import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignalTransition } from "~/utils/hooks";
+import { useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ params, request }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -46,18 +42,15 @@ export async function loader({ params, request }: LoaderArgs) {
 export default function ClarificationSubmit() {
   const { problems } = useLoaderData<typeof loader>();
   const { contestId } = useParams();
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionSubmit;
+  const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("提交成功");
     }
-  }, [isActionReload]);
+  });
 
   return (
     <Fullscreen
@@ -114,7 +107,7 @@ export default function ClarificationSubmit() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={isLoading}
+              disabled={loading.value}
             >
               提交
             </button>

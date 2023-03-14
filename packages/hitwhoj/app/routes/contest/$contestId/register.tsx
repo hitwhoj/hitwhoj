@@ -1,14 +1,16 @@
+import { useSignalEffect } from "@preact/signals-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect } from "react";
+import { Form, useLoaderData } from "@remix-run/react";
+import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import {
   findContestParticipantRole,
   findContestStatus,
 } from "~/utils/db/contest";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -106,18 +108,15 @@ export async function action({ request, params }: ActionArgs) {
 export default function ContestRegisteration() {
   const { contest } = useLoaderData<typeof loader>();
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionReload;
+  const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("报名成功");
     }
-  }, [isActionReload]);
+  });
 
   return (
     <>
@@ -131,10 +130,15 @@ export default function ContestRegisteration() {
             className="input input-bordered"
             placeholder="密码"
             name="password"
+            disabled={loading.value}
             required
           />
         )}
-        <button className="btn btn-primary" type="submit" disabled={isLoading}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={loading.value}
+        >
           同意并报名
         </button>
       </Form>

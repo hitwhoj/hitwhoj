@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -9,11 +9,13 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalFetcher } from "~/utils/hooks";
+import { useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -87,20 +89,15 @@ export async function action({ params, request }: ActionArgs) {
 }
 
 function DeleteMember({ id }: { id: number }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (fetcher.done.value) {
       Toasts.success("踢出成功");
     }
-  }, [isActionReload]);
+  });
 
   return (
     <fetcher.Form
@@ -113,8 +110,8 @@ function DeleteMember({ id }: { id: number }) {
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={isLoading}
-        className="btn btn-square btn-error btn-sm"
+        disabled={fetcher.loading.value}
+        className="btn btn-error btn-square btn-sm"
       >
         <HiOutlineLogout />
       </button>
@@ -129,26 +126,21 @@ function SetMemberRole({
   id: number;
   role: ContestParticipantRole;
 }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (fetcher.done.value) {
       Toasts.success("设定成员角色成功");
     }
-  }, [isActionReload]);
+  });
 
   const isJury = role === ContestParticipantRole.Jury;
   const isMember = role === ContestParticipantRole.Contestant;
 
   return (
-    <fetcher.Form method="post" className="dropdown dropdown-hover">
+    <fetcher.Form method="post" className="dropdown-hover dropdown">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <span className="btn btn-square btn-sm">
@@ -160,7 +152,7 @@ function SetMemberRole({
             type="submit"
             name="role"
             value={ContestParticipantRole.Jury}
-            disabled={isJury || isLoading}
+            disabled={isJury || fetcher.loading.value}
           >
             设置为裁判
           </button>
@@ -170,7 +162,7 @@ function SetMemberRole({
             type="submit"
             name="role"
             value={ContestParticipantRole.Contestant}
-            disabled={isMember || isLoading}
+            disabled={isMember || fetcher.loading.value}
           >
             设置为普通成员
           </button>

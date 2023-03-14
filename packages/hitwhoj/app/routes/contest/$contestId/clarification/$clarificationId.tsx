@@ -1,12 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useLoaderData,
-  useParams,
-  useTransition,
-} from "@remix-run/react";
+import { Form, Link, useLoaderData, useParams } from "@remix-run/react";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
 import { findContestTeam } from "~/utils/db/contest";
@@ -23,6 +17,7 @@ import {
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
+import { useSignalTransition } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -83,8 +78,7 @@ enum ActionType {
 export default function ClarificationDetail() {
   const { contestId } = useParams();
   const { clarification, canReply } = useLoaderData<typeof loader>();
-  const { state, type } = useTransition();
-  const isSubmitting = state === "submitting" || type === "actionReload";
+  const { loading } = useSignalTransition();
 
   return (
     <Fullscreen visible={true} className="overflow-auto bg-base-100">
@@ -151,7 +145,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Apply}
-                      disabled={isSubmitting}
+                      disabled={loading.value}
                     >
                       认领给自己
                     </button>
@@ -163,7 +157,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Resolve}
-                      disabled={isSubmitting}
+                      disabled={loading.value}
                     >
                       标记为解决
                     </button>
@@ -188,7 +182,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Reply}
-                      disabled={isSubmitting}
+                      disabled={loading.value}
                     >
                       提交回复
                     </button>

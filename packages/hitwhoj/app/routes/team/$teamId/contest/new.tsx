@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -13,12 +13,14 @@ import {
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { useSignalEffect } from "@preact/signals-react";
+import { useSignalTransition } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -74,19 +76,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function TeamContestNew() {
-  const { state, type } = useTransition();
-
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionRedirect = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionRedirect;
+  const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionRedirect) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("创建成功");
     }
-  }, [isActionRedirect]);
+  });
 
   return (
     <>
@@ -102,7 +100,7 @@ export default function TeamContestNew() {
             type="text"
             name="title"
             required
-            disabled={isLoading}
+            disabled={loading.value}
           />
         </div>
 
@@ -125,7 +123,7 @@ export default function TeamContestNew() {
             type="datetime-local"
             name="beginTime"
             required
-            disabled={isLoading}
+            disabled={loading.value}
           />
         </div>
 
@@ -141,7 +139,7 @@ export default function TeamContestNew() {
             type="datetime-local"
             name="endTime"
             required
-            disabled={isLoading}
+            disabled={loading.value}
           />
           <input
             type="hidden"
@@ -158,7 +156,7 @@ export default function TeamContestNew() {
             className="select select-bordered"
             name="system"
             required
-            disabled={isLoading}
+            disabled={loading.value}
             defaultValue=""
           >
             <option value="" disabled>
@@ -176,7 +174,7 @@ export default function TeamContestNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={isLoading}
+            disabled={loading.value}
           >
             创建比赛
           </button>

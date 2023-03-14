@@ -5,11 +5,13 @@ import { invariant } from "~/utils/invariant";
 import { teamNameScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 import { findRequestUser } from "~/utils/permission";
-import { Form, useTransition } from "@remix-run/react";
-import { useContext, useEffect } from "react";
+import { Form } from "@remix-run/react";
+import { useContext } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignalTransition } from "~/utils/hooks";
+import { useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -49,18 +51,15 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function NewTeam() {
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionRedirect = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionRedirect;
+  const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionRedirect) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("创建成功");
     }
-  }, [isActionRedirect]);
+  });
 
   return (
     <>
@@ -78,7 +77,7 @@ export default function NewTeam() {
             type="text"
             name="name"
             required
-            disabled={isLoading}
+            disabled={loading.value}
           />
         </div>
 
@@ -86,7 +85,7 @@ export default function NewTeam() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={isLoading}
+            disabled={loading.value}
           >
             创建团队
           </button>

@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -9,7 +9,7 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -19,6 +19,8 @@ import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { useSignalTransition } from "~/utils/hooks";
+import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -243,24 +245,21 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function ProblemSetEdit() {
   const { problemSet } = useLoaderData<typeof loader>();
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionRedirect = state === "loading" && type === "actionRedirect";
-  const isUpdating = isActionSubmit || isActionRedirect;
+  const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionRedirect) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("更新成功");
     }
-  }, [isActionRedirect]);
+  });
 
-  const [tags, setTags] = useState(problemSet.tags.map(({ name }) => name));
-  const [tag, setTag] = useState("");
+  const tags = useSignal(problemSet.tags.map(({ name }) => name));
+  const tag = useSignal("");
 
   const handleRemoveTag = (name: string) =>
-    setTags(tags.filter((tag) => tag !== name));
+    (tags.value = tags.value.filter((tag) => tag !== name));
 
   return (
     <>
@@ -276,7 +275,7 @@ export default function ProblemSetEdit() {
             type="text"
             name="title"
             defaultValue={problemSet.title}
-            disabled={isUpdating}
+            disabled={loading.value}
             required
           />
         </div>
@@ -286,7 +285,7 @@ export default function ProblemSetEdit() {
             <span className="label-text">题单标签</span>
           </label>
           <div className="flex flex-wrap gap-2">
-            {tags.map((name) => (
+            {tags.value.map((name) => (
               <div className="badge inline-flex gap-1" key={name}>
                 <input type="hidden" name="tag" value={name} />
                 <HiOutlineTag />
@@ -302,15 +301,19 @@ export default function ProblemSetEdit() {
             <input
               type="text"
               className="input input-bordered"
-              value={tag}
-              onChange={(event) => setTag(event.target.value)}
+              value={tag.value}
+              onChange={(event) => (tag.value = event.target.value)}
             />
             <button
               className="btn btn-primary"
               type="button"
               onClick={() => {
-                tag && setTags((tags) => [...tags, tag]);
-                setTag("");
+                if (tag.value) {
+                  batch(() => {
+                    tags.value = [...tags.value, tag.value];
+                    tag.value = "";
+                  });
+                }
               }}
             >
               添加标签
@@ -335,7 +338,7 @@ export default function ProblemSetEdit() {
               type="checkbox"
               name="private"
               defaultChecked={problemSet.private}
-              disabled={isUpdating}
+              disabled={loading.value}
             />
             <span className="label-text">保持题单隐藏</span>
           </label>
@@ -347,7 +350,7 @@ export default function ProblemSetEdit() {
             type="submit"
             name="_action"
             value={ActionType.UpdateInformation}
-            disabled={isUpdating}
+            disabled={loading.value}
           >
             确认修改
           </button>

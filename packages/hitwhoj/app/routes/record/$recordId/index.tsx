@@ -8,7 +8,7 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
@@ -28,6 +28,7 @@ import { AiOutlineCopy } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
 import type { SubtaskResult } from "~/utils/server/judge/judge.types";
+import { useSignal } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -77,21 +78,21 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function RecordView() {
   const { record, code } = useLoaderData<typeof loader>();
 
-  const [time, setTime] = useState(record.time);
-  const [memory, setMemory] = useState(record.memory);
-  const [status, setStatus] = useState(record.status);
-  const [subtasks, setSubtasks] = useState(record.subtasks as SubtaskResult[]);
-  const [message, setMessage] = useState(record.message);
+  const time = useSignal(record.time);
+  const memory = useSignal(record.memory);
+  const status = useSignal(record.status);
+  const subtasks = useSignal(record.subtasks as SubtaskResult[]);
+  const message = useSignal(record.message);
 
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${record.id}/events`
-    ).subscribe((message) => {
-      setTime(message.time);
-      setMemory(message.memory);
-      setStatus(message.status);
-      setSubtasks(message.subtasks as SubtaskResult[]);
-      setMessage(message.message);
+    ).subscribe((msg) => {
+      time.value = msg.time;
+      memory.value = msg.memory;
+      status.value = msg.status;
+      subtasks.value = msg.subtasks as SubtaskResult[];
+      message.value = msg.message;
     });
 
     return () => subscription.unsubscribe();
@@ -102,11 +103,11 @@ export default function RecordView() {
   return (
     <>
       <h1>
-        <RecordStatus status={status} />
+        <RecordStatus status={status.value} />
       </h1>
 
       <p>
-        <RecordTimeMemory time={time} memory={memory} />
+        <RecordTimeMemory time={time.value} memory={memory.value} />
       </p>
 
       <div className="my-4 flex flex-wrap gap-4">
@@ -126,17 +127,17 @@ export default function RecordView() {
         )}
       </div>
 
-      {message && (
+      {message.value && (
         <>
           <h2>输出信息</h2>
-          <Highlighter language="text" children={message} />
+          <Highlighter language="text" children={message.value} />
         </>
       )}
 
-      {subtasks.length > 0 && (
+      {subtasks.value.length > 0 && (
         <>
           <h2>测试点结果</h2>
-          {subtasks.map((subtask, index) => (
+          {subtasks.value.map((subtask, index) => (
             <div className="collapse-open collapse" key={index} tabIndex={0}>
               <div className="collapse-title flex gap-2">
                 <span>子任务 {index + 1}</span>
@@ -164,7 +165,7 @@ export default function RecordView() {
           <h2 className="flex gap-2">
             <span>源代码</span>
             <button
-              className="btn btn-square btn-ghost btn-sm"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={() =>
                 navigator.clipboard.writeText(code).then(
                   () => Toasts.success("复制成功"),

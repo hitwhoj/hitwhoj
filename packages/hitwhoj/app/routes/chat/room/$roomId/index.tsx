@@ -4,8 +4,8 @@ import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
-import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
@@ -22,6 +22,8 @@ import {
 } from "react-icons/hi";
 import { ChatRoomPermission } from "~/utils/permission/permission/room";
 import { selectUserData } from "~/utils/db/user";
+import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalTransition } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
@@ -69,34 +71,33 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export default function ChatRoomIndex() {
   const { room, isMember } = useLoaderData<typeof loader>();
-  const [messages, setMessages] = useState(room.chatMessage);
+  const messages = useSignal(room.chatMessage);
 
-  useEffect(() => setMessages(room.chatMessage), [room.chatMessage]);
+  useEffect(() => {
+    messages.value = room.chatMessage;
+  }, [room.chatMessage]);
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${room.id}/events`
     ).subscribe((message) => {
-      setMessages((prev) => [...prev, message]);
+      messages.value = [...messages.value, message];
     });
     return () => subscription.unsubscribe();
   }, [room.id]);
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const { success, loading } = useSignalTransition();
 
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       formRef.current?.reset();
     }
-  }, [isActionReload]);
+  });
 
   return (
     <Fullscreen visible={true} className="not-prose">
-      <div className="drawer-mobile drawer">
+      <div className="drawer drawer-mobile">
         <input type="checkbox" className="drawer-toggle" />
         <div className="not-prose drawer-content flex min-h-full flex-col overflow-auto bg-base-100 px-4">
           <header className="sticky top-0 z-10 bg-base-100 py-4">
@@ -104,7 +105,7 @@ export default function ChatRoomIndex() {
           </header>
 
           <div className="flex-1">
-            {messages.map((message, index, array) => {
+            {messages.value.map((message, index, array) => {
               // 是否是同一个人在连续五分钟内发送的第一条消息
               const isFirst =
                 index === 0 ||
@@ -186,14 +187,14 @@ export default function ChatRoomIndex() {
               type="text"
               placeholder="输入消息..."
               name="content"
-              disabled={isLoading}
+              disabled={loading.value}
               required
               autoComplete="false"
             />
             <button
               className="btn btn-primary gap-2"
               type="submit"
-              disabled={isLoading}
+              disabled={loading.value}
             >
               <HiOutlinePaperAirplane className="rotate-90" />
               <span>发送</span>

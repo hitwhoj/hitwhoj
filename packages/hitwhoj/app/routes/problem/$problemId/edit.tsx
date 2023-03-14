@@ -1,7 +1,8 @@
+import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { Form, useLoaderData } from "@remix-run/react";
+import { useContext } from "react";
 import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { UserLink } from "~/src/user/UserLink";
@@ -9,6 +10,7 @@ import { ToastContext } from "~/utils/context/toast";
 import { UserContext } from "~/utils/context/user";
 import { findProblemTeam } from "~/utils/db/problem";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -130,24 +132,21 @@ export async function action({ request, params }: ActionArgs) {
 export default function ProblemEdit() {
   const { problem } = useLoaderData<typeof loader>();
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const { success, loading } = useSignalTransition();
 
-  const [tags, setTags] = useState(problem.tags.map(({ name }) => name));
-  const [tag, setTag] = useState("");
+  const tags = useSignal(problem.tags.map(({ name }) => name));
+  const tag = useSignal("");
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("更新成功");
     }
-  }, [isActionReload]);
+  });
 
   const handleRemoveTag = (name: string) =>
-    setTags((tags) => tags.filter((tag) => tag !== name));
+    (tags.value = tags.value.filter((tag) => tag !== name));
 
   const userId = useContext(UserContext);
 
@@ -165,7 +164,7 @@ export default function ProblemEdit() {
           name="title"
           required
           defaultValue={problem.title}
-          disabled={isLoading}
+          disabled={loading.value}
         />
       </div>
 
@@ -174,7 +173,7 @@ export default function ProblemEdit() {
           <span className="label-text">题目标签</span>
         </label>
         <div className="flex flex-wrap gap-2">
-          {tags.map((name) => (
+          {tags.value.map((name) => (
             <div className="badge inline-flex gap-1" key={name}>
               <input type="hidden" name="tag" value={name} />
               <HiOutlineTag />
@@ -190,15 +189,19 @@ export default function ProblemEdit() {
           <input
             type="text"
             className="input input-bordered"
-            value={tag}
-            onChange={(event) => setTag(event.target.value)}
+            value={tag.value}
+            onChange={(event) => (tag.value = event.target.value)}
           />
           <button
             className="btn btn-primary"
             type="button"
             onClick={() => {
-              tag && setTags((tags) => [...tags, tag]);
-              setTag("");
+              if (tag.value) {
+                batch(() => {
+                  tags.value = [...tags.value, tag.value];
+                  tag.value = "";
+                });
+              }
             }}
           >
             添加标签
@@ -223,7 +226,7 @@ export default function ProblemEdit() {
           type="number"
           required
           defaultValue={String(problem.timeLimit)}
-          disabled={isLoading}
+          disabled={loading.value}
         />
       </div>
 
@@ -237,7 +240,7 @@ export default function ProblemEdit() {
           type="number"
           required
           defaultValue={String(problem.memoryLimit)}
-          disabled={isLoading}
+          disabled={loading.value}
         />
       </div>
 
@@ -248,7 +251,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="private"
             defaultChecked={problem.private}
-            disabled={isLoading}
+            disabled={loading.value}
           />
           <span className="label-text">保持题目隐藏</span>
         </label>
@@ -259,7 +262,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="allowSubmit"
             defaultChecked={problem.allowSubmit}
-            disabled={isLoading}
+            disabled={loading.value}
           />
           <span className="label-text">允许用户提交</span>
         </label>
@@ -270,7 +273,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="lock"
             defaultChecked={isLocked}
-            disabled={isLoading || (isLocked && !isLockedBySelf)}
+            disabled={loading.value || (isLocked && !isLockedBySelf)}
           />
           <span className="label-text">锁定题目</span>
           <div
@@ -298,7 +301,7 @@ export default function ProblemEdit() {
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={isLoading || (isLocked && !isLockedBySelf)}
+          disabled={loading.value || (isLocked && !isLockedBySelf)}
         >
           确认修改
         </button>

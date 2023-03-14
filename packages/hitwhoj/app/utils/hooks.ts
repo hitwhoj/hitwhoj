@@ -59,9 +59,9 @@ export function useSignalFetcher<T = any>() {
   const loading = useComputed(() => !(idle.value || done.value));
 
   return {
-    Form: fetcher.Form.bind(fetcher),
-    submit: fetcher.submit.bind(fetcher),
-    load: fetcher.load.bind(fetcher),
+    Form: fetcher.Form,
+    submit: fetcher.submit,
+    load: fetcher.load,
 
     state,
     type,

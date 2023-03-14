@@ -1,8 +1,9 @@
-import { useFetcher } from "@remix-run/react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useContext, useEffect } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
 import type { LoaderData } from "~/routes/problem/data";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignalFetcher } from "~/utils/hooks";
 
 type ProblemEditorCreatorProps = {
   createAction: string;
@@ -10,70 +11,65 @@ type ProblemEditorCreatorProps = {
 };
 
 export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
-      Toasts.success("更新成功");
-      setFilter("");
-    }
-  }, [isActionReload]);
-
-  const [problems, setProblems] = useState<LoaderData["problems"]>([]);
+  const problems = useSignal<LoaderData["problems"]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
     fetch("/problem/data", { signal })
-      .then((res) => res.json())
-      .then(({ problems }: LoaderData) => setProblems(problems));
+      .then((res) => res.json() as Promise<LoaderData>)
+      .then((data) => (problems.value = data.problems));
     return () => controller.abort();
   }, []);
 
-  const [filter, setFilter] = useState("");
+  const filter = useSignal("");
 
-  const available = useMemo(() => {
-    return problems.filter(({ id }) => !props.existProblem.includes(id));
-  }, [problems]);
+  const available = useComputed(() => {
+    return problems.value.filter(({ id }) => !props.existProblem.includes(id));
+  });
 
-  const datalist = useMemo(() => {
-    return available.filter(
+  const datalist = useComputed(() => {
+    return available.value.filter(
       ({ title, tags, id }) =>
-        id.toString().includes(filter) ||
-        title.includes(filter) ||
-        tags.some(({ name }) => name.includes(filter))
+        id.toString().includes(filter.value) ||
+        title.includes(filter.value) ||
+        tags.some(({ name }) => name.includes(filter.value))
     );
-  }, [available, filter]);
+  });
 
-  const selected = useMemo(() => {
-    const index = filter.indexOf(".");
+  const selected = useComputed(() => {
+    const index = filter.value.indexOf(".");
     if (index === -1) return 0;
-    const id = parseInt(filter.slice(0, index));
-    if (!available.some((p) => p.id === id)) return 0;
+    const id = parseInt(filter.value.slice(0, index));
+    if (!available.value.some((p) => p.id === id)) return 0;
     return id;
-  }, [filter]);
+  });
+
+  useSignalEffect(() => {
+    if (fetcher.done.value) {
+      filter.value = "";
+      Toasts.success("更新成功");
+    }
+  });
 
   return (
     <fetcher.Form method="post" className="not-prose inline-flex gap-4">
-      <input type="hidden" name="pid" value={selected} required />
+      <input type="hidden" name="pid" value={selected.value} required />
       <label className="input-group">
         <div className="dropdown">
           <input
             className="input input-bordered"
             placeholder="搜索题目..."
             list="search-problem"
-            value={filter}
-            disabled={isLoading}
-            onChange={(event) => setFilter(event.target.value)}
+            value={filter.value}
+            disabled={fetcher.loading.value}
+            onChange={(event) => (filter.value = event.target.value)}
           />
           <datalist id="search-problem">
-            {datalist.map(({ id, title }) => (
+            {datalist.value.map(({ id, title }) => (
               <option key={id} value={`${id}. ${title}`} />
             ))}
           </datalist>
@@ -83,7 +79,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
           type="submit"
           name="_action"
           value={props.createAction}
-          disabled={isLoading || !selected}
+          disabled={fetcher.loading.value || !selected}
         >
           <HiOutlinePlus />
           添加

@@ -14,7 +14,8 @@ import {
   HiOutlineX,
 } from "react-icons/hi";
 import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -78,53 +79,56 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 }
 
-type CountdownProps = { date: Date; onFinish?: () => void };
+type CountdownProps = { date: Date; onFinish: () => void };
 
 function Countdown(props: CountdownProps) {
-  const [now, setNow] = useState(new Date());
+  const now = useSignal(new Date());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
+    const interval = setInterval(() => (now.value = new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const time = props.date.getTime() - now.getTime();
-  const day = Math.floor(time / 1000 / 60 / 60 / 24);
-  const hour = Math.floor(time / 1000 / 60 / 60) % 24;
-  const minute = Math.floor(time / 1000 / 60) % 60;
-  const second = Math.floor(time / 1000) % 60;
+  const time = useComputed(() => {
+    const time = props.date.getTime() - now.value.getTime();
+    const day = Math.floor(time / 1000 / 60 / 60 / 24);
+    const hour = Math.floor(time / 1000 / 60 / 60) % 24;
+    const minute = Math.floor(time / 1000 / 60) % 60;
+    const second = Math.floor(time / 1000) % 60;
+    const finished = time < 0;
 
-  const finished = time < 0;
+    return { day, hour, minute, second, finished };
+  });
 
-  useEffect(() => {
-    if (finished) {
-      props.onFinish?.();
+  useSignalEffect(() => {
+    if (time.value.finished) {
+      props.onFinish();
     }
-  }, [finished]);
+  });
 
   return (
     <div className="flex gap-5">
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": day } as CSSProperties}></span>
+          <span style={{ "--value": time.value.day } as CSSProperties} />
         </span>
         days
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": hour } as CSSProperties}></span>
+          <span style={{ "--value": time.value.hour } as CSSProperties} />
         </span>
         hours
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": minute } as CSSProperties}></span>
+          <span style={{ "--value": time.value.minute } as CSSProperties} />
         </span>
         min
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": second } as CSSProperties}></span>
+          <span style={{ "--value": time.value.second } as CSSProperties} />
         </span>
         sec
       </div>

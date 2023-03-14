@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { UserContext } from "~/utils/context/user";
 import { fromEventSource } from "~/utils/eventSource";
@@ -11,6 +11,7 @@ import type { LoaderArgs } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { selectUserData } from "~/utils/db/user";
+import { useComputed, useSignal } from "@preact/signals-react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -38,34 +39,38 @@ export default function UserChatIndex() {
   const { messages } = useLoaderData<typeof loader>();
   const self = useContext(UserContext);
 
-  const [msgs, setMsgs] = useState(messages);
+  const msgs = useSignal(messages);
 
-  const set = new Set<number>();
-  const users = msgs
-    .map((message) => ({
-      user: message.from.id === self ? message.to : message.from,
-      message,
-    }))
-    .filter(({ user }) => {
-      if (set.has(user.id)) {
-        return false;
-      }
-      set.add(user.id);
-      return true;
-    });
+  const users = useComputed(() => {
+    const set = new Set<number>();
+    return msgs.value
+      .map((message) => ({
+        user: message.from.id === self ? message.to : message.from,
+        message,
+      }))
+      .filter(({ user }) => {
+        if (set.has(user.id)) {
+          return false;
+        }
+        set.add(user.id);
+        return true;
+      });
+  });
 
   useEffect(() => {
     if (self) {
       const subscription = fromEventSource<MessageType>(
         "/chat/events"
       ).subscribe((message) => {
-        setMsgs((msgs) => [message, ...msgs]);
+        msgs.value = [message, ...msgs.value];
       });
       return () => subscription.unsubscribe();
     }
   }, [self]);
 
-  useEffect(() => setMsgs(messages), [messages]);
+  useEffect(() => {
+    msgs.value = messages;
+  }, [messages]);
 
   return (
     <Fullscreen visible={true} className="not-prose flex bg-base-100">
@@ -83,7 +88,7 @@ export default function UserChatIndex() {
               <span>返回到上一页</span>
             </Link>
             <ul className="menu mt-4 w-72 p-0">
-              {users.map(({ user, message }) => (
+              {users.value.map(({ user, message }) => (
                 <li key={user.id}>
                   <NavLink to={`/chat/user/${user.id}`} className="w-full p-4">
                     <div className="flex w-full items-center gap-3">

@@ -1,11 +1,11 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -17,6 +17,8 @@ import {
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignalFetcher } from "~/utils/hooks";
+import { useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -148,20 +150,15 @@ export async function action({ params, request }: ActionArgs) {
 }
 
 function DeleteMember({ id }: { id: number }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (fetcher.done.value) {
       Toasts.success("踢出成功");
     }
-  }, [isActionReload]);
+  });
 
   return (
     <fetcher.Form
@@ -171,11 +168,11 @@ function DeleteMember({ id }: { id: number }) {
     >
       <input type="hidden" name="member" value={id} />
       <button
-        className="btn btn-square btn-error"
+        className="btn btn-error btn-square"
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={isLoading}
+        disabled={fetcher.loading.value}
       >
         <HiOutlineLogout className="h-6 w-6" />
       </button>
@@ -184,27 +181,22 @@ function DeleteMember({ id }: { id: number }) {
 }
 
 function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionReload) {
+  useSignalEffect(() => {
+    if (fetcher.done.value) {
       Toasts.success("设定成员角色成功");
     }
-  }, [isActionReload]);
+  });
 
   const isOwner = role === "Owner";
   const isAdmin = role === "Admin";
   const isMember = role === "Member";
 
   return (
-    <fetcher.Form method="post" className="dropdown dropdown-hover">
+    <fetcher.Form method="post" className="dropdown-hover dropdown">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <label tabIndex={0} className="btn btn-square">
@@ -216,7 +208,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Owner}
-            disabled={isOwner || isLoading}
+            disabled={isOwner || fetcher.loading.value}
           >
             设置为所有人
           </button>
@@ -226,7 +218,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Admin}
-            disabled={isAdmin || isLoading}
+            disabled={isAdmin || fetcher.loading.value}
           >
             设置为管理员
           </button>
@@ -236,7 +228,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Member}
-            disabled={isMember || isLoading}
+            disabled={isMember || fetcher.loading.value}
           >
             设置为成员
           </button>

@@ -3,8 +3,8 @@ import { json } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState, useRef } from "react";
+import { Form, useLoaderData } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
 import { privateMessageSubject } from "~/utils/serverEvents";
@@ -15,6 +15,8 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { HiOutlinePaperAirplane } from "react-icons/hi";
 import { formatDateTime, formatTime } from "~/utils/tools";
+import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalTransition } from "~/utils/hooks";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -90,33 +92,30 @@ export async function action({ request }: ActionArgs) {
 
 export default function ChatIndex() {
   const { target, source, msgs } = useLoaderData<typeof loader>();
-  const [messages, setMessages] = useState(msgs);
+  const messages = useSignal(msgs);
 
   useEffect(() => {
-    setMessages(msgs);
+    messages.value = msgs;
   }, [msgs]);
 
   useEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${target.id}/events`
     ).subscribe((message) => {
-      setMessages((messages) => [...messages, message]);
+      messages.value = [...messages.value, message];
     });
 
     return () => subscription.unsubscribe();
   }, [target.id]);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const { success, loading } = useSignalTransition();
 
-  useEffect(() => {
-    if (!isActionReload) {
+  useSignalEffect(() => {
+    if (success.value) {
       formRef.current?.reset();
     }
-  }, [isActionReload]);
+  });
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -127,8 +126,8 @@ export default function ChatIndex() {
       </header>
 
       <div className="flex-1">
-        {messages.length > 0 ? (
-          messages.map((message, index, array) => {
+        {messages.value.length > 0 ? (
+          messages.value.map((message, index, array) => {
             // 是否是同一个人在连续五分钟内发送的第一条消息
             const isFirst =
               index === 0 ||
@@ -208,13 +207,13 @@ export default function ChatIndex() {
           placeholder="输入消息..."
           name="content"
           required
-          disabled={isLoading}
+          disabled={loading.value}
           autoComplete="false"
         />
         <button
           className="btn btn-primary gap-2"
           type="submit"
-          disabled={isLoading}
+          disabled={loading.value}
         >
           <HiOutlinePaperAirplane className="rotate-90" />
           <span>发送</span>
