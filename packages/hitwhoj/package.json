@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.4.6",
+    "@preact/signals-react": "^1.2.2",
     "@prisma/client": "^4.3.1",
     "@remix-run/express": "^1.7.0",
     "@remix-run/node": "^1.7.0",

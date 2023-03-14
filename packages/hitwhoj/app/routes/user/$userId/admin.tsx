@@ -1,12 +1,13 @@
 import { SystemUserRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import {
   HiOutlineCheck,
   HiOutlineLockOpen,
   HiOutlineXCircle,
 } from "react-icons/hi";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -113,8 +114,7 @@ export async function action({ request, params }: ActionArgs) {
 export default function UserManage() {
   const { user, hasEditPrivPerm, hasEditRolePerm } =
     useLoaderData<typeof loader>();
-  const { state } = useTransition();
-  const isUpdating = state !== "idle";
+  const { loading } = useSignalTransition();
 
   const isUserBanned = !(user.privilege & Privileges.PRIV_OPERATE);
 
@@ -134,7 +134,7 @@ export default function UserManage() {
               type="submit"
               name="_action"
               value={ActionType.SetPrivilege}
-              disabled={isUpdating}
+              disabled={loading.value}
             >
               {isUserBanned ? <HiOutlineLockOpen /> : <HiOutlineXCircle />}
               <span>{isUserBanned ? "取消封禁" : "封禁用户"}</span>
@@ -162,7 +162,7 @@ export default function UserManage() {
               type="submit"
               name="_action"
               value={ActionType.SetRole}
-              disabled={isUpdating}
+              disabled={loading.value}
             >
               <HiOutlineCheck />
               确认修改

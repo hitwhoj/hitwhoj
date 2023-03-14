@@ -5,10 +5,12 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
-import { Form, Link, useActionData, useTransition } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { Form, Link, useActionData } from "@remix-run/react";
+import { useContext } from "react";
 import { passwordHash } from "~/utils/tools";
 import { ToastContext } from "~/utils/context/toast";
+import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalTransition } from "~/utils/hooks";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -43,21 +45,17 @@ export async function action({ request }: ActionArgs) {
 export default function Register() {
   const data = useActionData<typeof action>();
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type == "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isActionRedirect = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionReload || isActionRedirect;
+  const { loading, success } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
 
-  useEffect(() => {
-    if (isActionRedirect) {
+  useSignalEffect(() => {
+    if (success.value) {
       Toasts.success("登录成功");
     }
-  }, [isActionRedirect]);
+  });
 
-  const [password, setPassword] = useState("");
+  const password = useSignal("");
 
   return (
     <>
@@ -77,23 +75,27 @@ export default function Register() {
             type="text"
             name="username"
             required
-            disabled={isLoading}
+            disabled={loading.value}
             pattern="\w+"
           />
         </div>
 
         <div className="form-control">
-          <input type="hidden" name="password" value={passwordHash(password)} />
+          <input
+            type="hidden"
+            name="password"
+            value={passwordHash(password.value)}
+          />
           <label className="label">
             <span className="label-text">密码</span>
           </label>
           <input
             className="input input-bordered w-full max-w-xs"
             type="password"
-            value={password}
-            onChange={(event) => setPassword(event.currentTarget.value)}
+            value={password.value}
+            onChange={(event) => (password.value = event.currentTarget.value)}
             required
-            disabled={isLoading}
+            disabled={loading.value}
           />
         </div>
 

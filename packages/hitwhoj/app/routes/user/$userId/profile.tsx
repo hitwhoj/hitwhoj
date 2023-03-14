@@ -61,7 +61,7 @@ export default function Profile() {
         </tr>
         <tr>
           <th>用户昵称</th>
-          <td>{user.nickname}</td>
+          <td>{user.nickname || "-"}</td>
         </tr>
         <tr>
           <th>电子邮箱</th>
