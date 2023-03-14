@@ -1,5 +1,14 @@
-import { batch, useComputed, useSignal } from "@preact/signals-react";
-import { useFetcher as useRemixFetcher, useTransition } from "@remix-run/react";
+import {
+  batch,
+  useComputed,
+  useSignal,
+  useSignalEffect,
+} from "@preact/signals-react";
+import {
+  useFetcher as useRemixFetcher,
+  useLoaderData,
+  useTransition,
+} from "@remix-run/react";
 import { useEffect } from "react";
 
 export function useSignalTransition() {
@@ -72,4 +81,31 @@ export function useSignalFetcher<T = any>() {
     done,
     idle,
   };
+}
+
+export function useSignalLoaderData<T>() {
+  const data = useLoaderData<T>();
+
+  const loaderData = useSignal(data);
+
+  useEffect(() => {
+    loaderData.value = data;
+  }, [data]);
+
+  // convert to readonly signal
+  return useComputed(() => loaderData.value);
+}
+
+/**
+ * Create a Signal which can be modified, but will be overrided in case of compute() changes.
+ */
+export function useSynchronized<T>(compute: () => T) {
+  const computed = useComputed(compute);
+  const signal = useSignal(computed.value);
+
+  useSignalEffect(() => {
+    signal.value = computed.value;
+  });
+
+  return signal;
 }

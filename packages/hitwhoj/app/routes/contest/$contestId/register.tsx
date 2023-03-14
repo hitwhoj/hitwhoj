@@ -1,16 +1,16 @@
-import { useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import {
   findContestParticipantRole,
   findContestStatus,
 } from "~/utils/db/contest";
-import { useSignalTransition } from "~/utils/hooks";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -106,7 +106,8 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ContestRegisteration() {
-  const { contest } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
 
   const { success, loading } = useSignalTransition();
 
@@ -125,7 +126,7 @@ export default function ContestRegisteration() {
       <p>请注意诚信参赛，不要使用任何外挂、作弊工具参赛。</p>
 
       <Form method="post" className="flex gap-4">
-        {contest.registrationType === "Password" && (
+        {contest.value.registrationType === "Password" && (
           <input
             className="input input-bordered"
             placeholder="密码"

@@ -1,11 +1,13 @@
+import { useComputed } from "@preact/signals-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { Pagination } from "~/src/Pagination";
 import { selectContestListData } from "~/utils/db/contest";
+import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -13,7 +15,7 @@ import { pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
 
-const pageSize = 15;
+const PAGE_SIZE = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -37,7 +39,7 @@ export async function loader({ request }: LoaderArgs) {
       ? { team: null, private: false }
       : { id: -1 },
   });
-  if (totalTeams && page > Math.ceil(totalTeams / pageSize)) {
+  if (totalTeams && page > Math.ceil(totalTeams / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
@@ -51,8 +53,8 @@ export async function loader({ request }: LoaderArgs) {
     select: {
       ...selectContestListData,
     },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
 
   return json({
@@ -68,15 +70,19 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestListIndex() {
-  const { contests, hasCreatePerm, totalTeams, currentPage } =
-    useLoaderData<typeof loader>();
-  const totalPages = Math.ceil(totalTeams / pageSize);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contests = useComputed(() => loaderData.value.contests);
+  const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
+  const totalTeams = useComputed(() => loaderData.value.totalTeams);
+  const currentPage = useComputed(() => loaderData.value.currentPage);
+
+  const totalPages = useComputed(() => Math.ceil(totalTeams.value / PAGE_SIZE));
 
   return (
     <>
       <h1 className="flex items-center justify-between">
         <span>比赛列表</span>
-        {hasCreatePerm && (
+        {hasCreatePerm.value && (
           <Link className="btn btn-primary gap-2" to="/contest/new">
             <HiOutlinePlus className="h-4 w-4" />
             <span>新建比赛</span>
@@ -95,7 +101,7 @@ export default function ContestListIndex() {
           </tr>
         </thead>
         <tbody>
-          {contests.map((contest) => (
+          {contests.value.map((contest) => (
             <tr key={contest.id}>
               <th className="text-center">{contest.id}</th>
               <td>
@@ -112,8 +118,8 @@ export default function ContestListIndex() {
       </table>
       <Pagination
         action="/contest"
-        totalPages={totalPages}
-        currentPage={currentPage}
+        totalPages={totalPages.value}
+        currentPage={currentPage.value}
       />
     </>
   );

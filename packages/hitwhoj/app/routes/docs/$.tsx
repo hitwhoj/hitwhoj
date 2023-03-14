@@ -1,10 +1,11 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { constants, fs } from "~/utils/fs";
 import { resolve } from "path";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ params }: LoaderArgs) {
   const path = params["*"];
@@ -44,9 +45,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function DocsPage() {
-  const { markdown } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const markdown = useComputed(() => loaderData.value.markdown);
 
-  return <Markdown>{markdown}</Markdown>;
+  return <Markdown>{markdown.value}</Markdown>;
 }
 
 export { CatchBoundary } from "~/src/CatchBoundary";

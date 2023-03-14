@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData, useParams } from "@remix-run/react";
+import { Form, Link, useParams } from "@remix-run/react";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { json } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
@@ -12,8 +12,8 @@ import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
-import { useSignalTransition } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ params, request }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -40,7 +40,9 @@ export async function loader({ params, request }: LoaderArgs) {
 }
 
 export default function ClarificationSubmit() {
-  const { problems } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problems = useComputed(() => loaderData.value.problems);
+
   const { contestId } = useParams();
   const { success, loading } = useSignalTransition();
 
@@ -84,7 +86,7 @@ export default function ClarificationSubmit() {
               <option value="" disabled>
                 请选择题目
               </option>
-              {problems.map((p) => (
+              {problems.value.map((p) => (
                 <option key={p.rank} value={p.rank}>
                   {`${String.fromCharCode(0x40 + p.rank)} - ${p.problem.title}`}
                 </option>

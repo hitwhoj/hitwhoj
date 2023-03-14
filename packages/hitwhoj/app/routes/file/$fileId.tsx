@@ -1,9 +1,11 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
@@ -21,11 +23,12 @@ export async function loader({ params }: LoaderArgs) {
 }
 
 export default function FileIndex() {
-  const { filename } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const filename = useComputed(() => loaderData.value.filename);
 
   return (
     <>
-      <h1>{filename}</h1>
+      <h1>{filename.value}</h1>
       <Outlet />
     </>
   );

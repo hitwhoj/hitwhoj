@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
@@ -8,6 +8,8 @@ import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
@@ -44,7 +46,9 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => ({
 });
 
 export default function ProblemIndex() {
-  const { problems } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problems = useComputed(() => loaderData.value.problems);
+
   const params = useParams();
 
   return (
@@ -60,7 +64,7 @@ export default function ProblemIndex() {
           </tr>
         </thead>
         <tbody>
-          {problems.map((problem) => (
+          {problems.value.map((problem) => (
             <tr key={problem.id}>
               <th className="text-center">{problem.id}</th>
               <td>

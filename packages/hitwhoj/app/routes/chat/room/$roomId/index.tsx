@@ -4,8 +4,8 @@ import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
-import { Form, Link, useLoaderData } from "@remix-run/react";
-import { useEffect, useRef } from "react";
+import { Form, Link } from "@remix-run/react";
+import { useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
@@ -22,8 +22,12 @@ import {
 } from "react-icons/hi";
 import { ChatRoomPermission } from "~/utils/permission/permission/room";
 import { selectUserData } from "~/utils/db/user";
-import { useSignal, useSignalEffect } from "@preact/signals-react";
-import { useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import {
+  useSignalLoaderData,
+  useSignalTransition,
+  useSynchronized,
+} from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const roomId = invariant(idScheme, params.roomId, { status: 404 });
@@ -70,20 +74,19 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ChatRoomIndex() {
-  const { room, isMember } = useLoaderData<typeof loader>();
-  const messages = useSignal(room.chatMessage);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const room = useComputed(() => loaderData.value.room);
+  const isMember = useComputed(() => loaderData.value.isMember);
+  const messages = useSynchronized(() => room.value.chatMessage);
 
-  useEffect(() => {
-    messages.value = room.chatMessage;
-  }, [room.chatMessage]);
-  useEffect(() => {
+  useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `./${room.id}/events`
+      `./${room.value.id}/events`
     ).subscribe((message) => {
       messages.value = [...messages.value, message];
     });
     return () => subscription.unsubscribe();
-  }, [room.id]);
+  });
 
   const { success, loading } = useSignalTransition();
 
@@ -101,7 +104,7 @@ export default function ChatRoomIndex() {
         <input type="checkbox" className="drawer-toggle" />
         <div className="not-prose drawer-content flex min-h-full flex-col overflow-auto bg-base-100 px-4">
           <header className="sticky top-0 z-10 bg-base-100 py-4">
-            <h1 className="text-2xl font-bold">{room.name}</h1>
+            <h1 className="text-2xl font-bold">{room.value.name}</h1>
           </header>
 
           <div className="flex-1">
@@ -181,7 +184,7 @@ export default function ChatRoomIndex() {
             ref={formRef}
             autoComplete="off"
           >
-            <input type="hidden" name="roomId" value={room.id} />
+            <input type="hidden" name="roomId" value={room.value.id} />
             <input
               className="input input-bordered flex-1"
               type="text"

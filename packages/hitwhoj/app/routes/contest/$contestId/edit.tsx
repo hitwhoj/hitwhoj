@@ -1,7 +1,7 @@
 import { ContestRegistrationType, ContestSystem } from "@prisma/client";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -23,11 +23,11 @@ import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
-import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
-import { useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { TagsEditor } from "~/src/form/TagsEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -274,15 +274,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestEdit() {
-  const { contest } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
 
-  const registrationType = useSignal(contest.registrationType);
-  const tags = useSignal(contest.tags.map(({ name }) => name));
-  const tag = useSignal("");
-
-  const handleRemoveTag = (name: string) => {
-    tags.value = tags.value.filter((t) => t !== name);
-  };
+  const registrationType = useSignal(contest.value.registrationType);
 
   const { success, loading } = useSignalTransition();
 
@@ -307,52 +302,17 @@ export default function ContestEdit() {
             className="input input-bordered"
             type="text"
             name="title"
-            defaultValue={contest.title}
+            defaultValue={contest.value.title}
             required
             disabled={loading.value}
           />
         </div>
 
-        <div className="form-control gap-2">
-          <label className="label">
-            <span className="label-text">比赛标签</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {tags.value.map((name) => (
-              <div className="badge inline-flex gap-1" key={name}>
-                <input type="hidden" name="tag" value={name} />
-                <HiOutlineTag />
-                {name}
-                <HiOutlineX
-                  className="cursor-pointer"
-                  onClick={() => handleRemoveTag(name)}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              className="input input-bordered"
-              value={tag.value}
-              onChange={(event) => (tag.value = event.target.value)}
-            />
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => {
-                if (tag.value) {
-                  batch(() => {
-                    tags.value = [...tags.value, tag.value];
-                    tag.value = "";
-                  });
-                }
-              }}
-            >
-              添加标签
-            </button>
-          </div>
-        </div>
+        <TagsEditor
+          label="比赛标签"
+          name="tag"
+          defaultTags={contest.value.tags.map(({ name }) => name)}
+        />
 
         <div className="form-control">
           <label className="label">
@@ -360,7 +320,7 @@ export default function ContestEdit() {
           </label>
           <MarkdownEditor
             name="description"
-            defaultValue={contest.description}
+            defaultValue={contest.value.description}
           />
         </div>
 
@@ -376,7 +336,7 @@ export default function ContestEdit() {
             type="datetime-local"
             name="beginTime"
             defaultValue={getDatetimeLocal(
-              new Date(contest.beginTime).getTime()
+              new Date(contest.value.beginTime).getTime()
             )}
             required
             disabled={loading.value}
@@ -394,7 +354,9 @@ export default function ContestEdit() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            defaultValue={getDatetimeLocal(new Date(contest.endTime).getTime())}
+            defaultValue={getDatetimeLocal(
+              new Date(contest.value.endTime).getTime()
+            )}
             required
             disabled={loading.value}
           />
@@ -415,7 +377,7 @@ export default function ContestEdit() {
             name="system"
             required
             disabled={loading.value}
-            defaultValue={contest.system}
+            defaultValue={contest.value.system}
           >
             {Object.keys(ContestSystem).map((key) => (
               <option key={key} value={key}>
@@ -455,7 +417,7 @@ export default function ContestEdit() {
                 className="input input-bordered"
                 type="text"
                 name="registrationPassword"
-                defaultValue={contest.registrationPassword}
+                defaultValue={contest.value.registrationPassword}
                 disabled={loading.value}
                 placeholder="邀请码"
                 required
@@ -470,7 +432,7 @@ export default function ContestEdit() {
               className="checkbox checkbox-primary"
               type="checkbox"
               name="private"
-              defaultChecked={contest.private}
+              defaultChecked={contest.value.private}
               disabled={loading.value}
             />
             <span className="label-text">
@@ -483,7 +445,7 @@ export default function ContestEdit() {
               className="checkbox checkbox-primary"
               type="checkbox"
               name="joinAfterStart"
-              defaultChecked={contest.allowJoinAfterStart}
+              defaultChecked={contest.value.allowJoinAfterStart}
               disabled={loading.value}
             />
             <span className="label-text">允许比赛开始后中途加入</span>
@@ -505,14 +467,14 @@ export default function ContestEdit() {
 
       <h2>修改比赛题目</h2>
 
-      {Date.now() > new Date(contest.beginTime).getTime() && (
+      {Date.now() > new Date(contest.value.beginTime).getTime() && (
         <p className="alert alert-warning shadow-lg">
           如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性
         </p>
       )}
 
       <ProblemEditor
-        problems={contest.problems.map(({ problem }) => problem)}
+        problems={contest.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}
         moveUpAction={ActionType.MoveProblemUp}

@@ -1,6 +1,5 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -9,13 +8,13 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
-import { useContext, useMemo } from "react";
+import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
 import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
-import { useSignalFetcher } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -173,20 +172,21 @@ function SetMemberRole({
 }
 
 export default function ContestMembers() {
-  const { members } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const members = useComputed(() => loaderData.value.members);
 
-  const sortMembers = useMemo(() => {
-    const mods = members.filter(
+  const sortMembers = useComputed(() => {
+    const mods = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Mod
     );
-    const juries = members.filter(
+    const juries = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Jury
     );
-    const contestants = members.filter(
+    const contestants = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Contestant
     );
     return [...mods, ...juries, ...contestants];
-  }, [members]);
+  });
 
   return (
     <table className="not-prose table-compact table w-full">
@@ -198,7 +198,7 @@ export default function ContestMembers() {
         </tr>
       </thead>
       <tbody>
-        {sortMembers.map(({ user, role }) => {
+        {sortMembers.value.map(({ user, role }) => {
           return (
             <tr key={user.id}>
               <td>

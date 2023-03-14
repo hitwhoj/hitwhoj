@@ -1,12 +1,14 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
@@ -50,7 +52,8 @@ export const meta: MetaFunction = ({ params }) => ({
 
 export default function ProblemSetTag() {
   const { tag } = useParams();
-  const { problemSets } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problemSets = useComputed(() => loaderData.value.problemSets);
 
   return (
     <>
@@ -65,7 +68,7 @@ export default function ProblemSetTag() {
           </tr>
         </thead>
         <tbody>
-          {problemSets.map((problemset) => (
+          {problemSets.value.map((problemset) => (
             <tr key={problemset.id}>
               <th className="text-center">{problemset.id}</th>
               <td>

@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -15,12 +15,12 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
-import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useSignalTransition } from "~/utils/hooks";
-import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { TagsEditor } from "~/src/form/TagsEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -244,7 +244,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemSetEdit() {
-  const { problemSet } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problemSet = useComputed(() => loaderData.value.problemSet);
+
   const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
@@ -254,12 +256,6 @@ export default function ProblemSetEdit() {
       Toasts.success("更新成功");
     }
   });
-
-  const tags = useSignal(problemSet.tags.map(({ name }) => name));
-  const tag = useSignal("");
-
-  const handleRemoveTag = (name: string) =>
-    (tags.value = tags.value.filter((tag) => tag !== name));
 
   return (
     <>
@@ -274,52 +270,17 @@ export default function ProblemSetEdit() {
             className="input input-bordered"
             type="text"
             name="title"
-            defaultValue={problemSet.title}
+            defaultValue={problemSet.value.title}
             disabled={loading.value}
             required
           />
         </div>
 
-        <div className="form-control gap-2">
-          <label className="label">
-            <span className="label-text">题单标签</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {tags.value.map((name) => (
-              <div className="badge inline-flex gap-1" key={name}>
-                <input type="hidden" name="tag" value={name} />
-                <HiOutlineTag />
-                {name}
-                <HiOutlineX
-                  className="cursor-pointer"
-                  onClick={() => handleRemoveTag(name)}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              className="input input-bordered"
-              value={tag.value}
-              onChange={(event) => (tag.value = event.target.value)}
-            />
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => {
-                if (tag.value) {
-                  batch(() => {
-                    tags.value = [...tags.value, tag.value];
-                    tag.value = "";
-                  });
-                }
-              }}
-            >
-              添加标签
-            </button>
-          </div>
-        </div>
+        <TagsEditor
+          label="题单标签"
+          name="tag"
+          defaultTags={problemSet.value.tags.map(({ name }) => name)}
+        />
 
         <div className="form-control">
           <label className="label">
@@ -327,7 +288,7 @@ export default function ProblemSetEdit() {
           </label>
           <MarkdownEditor
             name="description"
-            defaultValue={problemSet.description}
+            defaultValue={problemSet.value.description}
           />
         </div>
 
@@ -337,7 +298,7 @@ export default function ProblemSetEdit() {
               className="checkbox checkbox-primary"
               type="checkbox"
               name="private"
-              defaultChecked={problemSet.private}
+              defaultChecked={problemSet.value.private}
               disabled={loading.value}
             />
             <span className="label-text">保持题单隐藏</span>
@@ -360,7 +321,7 @@ export default function ProblemSetEdit() {
       <h2>题目</h2>
 
       <ProblemEditor
-        problems={problemSet.problems.map(({ problem }) => problem)}
+        problems={problemSet.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}
         moveUpAction={ActionType.MoveProblemUp}

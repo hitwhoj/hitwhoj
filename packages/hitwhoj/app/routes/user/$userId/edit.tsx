@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -17,8 +17,8 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { useContext } from "react";
 import { ToastContext } from "~/utils/context/toast";
-import { useSignalTransition } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -109,7 +109,9 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function UserEdit() {
-  const { user } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const user = useComputed(() => loaderData.value.user);
+
   const { success, loading } = useSignalTransition();
 
   const Toasts = useContext(ToastContext);
@@ -130,7 +132,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="username"
-          defaultValue={user.username}
+          defaultValue={user.value.username}
           disabled={loading.value}
           required
           pattern="\w+"
@@ -145,7 +147,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="nickname"
-          defaultValue={user.nickname}
+          defaultValue={user.value.nickname}
           disabled={loading.value}
         />
       </div>
@@ -158,7 +160,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="bio"
-          defaultValue={user.bio}
+          defaultValue={user.value.bio}
           disabled={loading.value}
         />
       </div>
@@ -171,7 +173,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="email"
           name="email"
-          defaultValue={user.email}
+          defaultValue={user.value.email}
           disabled={loading.value}
         />
       </div>
@@ -184,7 +186,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="avatar"
-          defaultValue={user.avatar}
+          defaultValue={user.value.avatar}
           placeholder="https://"
           disabled={loading.value}
         />
@@ -198,7 +200,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="department"
-          defaultValue={user.department}
+          defaultValue={user.value.department}
           disabled={loading.value}
         />
       </div>
@@ -211,7 +213,7 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="studentId"
-          defaultValue={user.studentId}
+          defaultValue={user.value.studentId}
           disabled={loading.value}
         />
       </div>

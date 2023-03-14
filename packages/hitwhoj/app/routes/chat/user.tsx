@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet } from "@remix-run/react";
 import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { UserContext } from "~/utils/context/user";
@@ -11,7 +11,8 @@ import type { LoaderArgs } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { selectUserData } from "~/utils/db/user";
-import { useComputed, useSignal } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
+import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -36,14 +37,15 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function UserChatIndex() {
-  const { messages } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+
   const self = useContext(UserContext);
 
-  const msgs = useSignal(messages);
+  const messages = useSynchronized(() => loaderData.value.messages);
 
   const users = useComputed(() => {
     const set = new Set<number>();
-    return msgs.value
+    return messages.value
       .map((message) => ({
         user: message.from.id === self ? message.to : message.from,
         message,
@@ -62,15 +64,11 @@ export default function UserChatIndex() {
       const subscription = fromEventSource<MessageType>(
         "/chat/events"
       ).subscribe((message) => {
-        msgs.value = [message, ...msgs.value];
+        messages.value = [message, ...messages.value];
       });
       return () => subscription.unsubscribe();
     }
   }, [self]);
-
-  useEffect(() => {
-    msgs.value = messages;
-  }, [messages]);
 
   return (
     <Fullscreen visible={true} className="not-prose flex bg-base-100">

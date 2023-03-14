@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Form, Link } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { selectContestListData } from "~/utils/db/contest";
 import { selectProblemListData } from "~/utils/db/problem";
@@ -12,6 +12,7 @@ import { db } from "~/utils/server/db.server";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { formatDateTime, formatDurationTime } from "~/utils/tools";
+import { useSignalLoaderData } from "~/utils/hooks";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -68,7 +69,7 @@ const QQ_LINK =
 const ISSUE_LINK = "https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues";
 
 export default function Index() {
-  const { problems, contests } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
 
   return (
     <>
@@ -143,7 +144,7 @@ export default function Index() {
           <div className="card-body">
             <h2 className="card-title">近期比赛</h2>
             <div className="flex flex-col gap-4">
-              {contests.map((contest) => (
+              {loaderData.value.contests.map((contest) => (
                 <Link
                   className="card bg-base-100"
                   key={contest.id}
@@ -184,7 +185,7 @@ export default function Index() {
                 </tr>
               </thead>
               <tbody>
-                {problems.map((problem) => (
+                {loaderData.value.problems.map((problem) => (
                   <tr key={problem.id}>
                     <td>
                       <ProblemLink problem={problem} />

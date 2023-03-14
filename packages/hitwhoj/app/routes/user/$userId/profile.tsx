@@ -1,11 +1,12 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -42,7 +43,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function Profile() {
-  const { user } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const user = useComputed(() => loaderData.value.user);
 
   // FIXME 摆烂了，这个页面就跟 statistics 页面合并了吧
   // 丢给 @lingyunchi 处理吧
@@ -57,17 +59,17 @@ export default function Profile() {
       <tbody>
         <tr>
           <th>用户名</th>
-          <td>{user.username}</td>
+          <td>{user.value.username}</td>
         </tr>
         <tr>
           <th>用户昵称</th>
-          <td>{user.nickname || "-"}</td>
+          <td>{user.value.nickname || "-"}</td>
         </tr>
         <tr>
           <th>电子邮箱</th>
           <td>
-            {user.email ? (
-              <a href={`mailto:${user.email}`}>{user.email}</a>
+            {user.value.email ? (
+              <a href={`mailto:${user.value.email}`}>{user.value.email}</a>
             ) : (
               "-"
             )}
@@ -75,11 +77,11 @@ export default function Profile() {
         </tr>
         <tr>
           <th>工作单位</th>
-          <td>{user.department || "-"}</td>
+          <td>{user.value.department || "-"}</td>
         </tr>
         <tr>
           <th>学号</th>
-          <td>{user.studentId || "-"}</td>
+          <td>{user.value.studentId || "-"}</td>
         </tr>
       </tbody>
     </table>

@@ -3,8 +3,8 @@ import { json } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { Form, useLoaderData } from "@remix-run/react";
-import { useEffect, useRef } from "react";
+import { Form } from "@remix-run/react";
+import { useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
 import { privateMessageSubject } from "~/utils/serverEvents";
@@ -15,8 +15,12 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { HiOutlinePaperAirplane } from "react-icons/hi";
 import { formatDateTime, formatTime } from "~/utils/tools";
-import { useSignal, useSignalEffect } from "@preact/signals-react";
-import { useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import {
+  useSignalLoaderData,
+  useSignalTransition,
+  useSynchronized,
+} from "~/utils/hooks";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -91,22 +95,21 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ChatIndex() {
-  const { target, source, msgs } = useLoaderData<typeof loader>();
-  const messages = useSignal(msgs);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const target = useComputed(() => loaderData.value.target);
+  const source = useComputed(() => loaderData.value.source);
+  const msgs = useComputed(() => loaderData.value.msgs);
+  const messages = useSynchronized(() => msgs.value);
 
-  useEffect(() => {
-    messages.value = msgs;
-  }, [msgs]);
-
-  useEffect(() => {
+  useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `./${target.id}/events`
+      `./${target.value.id}/events`
     ).subscribe((message) => {
       messages.value = [...messages.value, message];
     });
 
     return () => subscription.unsubscribe();
-  }, [target.id]);
+  });
 
   const formRef = useRef<HTMLFormElement>(null);
   const { success, loading } = useSignalTransition();
@@ -121,7 +124,7 @@ export default function ChatIndex() {
     <div className="flex h-full w-full flex-col">
       <header className="sticky top-0 z-10 bg-base-100 py-4">
         <h1 className="text-2xl font-bold">
-          {target.nickname || target.username}
+          {target.value.nickname || target.value.username}
         </h1>
       </header>
 
@@ -135,7 +138,7 @@ export default function ChatIndex() {
               new Date(message.sentAt).getTime() -
                 new Date(array[index - 1].sentAt).getTime() >
                 1000 * 60 * 5;
-            const from = message.fromId === target.id ? target : source;
+            const from = message.fromId === target.value.id ? target : source;
 
             return isFirst ? (
               <div
@@ -144,12 +147,12 @@ export default function ChatIndex() {
               >
                 <UserAvatar
                   className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
-                  user={from}
+                  user={from.value}
                 />
                 <div className="flex-1">
                   <div className="flex w-full justify-between">
                     <span className="text-primary">
-                      {from.nickname || from.username}
+                      {from.value.nickname || from.value.username}
                     </span>
                   </div>
                   <div className="min-w-0 break-words">{message.content}</div>
@@ -200,7 +203,7 @@ export default function ChatIndex() {
         className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
         autoComplete="off"
       >
-        <input type="hidden" name="to" value={target.id} />
+        <input type="hidden" name="to" value={target.value.id} />
         <input
           className="input input-bordered flex-1"
           type="text"

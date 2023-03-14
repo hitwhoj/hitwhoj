@@ -1,16 +1,16 @@
-import { batch, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { useContext } from "react";
-import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { TagsEditor } from "~/src/form/TagsEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { UserLink } from "~/src/user/UserLink";
 import { ToastContext } from "~/utils/context/toast";
 import { UserContext } from "~/utils/context/user";
 import { findProblemTeam } from "~/utils/db/problem";
 import { selectUserData } from "~/utils/db/user";
-import { useSignalTransition } from "~/utils/hooks";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -130,12 +130,10 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ProblemEdit() {
-  const { problem } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problem = useComputed(() => loaderData.value.problem);
 
   const { success, loading } = useSignalTransition();
-
-  const tags = useSignal(problem.tags.map(({ name }) => name));
-  const tag = useSignal("");
 
   const Toasts = useContext(ToastContext);
 
@@ -145,13 +143,12 @@ export default function ProblemEdit() {
     }
   });
 
-  const handleRemoveTag = (name: string) =>
-    (tags.value = tags.value.filter((tag) => tag !== name));
-
   const userId = useContext(UserContext);
 
-  const isLocked = problem.lockedBy !== null;
-  const isLockedBySelf = userId && problem.lockedBy?.id === userId;
+  const isLocked = useComputed(() => problem.value.lockedBy !== null);
+  const isLockedBySelf = useComputed(
+    () => userId && problem.value.lockedBy?.id === userId
+  );
 
   return (
     <Form method="post" className="form-control gap-4">
@@ -163,57 +160,25 @@ export default function ProblemEdit() {
           className="input input-bordered"
           name="title"
           required
-          defaultValue={problem.title}
+          defaultValue={problem.value.title}
           disabled={loading.value}
         />
       </div>
 
-      <div className="form-control gap-2">
-        <label className="label">
-          <span className="label-text">题目标签</span>
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {tags.value.map((name) => (
-            <div className="badge inline-flex gap-1" key={name}>
-              <input type="hidden" name="tag" value={name} />
-              <HiOutlineTag />
-              {name}
-              <HiOutlineX
-                className="cursor-pointer"
-                onClick={() => handleRemoveTag(name)}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4">
-          <input
-            type="text"
-            className="input input-bordered"
-            value={tag.value}
-            onChange={(event) => (tag.value = event.target.value)}
-          />
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={() => {
-              if (tag.value) {
-                batch(() => {
-                  tags.value = [...tags.value, tag.value];
-                  tag.value = "";
-                });
-              }
-            }}
-          >
-            添加标签
-          </button>
-        </div>
-      </div>
+      <TagsEditor
+        label="题目标签"
+        name="tag"
+        defaultTags={problem.value.tags.map(({ name }) => name)}
+      />
 
       <div className="form-control">
         <label className="label">
           <span className="label-text">题目正文</span>
         </label>
-        <MarkdownEditor name="description" defaultValue={problem.description} />
+        <MarkdownEditor
+          name="description"
+          defaultValue={problem.value.description}
+        />
       </div>
 
       <div className="form-control w-full max-w-xs">
@@ -225,7 +190,7 @@ export default function ProblemEdit() {
           name="timeLimit"
           type="number"
           required
-          defaultValue={String(problem.timeLimit)}
+          defaultValue={String(problem.value.timeLimit)}
           disabled={loading.value}
         />
       </div>
@@ -239,7 +204,7 @@ export default function ProblemEdit() {
           name="memoryLimit"
           type="number"
           required
-          defaultValue={String(problem.memoryLimit)}
+          defaultValue={String(problem.value.memoryLimit)}
           disabled={loading.value}
         />
       </div>
@@ -250,7 +215,7 @@ export default function ProblemEdit() {
             className="checkbox checkbox-primary"
             type="checkbox"
             name="private"
-            defaultChecked={problem.private}
+            defaultChecked={problem.value.private}
             disabled={loading.value}
           />
           <span className="label-text">保持题目隐藏</span>
@@ -261,7 +226,7 @@ export default function ProblemEdit() {
             className="checkbox checkbox-primary"
             type="checkbox"
             name="allowSubmit"
-            defaultChecked={problem.allowSubmit}
+            defaultChecked={problem.value.allowSubmit}
             disabled={loading.value}
           />
           <span className="label-text">允许用户提交</span>
@@ -272,7 +237,7 @@ export default function ProblemEdit() {
             className="checkbox checkbox-primary"
             type="checkbox"
             name="lock"
-            defaultChecked={isLocked}
+            defaultChecked={isLocked.value}
             disabled={loading.value || (isLocked && !isLockedBySelf)}
           />
           <span className="label-text">锁定题目</span>
@@ -284,13 +249,13 @@ export default function ProblemEdit() {
               ?
             </button>
           </div>
-          {isLocked &&
-            (isLockedBySelf ? (
+          {isLocked.value &&
+            (isLockedBySelf.value ? (
               <span className="label-text text-success">您已锁定该题目</span>
             ) : (
               <span className="label-text text-error">
                 该题目已被
-                <UserLink user={problem.lockedBy!} />
+                <UserLink user={problem.value.lockedBy!} />
                 锁定
               </span>
             ))}
@@ -301,7 +266,7 @@ export default function ProblemEdit() {
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={loading.value || (isLocked && !isLockedBySelf)}
+          disabled={loading.value || (isLocked.value && !isLockedBySelf.value)}
         >
           确认修改
         </button>

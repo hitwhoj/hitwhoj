@@ -1,12 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import {
-  Link,
-  NavLink,
-  Outlet,
-  useLoaderData,
-  useParams,
-} from "@remix-run/react";
+import { Link, NavLink, Outlet, useParams } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -28,6 +22,8 @@ import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType as ResolveMessageType } from "./$contestId/clarification/events/resolve";
 import type { MessageType as ReplyMessageType } from "./$contestId/clarification/events/reply";
 import type { MessageType as AssignMessageType } from "./$contestId/clarification/events/reply";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -88,8 +84,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestView() {
-  const { contest, hasEditPerm, hasViewProblemPerm, isContestants } =
-    useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
+  const hasViewProblemPerm = useComputed(
+    () => loaderData.value.hasViewProblemPerm
+  );
+  const isContestants = useComputed(() => loaderData.value.isContestants);
+
   const { contestId } = useParams();
   const Toasts = useContext(ToastContext);
 
@@ -118,22 +120,22 @@ export default function ContestView() {
     <>
       <h1 className="flex gap-4">
         <AiOutlineTrophy className="flex-shrink-0" />
-        <span>{contest.title}</span>
+        <span>{contest.value.title}</span>
       </h1>
 
       <p className="not-prose flex flex-wrap gap-2">
         <ContestStateTag
-          beginTime={contest.beginTime}
-          endTime={contest.endTime}
+          beginTime={contest.value.beginTime}
+          endTime={contest.value.endTime}
         />
-        <ContestSystemTag system={contest.system} />
-        {contest.private && (
+        <ContestSystemTag system={contest.value.system} />
+        {contest.value.private && (
           <span className="badge badge-warning gap-1">
             <HiOutlineEyeOff />
             <span>隐藏</span>
           </span>
         )}
-        {contest.tags.map(({ name }) => (
+        {contest.value.tags.map(({ name }) => (
           <Link className="badge gap-1" to={`/contest/tag/${name}`} key={name}>
             <HiOutlineTag />
             <span>{name}</span>
@@ -145,17 +147,17 @@ export default function ContestView() {
         <NavLink className="tab" to="desc">
           详情
         </NavLink>
-        {(hasViewProblemPerm || isContestants) && (
+        {(hasViewProblemPerm.value || isContestants.value) && (
           <NavLink className="tab" to="problem">
             题目
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="edit">
             编辑
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="members">
             成员
           </NavLink>
@@ -166,7 +168,7 @@ export default function ContestView() {
         <NavLink className="tab" to="clarification">
           反馈
         </NavLink>
-        <NavLink className="tab" to={`/record?cid=${contest.id}`}>
+        <NavLink className="tab" to={`/record?cid=${contest.value.id}`}>
           提交记录
         </NavLink>
       </p>
