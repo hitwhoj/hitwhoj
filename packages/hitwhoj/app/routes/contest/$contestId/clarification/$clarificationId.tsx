@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, useLoaderData, useParams } from "@remix-run/react";
+import { Form, Link, useParams } from "@remix-run/react";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
 import { findContestTeam } from "~/utils/db/contest";
@@ -17,7 +17,8 @@ import {
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
-import { useSignalTransition } from "~/utils/hooks";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -77,7 +78,11 @@ enum ActionType {
 
 export default function ClarificationDetail() {
   const { contestId } = useParams();
-  const { clarification, canReply } = useLoaderData<typeof loader>();
+
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const clarification = useComputed(() => loaderData.value.clarification);
+  const canReply = useComputed(() => loaderData.value.canReply);
+
   const { loading } = useSignalTransition();
 
   return (
@@ -93,35 +98,37 @@ export default function ClarificationDetail() {
           </Link>
         </div>
 
-        <h2>反馈 #{clarification.id}</h2>
+        <h2>反馈 #{clarification.value.id}</h2>
 
         <table>
           <tbody>
             <tr>
               <th>提交者</th>
               <td>
-                <UserLink user={clarification.user} />
+                <UserLink user={clarification.value.user} />
               </td>
             </tr>
             <tr>
               <th>创建时间</th>
-              <td>{formatDateTime(clarification.createdAt)}</td>
+              <td>{formatDateTime(clarification.value.createdAt)}</td>
             </tr>
             <tr>
               <th>状态</th>
-              <td>{clarification.resolved ? "已解决" : "未解决"}</td>
+              <td>{clarification.value.resolved ? "已解决" : "未解决"}</td>
             </tr>
           </tbody>
         </table>
 
-        <blockquote className="break-words">{clarification.content}</blockquote>
+        <blockquote className="break-words">
+          {clarification.value.content}
+        </blockquote>
 
         <h3>回复</h3>
 
-        {clarification.replies.length === 0 ? (
+        {clarification.value.replies.length === 0 ? (
           <p className="italic opacity-60">暂无回复</p>
         ) : (
-          clarification.replies.map((reply) => (
+          clarification.value.replies.map((reply) => (
             <p key={reply.id} className="flex flex-col break-words">
               <span>{reply.content}</span>
               <span className="text-xs opacity-60">
@@ -131,10 +138,10 @@ export default function ClarificationDetail() {
           ))
         )}
 
-        {canReply ? (
+        {canReply.value ? (
           <>
             <h3>裁判操作</h3>
-            {clarification.resolved ? (
+            {clarification.value.resolved ? (
               <p className="alert alert-success">反馈已经解决</p>
             ) : (
               <>
@@ -192,7 +199,7 @@ export default function ClarificationDetail() {
             )}
           </>
         ) : (
-          !clarification.resolved && (
+          !clarification.value.resolved && (
             <div className="alert alert-info">请耐心等待裁判回复</div>
           )
         )}

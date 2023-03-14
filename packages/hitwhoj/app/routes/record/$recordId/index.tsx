@@ -1,6 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
@@ -8,7 +7,7 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
@@ -28,7 +27,8 @@ import { AiOutlineCopy } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi";
 import { ToastContext } from "~/utils/context/toast";
 import type { SubtaskResult } from "~/utils/server/judge/judge.types";
-import { useSignal } from "@preact/signals-react";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -76,61 +76,65 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function RecordView() {
-  const { record, code } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const record = useSynchronized(() => loaderData.value.record);
+  const code = useComputed(() => loaderData.value.code);
 
-  const time = useSignal(record.time);
-  const memory = useSignal(record.memory);
-  const status = useSignal(record.status);
-  const subtasks = useSignal(record.subtasks as SubtaskResult[]);
-  const message = useSignal(record.message);
-
-  useEffect(() => {
+  useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `./${record.id}/events`
+      `./${record.value.id}/events`
     ).subscribe((msg) => {
-      time.value = msg.time;
-      memory.value = msg.memory;
-      status.value = msg.status;
-      subtasks.value = msg.subtasks as SubtaskResult[];
-      message.value = msg.message;
+      record.value = {
+        ...record.value,
+        time: msg.time,
+        memory: msg.memory,
+        status: msg.status,
+        subtasks: msg.subtasks,
+        message: msg.message,
+      };
     });
 
     return () => subscription.unsubscribe();
-  }, [record.id]);
+  });
 
   const Toasts = useContext(ToastContext);
+
+  const subtasks = useComputed(() => record.value.subtasks as SubtaskResult[]);
 
   return (
     <>
       <h1>
-        <RecordStatus status={status.value} />
+        <RecordStatus status={record.value.status} />
       </h1>
 
       <p>
-        <RecordTimeMemory time={time.value} memory={memory.value} />
+        <RecordTimeMemory
+          time={record.value.time}
+          memory={record.value.memory}
+        />
       </p>
 
       <div className="my-4 flex flex-wrap gap-4">
         <span>
           <span className="opacity-60">用户：</span>
-          <UserLink user={record.submitter} />
+          <UserLink user={record.value.submitter} />
         </span>
         <span>
           <span className="opacity-60">题目：</span>
-          <ProblemLink problem={record.problem} />
+          <ProblemLink problem={record.value.problem} />
         </span>
-        {record.contest && (
+        {record.value.contest && (
           <span>
             <span className="opacity-60">比赛：</span>
-            <ContestLink contest={record.contest} />
+            <ContestLink contest={record.value.contest} />
           </span>
         )}
       </div>
 
-      {message.value && (
+      {record.value.message && (
         <>
           <h2>输出信息</h2>
-          <Highlighter language="text" children={message.value} />
+          <Highlighter language="text">{record.value.message}</Highlighter>
         </>
       )}
 
@@ -160,14 +164,14 @@ export default function RecordView() {
         </>
       )}
 
-      {code && (
+      {code.value && (
         <>
           <h2 className="flex gap-2">
             <span>源代码</span>
             <button
               className="btn btn-square btn-ghost btn-sm"
               onClick={() =>
-                navigator.clipboard.writeText(code).then(
+                navigator.clipboard.writeText(code.value).then(
                   () => Toasts.success("复制成功"),
                   () => Toasts.error("权限不足")
                 )
@@ -176,7 +180,9 @@ export default function RecordView() {
               <AiOutlineCopy className="h-4 w-4 text-info" />
             </button>
           </h2>
-          <Highlighter language={record.language} children={code} />
+          <Highlighter language={record.value.language}>
+            {code.value}
+          </Highlighter>
         </>
       )}
     </>

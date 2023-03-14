@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -8,6 +8,8 @@ import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 import { HiOutlineEyeOff, HiOutlineTag, HiOutlineX } from "react-icons/hi";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -49,34 +51,36 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemView() {
-  const { problem, hasEditPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problem = useComputed(() => loaderData.value.problem);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
 
   return (
     <>
-      <h1>{problem.title}</h1>
+      <h1>{problem.value.title}</h1>
 
-      {(problem.tags.length > 0 || problem.private) && (
+      {(problem.value.tags.length > 0 || problem.value.private) && (
         <div className="not-prose flex flex-wrap gap-2">
-          {problem.private && (
+          {problem.value.private && (
             <span className="badge badge-warning gap-1">
               <HiOutlineEyeOff />
               <span>隐藏</span>
             </span>
           )}
-          {!problem.allowSubmit && (
+          {!problem.value.allowSubmit && (
             <span className="badge badge-error gap-1">
               <HiOutlineX />
               <span>禁止提交</span>
             </span>
           )}
-          {problem.tags.map((tag) => (
+          {problem.value.tags.map(({ name }) => (
             <Link
               className="badge gap-1"
-              to={`/problem/tag/${tag.name}`}
-              key={tag.name}
+              to={`/problem/tag/${name}`}
+              key={name}
             >
               <HiOutlineTag />
-              <span>{tag.name}</span>
+              <span>{name}</span>
             </Link>
           ))}
         </div>
@@ -89,12 +93,12 @@ export default function ProblemView() {
         <NavLink className="tab" to="submit">
           提交
         </NavLink>
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="data">
             数据
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="edit">
             编辑
           </NavLink>
@@ -102,7 +106,7 @@ export default function ProblemView() {
         <NavLink className="tab" to="board">
           榜单
         </NavLink>
-        <Link className="tab" to={`/record?pid=${problem.id}`}>
+        <Link className="tab" to={`/record?pid=${problem.value.id}`}>
           提交记录
         </Link>
       </p>

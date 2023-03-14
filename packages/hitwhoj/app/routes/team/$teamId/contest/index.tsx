@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { idScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 import { selectContestListData } from "~/utils/db/contest";
@@ -11,6 +11,8 @@ import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ params, request }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -47,13 +49,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function HomeworkList() {
-  const { contests, hasCreatePerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contests = useComputed(() => loaderData.value.contests);
+  const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
 
   return (
     <>
       <h2 className="flex items-center justify-between">
         <span>团队比赛</span>
-        {hasCreatePerm && (
+        {hasCreatePerm.value && (
           <Link className="btn btn-primary gap-2" to="new">
             <HiOutlinePlus />
             <span>创建比赛</span>
@@ -72,7 +76,7 @@ export default function HomeworkList() {
           </tr>
         </thead>
         <tbody>
-          {contests.map((contest) => (
+          {contests.value.map((contest) => (
             <tr key={contest.id}>
               <th className="text-center">{contest.id}</th>
               <td>

@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
@@ -13,8 +13,8 @@ import { Permissions } from "~/utils/permission/permission";
 import { useContext } from "react";
 import { UserContext } from "~/utils/context/user";
 import { ToastContext } from "~/utils/context/toast";
-import { useSignalTransition } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -106,7 +106,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function TeamDetail() {
-  const { team, hasViewPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const team = useComputed(() => loaderData.value.team);
+  const hasViewPerm = useComputed(() => loaderData.value.hasViewPerm);
+
   const self = useContext(UserContext);
 
   const { success, loading } = useSignalTransition();
@@ -132,35 +135,35 @@ export default function TeamDetail() {
         <tbody>
           <tr>
             <th>创建时间</th>
-            <td>{formatDateTime(team.createdAt)}</td>
+            <td>{formatDateTime(team.value.createdAt)}</td>
           </tr>
           <tr>
             <th>成员数量</th>
-            <td>{team._count.members}</td>
+            <td>{team.value._count.members}</td>
           </tr>
           <tr>
             <th>题目数量</th>
-            <td>{team._count.problems}</td>
+            <td>{team.value._count.problems}</td>
           </tr>
           <tr>
             <th>题单数量</th>
-            <td>{team._count.problemSets}</td>
+            <td>{team.value._count.problemSets}</td>
           </tr>
           <tr>
             <th>比赛数量</th>
-            <td>{team._count.contests}</td>
+            <td>{team.value._count.contests}</td>
           </tr>
         </tbody>
       </table>
 
-      <Markdown>{team.description}</Markdown>
+      <Markdown>{team.value.description}</Markdown>
 
       {isNotMember &&
-        (team.invitationType === InvitationType.NONE ? (
+        (team.value.invitationType === InvitationType.NONE ? (
           <div className="alert alert-info">该团队未开放申请加入</div>
         ) : (
           <Form method="post" className="flex gap-4">
-            {team.invitationType === InvitationType.CODE && (
+            {team.value.invitationType === InvitationType.CODE && (
               <input
                 className="input input-bordered"
                 name="code"
