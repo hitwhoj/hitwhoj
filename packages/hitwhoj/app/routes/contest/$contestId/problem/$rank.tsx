@@ -233,11 +233,17 @@ export default function ContestProblemView() {
 
   const pending = useComputed(() => {
     return records.value
-      .filter((record) => record.status === "Pending")
+      .filter(
+        (record) =>
+          record.status === "Pending" ||
+          record.status === "Compiling" ||
+          record.status === "Judging" ||
+          record.status === "Running"
+      )
       .map(({ id }) => id);
   });
 
-  useSignalEffect(() => {
+  useEffect(() => {
     const subscriptions = pending.value.map((id) => {
       return fromEventSource<MessageType>(`/record/${id}/events`).subscribe(
         (message) => {
@@ -250,7 +256,7 @@ export default function ContestProblemView() {
             found.memory = message.memory;
             found.status = message.status;
           }
-          records.value = records.value;
+          records.value = [...records.value];
         }
       );
     });
@@ -258,7 +264,7 @@ export default function ContestProblemView() {
     return () => {
       subscriptions.forEach((subscription) => subscription.unsubscribe());
     };
-  });
+  }, [pending.value.join(" ")]);
 
   return (
     <Fullscreen
