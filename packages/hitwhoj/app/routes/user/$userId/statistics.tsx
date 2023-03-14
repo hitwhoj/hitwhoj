@@ -11,10 +11,10 @@ import { formatNumber } from "~/utils/tools";
 import ActivityCalendar from "react-activity-calendar";
 import type { Level } from "react-activity-calendar";
 import ReactTooltip from "react-tooltip";
-import { useContext } from "react";
-import { defaultThemeColor, ThemeContext } from "~/utils/theme";
+import { defaultThemeColor } from "~/utils/theme";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { useTheme } from "~/utils/context";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -91,11 +91,11 @@ export default function UserStatistics() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const user = useComputed(() => loaderData.value.user);
 
-  const theme = useContext(ThemeContext);
+  const theme = useTheme();
 
   const activityCalendarTheme = useComputed(() => {
-    const fromColor = defaultThemeColor[theme].base200;
-    const toColor = defaultThemeColor[theme].primary;
+    const fromColor = defaultThemeColor[theme.value].base200;
+    const toColor = defaultThemeColor[theme.value].primary;
     const [level0, level1, level2, level3, level4] = getLevelColors(
       fromColor,
       toColor

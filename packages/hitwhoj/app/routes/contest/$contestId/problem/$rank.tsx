@@ -1,12 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useBeforeUnload,
-  useLoaderData,
-  useParams,
-} from "@remix-run/react";
+import { Form, Link, useBeforeUnload, useParams } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { invariant } from "~/utils/invariant";
 import {
@@ -17,7 +11,7 @@ import {
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { findRequestUser } from "~/utils/permission";
 import {
@@ -32,13 +26,17 @@ import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
 import type { MessageType } from "~/routes/record/$recordId/events";
 import { VscodeEditor } from "~/src/VscodeEditor";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
-import { useSignalTransition } from "~/utils/hooks";
+import {
+  useSignalLoaderData,
+  useSignalTransition,
+  useSynchronized,
+} from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -173,18 +171,18 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ContestProblemView() {
-  const {
-    problem,
-    records: _records,
-    contest,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problem = useComputed(() => loaderData.value.problem);
+  const contest = useComputed(() => loaderData.value.contest);
+  const records = useSynchronized(() => loaderData.value.records);
+
   const { contestId, rank } = useParams();
 
   const { success, loading } = useSignalTransition();
 
   const visible = useSignal(false);
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {
@@ -222,14 +220,13 @@ export default function ContestProblemView() {
     }, [language.value, code.value])
   );
 
-  const now = new Date();
-  const isNotStarted = now < new Date(contest.beginTime);
-  const isEnded = now > new Date(contest.endTime);
-
-  const records = useSignal(_records);
-  useEffect(() => {
-    records.value = _records;
-  }, [_records]);
+  const status = useComputed(() => {
+    const now = new Date();
+    return {
+      isNotStarted: now < new Date(contest.value.beginTime),
+      isEnded: now > new Date(contest.value.endTime),
+    };
+  });
 
   const pending = useComputed(() => {
     return records.value
@@ -283,7 +280,7 @@ export default function ContestProblemView() {
           <nav className="sticky top-0 z-10 flex-shrink-0 bg-base-100 p-4">
             <Link
               className="btn btn-ghost gap-2"
-              to={`/contest/${contest.id}/problem`}
+              to={`/contest/${contest.value.id}/problem`}
             >
               <HiOutlineChevronLeft className="" />
               <span>返回题目列表</span>
@@ -291,28 +288,28 @@ export default function ContestProblemView() {
           </nav>
           <article className="p-4">
             <h1>
-              {rank} - {problem.title}
+              {rank} - {problem.value.title}
             </h1>
             <p>
               <RecordTimeMemory
-                time={problem.timeLimit}
-                memory={problem.memoryLimit}
+                time={problem.value.timeLimit}
+                memory={problem.value.memoryLimit}
               />
             </p>
-            {isNotStarted && (
+            {status.value.isNotStarted && (
               <p className="alert alert-warning shadow-lg">比赛还没有开始</p>
             )}
-            {isEnded && (
+            {status.value.isEnded && (
               <p className="alert alert-warning shadow-lg">
                 比赛已经结束，本页面仅供查看
               </p>
             )}
-            <Markdown>{problem.description}</Markdown>
-            {problem.files.length > 0 && (
+            <Markdown>{problem.value.description}</Markdown>
+            {problem.value.files.length > 0 && (
               <>
                 <h2>可供下载的文件</h2>
                 <ol>
-                  {problem.files.map((file) => (
+                  {problem.value.files.map((file) => (
                     <li key={file.id}>
                       <Link to={`/file/${file.id}`} target="_blank">
                         {file.filename}
@@ -355,7 +352,7 @@ export default function ContestProblemView() {
                 <AiOutlineHistory />
                 <span>查看提交记录</span>
               </button>
-              {!isNotStarted && !isEnded ? (
+              {!status.value.isNotStarted && !status.value.isEnded ? (
                 <button
                   className="btn btn-primary gap-2"
                   type="submit"
@@ -365,7 +362,10 @@ export default function ContestProblemView() {
                   <span>提交</span>
                 </button>
               ) : (
-                <Link className="btn btn-primary" to={`/problem/${problem.id}`}>
+                <Link
+                  className="btn btn-primary"
+                  to={`/problem/${problem.value.id}`}
+                >
                   跳转到题目页面
                 </Link>
               )}

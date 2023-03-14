@@ -6,11 +6,10 @@ import { invariant } from "~/utils/invariant";
 import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { Form, Link, useActionData } from "@remix-run/react";
-import { useContext } from "react";
 import { passwordHash } from "~/utils/tools";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignal, useSignalEffect } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -47,7 +46,7 @@ export default function Register() {
 
   const { loading, success } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

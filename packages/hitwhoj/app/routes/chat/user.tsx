@@ -1,7 +1,5 @@
 import { Link, NavLink, Outlet } from "@remix-run/react";
-import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { UserContext } from "~/utils/context/user";
 import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
@@ -11,8 +9,9 @@ import type { LoaderArgs } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { selectUserData } from "~/utils/db/user";
-import { useComputed } from "@preact/signals-react";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
+import { useUser } from "~/utils/context";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -39,7 +38,7 @@ export async function loader({ request }: LoaderArgs) {
 export default function UserChatIndex() {
   const loaderData = useSignalLoaderData<typeof loader>();
 
-  const self = useContext(UserContext);
+  const self = useUser();
 
   const messages = useSynchronized(() => loaderData.value.messages);
 
@@ -47,7 +46,7 @@ export default function UserChatIndex() {
     const set = new Set<number>();
     return messages.value
       .map((message) => ({
-        user: message.from.id === self ? message.to : message.from,
+        user: message.from.id === self.value ? message.to : message.from,
         message,
       }))
       .filter(({ user }) => {
@@ -59,8 +58,8 @@ export default function UserChatIndex() {
       });
   });
 
-  useEffect(() => {
-    if (self) {
+  useSignalEffect(() => {
+    if (self.value) {
       const subscription = fromEventSource<MessageType>(
         "/chat/events"
       ).subscribe((message) => {
@@ -68,7 +67,7 @@ export default function UserChatIndex() {
       });
       return () => subscription.unsubscribe();
     }
-  }, [self]);
+  });
 
   return (
     <Fullscreen visible={true} className="not-prose flex bg-base-100">

@@ -12,14 +12,13 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
-import { useContext } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
 import { useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -77,7 +76,7 @@ export const meta: MetaFunction = () => ({
 export default function ContestNew() {
   const { loading, success } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

@@ -6,12 +6,11 @@ import { teamNameScheme } from "~/utils/scheme";
 import { TeamMemberRole } from "@prisma/client";
 import { findRequestUser } from "~/utils/permission";
 import { Form } from "@remix-run/react";
-import { useContext } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignalTransition } from "~/utils/hooks";
 import { useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -53,7 +52,7 @@ export async function action({ request }: ActionArgs) {
 export default function NewTeam() {
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

@@ -13,16 +13,14 @@ import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { InvitationType } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useLoaderData } from "@remix-run/react";
-import { useContext } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useSignal, useSignalEffect } from "@preact/signals-react";
-import { useSignalFetcher } from "~/utils/hooks";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -146,7 +144,7 @@ function EditProfile({
 }: LoaderData["profile"]) {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {
@@ -240,7 +238,7 @@ function EditProfile({
 function ExitTeam() {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {
@@ -265,17 +263,20 @@ function ExitTeam() {
 }
 
 export default function TeamSettings() {
-  const { profile, hasLeavePerm, hasEditPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const profile = useComputed(() => loaderData.value.profile);
+  const hasLeavePerm = useComputed(() => loaderData.value.hasLeavePerm);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
 
   return (
     <>
-      {hasEditPerm && (
+      {hasEditPerm.value && (
         <>
           <h2>团队设置</h2>
-          <EditProfile {...profile} />
+          <EditProfile {...profile.value} />
         </>
       )}
-      {hasLeavePerm && (
+      {hasLeavePerm.value && (
         <>
           <h2>危险区域</h2>
           <ExitTeam />

@@ -5,7 +5,6 @@ import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import { useContext } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -16,9 +15,9 @@ import {
 } from "~/utils/db/team";
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignalFetcher } from "~/utils/hooks";
 import { useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -152,7 +151,7 @@ export async function action({ params, request }: ActionArgs) {
 function DeleteMember({ id }: { id: number }) {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {
@@ -183,7 +182,7 @@ function DeleteMember({ id }: { id: number }) {
 function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {

@@ -15,10 +15,9 @@ import {
 import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { useContext } from "react";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -114,7 +113,7 @@ export default function UserEdit() {
 
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

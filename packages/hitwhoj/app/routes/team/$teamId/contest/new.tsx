@@ -13,14 +13,13 @@ import {
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
-import { useContext } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalEffect } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -78,7 +77,7 @@ export const meta: MetaFunction = () => ({
 export default function TeamContestNew() {
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

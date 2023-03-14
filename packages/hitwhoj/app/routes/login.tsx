@@ -9,10 +9,9 @@ import { passwordHash } from "~/utils/tools";
 import { User } from "~/utils/permission/role/user";
 import { Privileges } from "~/utils/permission/privilege";
 import { Form, Link, useActionData } from "@remix-run/react";
-import { useContext } from "react";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignal, useSignalEffect } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function action({ request }: ActionArgs) {
   const form = await request.formData();
@@ -46,7 +45,7 @@ export default function Register() {
 
   const { loading, success } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

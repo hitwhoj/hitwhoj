@@ -1,8 +1,8 @@
-import { useSignal } from "@preact/signals-react";
-import { Link, useFetcher } from "@remix-run/react";
-import { useContext, useEffect } from "react";
-import { ToastContext } from "~/utils/context/toast";
-import { UserContext } from "~/utils/context/user";
+import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { Link } from "@remix-run/react";
+import { useUser } from "~/utils/context";
+import { useSignalFetcher } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 import { Markdown } from "./Markdown";
 import { VscodeEditor } from "./VscodeEditor";
 
@@ -19,23 +19,23 @@ type Props = {
  * ```
  */
 export function MarkdownEditor(props: Props) {
-  const fetcher = useFetcher();
+  const fetcher = useSignalFetcher();
 
   const preview = useSignal(false);
   const insertText = useSignal("");
 
   const code = useSignal(props.defaultValue ?? "Write **Markdown** here.");
 
-  const userId = useContext(UserContext);
-  const Toasts = useContext(ToastContext);
+  const user = useUser();
+  const Toasts = useToasts();
 
-  useEffect(() => {
-    if (fetcher.data) {
-      const markdown = `\n![image.png](/file/${fetcher.data[0]}/image.png)\n`;
+  useSignalEffect(() => {
+    if (fetcher.done.value && fetcher.data.value) {
+      const markdown = `\n![image.png](/file/${fetcher.data.value[0]}/image.png)\n`;
       insertText.value = markdown;
       Toasts.success("上传图片成功");
     }
-  }, [fetcher.data]);
+  });
 
   const language = useSignal("markdown");
 
@@ -76,12 +76,12 @@ export function MarkdownEditor(props: Props) {
             onPaste={(e) => {
               const image = e.clipboardData.files[0];
 
-              if (image && image.type.indexOf("image") > -1 && userId) {
+              if (image && image.type.indexOf("image") > -1 && user.value) {
                 const formData = new FormData();
                 formData.append("file", e.clipboardData.files[0]);
                 formData.append("_action", "uploadFile");
                 fetcher.submit(formData, {
-                  action: `/user/${userId}/files`,
+                  action: `/user/${user.value}/files`,
                   encType: "multipart/form-data",
                   method: "post",
                 });

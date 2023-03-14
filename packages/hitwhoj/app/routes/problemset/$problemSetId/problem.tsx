@@ -1,6 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, pageScheme } from "~/utils/scheme";
@@ -14,8 +13,10 @@ import {
   findProblemSetTeam,
 } from "~/utils/db/problemset";
 import { Pagination } from "~/src/Pagination";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
-const pageSize = 15;
+const PAGE_SIZE = 15;
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -55,14 +56,14 @@ export async function loader({ request, params }: LoaderArgs) {
             },
           },
         },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
       },
     },
   });
 
   const totalProblems = problemSet?._count?.problems || 0;
-  if (totalProblems && page > Math.ceil(totalProblems / pageSize)) {
+  if (totalProblems && page > Math.ceil(totalProblems / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
@@ -79,13 +80,17 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemSetIndex() {
-  const { problemSet, totalProblems, currentPage } =
-    useLoaderData<typeof loader>();
-  const totalPages = Math.ceil(totalProblems / pageSize);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problemSet = useComputed(() => loaderData.value.problemSet);
+  const totalProblems = useComputed(() => loaderData.value.totalProblems);
+  const currentPage = useComputed(() => loaderData.value.currentPage);
+  const totalPages = useComputed(() =>
+    Math.ceil(totalProblems.value / PAGE_SIZE)
+  );
 
   return (
     <>
-      <Markdown>{problemSet.description}</Markdown>
+      <Markdown>{problemSet.value.description}</Markdown>
 
       <table className="not-prose table-compact table w-full">
         <thead>
@@ -95,7 +100,7 @@ export default function ProblemSetIndex() {
           </tr>
         </thead>
         <tbody>
-          {problemSet.problems.map((problem) => (
+          {problemSet.value.problems.map((problem) => (
             <tr key={problem.problem.id}>
               <td className="text-center">{problem.rank}</td>
               <td>
@@ -107,9 +112,9 @@ export default function ProblemSetIndex() {
       </table>
 
       <Pagination
-        action={`/problemset/${problemSet.id}/problem`}
-        totalPages={totalPages}
-        currentPage={currentPage}
+        action={`/problemset/${problemSet.value.id}/problem`}
+        totalPages={totalPages.value}
+        currentPage={currentPage.value}
       />
     </>
   );

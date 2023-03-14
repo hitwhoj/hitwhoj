@@ -1,13 +1,14 @@
+import { useComputed } from "@preact/signals-react";
 import { SystemUserRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import {
   HiOutlineCheck,
   HiOutlineLockOpen,
   HiOutlineXCircle,
 } from "react-icons/hi";
-import { useSignalTransition } from "~/utils/hooks";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -112,22 +113,26 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function UserManage() {
-  const { user, hasEditPrivPerm, hasEditRolePerm } =
-    useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const user = useComputed(() => loaderData.value.user);
+  const hasEditPrivPerm = useComputed(() => loaderData.value.hasEditPrivPerm);
+  const hasEditRolePerm = useComputed(() => loaderData.value.hasEditRolePerm);
   const { loading } = useSignalTransition();
 
-  const isUserBanned = !(user.privilege & Privileges.PRIV_OPERATE);
+  const isUserBanned = useComputed(
+    () => !(user.value.privilege & Privileges.PRIV_OPERATE)
+  );
 
   return (
     <>
-      {hasEditPrivPerm && (
+      {hasEditPrivPerm.value && (
         <>
           <h2>管理员操作</h2>
           <Form method="post">
             <input
               type="hidden"
               name="privilege"
-              value={user.privilege ^ Privileges.PRIV_OPERATE}
+              value={user.value.privilege ^ Privileges.PRIV_OPERATE}
             />
             <button
               className="btn btn-primary gap-2"
@@ -136,21 +141,25 @@ export default function UserManage() {
               value={ActionType.SetPrivilege}
               disabled={loading.value}
             >
-              {isUserBanned ? <HiOutlineLockOpen /> : <HiOutlineXCircle />}
-              <span>{isUserBanned ? "取消封禁" : "封禁用户"}</span>
+              {isUserBanned.value ? (
+                <HiOutlineLockOpen />
+              ) : (
+                <HiOutlineXCircle />
+              )}
+              <span>{isUserBanned.value ? "取消封禁" : "封禁用户"}</span>
             </button>
           </Form>
         </>
       )}
 
-      {hasEditRolePerm && (
+      {hasEditRolePerm.value && (
         <>
           <h2>修改用户系统角色</h2>
           <Form method="post" className="flex gap-4">
             <select
               className="select select-bordered"
               name="role"
-              defaultValue={user.role}
+              defaultValue={user.value.role}
             >
               <option value={SystemUserRole.Root}>超级管理员</option>
               <option value={SystemUserRole.Admin}>系统管理员</option>
@@ -171,7 +180,9 @@ export default function UserManage() {
         </>
       )}
 
-      {!hasEditPrivPerm && !hasEditRolePerm && <p>你是怎么进到这个页面的？</p>}
+      {!hasEditPrivPerm.value && !hasEditRolePerm.value && (
+        <p>你是怎么进到这个页面的？</p>
+      )}
     </>
   );
 }

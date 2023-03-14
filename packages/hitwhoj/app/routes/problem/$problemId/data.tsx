@@ -20,7 +20,6 @@ import { FileUploader } from "~/src/file/FileUploader";
 import { s3 } from "~/utils/server/s3.server";
 import type { SelectHTMLAttributes } from "react";
 import { useCallback } from "react";
-import { useContext } from "react";
 import type {
   ConfigJson,
   ConfigSubtask,
@@ -35,11 +34,11 @@ import {
 } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
 import { z } from "zod";
-import { ToastContext } from "~/utils/context/toast";
 import Highlighter from "~/src/Highlighter";
 import { useSignalFetcher } from "~/utils/hooks";
 import type { Signal } from "@preact/signals-react";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -546,11 +545,11 @@ function ConfigJSONEditor({
 }: ConfigJSONEditorProps) {
   const config = useSignal(defaultConfig);
   const fetcher = useSignalFetcher();
-  const Toast = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {
-      Toast.success("更新配置成功");
+      Toasts.success("更新配置成功");
     }
   });
 

@@ -16,14 +16,14 @@ import { Permissions } from "~/utils/permission/permission";
 import { ContestPermission } from "~/utils/permission/permission/contest";
 import { AiOutlineTrophy } from "react-icons/ai";
 import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
-import { useContext, useEffect } from "react";
-import { ToastContext } from "~/utils/context/toast";
+import { useEffect } from "react";
 import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType as ResolveMessageType } from "./$contestId/clarification/events/resolve";
 import type { MessageType as ReplyMessageType } from "./$contestId/clarification/events/reply";
 import type { MessageType as AssignMessageType } from "./$contestId/clarification/events/reply";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -93,7 +93,7 @@ export default function ContestView() {
   const isContestants = useComputed(() => loaderData.value.isContestants);
 
   const { contestId } = useParams();
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
     const subsctiption = fromEventSource<ResolveMessageType>(

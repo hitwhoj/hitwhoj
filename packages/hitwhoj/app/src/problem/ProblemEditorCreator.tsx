@@ -1,9 +1,9 @@
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
-import { useContext, useEffect } from "react";
+import { useEffect } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
 import type { LoaderData } from "~/routes/problem/data";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignalFetcher } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 type ProblemEditorCreatorProps = {
   createAction: string;
@@ -12,7 +12,7 @@ type ProblemEditorCreatorProps = {
 
 export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   const fetcher = useSignalFetcher();
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   const problems = useSignal<LoaderData["problems"]>([]);
 

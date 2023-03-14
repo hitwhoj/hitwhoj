@@ -4,8 +4,6 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { useContext } from "react";
-import { ToastContext } from "~/utils/context/toast";
 import {
   findContestParticipantRole,
   findContestStatus,
@@ -16,6 +14,7 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { idScheme, weakPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -111,7 +110,7 @@ export default function ContestRegisteration() {
 
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

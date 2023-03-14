@@ -15,7 +15,6 @@ import {
   weakPasswordScheme,
 } from "~/utils/scheme";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { useContext } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -23,11 +22,11 @@ import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { TagsEditor } from "~/src/form/TagsEditor";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -281,7 +280,7 @@ export default function ContestEdit() {
 
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

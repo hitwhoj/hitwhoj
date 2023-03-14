@@ -9,18 +9,17 @@ import {
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { useContext } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { TagsEditor } from "~/src/form/TagsEditor";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -249,7 +248,7 @@ export default function ProblemSetEdit() {
 
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

@@ -10,11 +10,10 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext } from "react";
-import { UserContext } from "~/utils/context/user";
-import { ToastContext } from "~/utils/context/toast";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useUser } from "~/utils/context";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -110,13 +109,13 @@ export default function TeamDetail() {
   const team = useComputed(() => loaderData.value.team);
   const hasViewPerm = useComputed(() => loaderData.value.hasViewPerm);
 
-  const self = useContext(UserContext);
+  const self = useUser();
 
   const { success, loading } = useSignalTransition();
 
-  const isNotMember = self && !hasViewPerm;
+  const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {

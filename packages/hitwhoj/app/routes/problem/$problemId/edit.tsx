@@ -2,12 +2,10 @@ import { useComputed, useSignalEffect } from "@preact/signals-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { useContext } from "react";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { UserLink } from "~/src/user/UserLink";
-import { ToastContext } from "~/utils/context/toast";
-import { UserContext } from "~/utils/context/user";
+import { useUser } from "~/utils/context";
 import { findProblemTeam } from "~/utils/db/problem";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
@@ -23,6 +21,7 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -135,7 +134,7 @@ export default function ProblemEdit() {
 
   const { success, loading } = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (success.value) {
@@ -143,11 +142,11 @@ export default function ProblemEdit() {
     }
   });
 
-  const userId = useContext(UserContext);
+  const userId = useUser();
 
   const isLocked = useComputed(() => problem.value.lockedBy !== null);
   const isLockedBySelf = useComputed(
-    () => userId && problem.value.lockedBy?.id === userId
+    () => userId.value && problem.value.lockedBy?.id === userId.value
   );
 
   return (

@@ -5,8 +5,9 @@ import Editor, {
 import type { Signal } from "@preact/signals-react";
 import { useSignal, useSignalEffect } from "@preact/signals-react";
 import type { editor } from "monaco-editor";
-import { useContext, useEffect } from "react";
-import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
+import { useEffect } from "react";
+import { useTheme } from "~/utils/context";
+import { darkThemes, defaultThemeColor } from "~/utils/theme";
 
 type VscodeEditorProps = {
   code: Signal<string>;
@@ -22,15 +23,15 @@ monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
  * with the current theme.
  */
 export function VscodeEditor(props: VscodeEditorProps) {
-  const theme = useContext(ThemeContext);
+  const theme = useTheme();
 
   const monaco = useMonaco();
   // 设置 monaco 主题
   useEffect(() => {
     if (monaco) {
-      const color = defaultThemeColor[theme];
-      monaco.editor.defineTheme(theme, {
-        base: darkThemes.includes(theme) ? "vs-dark" : "vs",
+      const color = defaultThemeColor[theme.value];
+      monaco.editor.defineTheme(theme.value, {
+        base: darkThemes.includes(theme.value) ? "vs-dark" : "vs",
         inherit: true,
         rules: [],
         colors: {
@@ -39,9 +40,9 @@ export function VscodeEditor(props: VscodeEditorProps) {
           "editor.lineHighlightBackground": color.base200,
         },
       });
-      monaco.editor.setTheme(theme);
+      monaco.editor.setTheme(theme.value);
     }
-  }, [monaco, theme]);
+  }, [monaco, theme.value]);
 
   const editor = useSignal<editor.ICodeEditor | null>(null);
 
@@ -68,7 +69,7 @@ export function VscodeEditor(props: VscodeEditorProps) {
     <Editor
       value={props.code.value}
       language={props.language}
-      theme={theme}
+      theme={theme.value}
       onChange={(code) => (props.code.value = code ?? "")}
       options={{
         cursorSmoothCaretAnimation: true,

@@ -8,13 +8,12 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
-import { useContext } from "react";
-import { ToastContext } from "~/utils/context/toast";
 import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -90,7 +89,7 @@ export async function action({ params, request }: ActionArgs) {
 function DeleteMember({ id }: { id: number }) {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {
@@ -127,7 +126,7 @@ function SetMemberRole({
 }) {
   const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useSignalEffect(() => {
     if (fetcher.done.value) {

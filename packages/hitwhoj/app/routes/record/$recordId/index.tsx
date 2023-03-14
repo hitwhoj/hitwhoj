@@ -7,7 +7,6 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { useContext } from "react";
 import { UserLink } from "~/src/user/UserLink";
 import { ContestLink } from "~/src/contest/ContestLink";
 import { selectUserData } from "~/utils/db/user";
@@ -25,10 +24,10 @@ import {
 import { fromEventSource } from "~/utils/eventSource";
 import { AiOutlineCopy } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import type { SubtaskResult } from "~/utils/server/judge/judge.types";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
@@ -97,7 +96,7 @@ export default function RecordView() {
     return () => subscription.unsubscribe();
   });
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   const subtasks = useComputed(() => record.value.subtasks as SubtaskResult[]);
 
