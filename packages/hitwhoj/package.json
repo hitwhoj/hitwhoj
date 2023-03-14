@@ -13,14 +13,14 @@
     "dev:node": "cross-env NODE_ENV=development node ./server/server.js",
     "dev:remix": "remix watch",
     "clean": "shx rm -rf public/build build app/styles .cache",
-    "fmt": "prettier --write .",
-    "fmt:check": "prettier --check .",
+    "fmt": "pretty-quick",
+    "fmt:check": "pretty-quick --check",
     "lint": "eslint --ext ts,tsx app -f pretty --fix",
     "lint:check": "eslint --ext ts,tsx app -f pretty",
     "start": "cross-env NODE_ENV=production node ./server/server.js",
     "test": "cross-env NODE_ENV=test node -r esbuild-register tests",
     "postinstall": "prisma generate",
-    "precommit": "yarn lint:check && tsc && pretty-quick --staged"
+    "precommit": "yarn lint:check && yarn fmt:check && tsc"
   },
   "prisma": {
     "seed": "node --require esbuild-register prisma/seed.ts"

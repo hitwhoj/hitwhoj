@@ -111,7 +111,7 @@ function DeleteMember({ id }: { id: number }) {
         name="_action"
         value={ActionType.DeleteMember}
         disabled={fetcher.loading.value}
-        className="btn btn-error btn-square btn-sm"
+        className="btn btn-square btn-error btn-sm"
       >
         <HiOutlineLogout />
       </button>
@@ -140,7 +140,7 @@ function SetMemberRole({
   const isMember = role === ContestParticipantRole.Contestant;
 
   return (
-    <fetcher.Form method="post" className="dropdown-hover dropdown">
+    <fetcher.Form method="post" className="dropdown dropdown-hover">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <span className="btn btn-square btn-sm">

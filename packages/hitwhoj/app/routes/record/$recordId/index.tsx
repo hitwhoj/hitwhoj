@@ -165,7 +165,7 @@ export default function RecordView() {
           <h2 className="flex gap-2">
             <span>源代码</span>
             <button
-              className="btn btn-ghost btn-square btn-sm"
+              className="btn btn-square btn-ghost btn-sm"
               onClick={() =>
                 navigator.clipboard.writeText(code).then(
                   () => Toasts.success("复制成功"),

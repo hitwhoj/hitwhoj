@@ -168,7 +168,7 @@ function DeleteMember({ id }: { id: number }) {
     >
       <input type="hidden" name="member" value={id} />
       <button
-        className="btn btn-error btn-square"
+        className="btn btn-square btn-error"
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
@@ -196,7 +196,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
   const isMember = role === "Member";
 
   return (
-    <fetcher.Form method="post" className="dropdown-hover dropdown">
+    <fetcher.Form method="post" className="dropdown dropdown-hover">
       <input type="hidden" name="member" value={id} />
       <input type="hidden" name="_action" value={ActionType.ChangeRole} />
       <label tabIndex={0} className="btn btn-square">

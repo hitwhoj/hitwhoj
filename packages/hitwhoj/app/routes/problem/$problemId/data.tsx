@@ -328,7 +328,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                 {/* 添加新的测试点 */}
                 <div className="tooltip" data-tip="新建测试点">
                   <button
-                    className="btn btn-success btn-ghost btn-square btn-sm"
+                    className="btn btn-square btn-success btn-ghost btn-sm"
                     onClick={handleAddCase}
                   >
                     <HiOutlinePlus className="text-success" />
@@ -337,7 +337,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                 {/* 删除当前子任务 */}
                 <div className="tooltip" data-tip="删除子任务">
                   <button
-                    className="btn btn-error btn-ghost btn-square btn-sm"
+                    className="btn btn-square btn-error btn-ghost btn-sm"
                     onClick={handleRemoveSubtask}
                   >
                     <HiOutlineX className="text-error" />
@@ -385,7 +385,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                     </div>
                     {/* 删除当前测试点 */}
                     <div className="tooltip" data-tip="删除测试点">
-                      <button className="btn btn-error btn-ghost btn-square btn-sm">
+                      <button className="btn btn-square btn-error btn-ghost btn-sm">
                         <HiOutlineX
                           className="cursor-pointer text-error"
                           onClick={() => handleRemoveCase(index)}

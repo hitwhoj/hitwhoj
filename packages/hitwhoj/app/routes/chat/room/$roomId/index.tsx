@@ -97,7 +97,7 @@ export default function ChatRoomIndex() {
 
   return (
     <Fullscreen visible={true} className="not-prose">
-      <div className="drawer drawer-mobile">
+      <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
         <div className="not-prose drawer-content flex min-h-full flex-col overflow-auto bg-base-100 px-4">
           <header className="sticky top-0 z-10 bg-base-100 py-4">
