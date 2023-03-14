@@ -1,7 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
   createProblemData,
@@ -35,7 +34,7 @@ import {
 import Fullscreen from "~/src/Fullscreen";
 import { z } from "zod";
 import Highlighter from "~/src/Highlighter";
-import { useSignalFetcher } from "~/utils/hooks";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import type { Signal } from "@preact/signals-react";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
@@ -643,22 +642,23 @@ function ConfigJSONEditor({
 }
 
 export default function ProblemData() {
-  const {
-    problem: { files, data },
-    config: rawConfig,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const files = useComputed(() => loaderData.value.problem.files);
+  const data = useComputed(() => loaderData.value.problem.data);
+  const config = useComputed(() => loaderData.value.config);
 
-  const dataWithoutConfig = data.filter(
-    ({ filename }) => filename !== "config.json"
+  const defaultConfig = useComputed<ConfigJson>(() =>
+    config.value ? JSON.parse(config.value) : { type: "default", subtasks: [] }
   );
-  const config = rawConfig
-    ? JSON.parse(rawConfig)
-    : { type: "default", subtasks: [] };
+
+  const dataWithoutConfig = useComputed(() =>
+    data.value.filter(({ filename }) => filename !== "config.json")
+  );
   const visible = useSignal(false);
 
   return (
     <>
-      {!rawConfig && (
+      {!config.value && (
         <div className="alert alert-warning">
           您还没有进行题目的评测配置，题目当前无法被评测
         </div>
@@ -683,7 +683,7 @@ export default function ProblemData() {
         ，您可以选择使用我们提供的在线编辑工具，也可以选择手动编辑好后上传。
       </p>
       <FileList
-        files={dataWithoutConfig}
+        files={dataWithoutConfig.value}
         deleteAction={ActionType.RemoveData}
       />
 
@@ -692,7 +692,7 @@ export default function ProblemData() {
         <FileUploader uploadAction={ActionType.UploadFile} />
       </h2>
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      <FileList files={files} deleteAction={ActionType.RemoveFile} />
+      <FileList files={files.value} deleteAction={ActionType.RemoveFile} />
 
       <Fullscreen visible={visible.value} className="overflow-auto bg-base-100">
         <div className="mx-auto w-full max-w-xl p-4">
@@ -707,8 +707,8 @@ export default function ProblemData() {
           <h2>配置评测信息</h2>
 
           <ConfigJSONEditor
-            config={config}
-            data={dataWithoutConfig.map(({ filename }) => filename)}
+            config={defaultConfig.value}
+            data={dataWithoutConfig.value.map(({ filename }) => filename)}
           />
         </div>
       </Fullscreen>

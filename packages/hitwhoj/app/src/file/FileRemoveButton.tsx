@@ -1,7 +1,7 @@
 import type { File } from "@prisma/client";
 import type { SerializeFrom } from "@remix-run/node";
-import { useFetcher } from "@remix-run/react";
 import { HiOutlineTrash } from "react-icons/hi";
+import { useSignalFetcher } from "~/utils/hooks";
 
 type FileRemoveButtonProps = {
   file: SerializeFrom<File>;
@@ -12,8 +12,7 @@ export function FileRemoveButton({
   file,
   deleteAction,
 }: FileRemoveButtonProps) {
-  const fetcher = useFetcher();
-  const isDeleting = fetcher.state === "submitting";
+  const fetcher = useSignalFetcher();
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data">
@@ -23,7 +22,7 @@ export function FileRemoveButton({
         type="submit"
         name="_action"
         value={deleteAction}
-        disabled={isDeleting}
+        disabled={fetcher.loading.value}
       >
         <HiOutlineTrash className="h-4 w-4" />
       </button>

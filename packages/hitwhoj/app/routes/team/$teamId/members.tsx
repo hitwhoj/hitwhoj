@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
@@ -15,8 +15,8 @@ import {
 } from "~/utils/db/team";
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
-import { useSignalFetcher } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -244,19 +244,20 @@ const memberRoleTranslation: Record<TeamMemberRole, string> = {
 };
 
 export default function MemberList() {
-  const {
-    members,
-    hasEditPerm,
-    hasInvitePerm,
-    hasKickAdminPerm,
-    hasKickMemberPerm,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const members = useComputed(() => loaderData.value.members);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
+  const hasInvitePerm = useComputed(() => loaderData.value.hasInvitePerm);
+  const hasKickAdminPerm = useComputed(() => loaderData.value.hasKickAdminPerm);
+  const hasKickMemberPerm = useComputed(
+    () => loaderData.value.hasKickMemberPerm
+  );
 
   return (
     <>
       <h2 className="flex items-center justify-between">
         <span>团队成员</span>
-        {hasInvitePerm && (
+        {hasInvitePerm.value && (
           <button className="btn btn-primary gap-2">
             <HiOutlinePlus />
             <span>添加成员</span>
@@ -265,7 +266,7 @@ export default function MemberList() {
       </h2>
 
       <div className="not-prose grid grid-cols-1 gap-4 md:grid-cols-2">
-        {members.map((member) => (
+        {members.value.map((member) => (
           <div
             key={member.user.id}
             className="card overflow-visible bg-base-200"
@@ -298,13 +299,13 @@ export default function MemberList() {
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
-                  {hasEditPerm && (
+                  {hasEditPerm.value && (
                     <SetMemberRole id={member.user.id} role={member.role} />
                   )}
-                  {hasKickAdminPerm && member.role === "Admin" && (
+                  {hasKickAdminPerm.value && member.role === "Admin" && (
                     <DeleteMember id={member.user.id} />
                   )}
-                  {hasKickMemberPerm && member.role === "Member" && (
+                  {hasKickMemberPerm.value && member.role === "Member" && (
                     <DeleteMember id={member.user.id} />
                   )}
                 </div>

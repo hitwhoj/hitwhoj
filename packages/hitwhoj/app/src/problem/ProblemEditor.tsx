@@ -1,10 +1,10 @@
-import { useFetcher } from "@remix-run/react";
 import {
   HiOutlineChevronDown,
   HiOutlineChevronUp,
   HiOutlineTrash,
 } from "react-icons/hi";
 import type { ProblemListData } from "~/utils/db/problem";
+import { useSignalFetcher } from "~/utils/hooks";
 import ProblemEditorCreator from "./ProblemEditorCreator";
 import { ProblemLink } from "./ProblemLink";
 
@@ -18,12 +18,7 @@ type ProblemEditorOperationsProps = {
 };
 
 function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   return (
     <fetcher.Form method="post" className="inline-flex gap-2">
@@ -33,7 +28,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         type="submit"
         name="_action"
         value={props.deleteAction}
-        disabled={isLoading}
+        disabled={fetcher.loading.value}
       >
         <HiOutlineTrash />
       </button>
@@ -42,7 +37,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         type="submit"
         name="_action"
         value={props.moveUpAction}
-        disabled={props.first || isLoading}
+        disabled={props.first || fetcher.loading.value}
       >
         <HiOutlineChevronUp />
       </button>
@@ -51,7 +46,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         type="submit"
         name="_action"
         value={props.moveDownAction}
-        disabled={props.last || isLoading}
+        disabled={props.last || fetcher.loading.value}
       >
         <HiOutlineChevronDown />
       </button>

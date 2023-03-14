@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { Permissions } from "~/utils/permission/permission";
@@ -9,8 +9,10 @@ import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { pageScheme } from "~/utils/scheme";
 import { Pagination } from "~/src/Pagination";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
-const pageSize = 15;
+const PAGE_SIZE = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -31,7 +33,7 @@ export async function loader({ request }: LoaderArgs) {
       ? { team: null, private: false }
       : { id: -1 },
   });
-  if (totalProblemSets && page > Math.ceil(totalProblemSets / pageSize)) {
+  if (totalProblemSets && page > Math.ceil(totalProblemSets / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
@@ -53,8 +55,8 @@ export async function loader({ request }: LoaderArgs) {
         },
       },
     },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
 
   return json({
@@ -70,16 +72,22 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemsetList() {
-  const { problemSets, hasEditPerm, totalProblemSets, currentPage } =
-    useLoaderData<typeof loader>();
-  const totalPages = Math.ceil(totalProblemSets / pageSize);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problemSets = useComputed(() => loaderData.value.problemSets);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
+  const totalProblemSets = useComputed(() => loaderData.value.totalProblemSets);
+  const currentPage = useComputed(() => loaderData.value.currentPage);
+
+  const totalPages = useComputed(() =>
+    Math.ceil(totalProblemSets.value / PAGE_SIZE)
+  );
 
   return (
     <>
       <h1 className="flex items-center justify-between">
         <span>题单列表</span>
 
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <Link className="btn btn-primary gap-2" to="new">
             <HiOutlinePlus className="h-4 w-4" />
             <span>新建题单</span>
@@ -96,7 +104,7 @@ export default function ProblemsetList() {
           </tr>
         </thead>
         <tbody>
-          {problemSets.map((problemset) => (
+          {problemSets.value.map((problemset) => (
             <tr key={problemset.id}>
               <th className="text-center">{problemset.id}</th>
               <td>
@@ -110,8 +118,8 @@ export default function ProblemsetList() {
 
       <Pagination
         action="/problemset"
-        totalPages={totalPages}
-        currentPage={currentPage}
+        totalPages={totalPages.value}
+        currentPage={currentPage.value}
       />
     </>
   );

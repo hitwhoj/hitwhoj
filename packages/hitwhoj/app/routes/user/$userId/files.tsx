@@ -1,7 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { createUserFile, removeFile } from "~/utils/files";
 import { invariant } from "~/utils/invariant";
@@ -12,6 +11,8 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { FileUploader } from "~/src/file/FileUploader";
 import { FileList } from "~/src/file/FileList";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -104,9 +105,8 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function UserFilePage() {
-  const {
-    user: { createdFiles: files },
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const files = useComputed(() => loaderData.value.user.createdFiles);
 
   return (
     <>
@@ -116,7 +116,7 @@ export default function UserFilePage() {
       </h2>
       <p>上传即代表同意我们的用户手册（虽然没有这个东西）</p>
 
-      <FileList files={files} deleteAction={ActionType.RemoveFile} />
+      <FileList files={files.value} deleteAction={ActionType.RemoveFile} />
     </>
   );
 }

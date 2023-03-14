@@ -1,18 +1,20 @@
+import { useComputed } from "@preact/signals-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { HiOutlineFilter } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
-const pageSize = 15;
+const PAGE_SIZE = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
@@ -29,7 +31,7 @@ export async function loader({ request }: LoaderArgs) {
       problemId: pid || undefined,
     },
   });
-  if (totalRecords && page > Math.ceil(totalRecords / pageSize)) {
+  if (totalRecords && page > Math.ceil(totalRecords / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
@@ -40,8 +42,8 @@ export async function loader({ request }: LoaderArgs) {
       problemId: pid || undefined,
     },
     orderBy: [{ id: "desc" }],
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     select: {
       id: true,
       status: true,
@@ -72,9 +74,17 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function RecordList() {
-  const { records, totalRecords, currentPage, uid, pid, cid } =
-    useLoaderData<typeof loader>();
-  const totalPages = Math.ceil(totalRecords / pageSize);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const records = useComputed(() => loaderData.value.records);
+  const totalRecords = useComputed(() => loaderData.value.totalRecords);
+  const currentPage = useComputed(() => loaderData.value.currentPage);
+  const uid = useComputed(() => loaderData.value.uid);
+  const pid = useComputed(() => loaderData.value.pid);
+  const cid = useComputed(() => loaderData.value.cid);
+
+  const totalPages = useComputed(() =>
+    Math.ceil(totalRecords.value / PAGE_SIZE)
+  );
 
   return (
     <>
@@ -93,7 +103,7 @@ export default function RecordList() {
             type="text"
             className="input input-bordered"
             name="uid"
-            defaultValue={uid || ""}
+            defaultValue={uid.value || ""}
           />
         </div>
         <div className="form-control flex-1">
@@ -104,7 +114,7 @@ export default function RecordList() {
             type="text"
             className="input input-bordered"
             name="pid"
-            defaultValue={pid || ""}
+            defaultValue={pid.value || ""}
           />
         </div>
         <div className="form-control flex-1">
@@ -115,7 +125,7 @@ export default function RecordList() {
             type="text"
             className="input input-bordered"
             name="cid"
-            defaultValue={cid || ""}
+            defaultValue={cid.value || ""}
           />
         </div>
         <button className="btn btn-primary gap-2">
@@ -134,7 +144,7 @@ export default function RecordList() {
           </tr>
         </thead>
         <tbody>
-          {records.map((record) => (
+          {records.value.map((record) => (
             <tr key={record.id}>
               <th className="text-center">{record.id}</th>
               <td>
@@ -161,9 +171,11 @@ export default function RecordList() {
         </tbody>
       </table>
       <Pagination
-        action={`/record?uid=${uid || ""}&pid=${pid || ""}&cid=${cid || ""}`}
-        totalPages={totalPages}
-        currentPage={currentPage}
+        action={`/record?uid=${uid.value || ""}&pid=${pid.value || ""}&cid=${
+          cid.value || ""
+        }`}
+        totalPages={totalPages.value}
+        currentPage={currentPage.value}
       />
     </>
   );

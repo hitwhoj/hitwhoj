@@ -1,6 +1,6 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -16,6 +16,7 @@ import {
 import type { CSSProperties } from "react";
 import { useEffect } from "react";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -137,25 +138,19 @@ function Countdown(props: CountdownProps) {
 }
 
 export default function ContestProblemIndex() {
-  const data = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (data.countdown) {
-    return (
-      <div className="mx-auto w-full max-w-sm text-center">
-        <h2>距离比赛开始还有</h2>
+  return loaderData.value.countdown ? (
+    <div className="mx-auto w-full max-w-sm text-center">
+      <h2>距离比赛开始还有</h2>
 
-        <Countdown
-          date={new Date(data.contest.beginTime)}
-          onFinish={() => navigate(".")}
-        />
-      </div>
-    );
-  }
-
-  const { contest } = data;
-
-  return (
+      <Countdown
+        date={new Date(loaderData.value.contest.beginTime)}
+        onFinish={() => navigate(".")}
+      />
+    </div>
+  ) : (
     <table className="not-prose table w-full">
       <thead>
         <tr>
@@ -165,7 +160,7 @@ export default function ContestProblemIndex() {
         </tr>
       </thead>
       <tbody>
-        {contest.problems.map(({ rank, problem }) => {
+        {loaderData.value.contest.problems.map(({ rank, problem }) => {
           const charCode = String.fromCharCode(0x40 + rank);
           // 是否已经通过这道题目
           const accepted = problem.relatedRecords.some(
