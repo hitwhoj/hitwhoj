@@ -19,7 +19,8 @@
     "lint:check": "eslint --ext ts,tsx app -f pretty",
     "start": "cross-env NODE_ENV=production node ./server/server.js",
     "test": "cross-env NODE_ENV=test node -r esbuild-register tests",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "precommit": "yarn lint:check && yarn tsc && yarn pretty-quick --staged"
   },
   "prisma": {
     "seed": "node --require esbuild-register prisma/seed.ts"

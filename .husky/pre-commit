@@ -3,6 +3,4 @@
 
 yarn
 
-yarn workspace hitwhoj run lint:check
-yarn workspace hitwhoj run tsc
-yarn workspace hitwhoj run pretty-quick --staged
+yarn workspaces run precommit
