@@ -1,7 +1,7 @@
 import { ContestRegistrationType, ContestSystem } from "@prisma/client";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -15,7 +15,6 @@ import {
   weakPasswordScheme,
 } from "~/utils/scheme";
 import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
-import { useContext, useEffect, useState } from "react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
@@ -23,9 +22,12 @@ import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
-import { HiOutlineTag, HiOutlineX } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { useComputed, useSignal } from "@preact/signals-react";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { TagsEditor } from "~/src/form/TagsEditor";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -272,29 +274,20 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestEdit() {
-  const { contest } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
 
-  const [registrationType, setRegistrationType] = useState(
-    contest.registrationType
-  );
-  const [tags, setTags] = useState(contest.tags.map(({ name }) => name));
-  const [tag, setTag] = useState("");
+  const registrationType = useSignal(contest.value.registrationType);
 
-  const handleRemoveTag = (name: string) =>
-    setTags(tags.filter((t) => t !== name));
+  const transition = useSignalTransition();
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isUpdating = isActionSubmit || isActionReload;
-
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -309,48 +302,17 @@ export default function ContestEdit() {
             className="input input-bordered"
             type="text"
             name="title"
-            defaultValue={contest.title}
+            defaultValue={contest.value.title}
             required
-            disabled={isUpdating}
+            disabled={transition.isRunning}
           />
         </div>
 
-        <div className="form-control gap-2">
-          <label className="label">
-            <span className="label-text">比赛标签</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((name) => (
-              <div className="badge inline-flex gap-1" key={name}>
-                <input type="hidden" name="tag" value={name} />
-                <HiOutlineTag />
-                {name}
-                <HiOutlineX
-                  className="cursor-pointer"
-                  onClick={() => handleRemoveTag(name)}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              className="input input-bordered"
-              value={tag}
-              onChange={(event) => setTag(event.target.value)}
-            />
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => {
-                tag && setTags((tags) => [...tags, tag]);
-                setTag("");
-              }}
-            >
-              添加标签
-            </button>
-          </div>
-        </div>
+        <TagsEditor
+          label="比赛标签"
+          name="tag"
+          defaultTags={contest.value.tags.map(({ name }) => name)}
+        />
 
         <div className="form-control">
           <label className="label">
@@ -358,7 +320,7 @@ export default function ContestEdit() {
           </label>
           <MarkdownEditor
             name="description"
-            defaultValue={contest.description}
+            defaultValue={contest.value.description}
           />
         </div>
 
@@ -374,10 +336,10 @@ export default function ContestEdit() {
             type="datetime-local"
             name="beginTime"
             defaultValue={getDatetimeLocal(
-              new Date(contest.beginTime).getTime()
+              new Date(contest.value.beginTime).getTime()
             )}
             required
-            disabled={isUpdating}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -392,9 +354,11 @@ export default function ContestEdit() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            defaultValue={getDatetimeLocal(new Date(contest.endTime).getTime())}
+            defaultValue={getDatetimeLocal(
+              new Date(contest.value.endTime).getTime()
+            )}
             required
-            disabled={isUpdating}
+            disabled={transition.isRunning}
           />
           <input
             type="hidden"
@@ -412,8 +376,8 @@ export default function ContestEdit() {
             className="select select-bordered"
             name="system"
             required
-            disabled={isUpdating}
-            defaultValue={contest.system}
+            disabled={transition.isRunning}
+            defaultValue={contest.value.system}
           >
             {Object.keys(ContestSystem).map((key) => (
               <option key={key} value={key}>
@@ -431,13 +395,12 @@ export default function ContestEdit() {
             <select
               className="select select-bordered"
               name="registrationType"
-              value={registrationType}
+              value={registrationType.value}
               onChange={(event) =>
-                setRegistrationType(
-                  event.target.value as keyof typeof ContestRegistrationType
-                )
+                (registrationType.value = event.target
+                  .value as keyof typeof ContestRegistrationType)
               }
-              disabled={isUpdating}
+              disabled={transition.isRunning}
             >
               <option value={ContestRegistrationType.Public}>
                 允许任何人报名
@@ -449,13 +412,13 @@ export default function ContestEdit() {
                 不允许报名
               </option>
             </select>
-            {registrationType === "Password" && (
+            {registrationType.value === "Password" && (
               <input
                 className="input input-bordered"
                 type="text"
                 name="registrationPassword"
-                defaultValue={contest.registrationPassword}
-                disabled={isUpdating}
+                defaultValue={contest.value.registrationPassword}
+                disabled={transition.isRunning}
                 placeholder="邀请码"
                 required
               />
@@ -469,8 +432,8 @@ export default function ContestEdit() {
               className="checkbox checkbox-primary"
               type="checkbox"
               name="private"
-              defaultChecked={contest.private}
-              disabled={isUpdating}
+              defaultChecked={contest.value.private}
+              disabled={transition.isRunning}
             />
             <span className="label-text">
               保持比赛隐藏（取消勾选之后用户可以在首页看到该比赛）
@@ -482,8 +445,8 @@ export default function ContestEdit() {
               className="checkbox checkbox-primary"
               type="checkbox"
               name="joinAfterStart"
-              defaultChecked={contest.allowJoinAfterStart}
-              disabled={isUpdating}
+              defaultChecked={contest.value.allowJoinAfterStart}
+              disabled={transition.isRunning}
             />
             <span className="label-text">允许比赛开始后中途加入</span>
           </label>
@@ -495,7 +458,7 @@ export default function ContestEdit() {
             type="submit"
             name="_action"
             value={ActionType.UpdateInformation}
-            disabled={isUpdating}
+            disabled={transition.isRunning}
           >
             确认更新
           </button>
@@ -504,14 +467,14 @@ export default function ContestEdit() {
 
       <h2>修改比赛题目</h2>
 
-      {Date.now() > new Date(contest.beginTime).getTime() && (
+      {Date.now() > new Date(contest.value.beginTime).getTime() && (
         <p className="alert alert-warning shadow-lg">
           如果您在比赛开始后修改题目，系统可能会出现一些奇妙的特性
         </p>
       )}
 
       <ProblemEditor
-        problems={contest.problems.map(({ problem }) => problem)}
+        problems={contest.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}
         moveUpAction={ActionType.MoveProblemUp}

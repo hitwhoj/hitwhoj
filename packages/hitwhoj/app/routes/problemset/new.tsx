@@ -1,12 +1,13 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { titleScheme } from "~/utils/scheme";
 import { Privileges } from "~/utils/permission/privilege";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useSignalTransition } from "~/utils/hooks";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -36,8 +37,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemSetNew() {
-  const { state } = useTransition();
-  const loading = state !== "idle";
+  const transition = useSignalTransition();
 
   return (
     <>
@@ -52,13 +52,17 @@ export default function ProblemSetNew() {
             className="input input-bordered"
             type="text"
             name="title"
-            disabled={loading}
+            disabled={transition.isRunning}
             required
           />
         </div>
 
         <div className="form-control">
-          <button className="btn btn-primary" type="submit" disabled={loading}>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={transition.isRunning}
+          >
             创建题单
           </button>
         </div>

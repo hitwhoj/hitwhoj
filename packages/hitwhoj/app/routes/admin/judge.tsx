@@ -1,6 +1,7 @@
+import { useComputed } from "@preact/signals-react";
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useSignalLoaderData } from "~/utils/hooks";
 import { findRequestUser } from "~/utils/permission";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { Privileges } from "~/utils/permission/privilege";
@@ -31,7 +32,9 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function JudgeAdmin() {
-  const { judges, states } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const judges = useComputed(() => loaderData.value.judges);
+  const states = useComputed(() => loaderData.value.states);
 
   return (
     <>
@@ -41,22 +44,28 @@ export default function JudgeAdmin() {
         <div className="stat">
           <div className="stat-title">在线评测机</div>
           <div className="stat-value">
-            {states.filter(({ state }) => state.status === "Online").length}
+            {
+              states.value.filter(({ state }) => state.status === "Online")
+                .length
+            }
           </div>
         </div>
         <div className="stat">
           <div className="stat-title">掉线评测机</div>
           <div className="stat-value">
-            {states.filter(({ state }) => state.status === "Offline").length}
+            {
+              states.value.filter(({ state }) => state.status === "Offline")
+                .length
+            }
           </div>
         </div>
       </div>
 
-      {judges.map((judge) => {
-        const state = states.find((s) => s.id === judge.id)?.state;
+      {judges.value.map((judge) => {
+        const state = states.value.find((s) => s.id === judge.id)?.state;
 
         return (
-          <div className="not-prose card my-4 bg-base-200" key={judge.id}>
+          <div className="not-prose card bg-base-200 my-4" key={judge.id}>
             <div className="card-body">
               <h2 className="card-title">{judge.name}</h2>
               <p className="flex gap-4">
@@ -70,7 +79,12 @@ export default function JudgeAdmin() {
                 </span>
               </p>
               <div className="card-actions justify-end">
-                <button className="btn btn-primary">重连</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => alert("TODO: 还没写")}
+                >
+                  重连
+                </button>
               </div>
             </div>
           </div>

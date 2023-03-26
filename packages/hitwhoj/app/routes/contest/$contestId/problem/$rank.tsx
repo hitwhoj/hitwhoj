@@ -1,12 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useLoaderData,
-  useParams,
-  useTransition,
-} from "@remix-run/react";
+import { Form, Link, useBeforeUnload, useParams } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { invariant } from "~/utils/invariant";
 import {
@@ -17,7 +11,7 @@ import {
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { findRequestUser } from "~/utils/permission";
 import {
@@ -32,11 +26,17 @@ import Fullscreen from "~/src/Fullscreen";
 import { AiOutlineHistory } from "react-icons/ai";
 import { HiOutlineChevronLeft, HiOutlinePaperAirplane } from "react-icons/hi";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { ToastContext } from "~/utils/context/toast";
 import { judge } from "~/utils/server/judge/manager.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
 import type { MessageType } from "~/routes/record/$recordId/events";
 import { VscodeEditor } from "~/src/VscodeEditor";
+import { useComputed, useSignal } from "@preact/signals-react";
+import {
+  useSignalLoaderData,
+  useSignalTransition,
+  useSynchronized,
+} from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -171,31 +171,28 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ContestProblemView() {
-  const {
-    problem,
-    records: _records,
-    contest,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problem = useComputed(() => loaderData.value.problem);
+  const contest = useComputed(() => loaderData.value.contest);
+  const records = useSynchronized(() => loaderData.value.records);
+
   const { contestId, rank } = useParams();
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const transition = useSignalTransition();
 
-  const [visible, setVisible] = useState(false);
+  const visible = useSignal(false);
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("提交成功");
-      setVisible(true);
+      visible.value = true;
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
-  const [language, setLanguage] = useState("cpp");
-  const [code, setCode] = useState(
+  const language = useSignal("cpp");
+  const code = useSignal(
     "#include <bits/stdc++.h>\n" +
       "using namespace std;\n" +
       "\n" +
@@ -209,45 +206,54 @@ export default function ContestProblemView() {
 
   // load code from local storage
   useEffect(() => {
-    const storedLang = localStorage.getItem(`C${contestId}${rank}.language`);
-    if (storedLang) setLanguage(storedLang);
-    const storedCode = localStorage.getItem(`C${contestId}${rank}.code`);
-    if (storedCode) setCode(storedCode);
+    const storedLang = localStorage.getItem(`C#${contestId}#${rank}#language`);
+    if (storedLang) language.value = storedLang;
+    const storedCode = localStorage.getItem(`C#${contestId}#${rank}#code`);
+    if (storedCode) code.value = storedCode;
   }, []);
 
   // save code to local storage
-  useEffect(() => {
-    localStorage.setItem(`C${contestId}${rank}.language`, language);
-    localStorage.setItem(`C${contestId}${rank}.code`, code);
-  }, [language, code]);
+  useBeforeUnload(
+    useCallback(() => {
+      localStorage.setItem(`C#${contestId}#${rank}#language`, language.value);
+      localStorage.setItem(`C#${contestId}#${rank}#code`, code.value);
+    }, [language.value, code.value])
+  );
 
-  const now = new Date();
-  const isNotStarted = now < new Date(contest.beginTime);
-  const isEnded = now > new Date(contest.endTime);
+  const status = useComputed(() => {
+    const now = new Date();
+    return {
+      isNotStarted: now < new Date(contest.value.beginTime),
+      isEnded: now > new Date(contest.value.endTime),
+    };
+  });
 
-  const [records, setRecords] = useState(_records);
-  useEffect(() => setRecords(_records), [_records]);
-
-  const pending = useMemo(() => {
-    return _records
-      .filter((record) => record.status === "Pending")
+  const pending = useComputed(() => {
+    return records.value
+      .filter(
+        (record) =>
+          record.status === "Pending" ||
+          record.status === "Compiling" ||
+          record.status === "Judging" ||
+          record.status === "Running"
+      )
       .map(({ id }) => id);
-  }, [_records]);
+  });
 
   useEffect(() => {
-    const subscriptions = pending.map((id) => {
+    const subscriptions = pending.value.map((id) => {
       return fromEventSource<MessageType>(`/record/${id}/events`).subscribe(
         (message) => {
-          setRecords((records) => {
-            const found = records.find((record) => record.id === message.id);
-            if (found) {
-              found.time = message.time;
-              found.score = message.score;
-              found.memory = message.memory;
-              found.status = message.status;
-            }
-            return [...records];
-          });
+          const found = records.value.find(
+            (record) => record.id === message.id
+          );
+          if (found) {
+            found.time = message.time;
+            found.score = message.score;
+            found.memory = message.memory;
+            found.status = message.status;
+          }
+          records.value = [...records.value];
         }
       );
     });
@@ -255,26 +261,26 @@ export default function ContestProblemView() {
     return () => {
       subscriptions.forEach((subscription) => subscription.unsubscribe());
     };
-  }, [JSON.stringify(pending)]);
+  }, [pending.value.join(" ")]);
 
   return (
     <Fullscreen
       visible={true}
-      className="drawer drawer-end h-full w-full bg-base-100"
+      className="drawer drawer-end bg-base-100 h-full w-full"
     >
       <input
         type="checkbox"
         id="records"
         className="drawer-toggle"
-        checked={visible}
+        checked={visible.value}
         readOnly
       />
       <div className="drawer-content grid grid-cols-2 grid-rows-1">
         <div className="flex flex-col overflow-y-auto">
-          <nav className="sticky top-0 z-10 flex-shrink-0 bg-base-100 p-4">
+          <nav className="bg-base-100 sticky top-0 z-10 flex-shrink-0 p-4">
             <Link
               className="btn btn-ghost gap-2"
-              to={`/contest/${contest.id}/problem`}
+              to={`/contest/${contest.value.id}/problem`}
             >
               <HiOutlineChevronLeft className="" />
               <span>返回题目列表</span>
@@ -282,28 +288,28 @@ export default function ContestProblemView() {
           </nav>
           <article className="p-4">
             <h1>
-              {rank} - {problem.title}
+              {rank} - {problem.value.title}
             </h1>
             <p>
               <RecordTimeMemory
-                time={problem.timeLimit}
-                memory={problem.memoryLimit}
+                time={problem.value.timeLimit}
+                memory={problem.value.memoryLimit}
               />
             </p>
-            {isNotStarted && (
+            {status.value.isNotStarted && (
               <p className="alert alert-warning shadow-lg">比赛还没有开始</p>
             )}
-            {isEnded && (
+            {status.value.isEnded && (
               <p className="alert alert-warning shadow-lg">
                 比赛已经结束，本页面仅供查看
               </p>
             )}
-            <Markdown>{problem.description}</Markdown>
-            {problem.files.length > 0 && (
+            <Markdown>{problem.value.description}</Markdown>
+            {problem.value.files.length > 0 && (
               <>
                 <h2>可供下载的文件</h2>
                 <ol>
-                  {problem.files.map((file) => (
+                  {problem.value.files.map((file) => (
                     <li key={file.id}>
                       <Link to={`/file/${file.id}`} target="_blank">
                         {file.filename}
@@ -316,23 +322,21 @@ export default function ContestProblemView() {
           </article>
         </div>
         <div className="flex flex-col">
-          <VscodeEditor
-            code={code}
-            language={language}
-            onChange={(code) => setCode(code ?? "")}
-          />
+          <VscodeEditor code={code} language={language.value} />
           <Form
             method="post"
             className="flex flex-shrink-0 justify-between p-2"
           >
-            <textarea name="code" hidden value={code} readOnly />
+            <textarea name="code" hidden value={code.value} readOnly />
             <div>
               <select
                 className="select select-bordered"
                 name="language"
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-                disabled={isLoading}
+                value={language.value}
+                onChange={(event) =>
+                  (language.value = event.currentTarget.value)
+                }
+                disabled={transition.isRunning}
               >
                 <option value="c">C</option>
                 <option value="cpp">C++</option>
@@ -343,22 +347,25 @@ export default function ContestProblemView() {
               <button
                 className="btn btn-ghost gap-2"
                 type="button"
-                onClick={() => setVisible(true)}
+                onClick={() => (visible.value = true)}
               >
                 <AiOutlineHistory />
                 <span>查看提交记录</span>
               </button>
-              {!isNotStarted && !isEnded ? (
+              {!status.value.isNotStarted && !status.value.isEnded ? (
                 <button
                   className="btn btn-primary gap-2"
                   type="submit"
-                  disabled={isLoading}
+                  disabled={transition.isRunning}
                 >
                   <HiOutlinePaperAirplane className="rotate-90" />
                   <span>提交</span>
                 </button>
               ) : (
-                <Link className="btn btn-primary" to={`/problem/${problem.id}`}>
+                <Link
+                  className="btn btn-primary"
+                  to={`/problem/${problem.value.id}`}
+                >
                   跳转到题目页面
                 </Link>
               )}
@@ -367,11 +374,14 @@ export default function ContestProblemView() {
         </div>
       </div>
       <div className="drawer-side">
-        <label className="drawer-overlay" onClick={() => setVisible(false)} />
+        <label
+          className="drawer-overlay"
+          onClick={() => (visible.value = false)}
+        />
         <aside className="not-prose bg-base-200 p-4">
           <h3 className="text-lg font-bold">提交记录</h3>
           <ul className="menu menu-compact my-4 w-96">
-            {records.map((record) => (
+            {records.value.map((record) => (
               <li key={record.id}>
                 <Link
                   to={`/record/${record.id}`}

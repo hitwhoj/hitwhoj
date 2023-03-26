@@ -1,7 +1,5 @@
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
+import { Link, NavLink, Outlet } from "@remix-run/react";
 import { UserAvatar } from "~/src/user/UserAvatar";
-import { UserContext } from "~/utils/context/user";
 import { fromEventSource } from "~/utils/eventSource";
 import { findRequestUser } from "~/utils/permission";
 import { db } from "~/utils/server/db.server";
@@ -11,6 +9,9 @@ import type { LoaderArgs } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { selectUserData } from "~/utils/db/user";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
+import { useUser } from "~/utils/context";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -35,40 +36,41 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function UserChatIndex() {
-  const { messages } = useLoaderData<typeof loader>();
-  const self = useContext(UserContext);
+  const loaderData = useSignalLoaderData<typeof loader>();
 
-  const [msgs, setMsgs] = useState(messages);
+  const self = useUser();
 
-  const set = new Set<number>();
-  const users = msgs
-    .map((message) => ({
-      user: message.from.id === self ? message.to : message.from,
-      message,
-    }))
-    .filter(({ user }) => {
-      if (set.has(user.id)) {
-        return false;
-      }
-      set.add(user.id);
-      return true;
-    });
+  const messages = useSynchronized(() => loaderData.value.messages);
 
-  useEffect(() => {
-    if (self) {
+  const users = useComputed(() => {
+    const set = new Set<number>();
+    return messages.value
+      .map((message) => ({
+        user: message.from.id === self.value ? message.to : message.from,
+        message,
+      }))
+      .filter(({ user }) => {
+        if (set.has(user.id)) {
+          return false;
+        }
+        set.add(user.id);
+        return true;
+      });
+  });
+
+  useSignalEffect(() => {
+    if (self.value) {
       const subscription = fromEventSource<MessageType>(
         "/chat/events"
       ).subscribe((message) => {
-        setMsgs((msgs) => [message, ...msgs]);
+        messages.value = [message, ...messages.value];
       });
       return () => subscription.unsubscribe();
     }
-  }, [self]);
-
-  useEffect(() => setMsgs(messages), [messages]);
+  });
 
   return (
-    <Fullscreen visible={true} className="not-prose flex bg-base-100">
+    <Fullscreen visible={true} className="not-prose bg-base-100 flex">
       <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
         <div className="drawer-content overflow-hidden px-4">
@@ -83,13 +85,13 @@ export default function UserChatIndex() {
               <span>返回到上一页</span>
             </Link>
             <ul className="menu mt-4 w-72 p-0">
-              {users.map(({ user, message }) => (
+              {users.value.map(({ user, message }) => (
                 <li key={user.id}>
                   <NavLink to={`/chat/user/${user.id}`} className="w-full p-4">
                     <div className="flex w-full items-center gap-3">
                       <UserAvatar
                         user={user}
-                        className="h-16 w-16 flex-shrink-0 bg-base-300 text-3xl"
+                        className="bg-base-300 h-16 w-16 flex-shrink-0 text-3xl"
                       />
                       <div className="overflow-hidden">
                         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-xl font-bold">

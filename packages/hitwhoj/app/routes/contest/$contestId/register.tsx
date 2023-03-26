@@ -1,19 +1,21 @@
+import { useComputed } from "@preact/signals-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useContext, useEffect } from "react";
-import { ToastContext } from "~/utils/context/toast";
+import { Form } from "@remix-run/react";
+import { useEffect } from "react";
 import {
   findContestParticipantRole,
   findContestStatus,
 } from "~/utils/db/contest";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { idScheme, weakPasswordScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -104,20 +106,18 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ContestRegisteration() {
-  const { contest } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
 
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionReload;
+  const transition = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("报名成功");
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -126,15 +126,20 @@ export default function ContestRegisteration() {
       <p>请注意诚信参赛，不要使用任何外挂、作弊工具参赛。</p>
 
       <Form method="post" className="flex gap-4">
-        {contest.registrationType === "Password" && (
+        {contest.value.registrationType === "Password" && (
           <input
             className="input input-bordered"
             placeholder="密码"
             name="password"
+            disabled={transition.isRunning}
             required
           />
         )}
-        <button className="btn btn-primary" type="submit" disabled={isLoading}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={transition.isRunning}
+        >
           同意并报名
         </button>
       </Form>

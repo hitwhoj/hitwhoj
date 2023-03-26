@@ -1,6 +1,6 @@
 import type { HTMLProps } from "react";
-import { useContext, useEffect, useState } from "react";
-import { MenuDrawerContext } from "~/utils/context/menu";
+import { useEffect } from "react";
+import { menuSignal } from "~/utils/context";
 
 type FullscreenProps = {
   visible: boolean;
@@ -14,21 +14,18 @@ export default function Fullscreen({
   className,
   ...props
 }: FullscreenProps & HTMLProps<HTMLDivElement>) {
-  const setMenuDrawer = useContext(MenuDrawerContext);
-
   // listen to visibility change
-  useEffect(() => setMenuDrawer(!visible), [visible]);
+  useEffect(() => {
+    menuSignal.value = !visible;
+  }, [visible]);
   // recover menu drawer after leave page
-  useEffect(() => () => setMenuDrawer(true), []);
-
-  const [selfVisible, setSelfVisible] = useState(false);
-  useEffect(() => setSelfVisible(visible), [visible]);
+  useEffect(() => () => void (menuSignal.value = true), []);
 
   return (
     <div
       className={`${
-        selfVisible ? "visible" : "invisible scale-75 opacity-0"
-      } fixed top-0 left-0 z-10 h-screen w-screen text-base-content transition ${
+        visible ? "visible" : "invisible scale-75 opacity-0"
+      } text-base-content fixed top-0 left-0 z-10 h-screen w-screen transition ${
         className ?? ""
       }`}
       {...props}

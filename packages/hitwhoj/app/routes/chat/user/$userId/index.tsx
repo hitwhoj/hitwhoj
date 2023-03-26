@@ -3,8 +3,8 @@ import { json } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
-import { useEffect, useState, useRef } from "react";
+import { Form } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
 import { privateMessageSubject } from "~/utils/serverEvents";
@@ -15,6 +15,12 @@ import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { HiOutlinePaperAirplane } from "react-icons/hi";
 import { formatDateTime, formatTime } from "~/utils/tools";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import {
+  useSignalLoaderData,
+  useSignalTransition,
+  useSynchronized,
+} from "~/utils/hooks";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `聊天: ${data?.target.nickname || data?.target.username} - HITwh OJ`,
@@ -89,46 +95,42 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ChatIndex() {
-  const { target, source, msgs } = useLoaderData<typeof loader>();
-  const [messages, setMessages] = useState(msgs);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const target = useComputed(() => loaderData.value.target);
+  const source = useComputed(() => loaderData.value.source);
+  const msgs = useComputed(() => loaderData.value.msgs);
+  const messages = useSynchronized(() => msgs.value);
 
-  useEffect(() => {
-    setMessages(msgs);
-  }, [msgs]);
-
-  useEffect(() => {
+  useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `./${target.id}/events`
+      `./${target.value.id}/events`
     ).subscribe((message) => {
-      setMessages((messages) => [...messages, message]);
+      messages.value = [...messages.value, message];
     });
 
     return () => subscription.unsubscribe();
-  }, [target.id]);
+  });
 
   const formRef = useRef<HTMLFormElement>(null);
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const transition = useSignalTransition();
 
   useEffect(() => {
-    if (!isActionReload) {
+    if (transition.actionSuccess) {
       formRef.current?.reset();
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <div className="flex h-full w-full flex-col">
-      <header className="sticky top-0 z-10 bg-base-100 py-4">
+      <header className="bg-base-100 sticky top-0 z-10 py-4">
         <h1 className="text-2xl font-bold">
-          {target.nickname || target.username}
+          {target.value.nickname || target.value.username}
         </h1>
       </header>
 
       <div className="flex-1">
-        {messages.length > 0 ? (
-          messages.map((message, index, array) => {
+        {messages.value.length > 0 ? (
+          messages.value.map((message, index, array) => {
             // 是否是同一个人在连续五分钟内发送的第一条消息
             const isFirst =
               index === 0 ||
@@ -136,21 +138,21 @@ export default function ChatIndex() {
               new Date(message.sentAt).getTime() -
                 new Date(array[index - 1].sentAt).getTime() >
                 1000 * 60 * 5;
-            const from = message.fromId === target.id ? target : source;
+            const from = message.fromId === target.value.id ? target : source;
 
             return isFirst ? (
               <div
-                className="flex gap-4 px-2 pt-2 transition hover:bg-base-200"
+                className="hover:bg-base-200 flex gap-4 px-2 pt-2 transition"
                 key={message.id}
               >
                 <UserAvatar
-                  className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
-                  user={from}
+                  className="bg-base-300 h-12 w-12 flex-shrink-0 text-2xl"
+                  user={from.value}
                 />
                 <div className="flex-1">
                   <div className="flex w-full justify-between">
                     <span className="text-primary">
-                      {from.nickname || from.username}
+                      {from.value.nickname || from.value.username}
                     </span>
                   </div>
                   <div className="min-w-0 break-words">{message.content}</div>
@@ -160,7 +162,7 @@ export default function ChatIndex() {
                     className="tooltip tooltip-left"
                     data-tip={formatDateTime(message.sentAt)}
                   >
-                    <time className="text-sm text-base-content opacity-60">
+                    <time className="text-base-content text-sm opacity-60">
                       {formatTime(message.sentAt)}
                     </time>
                   </span>
@@ -168,7 +170,7 @@ export default function ChatIndex() {
               </div>
             ) : (
               <div
-                className="group flex gap-4 px-2 transition hover:bg-base-200"
+                className="hover:bg-base-200 group flex gap-4 px-2 transition"
                 key={message.id}
               >
                 <div className="h-0 w-12 flex-shrink-0" />
@@ -198,23 +200,23 @@ export default function ChatIndex() {
       <Form
         method="post"
         ref={formRef}
-        className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
+        className="bg-base-100 sticky bottom-0 z-10 flex gap-4 py-4"
         autoComplete="off"
       >
-        <input type="hidden" name="to" value={target.id} />
+        <input type="hidden" name="to" value={target.value.id} />
         <input
           className="input input-bordered flex-1"
           type="text"
           placeholder="输入消息..."
           name="content"
           required
-          disabled={isLoading}
+          disabled={transition.isRunning}
           autoComplete="false"
         />
         <button
           className="btn btn-primary gap-2"
           type="submit"
-          disabled={isLoading}
+          disabled={transition.isRunning}
         >
           <HiOutlinePaperAirplane className="rotate-90" />
           <span>发送</span>

@@ -1,6 +1,5 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -12,8 +11,10 @@ import { formatNumber } from "~/utils/tools";
 import ActivityCalendar from "react-activity-calendar";
 import type { Level } from "react-activity-calendar";
 import ReactTooltip from "react-tooltip";
-import { useContext } from "react";
-import { defaultThemeColor, ThemeContext } from "~/utils/theme";
+import { defaultThemeColor } from "~/utils/theme";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useTheme } from "~/utils/context";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -87,34 +88,51 @@ function hexToRGB(color: string) {
 }
 
 export default function UserStatistics() {
-  const { user } = useLoaderData<typeof loader>();
-  const theme = useContext(ThemeContext);
-  const fromColor = defaultThemeColor[theme].base200;
-  const toColor = defaultThemeColor[theme].primary;
-  const [level0, level1, level2, level3, level4] = getLevelColors(
-    fromColor,
-    toColor
-  );
-  const now = new Date();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const user = useComputed(() => loaderData.value.user);
+
+  const theme = useTheme();
+
+  const activityCalendarTheme = useComputed(() => {
+    const fromColor = defaultThemeColor[theme.value].base200;
+    const toColor = defaultThemeColor[theme.value].primary;
+    const [level0, level1, level2, level3, level4] = getLevelColors(
+      fromColor,
+      toColor
+    );
+    return { level0, level1, level2, level3, level4 };
+  });
 
   // FIXME 摆烂了，这个页面就跟 profile 页面合并了吧
   // 丢给 @lingyunchi 处理吧
 
-  // prettier-ignore
-  const ActivityCalendarData = Object.entries(user.createdRecords.reduce((cur, record) => {
-    const date = new Date(record.submittedAt).toISOString().slice(0, 10);
-    if (cur[date]) cur[date]++;
-    else cur[date] = 1;
-    return cur;
-  }, {
-    [now.toISOString().slice(0, 10)]: 0,
-    [new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)]: 0,
-  } as Record<string, number>)).map(([date, count]) => {
-    // level 0: 0, level 1: 1-2, level 2: 3-4, level 3: 4-5, level 4: 5-infinity
-    const level = Math.min(Math.floor(count + 1 / 2), 4) as Level;
-    return { date, count, level };
-  }).sort((a, b) => {
-    return a.date > b.date ? 1 : -1;
+  const activityCalendarData = useComputed(() => {
+    const now = new Date();
+
+    return Object.entries(
+      user.value.createdRecords.reduce(
+        (cur, record) => {
+          const date = new Date(record.submittedAt).toISOString().slice(0, 10);
+          if (cur[date]) cur[date]++;
+          else cur[date] = 1;
+          return cur;
+        },
+        {
+          [now.toISOString().slice(0, 10)]: 0,
+          [new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10)]: 0,
+        } as Record<string, number>
+      )
+    )
+      .map(([date, count]) => {
+        // level 0: 0, level 1: 1-2, level 2: 3-4, level 3: 4-5, level 4: 5-infinity
+        const level = Math.min(Math.floor(count + 1 / 2), 4) as Level;
+        return { date, count, level };
+      })
+      .sort((a, b) => {
+        return a.date > b.date ? 1 : -1;
+      });
   });
 
   return (
@@ -122,19 +140,13 @@ export default function UserStatistics() {
       <div className="stats w-full">
         <div className="stat place-items-center">
           <ActivityCalendar
-            data={ActivityCalendarData}
+            data={activityCalendarData.value}
             labels={{
               tooltip:
                 "<span style='font-weight: bold;' color='white'>{{count}} submitions</span> on {{date}}",
               totalCount: "{{count}} submitions in {{year}}",
             }}
-            theme={{
-              level0: level0,
-              level1: level1,
-              level2: level2,
-              level3: level3,
-              level4: level4,
-            }}
+            theme={activityCalendarTheme.value}
           >
             <ReactTooltip html />
           </ActivityCalendar>
@@ -143,21 +155,21 @@ export default function UserStatistics() {
       <div className="stats w-full">
         <div className="stat place-items-center">
           <div className="stat-value">
-            {formatNumber(user._count.createdRecords)}
+            {formatNumber(user.value._count.createdRecords)}
           </div>
           <div className="stat-desc">提交</div>
         </div>
 
         <div className="stat place-items-center">
           <div className="stat-value">
-            {formatNumber(user._count.createdComments)}
+            {formatNumber(user.value._count.createdComments)}
           </div>
           <div className="stat-desc">评论</div>
         </div>
 
         <div className="stat place-items-center">
           <div className="stat-value">
-            {formatNumber(user._count.createdReplies)}
+            {formatNumber(user.value._count.createdReplies)}
           </div>
           <div className="stat-desc">回复</div>
         </div>
@@ -165,7 +177,7 @@ export default function UserStatistics() {
 
       <h2>参与的比赛</h2>
       <ul>
-        {user.participatedContests.map(({ contest }) => (
+        {user.value.participatedContests.map(({ contest }) => (
           <li key={contest.id}>
             <ContestLink contest={contest} />
           </li>

@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { HiOutlineUpload } from "react-icons/hi";
+import { useSignalFetcher } from "~/utils/hooks";
 
 type FileUploaderProps = {
   uploadAction: string;
@@ -15,16 +15,15 @@ type FileUploaderProps = {
  * </form>
  */
 export function FileUploader({ uploadAction }: FileUploaderProps) {
-  const fetcher = useFetcher();
-  const isUploading = fetcher.state === "submitting";
+  const fetcher = useSignalFetcher();
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isUploading) {
+    if (fetcher.actionSuccess) {
       formRef.current?.reset();
     }
-  }, [isUploading]);
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
@@ -41,7 +40,7 @@ export function FileUploader({ uploadAction }: FileUploaderProps) {
         className="btn btn-primary gap-2"
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={isUploading}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineUpload />
         <span>上传文件捏</span>

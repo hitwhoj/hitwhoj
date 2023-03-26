@@ -5,10 +5,12 @@ import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
 import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { HiOutlineArrowsExpand, HiOutlinePlus } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -71,7 +73,9 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export default function ContestClarification() {
-  const { canSubmit, clarifications } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const canSubmit = useComputed(() => loaderData.value.canSubmit);
+  const clarifications = useComputed(() => loaderData.value.clarifications);
 
   return (
     <>
@@ -87,12 +91,12 @@ export default function ContestClarification() {
           </tr>
         </thead>
         <tbody>
-          {clarifications.length === 0 ? (
+          {clarifications.value.length === 0 ? (
             <tr>
               <td colSpan={5}>暂无</td>
             </tr>
           ) : (
-            clarifications.map((clarification) => (
+            clarifications.value.map((clarification) => (
               <tr key={clarification.id}>
                 <td>
                   <UserLink user={clarification.user} />
@@ -119,7 +123,7 @@ export default function ContestClarification() {
           )}
         </tbody>
       </table>
-      {canSubmit && (
+      {canSubmit.value && (
         <div className="flex justify-end">
           <Link className="btn btn-primary gap-2" to="submit">
             <HiOutlinePlus />

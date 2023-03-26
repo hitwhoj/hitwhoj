@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import {
@@ -12,12 +12,13 @@ import {
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
-import { useContext, useEffect } from "react";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { useSignalTransition } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -73,19 +74,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestNew() {
-  const { state, type } = useTransition();
+  const transition = useSignalTransition();
 
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionRedirect = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionRedirect;
-
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionRedirect) {
+    if (transition.actionSuccess) {
       Toasts.success("创建成功");
     }
-  }, [isActionRedirect]);
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -101,7 +98,7 @@ export default function ContestNew() {
             type="text"
             name="title"
             required
-            disabled={isLoading}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -124,7 +121,7 @@ export default function ContestNew() {
             type="datetime-local"
             name="beginTime"
             required
-            disabled={isLoading}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -140,7 +137,7 @@ export default function ContestNew() {
             type="datetime-local"
             name="endTime"
             required
-            disabled={isLoading}
+            disabled={transition.isRunning}
           />
           <input
             type="hidden"
@@ -157,7 +154,7 @@ export default function ContestNew() {
             className="select select-bordered"
             name="system"
             required
-            disabled={isLoading}
+            disabled={transition.isRunning}
           >
             <option value="" disabled selected>
               请选择比赛的赛制
@@ -174,7 +171,7 @@ export default function ContestNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={isLoading}
+            disabled={transition.isRunning}
           >
             创建比赛
           </button>

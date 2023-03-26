@@ -1,12 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useLoaderData,
-  useParams,
-  useTransition,
-} from "@remix-run/react";
+import { Form, Link, useParams } from "@remix-run/react";
 import { HiOutlineChevronLeft } from "react-icons/hi";
 import { json } from "@remix-run/node";
 import Fullscreen from "~/src/Fullscreen";
@@ -16,8 +10,10 @@ import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext, useEffect } from "react";
-import { ToastContext } from "~/utils/context/toast";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ params, request }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -44,25 +40,24 @@ export async function loader({ params, request }: LoaderArgs) {
 }
 
 export default function ClarificationSubmit() {
-  const { problems } = useLoaderData<typeof loader>();
-  const { contestId } = useParams();
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isLoading = isActionSubmit || isActionSubmit;
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problems = useComputed(() => loaderData.value.problems);
 
-  const Toasts = useContext(ToastContext);
+  const { contestId } = useParams();
+  const transition = useSignalTransition();
+
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("提交成功");
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <Fullscreen
       visible={true}
-      className="flex flex-col items-center justify-start bg-base-100"
+      className="bg-base-100 flex flex-col items-center justify-start"
     >
       <div className="w-full max-w-2xl p-4">
         <div>
@@ -91,7 +86,7 @@ export default function ClarificationSubmit() {
               <option value="" disabled>
                 请选择题目
               </option>
-              {problems.map((p) => (
+              {problems.value.map((p) => (
                 <option key={p.rank} value={p.rank}>
                   {`${String.fromCharCode(0x40 + p.rank)} - ${p.problem.title}`}
                 </option>
@@ -114,7 +109,7 @@ export default function ClarificationSubmit() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={isLoading}
+              disabled={transition.isRunning}
             >
               提交
             </button>

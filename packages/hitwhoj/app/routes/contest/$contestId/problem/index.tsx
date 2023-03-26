@@ -1,6 +1,6 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -14,7 +14,9 @@ import {
   HiOutlineX,
 } from "react-icons/hi";
 import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -78,53 +80,56 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 }
 
-type CountdownProps = { date: Date; onFinish?: () => void };
+type CountdownProps = { date: Date; onFinish: () => void };
 
 function Countdown(props: CountdownProps) {
-  const [now, setNow] = useState(new Date());
+  const now = useSignal(new Date());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
+    const interval = setInterval(() => (now.value = new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const time = props.date.getTime() - now.getTime();
-  const day = Math.floor(time / 1000 / 60 / 60 / 24);
-  const hour = Math.floor(time / 1000 / 60 / 60) % 24;
-  const minute = Math.floor(time / 1000 / 60) % 60;
-  const second = Math.floor(time / 1000) % 60;
+  const time = useComputed(() => {
+    const time = props.date.getTime() - now.value.getTime();
+    const day = Math.floor(time / 1000 / 60 / 60 / 24);
+    const hour = Math.floor(time / 1000 / 60 / 60) % 24;
+    const minute = Math.floor(time / 1000 / 60) % 60;
+    const second = Math.floor(time / 1000) % 60;
+    const finished = time < 0;
 
-  const finished = time < 0;
+    return { day, hour, minute, second, finished };
+  });
 
-  useEffect(() => {
-    if (finished) {
-      props.onFinish?.();
+  useSignalEffect(() => {
+    if (time.value.finished) {
+      props.onFinish();
     }
-  }, [finished]);
+  });
 
   return (
     <div className="flex gap-5">
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": day } as CSSProperties}></span>
+          <span style={{ "--value": time.value.day } as CSSProperties} />
         </span>
         days
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": hour } as CSSProperties}></span>
+          <span style={{ "--value": time.value.hour } as CSSProperties} />
         </span>
         hours
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": minute } as CSSProperties}></span>
+          <span style={{ "--value": time.value.minute } as CSSProperties} />
         </span>
         min
       </div>
       <div>
         <span className="countdown font-mono text-4xl">
-          <span style={{ "--value": second } as CSSProperties}></span>
+          <span style={{ "--value": time.value.second } as CSSProperties} />
         </span>
         sec
       </div>
@@ -133,25 +138,19 @@ function Countdown(props: CountdownProps) {
 }
 
 export default function ContestProblemIndex() {
-  const data = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (data.countdown) {
-    return (
-      <div className="mx-auto w-full max-w-sm text-center">
-        <h2>距离比赛开始还有</h2>
+  return loaderData.value.countdown ? (
+    <div className="mx-auto w-full max-w-sm text-center">
+      <h2>距离比赛开始还有</h2>
 
-        <Countdown
-          date={new Date(data.contest.beginTime)}
-          onFinish={() => navigate(".")}
-        />
-      </div>
-    );
-  }
-
-  const { contest } = data;
-
-  return (
+      <Countdown
+        date={new Date(loaderData.value.contest.beginTime)}
+        onFinish={() => navigate(".")}
+      />
+    </div>
+  ) : (
     <table className="not-prose table w-full">
       <thead>
         <tr>
@@ -161,7 +160,7 @@ export default function ContestProblemIndex() {
         </tr>
       </thead>
       <tbody>
-        {contest.problems.map(({ rank, problem }) => {
+        {loaderData.value.contest.problems.map(({ rank, problem }) => {
           const charCode = String.fromCharCode(0x40 + rank);
           // 是否已经通过这道题目
           const accepted = problem.relatedRecords.some(
@@ -184,9 +183,9 @@ export default function ContestProblemIndex() {
               </td>
               <td>
                 {accepted && (
-                  <HiOutlineCheck className="h-6 w-6 text-success" />
+                  <HiOutlineCheck className="text-success h-6 w-6" />
                 )}
-                {failed && <HiOutlineX className="h-6 w-6 text-error" />}
+                {failed && <HiOutlineX className="text-error h-6 w-6" />}
               </td>
             </tr>
           );

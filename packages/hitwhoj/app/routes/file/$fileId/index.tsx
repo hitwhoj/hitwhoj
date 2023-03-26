@@ -1,10 +1,12 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { uuidScheme } from "~/utils/scheme";
 import { HiOutlineArrowsExpand, HiOutlineDownload } from "react-icons/hi";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ params }: LoaderArgs) {
   const fileId = invariant(uuidScheme, params.fileId, { status: 404 });
@@ -30,35 +32,42 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function FileIndex() {
-  const { file } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const file = useComputed(() => loaderData.value.file);
 
-  const filelink = `/file/${file.id}/${file.filename}`;
+  const filelink = useComputed(
+    () => `/file/${file.value.id}/${file.value.filename}`
+  );
 
   return (
     <>
       {/* previews for audio/video/images */}
-      {file.mimetype.startsWith("audio/") ? (
-        <audio controls src={filelink} style={{ maxWidth: "100%" }} />
-      ) : file.mimetype.startsWith("video/") ? (
+      {file.value.mimetype.startsWith("audio/") ? (
+        <audio controls src={filelink.value} style={{ maxWidth: "100%" }} />
+      ) : file.value.mimetype.startsWith("video/") ? (
         <video
           controls
-          src={filelink}
+          src={filelink.value}
           style={{ maxHeight: "80vh", maxWidth: "100%" }}
         />
-      ) : file.mimetype.startsWith("image/") ? (
-        <img src={filelink} alt={file.filename} />
+      ) : file.value.mimetype.startsWith("image/") ? (
+        <img src={filelink.value} alt={file.value.filename} />
       ) : null}
 
       <p className="flex gap-4">
-        {file.mimetype === "application/pdf" && (
-          <Link to={filelink} className="btn btn-primary gap-2" reloadDocument>
+        {file.value.mimetype === "application/pdf" && (
+          <Link
+            to={filelink.value}
+            className="btn btn-primary gap-2"
+            reloadDocument
+          >
             <HiOutlineArrowsExpand />
             <span>在标签页中打开</span>
           </Link>
         )}
         <Link
           className="btn btn-primary gap-2"
-          to={filelink}
+          to={filelink.value}
           target="_blank"
           rel="noreferrer noopener"
           aria-label="download"

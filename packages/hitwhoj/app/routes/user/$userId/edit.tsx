@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { z } from "zod";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -15,8 +15,10 @@ import {
 import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { useContext, useEffect } from "react";
-import { ToastContext } from "~/utils/context/toast";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -107,19 +109,18 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function UserEdit() {
-  const { user } = useLoaderData<typeof loader>();
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isUpdating = isActionSubmit || isActionReload;
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const user = useComputed(() => loaderData.value.user);
 
-  const Toasts = useContext(ToastContext);
+  const transition = useSignalTransition();
+
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <Form method="post" className="form-control mx-auto w-full max-w-lg gap-4">
@@ -131,8 +132,8 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="username"
-          defaultValue={user.username}
-          disabled={isUpdating}
+          defaultValue={user.value.username}
+          disabled={transition.isRunning}
           required
           pattern="\w+"
         />
@@ -146,8 +147,8 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="nickname"
-          defaultValue={user.nickname}
-          disabled={isUpdating}
+          defaultValue={user.value.nickname}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -159,8 +160,8 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="bio"
-          defaultValue={user.bio}
-          disabled={isUpdating}
+          defaultValue={user.value.bio}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -172,8 +173,8 @@ export default function UserEdit() {
           className="input input-bordered"
           type="email"
           name="email"
-          defaultValue={user.email}
-          disabled={isUpdating}
+          defaultValue={user.value.email}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -185,9 +186,9 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="avatar"
-          defaultValue={user.avatar}
+          defaultValue={user.value.avatar}
           placeholder="https://"
-          disabled={isUpdating}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -199,8 +200,8 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="department"
-          defaultValue={user.department}
-          disabled={isUpdating}
+          defaultValue={user.value.department}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -212,13 +213,17 @@ export default function UserEdit() {
           className="input input-bordered"
           type="text"
           name="studentId"
-          defaultValue={user.studentId}
-          disabled={isUpdating}
+          defaultValue={user.value.studentId}
+          disabled={transition.isRunning}
         />
       </div>
 
       <div className="form-control">
-        <button className="btn btn-primary" type="submit" disabled={isUpdating}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={transition.isRunning}
+        >
           确认修改
         </button>
       </div>

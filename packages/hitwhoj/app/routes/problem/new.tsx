@@ -1,6 +1,7 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -33,10 +34,7 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ProblemNew() {
-  const { state, type } = useTransition();
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isActionRedirect = state === "loading" && type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionRedirect;
+  const transition = useSignalTransition();
 
   return (
     <>
@@ -52,12 +50,16 @@ export default function ProblemNew() {
             type="text"
             name="title"
             required
-            disabled={isLoading}
+            disabled={transition.isRunning}
           />
         </div>
 
         <div className="form-control">
-          <button className="btn btn-primary" type="submit">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={transition.isRunning}
+          >
             创建题目
           </button>
         </div>

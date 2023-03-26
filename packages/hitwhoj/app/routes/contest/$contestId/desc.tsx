@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -20,6 +20,8 @@ import {
   findContestTeam,
 } from "~/utils/db/contest";
 import { HiOutlineBookOpen, HiOutlineClock } from "react-icons/hi";
+import { useComputed } from "@preact/signals-react";
+import { useSignalLoaderData } from "~/utils/hooks";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -75,24 +77,26 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ContestIndex() {
-  const { contest, registered, status } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
 
-  const isMod = registered === "Mod";
-  const isJury = registered === "Jury";
-  const isAttendee = registered === "Contestant";
+  const contest = useComputed(() => loaderData.value.contest);
+  const registered = useComputed(() => loaderData.value.registered);
+  const status = useComputed(() => loaderData.value.status);
 
   return (
     <>
-      <div className="stats w-full bg-base-200 text-base-content">
+      <div className="stats bg-base-200 text-base-content w-full">
         <div className="stat">
           <div className="stat-figure text-secondary">
             <HiOutlineClock className="h-8 w-8" />
           </div>
           <div className="stat-title">开始时间</div>
           <div className="stat-value">
-            {formatRelativeDateTime(contest.beginTime)}
+            {formatRelativeDateTime(contest.value.beginTime)}
           </div>
-          <div className="stat-desc">{formatDateTime(contest.beginTime)}</div>
+          <div className="stat-desc">
+            {formatDateTime(contest.value.beginTime)}
+          </div>
         </div>
 
         <div className="stat">
@@ -102,11 +106,13 @@ export default function ContestIndex() {
           <div className="stat-title">比赛时长</div>
           <div className="stat-value">
             {formatDurationTime(
-              new Date(contest.endTime).getTime() -
-                new Date(contest.beginTime).getTime()
+              new Date(contest.value.endTime).getTime() -
+                new Date(contest.value.beginTime).getTime()
             )}
           </div>
-          <div className="stat-desc">{formatDateTime(contest.endTime)}</div>
+          <div className="stat-desc">
+            {formatDateTime(contest.value.endTime)}
+          </div>
         </div>
 
         <div className="stat">
@@ -115,32 +121,32 @@ export default function ContestIndex() {
           </div>
           <div className="stat-title">题目数量</div>
           <div className="stat-value">
-            {formatNumber(contest._count.problems)}
+            {formatNumber(contest.value._count.problems)}
           </div>
           <div className="stat-desc">这里可以说什么</div>
         </div>
       </div>
 
-      <Markdown>{contest.description}</Markdown>
+      <Markdown>{contest.value.description}</Markdown>
 
-      {isMod ? (
+      {registered.value === "Mod" ? (
         <p className="alert alert-info shadow-lg">您已经是比赛的管理员</p>
-      ) : isJury ? (
+      ) : registered.value === "Jury" ? (
         <p className="alert alert-info shadow-lg">您已经是比赛的裁判</p>
-      ) : isAttendee ? (
+      ) : registered.value === "Contestant" ? (
         <p className="alert alert-info shadow-lg">您已经报名了该比赛</p>
-      ) : contest.private ? (
+      ) : contest.value.private ? (
         <p className="alert alert-info shadow-lg">无法报名私有比赛</p>
-      ) : status === "Running" && !contest.allowJoinAfterStart ? (
+      ) : status.value === "Running" && !contest.value.allowJoinAfterStart ? (
         <p className="alert alert-info shadow-lg">该比赛不允许中途加入</p>
-      ) : status === "Ended" ? (
+      ) : status.value === "Ended" ? (
         <p className="alert alert-info shadow-lg">比赛已经结束</p>
-      ) : contest.registrationType === "Disallow" ? (
+      ) : contest.value.registrationType === "Disallow" ? (
         <p className="alert alert-info shadow-lg">报名已经关闭</p>
       ) : (
         <Link
           className="btn btn-primary"
-          to={`/contest/${contest.id}/register`}
+          to={`/contest/${contest.value.id}/register`}
         >
           报名比赛
         </Link>

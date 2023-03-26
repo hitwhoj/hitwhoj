@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
@@ -10,9 +10,11 @@ import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useContext, useEffect } from "react";
-import { UserContext } from "~/utils/context/user";
-import { ToastContext } from "~/utils/context/toast";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useUser } from "~/utils/context";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -104,23 +106,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function TeamDetail() {
-  const { team, hasViewPerm } = useLoaderData<typeof loader>();
-  const self = useContext(UserContext);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const team = useComputed(() => loaderData.value.team);
+  const hasViewPerm = useComputed(() => loaderData.value.hasViewPerm);
 
-  const { state, type } = useTransition();
-  const isActionReload = state === "loading" && type === "actionReload";
-  const isActionSubmit = state === "submitting" && type === "actionSubmission";
-  const isLoading = isActionReload && isActionSubmit;
+  const self = useUser();
 
-  const isNotMember = self && !hasViewPerm;
+  const transition = useSignalTransition();
 
-  const Toasts = useContext(ToastContext);
+  const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
+
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (transition.actionSuccess) {
       Toasts.success("成功加入团队");
     }
-  }, [isActionReload]);
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -133,47 +135,47 @@ export default function TeamDetail() {
         <tbody>
           <tr>
             <th>创建时间</th>
-            <td>{formatDateTime(team.createdAt)}</td>
+            <td>{formatDateTime(team.value.createdAt)}</td>
           </tr>
           <tr>
             <th>成员数量</th>
-            <td>{team._count.members}</td>
+            <td>{team.value._count.members}</td>
           </tr>
           <tr>
             <th>题目数量</th>
-            <td>{team._count.problems}</td>
+            <td>{team.value._count.problems}</td>
           </tr>
           <tr>
             <th>题单数量</th>
-            <td>{team._count.problemSets}</td>
+            <td>{team.value._count.problemSets}</td>
           </tr>
           <tr>
             <th>比赛数量</th>
-            <td>{team._count.contests}</td>
+            <td>{team.value._count.contests}</td>
           </tr>
         </tbody>
       </table>
 
-      <Markdown>{team.description}</Markdown>
+      <Markdown>{team.value.description}</Markdown>
 
       {isNotMember &&
-        (team.invitationType === InvitationType.NONE ? (
+        (team.value.invitationType === InvitationType.NONE ? (
           <div className="alert alert-info">该团队未开放申请加入</div>
         ) : (
           <Form method="post" className="flex gap-4">
-            {team.invitationType === InvitationType.CODE && (
+            {team.value.invitationType === InvitationType.CODE && (
               <input
                 className="input input-bordered"
                 name="code"
                 placeholder="请输入邀请码"
                 required
-                disabled={isLoading}
+                disabled={transition.isRunning}
               />
             )}
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={isLoading}
+              disabled={transition.isRunning}
             >
               加入团队
             </button>

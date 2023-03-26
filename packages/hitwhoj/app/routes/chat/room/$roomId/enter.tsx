@@ -1,8 +1,10 @@
+import { useComputed } from "@preact/signals-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData, useTransition } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { HiOutlineLockClosed } from "react-icons/hi";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -41,33 +43,34 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function EnterRoom() {
-  const { room } = useLoaderData<typeof loader>();
-  const { state } = useTransition();
-  const isSubmitting = state !== "idle";
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const room = useComputed(() => loaderData.value.room);
+
+  const transition = useSignalTransition();
 
   return (
     <>
       <h1 className="flex gap-4">
-        {room.private && <HiOutlineLockClosed className="shrink-0" />}
-        <span>{room.name}</span>
+        {room.value.private && <HiOutlineLockClosed className="shrink-0" />}
+        <span>{room.value.name}</span>
       </h1>
 
-      <p>{room.description}</p>
+      <p>{room.value.description}</p>
 
       <Form method="post" className="flex gap-4">
-        {room.private && (
+        {room.value.private && (
           <input
             className="input input-bordered"
             type="password"
             name="password"
             placeholder="请输入房间密码"
-            disabled={isSubmitting}
+            disabled={transition.isRunning}
           />
         )}
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={isSubmitting}
+          disabled={transition.isRunning}
         >
           加入房间
         </button>

@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { signal } from "@preact/signals-react";
 
 export const themes = [
   "light",
@@ -32,7 +32,7 @@ export const themes = [
   "winter",
 ] as const;
 
-export type Theme = typeof themes[number];
+export type Theme = (typeof themes)[number];
 
 export const darkThemes: Theme[] = [
   "dark",
@@ -48,7 +48,7 @@ export const darkThemes: Theme[] = [
   "coffee",
 ];
 
-export const ThemeContext = createContext<Theme>("light");
+export const themeSignal = signal<Theme>("light");
 
 function t(str: string) {
   const colors = str.split(" ").map((s) => `#${s}`);

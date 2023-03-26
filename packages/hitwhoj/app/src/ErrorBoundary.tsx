@@ -9,7 +9,7 @@ export function ErrorBoundary({ error }: ErrorBoundaryProps) {
 
   return (
     <div className="grid h-full w-full place-items-center">
-      <div className="not-prose card card-compact w-96 bg-error text-error-content shadow-lg">
+      <div className="not-prose card card-compact bg-error text-error-content w-96 shadow-lg">
         <figure>
           <img src="/error.png" alt="error" />
         </figure>

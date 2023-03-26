@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Markdown } from "~/src/Markdown";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
@@ -8,6 +8,8 @@ import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -44,18 +46,19 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function ProblemIndex() {
-  const { problem } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problem = useComputed(() => loaderData.value.problem);
 
   return (
     <>
-      <Markdown>{problem.description}</Markdown>
+      <Markdown>{problem.value.description}</Markdown>
 
-      {problem.files.length > 0 && (
+      {problem.value.files.length > 0 && (
         <>
           <h2>相关文件</h2>
 
           <ul>
-            {problem.files.map((file) => (
+            {problem.value.files.map((file) => (
               <li key={file.id}>
                 <Link className="link" to={`/file/${file.id}`} target="_blank">
                   {file.filename}

@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Link, NavLink, Outlet } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
@@ -11,6 +11,8 @@ import {
   findProblemSetTeam,
 } from "~/utils/db/problemset";
 import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -50,21 +52,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function Problemset() {
-  const { problemSet, hasEditPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problemSet = useComputed(() => loaderData.value.problemSet);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
 
   return (
     <>
-      <h1>{problemSet.title}</h1>
+      <h1>{problemSet.value.title}</h1>
 
-      {(problemSet.tags.length > 0 || problemSet.private) && (
+      {(problemSet.value.tags.length > 0 || problemSet.value.private) && (
         <div className="not-prose flex flex-wrap gap-2">
-          {problemSet.private && (
+          {problemSet.value.private && (
             <span className="badge badge-warning gap-1">
               <HiOutlineEyeOff />
               <span>隐藏</span>
             </span>
           )}
-          {problemSet.tags.map(({ name }) => (
+          {problemSet.value.tags.map(({ name }) => (
             <Link
               className="badge gap-1"
               to={`/problemset/tag/${name}`}
@@ -81,7 +85,7 @@ export default function Problemset() {
         <NavLink className="tab" to="problem">
           详情
         </NavLink>
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="edit">
             编辑
           </NavLink>

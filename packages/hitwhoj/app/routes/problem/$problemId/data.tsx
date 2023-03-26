@@ -1,7 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { unstable_parseMultipartFormData } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import {
   createProblemData,
@@ -19,8 +18,8 @@ import { FileList } from "~/src/file/FileList";
 import { FileUploader } from "~/src/file/FileUploader";
 import { s3 } from "~/utils/server/s3.server";
 import type { SelectHTMLAttributes } from "react";
-import { useContext, useEffect } from "react";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useCallback } from "react";
 import type {
   ConfigJson,
   ConfigSubtask,
@@ -35,8 +34,11 @@ import {
 } from "react-icons/hi";
 import Fullscreen from "~/src/Fullscreen";
 import { z } from "zod";
-import { ToastContext } from "~/utils/context/toast";
 import Highlighter from "~/src/Highlighter";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import type { Signal } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -177,38 +179,46 @@ const DEFAULT_TIME_LIMIT = 1000;
 const DEFAULT_MEMORY_LIMIT = 268435456; // 256MB
 
 type EditorProps<T> = {
-  config: T;
-  onChange: (config: T) => void;
+  config: Signal<T>;
   data: string[];
 };
 type DefaultConfig = Extract<ConfigJson, { type: "default" }>;
 type DefaultConfigEditorProps = EditorProps<DefaultConfig>;
 
 function DefaultConfigEditor(props: DefaultConfigEditorProps) {
-  const handleAddSubtask = () => {
-    props.onChange({
-      ...props.config,
-      subtasks: [...props.config.subtasks, { score: 20, cases: [] }],
-    });
-  };
+  const handleAddSubtask = useCallback(() => {
+    props.config.value = {
+      ...props.config.value,
+      subtasks: [...props.config.value.subtasks, { score: 20, cases: [] }],
+    };
+  }, [props.config.value]);
 
-  const totalScore = props.config.subtasks.reduce(
-    (prev, cur) => prev + cur.score,
-    0
-  );
-  const hasEmptySubtask = props.config.subtasks.some(
-    (subtask) => subtask.cases.length === 0
-  );
-  const hasEmptyTask = props.config.subtasks.some((subtask) =>
-    subtask.cases.some((task) => task.input === "" || task.output === "")
-  );
-  const hasInvalidScore = totalScore !== 100;
-  const allFiles = props.config.subtasks
-    .flatMap((subtask) =>
-      subtask.cases.flatMap((task) => [task.input, task.output])
-    )
-    .filter((file) => file !== "");
-  const hasDuplicatedFile = new Set(allFiles).size !== allFiles.length;
+  const diagnostics = useComputed(() => {
+    const totalScore = props.config.value.subtasks.reduce(
+      (prev, cur) => prev + cur.score,
+      0
+    );
+    const hasEmptySubtask = props.config.value.subtasks.some(
+      (subtask) => subtask.cases.length === 0
+    );
+    const hasEmptyTask = props.config.value.subtasks.some((subtask) =>
+      subtask.cases.some((task) => task.input === "" || task.output === "")
+    );
+    const hasInvalidScore = totalScore !== 100;
+    const allFiles = props.config.value.subtasks
+      .flatMap((subtask) =>
+        subtask.cases.flatMap((task) => [task.input, task.output])
+      )
+      .filter((file) => file !== "");
+    const hasDuplicatedFile = new Set(allFiles).size !== allFiles.length;
+
+    return {
+      hasEmptySubtask,
+      hasEmptyTask,
+      hasInvalidScore,
+      hasDuplicatedFile,
+    };
+  });
 
   return (
     <>
@@ -219,12 +229,12 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
         <input
           className="input input-bordered"
           type="number"
-          value={props.config.time}
+          value={props.config.value.time}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               time: Number(event.target.value),
-            });
+            };
           }}
           placeholder={DEFAULT_TIME_LIMIT.toString()}
         />
@@ -237,12 +247,12 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
         <input
           className="input input-bordered"
           type="number"
-          value={props.config.memory}
+          value={props.config.value.memory}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               memory: Number(event.target.value),
-            });
+            };
           }}
           placeholder={DEFAULT_MEMORY_LIMIT.toString()}
         />
@@ -256,25 +266,25 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
         </button>
       </h3>
 
-      {props.config.subtasks.map((subtask, index) => {
+      {props.config.value.subtasks.map((subtask, index) => {
         const setSubtask = (subtask: ConfigSubtask<ConfigTaskDefault>) => {
-          props.onChange({
-            ...props.config,
+          props.config.value = {
+            ...props.config.value,
             subtasks: [
-              ...props.config.subtasks.slice(0, index),
+              ...props.config.value.subtasks.slice(0, index),
               subtask,
-              ...props.config.subtasks.slice(index + 1),
+              ...props.config.value.subtasks.slice(index + 1),
             ],
-          });
+          };
         };
         const handleRemoveSubtask = () => {
-          props.onChange({
-            ...props.config,
+          props.config.value = {
+            ...props.config.value,
             subtasks: [
-              ...props.config.subtasks.slice(0, index),
-              ...props.config.subtasks.slice(index + 1),
+              ...props.config.value.subtasks.slice(0, index),
+              ...props.config.value.subtasks.slice(index + 1),
             ],
-          });
+          };
         };
 
         const handleRemoveCase = (caseIndex: number) => {
@@ -292,7 +302,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
 
         return (
           <div
-            className="collapse collapse-open overflow-visible"
+            className="collapse-open collapse overflow-visible"
             key={index}
             tabIndex={0}
           >
@@ -376,7 +386,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                     <div className="tooltip" data-tip="删除测试点">
                       <button className="btn btn-square btn-error btn-ghost btn-sm">
                         <HiOutlineX
-                          className="cursor-pointer text-error"
+                          className="text-error cursor-pointer"
                           onClick={() => handleRemoveCase(index)}
                         />
                       </button>
@@ -390,19 +400,20 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
       })}
 
       <div className="my-4 flex flex-col gap-2">
-        {!props.config.subtasks.length && (
+        {!props.config.value.subtasks.length && (
           <div className="alert alert-warning">还没有任何子任务</div>
         )}
-        {!!props.config.subtasks.length && hasInvalidScore && (
-          <div className="alert alert-warning">子任务分数之和不等于 100</div>
-        )}
-        {hasEmptySubtask && (
+        {props.config.value.subtasks.length > 0 &&
+          diagnostics.value.hasInvalidScore && (
+            <div className="alert alert-warning">子任务分数之和不等于 100</div>
+          )}
+        {diagnostics.value.hasEmptySubtask && (
           <div className="alert alert-warning">存在空的子任务</div>
         )}
-        {hasEmptyTask && (
+        {diagnostics.value.hasEmptyTask && (
           <div className="alert alert-warning">存在未选择的测试点</div>
         )}
-        {hasDuplicatedFile && (
+        {diagnostics.value.hasDuplicatedFile && (
           <div className="alert alert-warning">存在重复使用的测试数据</div>
         )}
       </div>
@@ -422,18 +433,18 @@ function InteractiveConfigEditor(props: InteractiveConfigEditorProps) {
         </label>
         <DataSelect
           options={props.data}
-          value={props.config.interactive}
+          value={props.config.value.interactive}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               interactive: event.target.value,
-            });
+            };
           }}
         />
       </div>
 
       <div className="my-4 flex flex-col gap-2">
-        {!props.config.interactive && (
+        {!props.config.value.interactive && (
           <div className="alert alert-warning">请选择交互代码</div>
         )}
       </div>
@@ -453,12 +464,12 @@ function DynamicConfigEditor(props: DynamicConfigEditorProps) {
         </label>
         <DataSelect
           options={props.data}
-          value={props.config.mkdata}
+          value={props.config.value.mkdata}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               mkdata: event.target.value,
-            });
+            };
           }}
         />
       </div>
@@ -469,18 +480,18 @@ function DynamicConfigEditor(props: DynamicConfigEditorProps) {
         </label>
         <DataSelect
           options={props.data}
-          value={props.config.std}
+          value={props.config.value.std}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               std: event.target.value,
-            });
+            };
           }}
         />
       </div>
 
       <div className="my-4 flex flex-col gap-2">
-        {(!props.config.mkdata || !props.config.std) && (
+        {(!props.config.value.mkdata || !props.config.value.std) && (
           <div className="alert alert-warning">
             请选择数据构造代码和标准代码
           </div>
@@ -504,18 +515,18 @@ function SubmitAnswerConfigEditor(props: SubmitAnswerConfigEditorProps) {
         <input
           className="input input-bordered"
           type="text"
-          value={props.config.answer}
+          value={props.config.value.answer}
           onChange={(event) => {
-            props.onChange({
-              ...props.config,
+            props.config.value = {
+              ...props.config.value,
               answer: event.target.value,
-            });
+            };
           }}
         />
       </div>
 
       <div className="my-4 flex flex-col gap-2">
-        {!props.config.answer && (
+        {!props.config.value.answer && (
           <div className="alert alert-warning">请输入答案</div>
         )}
       </div>
@@ -532,20 +543,15 @@ function ConfigJSONEditor({
   config: defaultConfig,
   data,
 }: ConfigJSONEditorProps) {
-  const [config, setConfig] = useState(defaultConfig);
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
-  const Toast = useContext(ToastContext);
+  const config = useSignal(defaultConfig);
+  const fetcher = useSignalFetcher();
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
-      Toast.success("更新配置成功");
+    if (fetcher.actionSuccess) {
+      Toasts.success("更新配置成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
 
   return (
     <div className="mb-24 flex flex-col gap-2">
@@ -555,16 +561,21 @@ function ConfigJSONEditor({
         </label>
         <select
           className="select select-bordered w-full max-w-xs"
-          value={config.type}
+          value={config.value.type}
           onChange={(event) => {
             const value = event.target.value as ConfigJson["type"];
             if (value === "default")
-              setConfig({ type: "default", subtasks: [] });
+              config.value = { type: "default", subtasks: [] };
             else if (value === "interactive")
-              setConfig({ type: "interactive", interactive: "" });
+              config.value = { type: "interactive", interactive: "" };
             else if (value === "dynamic")
-              setConfig({ type: "dynamic", mkdata: "", std: "", subtasks: [] });
-            else setConfig({ type: "submit_answer", answer: "" });
+              config.value = {
+                type: "dynamic",
+                mkdata: "",
+                std: "",
+                subtasks: [],
+              };
+            else config.value = { type: "submit_answer", answer: "" };
           }}
         >
           <option value="default">默认</option>
@@ -574,31 +585,35 @@ function ConfigJSONEditor({
         </select>
       </div>
 
-      {config.type === "default" && (
-        <DefaultConfigEditor data={data} config={config} onChange={setConfig} />
-      )}
-      {config.type === "interactive" && (
-        <InteractiveConfigEditor
+      {config.value.type === "default" && (
+        <DefaultConfigEditor
           data={data}
-          config={config}
-          onChange={setConfig}
+          config={config as Signal<DefaultConfig>}
         />
       )}
-      {config.type === "dynamic" && (
-        <DynamicConfigEditor data={data} config={config} onChange={setConfig} />
+      {config.value.type === "interactive" && (
+        <InteractiveConfigEditor
+          data={data}
+          config={config as Signal<InteractiveConfig>}
+        />
       )}
-      {config.type === "submit_answer" && (
+      {config.value.type === "dynamic" && (
+        <DynamicConfigEditor
+          data={data}
+          config={config as Signal<DynamicConfig>}
+        />
+      )}
+      {config.value.type === "submit_answer" && (
         <SubmitAnswerConfigEditor
           data={data}
-          config={config}
-          onChange={setConfig}
+          config={config as Signal<SubmitAnswerConfig>}
         />
       )}
 
       <fetcher.Form method="post" encType="multipart/form-data">
         <textarea
           name="config"
-          value={JSON.stringify(config)}
+          value={JSON.stringify(config.value)}
           hidden
           readOnly
         />
@@ -607,7 +622,7 @@ function ConfigJSONEditor({
           type="submit"
           name="_action"
           value={ActionType.UpdateConfig}
-          disabled={isLoading}
+          disabled={fetcher.isRunning}
         >
           确认更新
         </button>
@@ -618,7 +633,7 @@ function ConfigJSONEditor({
           </div>
           <div className="collapse-content">
             <Highlighter language="json">
-              {JSON.stringify(config, null, 2)}
+              {JSON.stringify(config.value, null, 2)}
             </Highlighter>
           </div>
         </div>
@@ -628,22 +643,23 @@ function ConfigJSONEditor({
 }
 
 export default function ProblemData() {
-  const {
-    problem: { files, data },
-    config: rawConfig,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const files = useComputed(() => loaderData.value.problem.files);
+  const data = useComputed(() => loaderData.value.problem.data);
+  const config = useComputed(() => loaderData.value.config);
 
-  const dataWithoutConfig = data.filter(
-    ({ filename }) => filename !== "config.json"
+  const defaultConfig = useComputed<ConfigJson>(() =>
+    config.value ? JSON.parse(config.value) : { type: "default", subtasks: [] }
   );
-  const config = rawConfig
-    ? JSON.parse(rawConfig)
-    : { type: "default", subtasks: [] };
-  const [visible, setVisible] = useState(false);
+
+  const dataWithoutConfig = useComputed(() =>
+    data.value.filter(({ filename }) => filename !== "config.json")
+  );
+  const visible = useSignal(false);
 
   return (
     <>
-      {!rawConfig && (
+      {!config.value && (
         <div className="alert alert-warning">
           您还没有进行题目的评测配置，题目当前无法被评测
         </div>
@@ -654,7 +670,7 @@ export default function ProblemData() {
         <span className="inline-flex items-center gap-4">
           <button
             className="btn btn-primary gap-2"
-            onClick={() => setVisible(true)}
+            onClick={() => (visible.value = true)}
           >
             <span>配置</span>
             <HiOutlineArrowsExpand />
@@ -668,7 +684,7 @@ export default function ProblemData() {
         ，您可以选择使用我们提供的在线编辑工具，也可以选择手动编辑好后上传。
       </p>
       <FileList
-        files={dataWithoutConfig}
+        files={dataWithoutConfig.value}
         deleteAction={ActionType.RemoveData}
       />
 
@@ -677,13 +693,13 @@ export default function ProblemData() {
         <FileUploader uploadAction={ActionType.UploadFile} />
       </h2>
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
-      <FileList files={files} deleteAction={ActionType.RemoveFile} />
+      <FileList files={files.value} deleteAction={ActionType.RemoveFile} />
 
-      <Fullscreen visible={visible} className="overflow-auto bg-base-100">
+      <Fullscreen visible={visible.value} className="bg-base-100 overflow-auto">
         <div className="mx-auto w-full max-w-xl p-4">
           <button
             className="btn btn-ghost gap-2"
-            onClick={() => setVisible(false)}
+            onClick={() => (visible.value = false)}
           >
             <HiOutlineChevronLeft />
             <span>返回</span>
@@ -692,8 +708,8 @@ export default function ProblemData() {
           <h2>配置评测信息</h2>
 
           <ConfigJSONEditor
-            config={config}
-            data={dataWithoutConfig.map(({ filename }) => filename)}
+            config={defaultConfig.value}
+            data={dataWithoutConfig.value.map(({ filename }) => filename)}
           />
         </div>
       </Fullscreen>

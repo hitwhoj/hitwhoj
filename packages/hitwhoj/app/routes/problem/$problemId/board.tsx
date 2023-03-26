@@ -1,9 +1,11 @@
+import { useComputed } from "@preact/signals-react";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
@@ -34,7 +36,8 @@ export async function loader({ params }: LoaderArgs) {
 }
 
 export default function ProblemBoard() {
-  const { records } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const records = useComputed(() => loaderData.value.records);
 
   return (
     <>
@@ -52,7 +55,7 @@ export default function ProblemBoard() {
           </tr>
         </thead>
         <tbody>
-          {records.map((record, index) => (
+          {records.value.map((record, index) => (
             <tr key={record.id}>
               <th className="text-center">{index + 1}</th>
               <td>

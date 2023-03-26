@@ -1,60 +1,51 @@
-import { useEffect, useState } from "react";
+import { useSignal } from "@preact/signals-react";
+import { useBeforeUnload } from "@remix-run/react";
+import { useCallback, useEffect } from "react";
 import Fullscreen from "~/src/Fullscreen";
 import { VscodeEditor } from "~/src/VscodeEditor";
 
-/* eslint-disable @typescript-eslint/consistent-type-imports */
-type RunCode = typeof import("~/utils/wasi").runCode;
-
 export default function PlayGround() {
-  const [code, setCode] = useState(`#include <stdio.h>
+  const code = useSignal(`#include <stdio.h>
 int main() {
   int a, b;
   scanf("%d%d", &a, &b);
   printf("%d\\n", a + b);
 }
 `);
-  const [stdin, setStdin] = useState("114 514");
-  const [stdout, setStdout] = useState("");
-  const [runCode, setRunCode] = useState<RunCode>(async () => "Loading...");
-  const [language, setLanguage] = useState("cpp");
+  const stdin = useSignal("114 514");
+  const stdout = useSignal("");
+  const language = useSignal("cpp");
 
   useEffect(() => {
-    const code = localStorage.getItem("playground.code");
-    if (typeof code === "string") {
-      setCode(code);
+    const cacheCode = localStorage.getItem("playground.code");
+    if (typeof cacheCode === "string") {
+      code.value = cacheCode;
     }
-    const language = localStorage.getItem("playground.language");
-    if (typeof language === "string") {
-      setLanguage(language);
+    const cacheLanguage = localStorage.getItem("playground.language");
+    if (typeof cacheLanguage === "string") {
+      language.value = cacheLanguage;
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("playground.code", code);
-  }, [code]);
-  useEffect(() => {
-    localStorage.setItem("playground.language", language);
-  }, [language]);
-
-  // lazyload
-  useEffect(() => {
-    import("~/utils/wasi").then(({ runCode }) => {
-      setRunCode(() => runCode);
-    });
-  }, []);
+  useBeforeUnload(
+    useCallback(() => {
+      localStorage.setItem("playground.code", code.value);
+      localStorage.setItem("playground.language", language.value);
+    }, [code.value, language.value])
+  );
 
   return (
     <Fullscreen visible className="bg-base-100">
       <div className="flex h-full flex-row">
         <div className="flex-1">
-          <VscodeEditor code={code} onChange={setCode} language={language} />
+          <VscodeEditor code={code} language={language.value} />
         </div>
         <div className="w-96 overflow-auto p-4">
           <h2>选择语言</h2>
           <select
             className="select select-bordered"
-            value={language}
-            onChange={(e) => setLanguage(e.currentTarget.value)}
+            value={language.value}
+            onChange={(e) => (language.value = e.currentTarget.value)}
           >
             <option value="c">C</option>
             <option value="cpp">C++</option>
@@ -63,24 +54,28 @@ int main() {
           <h2>输入</h2>
           <textarea
             className="textarea textarea-bordered w-full"
-            value={stdin}
-            onChange={(e) => setStdin(e.target.value)}
+            value={stdin.value}
+            onChange={(e) => (stdin.value = e.target.value)}
           />
           <button
             className="btn"
             onClick={() => {
-              setStdout("[INFO] Compiling...");
-              runCode(code, stdin, language).then((stdout) =>
-                setStdout(stdout)
-              );
+              stdout.value = "[INFO] Initializing...";
+              // lazyload
+              import("~/utils/wasi")
+                .then(({ runCode }) => {
+                  stdout.value = "[INFO] Downloading...";
+                  return runCode(code.value, stdin.value, language.value);
+                })
+                .then((output) => (stdout.value = output));
             }}
           >
             点击运行
           </button>
-          {stdout && (
+          {stdout.value && (
             <>
               <h2>输出</h2>
-              <pre>{stdout}</pre>
+              <pre>{stdout.value}</pre>
             </>
           )}
           <div className="alert alert-info mt-4">

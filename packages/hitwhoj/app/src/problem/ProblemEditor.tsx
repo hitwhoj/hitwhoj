@@ -1,10 +1,10 @@
-import { useFetcher } from "@remix-run/react";
 import {
   HiOutlineChevronDown,
   HiOutlineChevronUp,
   HiOutlineTrash,
 } from "react-icons/hi";
 import type { ProblemListData } from "~/utils/db/problem";
+import { useSignalFetcher } from "~/utils/hooks";
 import ProblemEditorCreator from "./ProblemEditorCreator";
 import { ProblemLink } from "./ProblemLink";
 
@@ -18,40 +18,35 @@ type ProblemEditorOperationsProps = {
 };
 
 function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
   return (
     <fetcher.Form method="post" className="inline-flex gap-2">
       <input type="hidden" name="pid" value={props.pid} />
       <button
-        className="btn btn-square btn-primary btn-error btn-sm"
+        className="btn btn-primary btn-error btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.deleteAction}
-        disabled={isLoading}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineTrash />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveUpAction}
-        disabled={props.first || isLoading}
+        disabled={props.first || fetcher.isRunning}
       >
         <HiOutlineChevronUp />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveDownAction}
-        disabled={props.last || isLoading}
+        disabled={props.last || fetcher.isRunning}
       >
         <HiOutlineChevronDown />
       </button>

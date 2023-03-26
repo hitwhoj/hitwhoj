@@ -13,14 +13,15 @@ import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { InvitationType } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useContext, useEffect, useState } from "react";
 import { Privileges } from "~/utils/permission/privilege";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { useComputed, useSignal } from "@preact/signals-react";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -142,21 +143,17 @@ function EditProfile({
   invitationCode: code,
   allowMembersInvite: allow,
 }: LoaderData["profile"]) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
-  const [invitationType, setInvitationType] = useState(type);
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (fetcher.actionSuccess) {
       Toasts.success("更新团队信息成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
+
+  const invitationType = useSignal(type);
 
   return (
     <fetcher.Form method="post" className="form-control gap-4">
@@ -168,7 +165,7 @@ function EditProfile({
           className="input input-bordered"
           name="name"
           defaultValue={name}
-          disabled={isLoading}
+          disabled={fetcher.isRunning}
           required
         />
       </div>
@@ -188,23 +185,23 @@ function EditProfile({
           <select
             className="select select-bordered"
             name="invitation"
-            value={invitationType}
+            value={invitationType.value}
             onChange={(event) =>
-              setInvitationType(event.target.value as InvitationType)
+              (invitationType.value = event.target.value as InvitationType)
             }
-            disabled={isLoading}
+            disabled={fetcher.isRunning}
           >
             <option value={InvitationType.FREE}>所有人均可加入</option>
             <option value={InvitationType.CODE}>需要填写邀请码</option>
             <option value={InvitationType.NONE}>禁止任何人加入</option>
           </select>
-          {invitationType === InvitationType.CODE && (
+          {invitationType.value === InvitationType.CODE && (
             <input
               className="input input-bordered"
               name="code"
               defaultValue={code}
               placeholder="邀请码"
-              disabled={isLoading}
+              disabled={fetcher.isRunning}
               required
             />
           )}
@@ -218,7 +215,7 @@ function EditProfile({
             type="checkbox"
             name="allow_invite"
             defaultChecked={allow}
-            disabled={isLoading}
+            disabled={fetcher.isRunning}
           />
           <span className="label-text">允许团队成员邀请其他用户直接加入</span>
         </label>
@@ -228,7 +225,7 @@ function EditProfile({
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={isLoading}
+          disabled={fetcher.isRunning}
           name="_action"
           value={ActionType.EditProfile}
         >
@@ -240,27 +237,22 @@ function EditProfile({
 }
 
 function ExitTeam() {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionRedirect =
-    fetcher.state === "loading" && fetcher.type === "actionRedirect";
-  const isLoading = isActionSubmit || isActionRedirect;
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionRedirect) {
+    if (fetcher.actionSuccess) {
       Toasts.success("成功退出团队");
     }
-  }, [isActionRedirect]);
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form method="post">
       <button
         className="btn btn-error gap-2"
         type="submit"
-        disabled={isLoading}
+        disabled={fetcher.isRunning}
         name="_action"
         value={ActionType.ExitTeam}
       >
@@ -272,17 +264,20 @@ function ExitTeam() {
 }
 
 export default function TeamSettings() {
-  const { profile, hasLeavePerm, hasEditPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const profile = useComputed(() => loaderData.value.profile);
+  const hasLeavePerm = useComputed(() => loaderData.value.hasLeavePerm);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
 
   return (
     <>
-      {hasEditPerm && (
+      {hasEditPerm.value && (
         <>
           <h2>团队设置</h2>
-          <EditProfile {...profile} />
+          <EditProfile {...profile.value} />
         </>
       )}
-      {hasLeavePerm && (
+      {hasLeavePerm.value && (
         <>
           <h2>危险区域</h2>
           <ExitTeam />

@@ -1,5 +1,5 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 import { invariant } from "~/utils/invariant";
 import { tagScheme } from "~/utils/scheme";
 import { selectContestListData } from "~/utils/db/contest";
@@ -9,6 +9,8 @@ import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const tag = invariant(tagScheme, params.tag, { status: 404 });
@@ -41,8 +43,10 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => ({
 });
 
 export default function ContestTag() {
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const contests = useComputed(() => loaderData.value.contests);
+
   const { tag } = useParams();
-  const { contests } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -59,7 +63,7 @@ export default function ContestTag() {
           </tr>
         </thead>
         <tbody>
-          {contests.map((contest) => (
+          {contests.value.map((contest) => (
             <tr key={contest.id}>
               <th className="text-center">{contest.id}</th>
               <td>

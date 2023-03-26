@@ -2,15 +2,17 @@ import Editor, {
   useMonaco,
   loader as monacoLoader,
 } from "@monaco-editor/react";
+import type { Signal } from "@preact/signals-react";
+import { useSignal, useSignalEffect } from "@preact/signals-react";
 import type { editor } from "monaco-editor";
-import { useContext, useEffect, useState } from "react";
-import { darkThemes, defaultThemeColor, ThemeContext } from "~/utils/theme";
+import { useEffect } from "react";
+import { useTheme } from "~/utils/context";
+import { darkThemes, defaultThemeColor } from "~/utils/theme";
 
 type VscodeEditorProps = {
-  code: string;
-  onChange: (code: string) => void;
+  code: Signal<string>;
   language: string;
-  insertText?: string;
+  insertText?: Signal<string>;
 };
 
 // override monaco loader
@@ -21,15 +23,15 @@ monacoLoader.config({ paths: { vs: "/build/_assets/vs" } });
  * with the current theme.
  */
 export function VscodeEditor(props: VscodeEditorProps) {
-  const theme = useContext(ThemeContext);
+  const theme = useTheme();
 
   const monaco = useMonaco();
   // 设置 monaco 主题
   useEffect(() => {
     if (monaco) {
-      const color = defaultThemeColor[theme];
-      monaco.editor.defineTheme(theme, {
-        base: darkThemes.includes(theme) ? "vs-dark" : "vs",
+      const color = defaultThemeColor[theme.value];
+      monaco.editor.defineTheme(theme.value, {
+        base: darkThemes.includes(theme.value) ? "vs-dark" : "vs",
         inherit: true,
         rules: [],
         colors: {
@@ -38,18 +40,18 @@ export function VscodeEditor(props: VscodeEditorProps) {
           "editor.lineHighlightBackground": color.base200,
         },
       });
-      monaco.editor.setTheme(theme);
+      monaco.editor.setTheme(theme.value);
     }
-  }, [monaco, theme]);
+  }, [monaco, theme.value]);
 
-  const [editor, setEditor] = useState<editor.ICodeEditor | null>(null);
+  const editor = useSignal<editor.ICodeEditor | null>(null);
 
   // 插入代码
   // @see https://github.com/microsoft/monaco-editor/issues/584
-  useEffect(() => {
-    if (editor && props.insertText) {
-      const p = editor.getPosition()!;
-      editor.executeEdits("", [
+  useSignalEffect(() => {
+    if (editor.value && props.insertText) {
+      const p = editor.value.getPosition()!;
+      editor.value.executeEdits("", [
         {
           range: {
             startLineNumber: p.lineNumber,
@@ -57,26 +59,24 @@ export function VscodeEditor(props: VscodeEditorProps) {
             endLineNumber: p.lineNumber,
             endColumn: p.column,
           },
-          text: props.insertText,
+          text: props.insertText.value,
         },
       ]);
     }
-  }, [props.insertText]);
+  });
 
   return (
     <Editor
-      value={props.code}
+      value={props.code.value}
       language={props.language}
-      theme={theme}
-      onChange={(code) => {
-        props.onChange(code ?? "");
-      }}
+      theme={theme.value}
+      onChange={(code) => (props.code.value = code ?? "")}
       options={{
         cursorSmoothCaretAnimation: true,
         smoothScrolling: true,
         fontSize: 16,
       }}
-      onMount={(editor) => setEditor(editor)}
+      onMount={(_editor) => (editor.value = _editor)}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Form, Link } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { selectContestListData } from "~/utils/db/contest";
 import { selectProblemListData } from "~/utils/db/problem";
@@ -12,6 +12,7 @@ import { db } from "~/utils/server/db.server";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { formatDateTime, formatDurationTime } from "~/utils/tools";
+import { useSignalLoaderData } from "~/utils/hooks";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -68,13 +69,13 @@ const QQ_LINK =
 const ISSUE_LINK = "https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues";
 
 export default function Index() {
-  const { problems, contests } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
 
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>
       <div className="not-prose grid grid-cols-8 place-content-between gap-4 md:grid-cols-12">
-        <div className="card col-span-8 bg-info text-info-content md:col-span-12">
+        <div className="card bg-info text-info-content col-span-8 md:col-span-12">
           <div className="card-body">
             <h2 className="card-title">纳新公告</h2>
             <p>HITwh OJ 项目组和 HITwh FP 项目组绝赞纳新中！！！</p>
@@ -85,7 +86,7 @@ export default function Index() {
             <p>详情请联系 QQ 3224177294 或者发送邮件到 contact#hitwh.moe。</p>
           </div>
         </div>
-        <div className="card col-span-8 row-span-2 bg-base-200">
+        <div className="card bg-base-200 col-span-8 row-span-2">
           <div className="card-body">
             <h2 className="card-title">通知公告</h2>
             <p className="flex items-center">
@@ -111,7 +112,7 @@ export default function Index() {
             </p>
           </div>
         </div>
-        <div className="stats col-span-4 bg-base-200">
+        <div className="stats bg-base-200 col-span-4">
           <div className="stat">
             <div className="stat-title">今天</div>
             <div className="stat-value">
@@ -122,7 +123,7 @@ export default function Index() {
             </div>
           </div>
         </div>
-        <div className="stats col-span-4 bg-base-200">
+        <div className="stats bg-base-200 col-span-4">
           <div className="stat">
             <div className="stat-title">快速跳题</div>
             <Form className="input-group" method="post">
@@ -139,11 +140,11 @@ export default function Index() {
             </Form>
           </div>
         </div>
-        <div className="card col-span-8 bg-base-200 md:col-span-6">
+        <div className="card bg-base-200 col-span-8 md:col-span-6">
           <div className="card-body">
             <h2 className="card-title">近期比赛</h2>
             <div className="flex flex-col gap-4">
-              {contests.map((contest) => (
+              {loaderData.value.contests.map((contest) => (
                 <Link
                   className="card bg-base-100"
                   key={contest.id}
@@ -173,7 +174,7 @@ export default function Index() {
             </div>
           </div>
         </div>
-        <div className="card col-span-8 bg-base-200 md:col-span-6">
+        <div className="card bg-base-200 col-span-8 md:col-span-6">
           <div className="card-body">
             <h2 className="card-title">推荐题目</h2>
             <table className="table-compact table">
@@ -184,7 +185,7 @@ export default function Index() {
                 </tr>
               </thead>
               <tbody>
-                {problems.map((problem) => (
+                {loaderData.value.problems.map((problem) => (
                   <tr key={problem.id}>
                     <td>
                       <ProblemLink problem={problem} />

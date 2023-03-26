@@ -1,12 +1,11 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { invariant } from "~/utils/invariant";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { idScheme } from "~/utils/scheme";
 import type { UserData } from "~/utils/db/user";
 import { selectUserData } from "~/utils/db/user";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback } from "react";
 import { UserLink } from "~/src/user/UserLink";
 import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType } from "./events";
@@ -14,6 +13,8 @@ import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlineSave } from "react-icons/hi";
+import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
 
 interface Problem {
   count: number;
@@ -62,28 +63,30 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export default function RankView() {
-  const { canExport, contest } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const canExport = useComputed(() => loaderData.value.canExport);
+  const contest = useComputed(() => loaderData.value.contest);
 
-  const [records, setRecords] = useState(contest.relatedRecords);
+  const records = useSynchronized(() => contest.value.relatedRecords);
 
-  useEffect(() => {
+  useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `/contest/${contest.id}/board/events`
+      `/contest/${contest.value.id}/board/events`
     ).subscribe((record) => {
-      setRecords((records) => [...records, record]);
+      records.value = [...records.value, record];
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  });
 
-  const [users] = useMemo(() => {
+  const users = useComputed(() => {
     // contestant user data cache
     const contestants = new Map<number, UserData>();
     // analyze ranklist
     const userMap = new Map<number, Map<number, Problem>>();
-    const beginTime = new Date(contest.beginTime).getTime();
+    const beginTime = new Date(contest.value.beginTime).getTime();
 
-    for (const record of records) {
+    for (const record of records.value) {
       const submittedAt = new Date(record.submittedAt).getTime();
       const penalty = Math.floor((submittedAt - beginTime) / 60_000);
 
@@ -143,12 +146,12 @@ export default function RankView() {
         return user;
       });
 
-    return [users];
-  }, [records]);
+    return users;
+  });
 
-  const exportData = () => {
-    const data = users.map((user) => {
-      const problems = contest.problems.map((problem) => {
+  const exportData = useCallback(() => {
+    const data = users.value.map((user) => {
+      const problems = contest.value.problems.map((problem) => {
         const p = user.problems.get(problem.problemId);
         if (!p) return "-";
         return p.solved ? `+${p.count}/${p.penalty}\t` : `-${p.count}\t`;
@@ -164,7 +167,7 @@ export default function RankView() {
     // add \ufeff to make excel recognize the csv file as utf-8
     let csv =
       "\ufeff排名,选手,解题数,总罚时," +
-      contest.problems
+      contest.value.problems
         .map((p) => String.fromCharCode(0x40 + p.rank))
         .join(",") +
       "\n";
@@ -173,14 +176,14 @@ export default function RankView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${contest.title}_${new Date()
+    a.download = `${contest.value.title}_${new Date()
       .toLocaleString()
       .replace(/:/g, "-")
       .replace(/\//g, "-")
       .replace(/ /g, "_")}_rank.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [users.value]);
 
   return (
     <>
@@ -202,7 +205,7 @@ export default function RankView() {
             <th>选手</th>
             <th className="w-16 text-center">解题数</th>
             <th className="w-16 text-center">总罚时</th>
-            {contest.problems.map((problem) => (
+            {contest.value.problems.map((problem) => (
               <th key={problem.problemId} className="w-16 text-center">
                 {String.fromCharCode(0x40 + problem.rank)}
               </th>
@@ -210,42 +213,40 @@ export default function RankView() {
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => {
-            return (
-              <tr key={user.submitter.id}>
-                <th className="text-center">{user.rank}</th>
-                <td>
-                  <UserLink user={user.submitter} />
-                </td>
-                <td className="text-center">{user.solved}</td>
-                <td className="text-center">{user.penalty}</td>
-                {contest.problems.map(({ problemId }) => {
-                  const problem = user.problems.get(problemId);
-                  if (!problem)
-                    return (
-                      <td key={problemId} className="text-center">
-                        -
-                      </td>
-                    );
-
+          {users.value.map((user) => (
+            <tr key={user.submitter.id}>
+              <th className="text-center">{user.rank}</th>
+              <td>
+                <UserLink user={user.submitter} />
+              </td>
+              <td className="text-center">{user.solved}</td>
+              <td className="text-center">{user.penalty}</td>
+              {contest.value.problems.map(({ problemId }) => {
+                const problem = user.problems.get(problemId);
+                if (!problem)
                   return (
-                    <td
-                      key={problemId}
-                      className={
-                        problem.solved
-                          ? "bg-success text-center text-success-content"
-                          : "bg-error text-center text-error-content"
-                      }
-                    >
-                      {problem.solved
-                        ? `+${problem.count}/${problem.penalty}`
-                        : `-${problem.count}`}
+                    <td key={problemId} className="text-center">
+                      -
                     </td>
                   );
-                })}
-              </tr>
-            );
-          })}
+
+                return (
+                  <td
+                    key={problemId}
+                    className={
+                      problem.solved
+                        ? "bg-success text-success-content text-center"
+                        : "bg-error text-error-content text-center"
+                    }
+                  >
+                    {problem.solved
+                      ? `+${problem.count}/${problem.penalty}`
+                      : `-${problem.count}`}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
     </>

@@ -1,6 +1,6 @@
 import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
 import { ProblemLink } from "~/src/problem/ProblemLink";
@@ -10,8 +10,10 @@ import { HiOutlinePlus } from "react-icons/hi";
 import { pageScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 import { Pagination } from "~/src/Pagination";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
 
-const pageSize = 15;
+const PAGE_SIZE = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -32,7 +34,7 @@ export async function loader({ request }: LoaderArgs) {
       ? { team: null, private: false }
       : { id: -1 },
   });
-  if (totalProblems && page > Math.ceil(totalProblems / pageSize)) {
+  if (totalProblems && page > Math.ceil(totalProblems / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
 
@@ -51,8 +53,8 @@ export async function loader({ request }: LoaderArgs) {
         },
       },
     },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
 
   return json({ problems, hasCreatePerm, totalProblems, currentPage: page });
@@ -63,15 +65,21 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemIndex() {
-  const { problems, hasCreatePerm, totalProblems, currentPage } =
-    useLoaderData<typeof loader>();
-  const totalPages = Math.ceil(totalProblems / pageSize);
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const problems = useComputed(() => loaderData.value.problems);
+  const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
+  const totalProblems = useComputed(() => loaderData.value.totalProblems);
+  const currentPage = useComputed(() => loaderData.value.currentPage);
+
+  const totalPages = useComputed(() =>
+    Math.ceil(totalProblems.value / PAGE_SIZE)
+  );
 
   return (
     <>
       <h1 className="flex items-center justify-between">
         <span>题目列表</span>
-        {hasCreatePerm && (
+        {hasCreatePerm.value && (
           <Link to="/problem/new" className="btn btn-primary gap-2">
             <HiOutlinePlus className="h-4 w-4" />
             <span>新建题目</span>
@@ -88,7 +96,7 @@ export default function ProblemIndex() {
           </tr>
         </thead>
         <tbody>
-          {problems.map((problem) => (
+          {problems.value.map((problem) => (
             <tr key={problem.id}>
               <th className="text-center">{problem.id}</th>
               <td>
@@ -101,8 +109,8 @@ export default function ProblemIndex() {
       </table>
       <Pagination
         action="/problem"
-        totalPages={totalPages}
-        currentPage={currentPage}
+        totalPages={totalPages.value}
+        currentPage={currentPage.value}
       />
     </>
   );

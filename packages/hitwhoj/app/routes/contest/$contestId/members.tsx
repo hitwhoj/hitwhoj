@@ -1,6 +1,5 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
 import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -9,11 +8,13 @@ import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
-import { useContext, useEffect, useMemo } from "react";
-import { ToastContext } from "~/utils/context/toast";
 import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -87,20 +88,15 @@ export async function action({ params, request }: ActionArgs) {
 }
 
 function DeleteMember({ id }: { id: number }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (fetcher.actionSuccess) {
       Toasts.success("踢出成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form
@@ -113,7 +109,7 @@ function DeleteMember({ id }: { id: number }) {
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={isLoading}
+        disabled={fetcher.isRunning}
         className="btn btn-square btn-error btn-sm"
       >
         <HiOutlineLogout />
@@ -129,20 +125,15 @@ function SetMemberRole({
   id: number;
   role: ContestParticipantRole;
 }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (fetcher.actionSuccess) {
       Toasts.success("设定成员角色成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
 
   const isJury = role === ContestParticipantRole.Jury;
   const isMember = role === ContestParticipantRole.Contestant;
@@ -154,13 +145,13 @@ function SetMemberRole({
       <span className="btn btn-square btn-sm">
         <HiOutlineCog />
       </span>
-      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
+      <ul className="dropdown-content menu rounded-box bg-base-300 w-72 p-2 shadow-2xl">
         <li className={isJury ? "disabled" : ""}>
           <button
             type="submit"
             name="role"
             value={ContestParticipantRole.Jury}
-            disabled={isJury || isLoading}
+            disabled={isJury || fetcher.isRunning}
           >
             设置为裁判
           </button>
@@ -170,7 +161,7 @@ function SetMemberRole({
             type="submit"
             name="role"
             value={ContestParticipantRole.Contestant}
-            disabled={isMember || isLoading}
+            disabled={isMember || fetcher.isRunning}
           >
             设置为普通成员
           </button>
@@ -181,20 +172,21 @@ function SetMemberRole({
 }
 
 export default function ContestMembers() {
-  const { members } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const members = useComputed(() => loaderData.value.members);
 
-  const sortMembers = useMemo(() => {
-    const mods = members.filter(
+  const sortMembers = useComputed(() => {
+    const mods = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Mod
     );
-    const juries = members.filter(
+    const juries = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Jury
     );
-    const contestants = members.filter(
+    const contestants = members.value.filter(
       ({ role }) => role === ContestParticipantRole.Contestant
     );
     return [...mods, ...juries, ...contestants];
-  }, [members]);
+  });
 
   return (
     <table className="not-prose table-compact table w-full">
@@ -206,7 +198,7 @@ export default function ContestMembers() {
         </tr>
       </thead>
       <tbody>
-        {sortMembers.map(({ user, role }) => {
+        {sortMembers.value.map(({ user, role }) => {
           return (
             <tr key={user.id}>
               <td>
