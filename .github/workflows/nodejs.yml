@@ -41,9 +41,9 @@ jobs:
 
       - name: Check formats and types
         run: |
-          yarn workspace hitwhoj run fmt:check
           yarn workspace hitwhoj run lint:check
           yarn workspace hitwhoj run tsc
+          yarn run fmt.check
 
       - name: Configure Postgres & MinIO
         run: |
