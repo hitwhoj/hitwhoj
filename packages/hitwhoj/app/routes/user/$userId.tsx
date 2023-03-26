@@ -66,13 +66,13 @@ export default function UserProfile() {
       <header className="not-prose my-4 text-center">
         <UserAvatar
           user={user.value}
-          className="mx-auto h-20 w-20 bg-base-200 text-3xl"
+          className="bg-base-200 mx-auto h-20 w-20 text-3xl"
         />
         <h1 className="mt-4 text-lg font-bold">
           {user.value.nickname || user.value.username}
         </h1>
         {user.value.bio && <p className="mt-3 text-sm">{user.value.bio}</p>}
-        <div className="tabs tabs-boxed mt-5 justify-center bg-base-100">
+        <div className="tabs tabs-boxed bg-base-100 mt-5 justify-center">
           <NavLink className="tab" to="profile">
             资料
           </NavLink>

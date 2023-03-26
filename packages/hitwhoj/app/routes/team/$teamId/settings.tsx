@@ -18,9 +18,10 @@ import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
 import { HiOutlineLogout } from "react-icons/hi";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -146,11 +147,11 @@ function EditProfile({
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("更新团队信息成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   const invitationType = useSignal(type);
 
@@ -164,7 +165,7 @@ function EditProfile({
           className="input input-bordered"
           name="name"
           defaultValue={name}
-          disabled={fetcher.loading.value}
+          disabled={fetcher.isRunning}
           required
         />
       </div>
@@ -188,7 +189,7 @@ function EditProfile({
             onChange={(event) =>
               (invitationType.value = event.target.value as InvitationType)
             }
-            disabled={fetcher.loading.value}
+            disabled={fetcher.isRunning}
           >
             <option value={InvitationType.FREE}>所有人均可加入</option>
             <option value={InvitationType.CODE}>需要填写邀请码</option>
@@ -200,7 +201,7 @@ function EditProfile({
               name="code"
               defaultValue={code}
               placeholder="邀请码"
-              disabled={fetcher.loading.value}
+              disabled={fetcher.isRunning}
               required
             />
           )}
@@ -214,7 +215,7 @@ function EditProfile({
             type="checkbox"
             name="allow_invite"
             defaultChecked={allow}
-            disabled={fetcher.loading.value}
+            disabled={fetcher.isRunning}
           />
           <span className="label-text">允许团队成员邀请其他用户直接加入</span>
         </label>
@@ -224,7 +225,7 @@ function EditProfile({
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={fetcher.loading.value}
+          disabled={fetcher.isRunning}
           name="_action"
           value={ActionType.EditProfile}
         >
@@ -240,18 +241,18 @@ function ExitTeam() {
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("成功退出团队");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form method="post">
       <button
         className="btn btn-error gap-2"
         type="submit"
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
         name="_action"
         value={ActionType.ExitTeam}
       >

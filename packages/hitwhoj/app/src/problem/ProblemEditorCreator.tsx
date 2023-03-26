@@ -1,4 +1,4 @@
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import { useEffect } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
 import type { LoaderData } from "~/routes/problem/data";
@@ -48,12 +48,12 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
     return id;
   });
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       filter.value = "";
       Toasts.success("更新成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form method="post" className="not-prose inline-flex gap-4">
@@ -65,7 +65,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
             placeholder="搜索题目..."
             list="search-problem"
             value={filter.value}
-            disabled={fetcher.loading.value}
+            disabled={fetcher.isRunning}
             onChange={(event) => (filter.value = event.target.value)}
           />
           <datalist id="search-problem">
@@ -79,7 +79,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
           type="submit"
           name="_action"
           value={props.createAction}
-          disabled={fetcher.loading.value || !selected}
+          disabled={fetcher.isRunning || !selected}
         >
           <HiOutlinePlus />
           添加

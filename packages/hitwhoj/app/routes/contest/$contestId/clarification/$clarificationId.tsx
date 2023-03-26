@@ -83,10 +83,10 @@ export default function ClarificationDetail() {
   const clarification = useComputed(() => loaderData.value.clarification);
   const canReply = useComputed(() => loaderData.value.canReply);
 
-  const { loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   return (
-    <Fullscreen visible={true} className="overflow-auto bg-base-100">
+    <Fullscreen visible={true} className="bg-base-100 overflow-auto">
       <div className="mx-auto w-full max-w-2xl p-4">
         <div>
           <Link
@@ -152,7 +152,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Apply}
-                      disabled={loading.value}
+                      disabled={transition.isRunning}
                     >
                       认领给自己
                     </button>
@@ -164,7 +164,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Resolve}
-                      disabled={loading.value}
+                      disabled={transition.isRunning}
                     >
                       标记为解决
                     </button>
@@ -189,7 +189,7 @@ export default function ClarificationDetail() {
                       type="submit"
                       name="_action"
                       value={ActionType.Reply}
-                      disabled={loading.value}
+                      disabled={transition.isRunning}
                     >
                       提交回复
                     </button>

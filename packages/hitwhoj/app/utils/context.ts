@@ -15,7 +15,7 @@ function useContextAsSignal<T>(context: Context<T>) {
 }
 
 /** 控制左侧菜单是否打开 */
-export const menuSignal = signal(false);
+export const menuSignal = signal(true);
 
 export const UserContext = createContext<number | null>(null);
 

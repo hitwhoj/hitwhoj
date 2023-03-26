@@ -4,7 +4,10 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "husky install && patch-package && yarn workspaces run postinstall"
+    "postinstall": "husky install && patch-package && yarn workspaces run postinstall",
+    "fmt": "pretty-quick",
+    "fmt.staged": "pretty-quick --staged",
+    "fmt.check": "pretty-quick --check"
   },
   "resolutions": {
     "katex": "^0.15.3",
@@ -14,6 +17,10 @@
   "devDependencies": {
     "husky": "^8.0.3",
     "patch-package": "^6.5.1",
-    "postinstall-postinstall": "^2.1.0"
+    "postinstall-postinstall": "^2.1.0",
+    "prettier": "^2.8.7",
+    "prettier-plugin-prisma": "^4.10.0",
+    "prettier-plugin-tailwindcss": "^0.2.5",
+    "pretty-quick": "^3.1.3"
   }
 }

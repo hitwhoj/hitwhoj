@@ -37,7 +37,7 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ProblemSetNew() {
-  const { loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   return (
     <>
@@ -52,7 +52,7 @@ export default function ProblemSetNew() {
             className="input input-bordered"
             type="text"
             name="title"
-            disabled={loading.value}
+            disabled={transition.isRunning}
             required
           />
         </div>
@@ -61,7 +61,7 @@ export default function ProblemSetNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             创建题单
           </button>

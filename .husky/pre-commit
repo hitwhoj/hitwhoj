@@ -4,3 +4,5 @@
 yarn
 
 yarn workspaces run precommit
+
+yarn fmt.staged

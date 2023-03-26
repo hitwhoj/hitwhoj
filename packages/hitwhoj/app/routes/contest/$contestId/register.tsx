@@ -1,9 +1,10 @@
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { ContestParticipantRole } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
+import { useEffect } from "react";
 import {
   findContestParticipantRole,
   findContestStatus,
@@ -108,15 +109,15 @@ export default function ContestRegisteration() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const contest = useComputed(() => loaderData.value.contest);
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("报名成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -130,14 +131,14 @@ export default function ContestRegisteration() {
             className="input input-bordered"
             placeholder="密码"
             name="password"
-            disabled={loading.value}
+            disabled={transition.isRunning}
             required
           />
         )}
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={loading.value}
+          disabled={transition.isRunning}
         >
           同意并报名
         </button>

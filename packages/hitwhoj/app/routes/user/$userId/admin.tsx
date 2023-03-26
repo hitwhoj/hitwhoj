@@ -117,7 +117,7 @@ export default function UserManage() {
   const user = useComputed(() => loaderData.value.user);
   const hasEditPrivPerm = useComputed(() => loaderData.value.hasEditPrivPerm);
   const hasEditRolePerm = useComputed(() => loaderData.value.hasEditRolePerm);
-  const { loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const isUserBanned = useComputed(
     () => !(user.value.privilege & Privileges.PRIV_OPERATE)
@@ -139,7 +139,7 @@ export default function UserManage() {
               type="submit"
               name="_action"
               value={ActionType.SetPrivilege}
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               {isUserBanned.value ? (
                 <HiOutlineLockOpen />
@@ -171,7 +171,7 @@ export default function UserManage() {
               type="submit"
               name="_action"
               value={ActionType.SetRole}
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               <HiOutlineCheck />
               确认修改

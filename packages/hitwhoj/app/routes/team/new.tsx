@@ -9,8 +9,8 @@ import { Form } from "@remix-run/react";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { useSignalTransition } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -50,15 +50,15 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function NewTeam() {
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("创建成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -76,7 +76,7 @@ export default function NewTeam() {
             type="text"
             name="name"
             required
-            disabled={loading.value}
+            disabled={transition.actionSuccess}
           />
         </div>
 
@@ -84,7 +84,7 @@ export default function NewTeam() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading.value}
+            disabled={transition.actionSuccess}
           >
             创建团队
           </button>

@@ -70,7 +70,7 @@ export default function UserChatIndex() {
   });
 
   return (
-    <Fullscreen visible={true} className="not-prose flex bg-base-100">
+    <Fullscreen visible={true} className="not-prose bg-base-100 flex">
       <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
         <div className="drawer-content overflow-hidden px-4">
@@ -91,7 +91,7 @@ export default function UserChatIndex() {
                     <div className="flex w-full items-center gap-3">
                       <UserAvatar
                         user={user}
-                        className="h-16 w-16 flex-shrink-0 bg-base-300 text-3xl"
+                        className="bg-base-300 h-16 w-16 flex-shrink-0 text-3xl"
                       />
                       <div className="overflow-hidden">
                         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-xl font-bold">

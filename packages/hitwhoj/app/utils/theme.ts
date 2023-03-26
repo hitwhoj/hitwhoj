@@ -32,7 +32,7 @@ export const themes = [
   "winter",
 ] as const;
 
-export type Theme = typeof themes[number];
+export type Theme = (typeof themes)[number];
 
 export const darkThemes: Theme[] = [
   "dark",

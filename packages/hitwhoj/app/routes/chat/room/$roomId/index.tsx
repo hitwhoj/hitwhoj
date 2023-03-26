@@ -5,7 +5,7 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { Form, Link } from "@remix-run/react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { chatMessageSubject } from "~/utils/serverEvents";
 import type { MessageType } from "./events";
@@ -88,22 +88,22 @@ export default function ChatRoomIndex() {
     return () => subscription.unsubscribe();
   });
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const formRef = useRef<HTMLFormElement>(null);
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       formRef.current?.reset();
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <Fullscreen visible={true} className="not-prose">
       <div className="drawer-mobile drawer">
         <input type="checkbox" className="drawer-toggle" />
-        <div className="not-prose drawer-content flex min-h-full flex-col overflow-auto bg-base-100 px-4">
-          <header className="sticky top-0 z-10 bg-base-100 py-4">
+        <div className="not-prose drawer-content bg-base-100 flex min-h-full flex-col overflow-auto px-4">
+          <header className="bg-base-100 sticky top-0 z-10 py-4">
             <h1 className="text-2xl font-bold">{room.value.name}</h1>
           </header>
 
@@ -119,11 +119,11 @@ export default function ChatRoomIndex() {
 
               return isFirst ? (
                 <div
-                  className="flex gap-4 px-2 pt-2 transition hover:bg-base-200"
+                  className="hover:bg-base-200 flex gap-4 px-2 pt-2 transition"
                   key={message.id}
                 >
                   <UserAvatar
-                    className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
+                    className="bg-base-300 h-12 w-12 flex-shrink-0 text-2xl"
                     user={message.sender}
                   />
                   <div className="flex-1">
@@ -148,7 +148,7 @@ export default function ChatRoomIndex() {
                       className="tooltip tooltip-left"
                       data-tip={formatDateTime(message.sentAt)}
                     >
-                      <time className="text-sm text-base-content opacity-60">
+                      <time className="text-base-content text-sm opacity-60">
                         {formatTime(message.sentAt)}
                       </time>
                     </span>
@@ -156,7 +156,7 @@ export default function ChatRoomIndex() {
                 </div>
               ) : (
                 <div
-                  className="group flex gap-4 px-2 transition hover:bg-base-200"
+                  className="hover:bg-base-200 group flex gap-4 px-2 transition"
                   key={message.id}
                 >
                   <div className="h-0 w-12 flex-shrink-0" />
@@ -180,7 +180,7 @@ export default function ChatRoomIndex() {
 
           <Form
             method="post"
-            className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
+            className="bg-base-100 sticky bottom-0 z-10 flex gap-4 py-4"
             ref={formRef}
             autoComplete="off"
           >
@@ -190,14 +190,14 @@ export default function ChatRoomIndex() {
               type="text"
               placeholder="输入消息..."
               name="content"
-              disabled={loading.value}
+              disabled={transition.isRunning}
               required
               autoComplete="false"
             />
             <button
               className="btn btn-primary gap-2"
               type="submit"
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               <HiOutlinePaperAirplane className="rotate-90" />
               <span>发送</span>
@@ -206,7 +206,7 @@ export default function ChatRoomIndex() {
         </div>
         <div className="drawer-side">
           <div className="drawer-overlay" />
-          <aside className="flex w-72 flex-col justify-between bg-base-200 p-4">
+          <aside className="bg-base-200 flex w-72 flex-col justify-between p-4">
             <div>
               <Link className="btn btn-ghost gap-2" to="/">
                 <HiOutlineChevronLeft />

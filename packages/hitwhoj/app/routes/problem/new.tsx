@@ -34,7 +34,7 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ProblemNew() {
-  const { loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   return (
     <>
@@ -50,7 +50,7 @@ export default function ProblemNew() {
             type="text"
             name="title"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -58,7 +58,7 @@ export default function ProblemNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             创建题目
           </button>

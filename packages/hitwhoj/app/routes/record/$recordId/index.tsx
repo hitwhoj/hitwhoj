@@ -176,7 +176,7 @@ export default function RecordView() {
                 )
               }
             >
-              <AiOutlineCopy className="h-4 w-4 text-info" />
+              <AiOutlineCopy className="text-info h-4 w-4" />
             </button>
           </h2>
           <Highlighter language={record.value.language}>

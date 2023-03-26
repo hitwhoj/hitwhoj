@@ -17,9 +17,10 @@ import { findProblemSetTeam } from "~/utils/db/problemset";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
@@ -246,15 +247,15 @@ export default function ProblemSetEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problemSet = useComputed(() => loaderData.value.problemSet);
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -270,7 +271,7 @@ export default function ProblemSetEdit() {
             type="text"
             name="title"
             defaultValue={problemSet.value.title}
-            disabled={loading.value}
+            disabled={transition.isRunning}
             required
           />
         </div>
@@ -298,7 +299,7 @@ export default function ProblemSetEdit() {
               type="checkbox"
               name="private"
               defaultChecked={problemSet.value.private}
-              disabled={loading.value}
+              disabled={transition.isRunning}
             />
             <span className="label-text">保持题单隐藏</span>
           </label>
@@ -310,7 +311,7 @@ export default function ProblemSetEdit() {
             type="submit"
             name="_action"
             value={ActionType.UpdateInformation}
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             确认修改
           </button>

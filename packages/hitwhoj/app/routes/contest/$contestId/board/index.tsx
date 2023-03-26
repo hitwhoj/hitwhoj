@@ -235,8 +235,8 @@ export default function RankView() {
                     key={problemId}
                     className={
                       problem.solved
-                        ? "bg-success text-center text-success-content"
-                        : "bg-error text-center text-error-content"
+                        ? "bg-success text-success-content text-center"
+                        : "bg-error text-error-content text-center"
                     }
                   >
                     {problem.solved

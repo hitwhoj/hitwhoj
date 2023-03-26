@@ -183,9 +183,9 @@ export default function ContestProblemIndex() {
               </td>
               <td>
                 {accepted && (
-                  <HiOutlineCheck className="h-6 w-6 text-success" />
+                  <HiOutlineCheck className="text-success h-6 w-6" />
                 )}
-                {failed && <HiOutlineX className="h-6 w-6 text-error" />}
+                {failed && <HiOutlineX className="text-error h-6 w-6" />}
               </td>
             </tr>
           );

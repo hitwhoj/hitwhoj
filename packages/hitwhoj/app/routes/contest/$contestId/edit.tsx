@@ -23,10 +23,11 @@ import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -278,15 +279,15 @@ export default function ContestEdit() {
 
   const registrationType = useSignal(contest.value.registrationType);
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -303,7 +304,7 @@ export default function ContestEdit() {
             name="title"
             defaultValue={contest.value.title}
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -338,7 +339,7 @@ export default function ContestEdit() {
               new Date(contest.value.beginTime).getTime()
             )}
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -357,7 +358,7 @@ export default function ContestEdit() {
               new Date(contest.value.endTime).getTime()
             )}
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
           <input
             type="hidden"
@@ -375,7 +376,7 @@ export default function ContestEdit() {
             className="select select-bordered"
             name="system"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
             defaultValue={contest.value.system}
           >
             {Object.keys(ContestSystem).map((key) => (
@@ -399,7 +400,7 @@ export default function ContestEdit() {
                 (registrationType.value = event.target
                   .value as keyof typeof ContestRegistrationType)
               }
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               <option value={ContestRegistrationType.Public}>
                 允许任何人报名
@@ -417,7 +418,7 @@ export default function ContestEdit() {
                 type="text"
                 name="registrationPassword"
                 defaultValue={contest.value.registrationPassword}
-                disabled={loading.value}
+                disabled={transition.isRunning}
                 placeholder="邀请码"
                 required
               />
@@ -432,7 +433,7 @@ export default function ContestEdit() {
               type="checkbox"
               name="private"
               defaultChecked={contest.value.private}
-              disabled={loading.value}
+              disabled={transition.isRunning}
             />
             <span className="label-text">
               保持比赛隐藏（取消勾选之后用户可以在首页看到该比赛）
@@ -445,7 +446,7 @@ export default function ContestEdit() {
               type="checkbox"
               name="joinAfterStart"
               defaultChecked={contest.value.allowJoinAfterStart}
-              disabled={loading.value}
+              disabled={transition.isRunning}
             />
             <span className="label-text">允许比赛开始后中途加入</span>
           </label>
@@ -457,7 +458,7 @@ export default function ContestEdit() {
             type="submit"
             name="_action"
             value={ActionType.UpdateInformation}
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             确认更新
           </button>

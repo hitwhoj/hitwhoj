@@ -18,6 +18,7 @@ import { FileList } from "~/src/file/FileList";
 import { FileUploader } from "~/src/file/FileUploader";
 import { s3 } from "~/utils/server/s3.server";
 import type { SelectHTMLAttributes } from "react";
+import { useEffect } from "react";
 import { useCallback } from "react";
 import type {
   ConfigJson,
@@ -36,7 +37,7 @@ import { z } from "zod";
 import Highlighter from "~/src/Highlighter";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import type { Signal } from "@preact/signals-react";
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -301,7 +302,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
 
         return (
           <div
-            className="collapse collapse-open overflow-visible"
+            className="collapse-open collapse overflow-visible"
             key={index}
             tabIndex={0}
           >
@@ -385,7 +386,7 @@ function DefaultConfigEditor(props: DefaultConfigEditorProps) {
                     <div className="tooltip" data-tip="删除测试点">
                       <button className="btn btn-square btn-error btn-ghost btn-sm">
                         <HiOutlineX
-                          className="cursor-pointer text-error"
+                          className="text-error cursor-pointer"
                           onClick={() => handleRemoveCase(index)}
                         />
                       </button>
@@ -546,11 +547,11 @@ function ConfigJSONEditor({
   const fetcher = useSignalFetcher();
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("更新配置成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <div className="mb-24 flex flex-col gap-2">
@@ -621,7 +622,7 @@ function ConfigJSONEditor({
           type="submit"
           name="_action"
           value={ActionType.UpdateConfig}
-          disabled={fetcher.loading.value}
+          disabled={fetcher.isRunning}
         >
           确认更新
         </button>
@@ -694,7 +695,7 @@ export default function ProblemData() {
       <p>题目的附加资料，例如样例数据、PDF 题面等</p>
       <FileList files={files.value} deleteAction={ActionType.RemoveFile} />
 
-      <Fullscreen visible={visible.value} className="overflow-auto bg-base-100">
+      <Fullscreen visible={visible.value} className="bg-base-100 overflow-auto">
         <div className="mx-auto w-full max-w-xl p-4">
           <button
             className="btn btn-ghost gap-2"

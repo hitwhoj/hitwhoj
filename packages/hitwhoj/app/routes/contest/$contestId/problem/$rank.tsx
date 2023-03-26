@@ -30,7 +30,7 @@ import { judge } from "~/utils/server/judge/manager.server";
 import { recordUpdateSubject } from "~/utils/serverEvents";
 import type { MessageType } from "~/routes/record/$recordId/events";
 import { VscodeEditor } from "~/src/VscodeEditor";
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import {
   useSignalLoaderData,
   useSignalTransition,
@@ -178,18 +178,18 @@ export default function ContestProblemView() {
 
   const { contestId, rank } = useParams();
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const visible = useSignal(false);
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("提交成功");
       visible.value = true;
     }
-  });
+  }, [transition.actionSuccess]);
 
   const language = useSignal("cpp");
   const code = useSignal(
@@ -266,7 +266,7 @@ export default function ContestProblemView() {
   return (
     <Fullscreen
       visible={true}
-      className="drawer drawer-end h-full w-full bg-base-100"
+      className="drawer drawer-end bg-base-100 h-full w-full"
     >
       <input
         type="checkbox"
@@ -277,7 +277,7 @@ export default function ContestProblemView() {
       />
       <div className="drawer-content grid grid-cols-2 grid-rows-1">
         <div className="flex flex-col overflow-y-auto">
-          <nav className="sticky top-0 z-10 flex-shrink-0 bg-base-100 p-4">
+          <nav className="bg-base-100 sticky top-0 z-10 flex-shrink-0 p-4">
             <Link
               className="btn btn-ghost gap-2"
               to={`/contest/${contest.value.id}/problem`}
@@ -336,7 +336,7 @@ export default function ContestProblemView() {
                 onChange={(event) =>
                   (language.value = event.currentTarget.value)
                 }
-                disabled={loading.value}
+                disabled={transition.isRunning}
               >
                 <option value="c">C</option>
                 <option value="cpp">C++</option>
@@ -356,7 +356,7 @@ export default function ContestProblemView() {
                 <button
                   className="btn btn-primary gap-2"
                   type="submit"
-                  disabled={loading.value}
+                  disabled={transition.isRunning}
                 >
                   <HiOutlinePaperAirplane className="rotate-90" />
                   <span>提交</span>

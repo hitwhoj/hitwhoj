@@ -17,9 +17,9 @@ import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useSignalEffect } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -75,15 +75,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function TeamContestNew() {
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("创建成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -99,7 +99,7 @@ export default function TeamContestNew() {
             type="text"
             name="title"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -122,7 +122,7 @@ export default function TeamContestNew() {
             type="datetime-local"
             name="beginTime"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -138,7 +138,7 @@ export default function TeamContestNew() {
             type="datetime-local"
             name="endTime"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
           <input
             type="hidden"
@@ -155,7 +155,7 @@ export default function TeamContestNew() {
             className="select select-bordered"
             name="system"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
             defaultValue=""
           >
             <option value="" disabled>
@@ -173,7 +173,7 @@ export default function TeamContestNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             创建比赛
           </button>

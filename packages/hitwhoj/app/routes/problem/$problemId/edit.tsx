@@ -1,7 +1,8 @@
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form } from "@remix-run/react";
+import { useEffect } from "react";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { UserLink } from "~/src/user/UserLink";
@@ -132,15 +133,15 @@ export default function ProblemEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problem = useComputed(() => loaderData.value.problem);
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   const userId = useUser();
 
@@ -160,7 +161,7 @@ export default function ProblemEdit() {
           name="title"
           required
           defaultValue={problem.value.title}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -190,7 +191,7 @@ export default function ProblemEdit() {
           type="number"
           required
           defaultValue={String(problem.value.timeLimit)}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -204,7 +205,7 @@ export default function ProblemEdit() {
           type="number"
           required
           defaultValue={String(problem.value.memoryLimit)}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -215,7 +216,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="private"
             defaultChecked={problem.value.private}
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
           <span className="label-text">保持题目隐藏</span>
         </label>
@@ -226,7 +227,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="allowSubmit"
             defaultChecked={problem.value.allowSubmit}
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
           <span className="label-text">允许用户提交</span>
         </label>
@@ -237,7 +238,7 @@ export default function ProblemEdit() {
             type="checkbox"
             name="lock"
             defaultChecked={isLocked.value}
-            disabled={loading.value || (isLocked && !isLockedBySelf)}
+            disabled={transition.isRunning || (isLocked && !isLockedBySelf)}
           />
           <span className="label-text">锁定题目</span>
           <div
@@ -265,7 +266,9 @@ export default function ProblemEdit() {
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={loading.value || (isLocked.value && !isLockedBySelf.value)}
+          disabled={
+            transition.isRunning || (isLocked.value && !isLockedBySelf.value)
+          }
         >
           确认修改
         </button>

@@ -1,5 +1,4 @@
-import { useSignalEffect } from "@preact/signals-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { HiOutlineUpload } from "react-icons/hi";
 import { useSignalFetcher } from "~/utils/hooks";
 
@@ -20,11 +19,11 @@ export function FileUploader({ uploadAction }: FileUploaderProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       formRef.current?.reset();
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form method="post" encType="multipart/form-data" ref={formRef}>
@@ -41,7 +40,7 @@ export function FileUploader({ uploadAction }: FileUploaderProps) {
         className="btn btn-primary gap-2"
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineUpload />
         <span>上传文件捏</span>

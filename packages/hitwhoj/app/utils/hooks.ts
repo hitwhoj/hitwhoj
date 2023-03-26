@@ -1,99 +1,60 @@
-import {
-  batch,
-  useComputed,
-  useSignal,
-  useSignalEffect,
-} from "@preact/signals-react";
-import {
-  useFetcher as useRemixFetcher,
-  useLoaderData,
-  useTransition,
-} from "@remix-run/react";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
+import { useFetcher, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect } from "react";
+
+export function useConvertToSignal<T>(t: T) {
+  const signal = useSignal(t);
+  useEffect(() => {
+    signal.value = t;
+  }, [t]);
+  return signal;
+}
 
 export function useSignalTransition() {
   const transition = useTransition();
 
-  const type = useSignal(transition.type);
-  const state = useSignal(transition.state);
-  const location = useSignal(transition.location);
-  const submission = useSignal(transition.submission);
-
-  useEffect(() => {
-    batch(() => {
-      type.value = transition.type;
-      state.value = transition.state;
-      location.value = transition.location;
-      submission.value = transition.submission;
-    });
-  }, [transition.state, transition.type]);
-
-  const loading = useComputed(() => state.value !== "idle");
-  const success = useComputed(
-    () =>
-      state.value === "loading" &&
-      (type.value === "actionRedirect" || type.value === "actionReload")
-  );
-
   return {
-    type,
-    state,
-    location,
-    submission,
+    type: transition.type,
+    state: transition.state,
+    location: transition.location,
+    submission: transition.submission,
 
-    loading,
-    success,
+    isRunning:
+      transition.type === "actionRedirect" ||
+      transition.type === "actionReload" ||
+      transition.type === "actionSubmission" ||
+      transition.type === "loaderSubmission" ||
+      transition.type === "loaderSubmissionRedirect" ||
+      transition.type === "fetchActionRedirect",
+
+    actionSuccess:
+      transition.type === "actionReload" ||
+      transition.type === "actionRedirect",
   };
 }
 
 export function useSignalFetcher<T = any>() {
-  const fetcher = useRemixFetcher<T>();
-
-  const state = useSignal(fetcher.state);
-  const type = useSignal(fetcher.type);
-  const data = useSignal(fetcher.data);
-  const submission = useSignal(fetcher.submission);
-
-  useEffect(() => {
-    batch(() => {
-      state.value = fetcher.state;
-      type.value = fetcher.type;
-      data.value = fetcher.data;
-      submission.value = fetcher.submission;
-    });
-  }, [fetcher.state, fetcher.type]);
-
-  const idle = useComputed(() => type.value === "init");
-  const done = useComputed(() => type.value === "done");
-  const loading = useComputed(() => !(idle.value || done.value));
+  const fetcher = useFetcher<T>();
 
   return {
-    Form: fetcher.Form,
-    submit: fetcher.submit,
-    load: fetcher.load,
-
-    state,
-    type,
-    data,
-    submission,
-
-    loading,
-    done,
-    idle,
+    ...fetcher,
+    isRunning:
+      fetcher.type === "actionRedirect" ||
+      fetcher.type === "actionReload" ||
+      fetcher.type === "actionSubmission",
+    actionSuccess:
+      fetcher.type === "actionRedirect" || fetcher.type === "actionReload",
   };
 }
 
+/**
+ * This seems useless, but prepare for Qwik City
+ */
 export function useSignalLoaderData<T>() {
   const data = useLoaderData<T>();
 
-  const loaderData = useSignal(data);
-
-  useEffect(() => {
-    loaderData.value = data;
-  }, [data]);
-
   // convert to readonly signal
-  return useComputed(() => loaderData.value);
+  return useConvertToSignal(data);
 }
 
 /**

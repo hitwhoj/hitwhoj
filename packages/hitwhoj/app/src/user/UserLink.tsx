@@ -23,11 +23,11 @@ export function UserLink({ user }: Props) {
       </Link>
       <div
         tabIndex={0}
-        className="dropdown-content rounded-box flex w-72 gap-4 bg-base-300 p-4 shadow-2xl"
+        className="dropdown-content rounded-box bg-base-300 flex w-72 gap-4 p-4 shadow-2xl"
       >
         <UserAvatar
           user={user}
-          className="h-16 w-16 flex-shrink-0 bg-base-100 text-3xl"
+          className="bg-base-100 h-16 w-16 flex-shrink-0 text-3xl"
         />
         <div className="whitespace-normal">
           <div className="text-lg font-bold">

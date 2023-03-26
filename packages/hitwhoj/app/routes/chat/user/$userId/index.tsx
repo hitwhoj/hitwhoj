@@ -4,7 +4,7 @@ import { invariant } from "~/utils/invariant";
 import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { Form } from "@remix-run/react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import type { MessageType } from "./events";
 import { privateMessageSubject } from "~/utils/serverEvents";
@@ -112,17 +112,17 @@ export default function ChatIndex() {
   });
 
   const formRef = useRef<HTMLFormElement>(null);
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       formRef.current?.reset();
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <div className="flex h-full w-full flex-col">
-      <header className="sticky top-0 z-10 bg-base-100 py-4">
+      <header className="bg-base-100 sticky top-0 z-10 py-4">
         <h1 className="text-2xl font-bold">
           {target.value.nickname || target.value.username}
         </h1>
@@ -142,11 +142,11 @@ export default function ChatIndex() {
 
             return isFirst ? (
               <div
-                className="flex gap-4 px-2 pt-2 transition hover:bg-base-200"
+                className="hover:bg-base-200 flex gap-4 px-2 pt-2 transition"
                 key={message.id}
               >
                 <UserAvatar
-                  className="h-12 w-12 flex-shrink-0 bg-base-300 text-2xl"
+                  className="bg-base-300 h-12 w-12 flex-shrink-0 text-2xl"
                   user={from.value}
                 />
                 <div className="flex-1">
@@ -162,7 +162,7 @@ export default function ChatIndex() {
                     className="tooltip tooltip-left"
                     data-tip={formatDateTime(message.sentAt)}
                   >
-                    <time className="text-sm text-base-content opacity-60">
+                    <time className="text-base-content text-sm opacity-60">
                       {formatTime(message.sentAt)}
                     </time>
                   </span>
@@ -170,7 +170,7 @@ export default function ChatIndex() {
               </div>
             ) : (
               <div
-                className="group flex gap-4 px-2 transition hover:bg-base-200"
+                className="hover:bg-base-200 group flex gap-4 px-2 transition"
                 key={message.id}
               >
                 <div className="h-0 w-12 flex-shrink-0" />
@@ -200,7 +200,7 @@ export default function ChatIndex() {
       <Form
         method="post"
         ref={formRef}
-        className="sticky bottom-0 z-10 flex gap-4 bg-base-100 py-4"
+        className="bg-base-100 sticky bottom-0 z-10 flex gap-4 py-4"
         autoComplete="off"
       >
         <input type="hidden" name="to" value={target.value.id} />
@@ -210,13 +210,13 @@ export default function ChatIndex() {
           placeholder="输入消息..."
           name="content"
           required
-          disabled={loading.value}
+          disabled={transition.isRunning}
           autoComplete="false"
         />
         <button
           className="btn btn-primary gap-2"
           type="submit"
-          disabled={loading.value}
+          disabled={transition.isRunning}
         >
           <HiOutlinePaperAirplane className="rotate-90" />
           <span>发送</span>

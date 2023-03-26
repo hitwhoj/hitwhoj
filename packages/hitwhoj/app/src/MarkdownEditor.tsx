@@ -1,5 +1,6 @@
-import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignal } from "@preact/signals-react";
 import { Link } from "@remix-run/react";
+import { useEffect } from "react";
 import { useUser } from "~/utils/context";
 import { useSignalFetcher } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
@@ -29,18 +30,18 @@ export function MarkdownEditor(props: Props) {
   const user = useUser();
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value && fetcher.data.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess && fetcher.data.value) {
       const markdown = `\n![image.png](/file/${fetcher.data.value[0]}/image.png)\n`;
       insertText.value = markdown;
       Toasts.success("上传图片成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   const language = useSignal("markdown");
 
   return (
-    <div className="rounded-box overflow-hidden border border-base-300">
+    <div className="rounded-box border-base-300 overflow-hidden border">
       {props.name && (
         <textarea name={props.name} value={code.value} hidden readOnly />
       )}

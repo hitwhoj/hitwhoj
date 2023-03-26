@@ -11,8 +11,9 @@ import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { Permissions } from "~/utils/permission/permission";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ params, request }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -43,20 +44,20 @@ export default function ClarificationSubmit() {
   const problems = useComputed(() => loaderData.value.problems);
 
   const { contestId } = useParams();
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("提交成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <Fullscreen
       visible={true}
-      className="flex flex-col items-center justify-start bg-base-100"
+      className="bg-base-100 flex flex-col items-center justify-start"
     >
       <div className="w-full max-w-2xl p-4">
         <div>
@@ -108,7 +109,7 @@ export default function ClarificationSubmit() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               提交
             </button>

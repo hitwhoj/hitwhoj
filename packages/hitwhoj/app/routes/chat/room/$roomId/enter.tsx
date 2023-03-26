@@ -46,7 +46,7 @@ export default function EnterRoom() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const room = useComputed(() => loaderData.value.room);
 
-  const { loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   return (
     <>
@@ -64,13 +64,13 @@ export default function EnterRoom() {
             type="password"
             name="password"
             placeholder="请输入房间密码"
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         )}
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={loading.value}
+          disabled={transition.isRunning}
         >
           加入房间
         </button>

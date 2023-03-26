@@ -7,9 +7,10 @@ import { passwordScheme, usernameScheme } from "~/utils/scheme";
 import { commitSession } from "~/utils/sessions";
 import { Form, Link, useActionData } from "@remix-run/react";
 import { passwordHash } from "~/utils/tools";
-import { useSignal, useSignalEffect } from "@preact/signals-react";
+import { useSignal } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -44,15 +45,15 @@ export async function action({ request }: ActionArgs) {
 export default function Register() {
   const data = useActionData<typeof action>();
 
-  const { loading, success } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("登录成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   const password = useSignal("");
 
@@ -74,7 +75,7 @@ export default function Register() {
             type="text"
             name="username"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
             pattern="\w+"
           />
         </div>
@@ -94,7 +95,7 @@ export default function Register() {
             value={password.value}
             onChange={(event) => (password.value = event.currentTarget.value)}
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 

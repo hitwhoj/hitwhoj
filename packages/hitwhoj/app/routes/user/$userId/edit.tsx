@@ -16,8 +16,9 @@ import { Permissions } from "~/utils/permission/permission";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = invariant(idScheme, params.userId, { status: 404 });
@@ -111,15 +112,15 @@ export default function UserEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const user = useComputed(() => loaderData.value.user);
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("更新成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <Form method="post" className="form-control mx-auto w-full max-w-lg gap-4">
@@ -132,7 +133,7 @@ export default function UserEdit() {
           type="text"
           name="username"
           defaultValue={user.value.username}
-          disabled={loading.value}
+          disabled={transition.isRunning}
           required
           pattern="\w+"
         />
@@ -147,7 +148,7 @@ export default function UserEdit() {
           type="text"
           name="nickname"
           defaultValue={user.value.nickname}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -160,7 +161,7 @@ export default function UserEdit() {
           type="text"
           name="bio"
           defaultValue={user.value.bio}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -173,7 +174,7 @@ export default function UserEdit() {
           type="email"
           name="email"
           defaultValue={user.value.email}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -187,7 +188,7 @@ export default function UserEdit() {
           name="avatar"
           defaultValue={user.value.avatar}
           placeholder="https://"
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -200,7 +201,7 @@ export default function UserEdit() {
           type="text"
           name="department"
           defaultValue={user.value.department}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -213,7 +214,7 @@ export default function UserEdit() {
           type="text"
           name="studentId"
           defaultValue={user.value.studentId}
-          disabled={loading.value}
+          disabled={transition.isRunning}
         />
       </div>
 
@@ -221,7 +222,7 @@ export default function UserEdit() {
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={loading.value}
+          disabled={transition.isRunning}
         >
           确认修改
         </button>

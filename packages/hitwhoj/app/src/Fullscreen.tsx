@@ -25,7 +25,7 @@ export default function Fullscreen({
     <div
       className={`${
         visible ? "visible" : "invisible scale-75 opacity-0"
-      } fixed top-0 left-0 z-10 h-screen w-screen text-base-content transition ${
+      } text-base-content fixed top-0 left-0 z-10 h-screen w-screen transition ${
         className ?? ""
       }`}
       {...props}

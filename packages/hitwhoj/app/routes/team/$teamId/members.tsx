@@ -16,8 +16,9 @@ import {
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
@@ -153,11 +154,11 @@ function DeleteMember({ id }: { id: number }) {
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("踢出成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form
@@ -171,7 +172,7 @@ function DeleteMember({ id }: { id: number }) {
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineLogout className="h-6 w-6" />
       </button>
@@ -184,11 +185,11 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("设定成员角色成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   const isOwner = role === "Owner";
   const isAdmin = role === "Admin";
@@ -201,13 +202,13 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
       <label tabIndex={0} className="btn btn-square">
         <HiOutlineCog className="h-6 w-6" />
       </label>
-      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
+      <ul className="dropdown-content menu rounded-box bg-base-300 w-72 p-2 shadow-2xl">
         <li className={isOwner ? "disabled" : ""}>
           <button
             type="submit"
             name="role"
             value={TeamMemberRole.Owner}
-            disabled={isOwner || fetcher.loading.value}
+            disabled={isOwner || fetcher.isRunning}
           >
             设置为所有人
           </button>
@@ -217,7 +218,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Admin}
-            disabled={isAdmin || fetcher.loading.value}
+            disabled={isAdmin || fetcher.isRunning}
           >
             设置为管理员
           </button>
@@ -227,7 +228,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Member}
-            disabled={isMember || fetcher.loading.value}
+            disabled={isMember || fetcher.isRunning}
           >
             设置为成员
           </button>
@@ -269,14 +270,14 @@ export default function MemberList() {
         {members.value.map((member) => (
           <div
             key={member.user.id}
-            className="card overflow-visible bg-base-200"
+            className="card bg-base-200 overflow-visible"
           >
             <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <UserAvatar
                     user={member.user}
-                    className="h-16 w-16 shrink-0 bg-base-100 text-2xl"
+                    className="bg-base-100 h-16 w-16 shrink-0 text-2xl"
                   />
                   <div>
                     <Link

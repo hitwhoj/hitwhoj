@@ -24,29 +24,29 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
     <fetcher.Form method="post" className="inline-flex gap-2">
       <input type="hidden" name="pid" value={props.pid} />
       <button
-        className="btn btn-square btn-primary btn-error btn-sm"
+        className="btn btn-primary btn-error btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.deleteAction}
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineTrash />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveUpAction}
-        disabled={props.first || fetcher.loading.value}
+        disabled={props.first || fetcher.isRunning}
       >
         <HiOutlineChevronUp />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveDownAction}
-        disabled={props.last || fetcher.loading.value}
+        disabled={props.last || fetcher.isRunning}
       >
         <HiOutlineChevronDown />
       </button>

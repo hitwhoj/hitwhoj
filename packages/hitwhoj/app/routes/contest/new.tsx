@@ -17,8 +17,8 @@ import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
-import { useSignalEffect } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -74,15 +74,15 @@ export const meta: MetaFunction = () => ({
 });
 
 export default function ContestNew() {
-  const { loading, success } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("创建成功");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -98,7 +98,7 @@ export default function ContestNew() {
             type="text"
             name="title"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -121,7 +121,7 @@ export default function ContestNew() {
             type="datetime-local"
             name="beginTime"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -137,7 +137,7 @@ export default function ContestNew() {
             type="datetime-local"
             name="endTime"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           />
           <input
             type="hidden"
@@ -154,7 +154,7 @@ export default function ContestNew() {
             className="select select-bordered"
             name="system"
             required
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             <option value="" disabled selected>
               请选择比赛的赛制
@@ -171,7 +171,7 @@ export default function ContestNew() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading.value}
+            disabled={transition.isRunning}
           >
             创建比赛
           </button>

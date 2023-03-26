@@ -11,9 +11,10 @@ import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType, TeamMemberRole } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { useUser } from "~/utils/context";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
@@ -111,17 +112,17 @@ export default function TeamDetail() {
 
   const self = useUser();
 
-  const { success, loading } = useSignalTransition();
+  const transition = useSignalTransition();
 
   const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (success.value) {
+  useEffect(() => {
+    if (transition.actionSuccess) {
       Toasts.success("成功加入团队");
     }
-  });
+  }, [transition.actionSuccess]);
 
   return (
     <>
@@ -168,13 +169,13 @@ export default function TeamDetail() {
                 name="code"
                 placeholder="请输入邀请码"
                 required
-                disabled={loading.value}
+                disabled={transition.isRunning}
               />
             )}
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={loading.value}
+              disabled={transition.isRunning}
             >
               加入团队
             </button>

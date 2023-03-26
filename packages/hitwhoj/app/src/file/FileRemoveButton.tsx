@@ -18,11 +18,11 @@ export function FileRemoveButton({
     <fetcher.Form method="post" encType="multipart/form-data">
       <input type="hidden" name="fid" value={file.id} />
       <button
-        className="btn btn-square btn-error btn-sm"
+        className="btn btn-error btn-square btn-sm"
         type="submit"
         name="_action"
         value={deleteAction}
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineTrash className="h-4 w-4" />
       </button>

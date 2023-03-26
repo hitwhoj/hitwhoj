@@ -12,8 +12,9 @@ import { HiOutlineCog, HiOutlineLogout } from "react-icons/hi";
 import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
-import { useComputed, useSignalEffect } from "@preact/signals-react";
+import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -91,11 +92,11 @@ function DeleteMember({ id }: { id: number }) {
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("踢出成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form
@@ -108,7 +109,7 @@ function DeleteMember({ id }: { id: number }) {
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={fetcher.loading.value}
+        disabled={fetcher.isRunning}
         className="btn btn-square btn-error btn-sm"
       >
         <HiOutlineLogout />
@@ -128,11 +129,11 @@ function SetMemberRole({
 
   const Toasts = useToasts();
 
-  useSignalEffect(() => {
-    if (fetcher.done.value) {
+  useEffect(() => {
+    if (fetcher.actionSuccess) {
       Toasts.success("设定成员角色成功");
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   const isJury = role === ContestParticipantRole.Jury;
   const isMember = role === ContestParticipantRole.Contestant;
@@ -144,13 +145,13 @@ function SetMemberRole({
       <span className="btn btn-square btn-sm">
         <HiOutlineCog />
       </span>
-      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
+      <ul className="dropdown-content menu rounded-box bg-base-300 w-72 p-2 shadow-2xl">
         <li className={isJury ? "disabled" : ""}>
           <button
             type="submit"
             name="role"
             value={ContestParticipantRole.Jury}
-            disabled={isJury || fetcher.loading.value}
+            disabled={isJury || fetcher.isRunning}
           >
             设置为裁判
           </button>
@@ -160,7 +161,7 @@ function SetMemberRole({
             type="submit"
             name="role"
             value={ContestParticipantRole.Contestant}
-            disabled={isMember || fetcher.loading.value}
+            disabled={isMember || fetcher.isRunning}
           >
             设置为普通成员
           </button>

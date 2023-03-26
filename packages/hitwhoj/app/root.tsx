@@ -163,15 +163,15 @@ export default function App() {
   });
 
   const fetcher = useSignalFetcher<ActionData>();
-  useSignalEffect(() => {
-    if (fetcher.done.value && fetcher.data.value) {
-      if (fetcher.data.value.success) {
+  useEffect(() => {
+    if (fetcher.actionSuccess && fetcher.data) {
+      if (fetcher.data.success) {
         Toasts.success("退出登录成功");
       } else {
-        Toasts.error(fetcher.data.value.reason ?? "退出登录失败");
+        Toasts.error(fetcher.data.reason ?? "退出登录失败");
       }
     }
-  });
+  }, [fetcher.actionSuccess]);
 
   const showFooterAdvertise = useSignal(true);
 
@@ -211,7 +211,7 @@ export default function App() {
                     <HiOutlineMenu className="h-6 w-6" />
                   </label>
                   <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
-                    <span className="lowercase text-primary">hitwh</span>
+                    <span className="text-primary lowercase">hitwh</span>
                     <span>OJ</span>
                   </Link>
                 </div>
@@ -222,13 +222,13 @@ export default function App() {
                     <span className="hidden md:inline-block">主题</span>
                     <HiOutlineChevronDown className="hidden h-3 w-3 md:block" />
                   </div>
-                  <div className="dropdown-content rounded-t-box rounded-b-box top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto bg-base-200 text-base-content shadow-2xl">
+                  <div className="dropdown-content rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto shadow-2xl">
                     <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
                       {themes.map((iter) => (
                         <div
                           key={iter}
                           data-theme={iter}
-                          className={`cursor-pointer rounded-lg p-3 font-sans font-bold text-base-content outline-2 outline-offset-2${
+                          className={`text-base-content cursor-pointer rounded-lg p-3 font-sans font-bold outline-2 outline-offset-2${
                             theme.value === iter ? " outline" : ""
                           }`}
                           onClick={() => (theme.value = iter)}
@@ -245,9 +245,9 @@ export default function App() {
                     <UserAvatar
                       user={user.value}
                       tabIndex={0}
-                      className="h-12 w-12 cursor-pointer bg-base-300 text-2xl"
+                      className="bg-base-300 h-12 w-12 cursor-pointer text-2xl"
                     />
-                    <ul className="dropdown-content menu rounded-t-box rounded-b-box top-0 mt-16 w-52 bg-base-200 p-4 text-base-content shadow-2xl">
+                    <ul className="dropdown-content menu rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 w-52 p-4 shadow-2xl">
                       <li>
                         <Link to={`/user/${user.value.id}`}>
                           <AiOutlineProfile />
@@ -291,7 +291,7 @@ export default function App() {
               </div>
             </div>
             {/* 底部 */}
-            <footer className="footer bg-neutral p-10 text-neutral-content">
+            <footer className="footer bg-neutral text-neutral-content p-10">
               {/* About */}
               <div>
                 <span className="footer-title">About</span>
@@ -301,7 +301,7 @@ export default function App() {
                   rel="noreferrer"
                 >
                   <div
-                    className="h-[48px] w-[221px] bg-neutral-content"
+                    className="bg-neutral-content h-[48px] w-[221px]"
                     style={{
                       maskImage: `url(${hitwh})`,
                       maskSize: "cover",
@@ -412,10 +412,10 @@ export default function App() {
           {/* 左侧目录部分 */}
           <div className="drawer-side">
             <label htmlFor="drawer-menu" className="drawer-overlay" />
-            <aside className="flex h-full w-80 flex-col bg-base-200">
+            <aside className="bg-base-200 flex h-full w-80 flex-col">
               <div className="sticky top-0 hidden items-center gap-2 px-4 py-2 lg:flex">
                 <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
-                  <span className="lowercase text-primary">hitwh</span>
+                  <span className="text-primary lowercase">hitwh</span>
                   <span>OJ</span>
                 </Link>
                 <a
@@ -427,7 +427,7 @@ export default function App() {
                   {version}
                 </a>
               </div>
-              <ul className="menu w-80 flex-1 overflow-y-auto p-4 text-base-content">
+              <ul className="menu text-base-content w-80 flex-1 overflow-y-auto p-4">
                 <li>
                   <NavLink className="flex gap-4" to="/">
                     <HiOutlineHome className="h-6 w-6" />
