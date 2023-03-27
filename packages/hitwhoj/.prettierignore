@@ -3,3 +3,4 @@
 /app/styles
 /.cache
 /.nyc_output
+/prisma/migrations

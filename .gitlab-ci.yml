@@ -18,8 +18,16 @@ cache:
 
 test_build:
   script:
+    # environments and versions
+    - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
+    - export S3_END_POINT=minio
+    - export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
+    - export S3_SECRET_KEY=$MINIO_SECRET_KEY
+    - export S3_BUCKET=hitwhoj
     - node --version
     - yarn --version
+
+    # install dependecies
     - yarn install --cache-folder "$(realpath .)/.cache"
 
     # check format and type
@@ -28,12 +36,7 @@ test_build:
     - yarn run fmt.check
 
     # prisma & minio
-    - export DATABASE_URL="postgres://postgres:mysecretpassword@postgres/postgres"
-    - export S3_END_POINT=minio
-    - export S3_ACCESS_KEY=$MINIO_ACCESS_KEY
-    - export S3_SECRET_KEY=$MINIO_SECRET_KEY
-    - export S3_BUCKET=hitwhoj
-    - yarn workspace hitwhoj run prisma db push
+    - yarn workspace hitwhoj run prisma migrate dev
 
     # test
     - yarn workspace hitwhoj run prisma db seed

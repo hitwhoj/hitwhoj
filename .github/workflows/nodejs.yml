@@ -10,6 +10,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    environment:
+      DATABASE_URL: postgres://postgres:mysecretpassword@localhost:5432/postgres
+      S3_ACCESS_KEY: testadmin
+      S3_SECRET_KEY: testpassword
+      S3_BUCKET: hitwhoj
+
     steps:
       - uses: actions/checkout@v2
 
@@ -31,7 +37,7 @@ jobs:
                      -e "MINIO_SECRET_KEY=testpassword" \
                      minio/minio server /data
 
-      - name: Check version
+      - name: Environments and version
         run: |
           node --version
           yarn --version
@@ -45,20 +51,8 @@ jobs:
           yarn workspace hitwhoj run tsc
           yarn run fmt.check
 
-      - name: Configure Postgres & MinIO
-        run: |
-          export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
-          export S3_ACCESS_KEY="testadmin"
-          export S3_SECRET_KEY="testpassword"
-          export S3_BUCKET="hitwhoj"
-          yarn workspace hitwhoj run prisma db push
-
       - name: Test
         run: |
-          export DATABASE_URL="postgres://postgres:mysecretpassword@localhost:5432/postgres"
-          export S3_ACCESS_KEY="testadmin"
-          export S3_SECRET_KEY="testpassword"
-          export S3_BUCKET="hitwhoj"
           yarn workspace hitwhoj run prisma db seed
           yarn workspace hitwhoj run test
 
