@@ -1,11 +1,13 @@
-import type { Contest, Prisma, PrismaPromise } from "@prisma/client";
+import type { Contest, Prisma } from "@prisma/client";
 import { db } from "../server/db.server";
 import type { Unpack } from "../tools";
 
-type ContestFindMany<T> = Prisma.CheckSelect<
+type ContestFindMany<
+  T extends boolean | Prisma.ContestArgs | null | undefined
+> = Prisma.CheckSelect<
   T,
-  PrismaPromise<Array<Contest>>,
-  PrismaPromise<Array<Prisma.ContestGetPayload<T>>>
+  Prisma.PrismaPromise<Array<Contest>>,
+  Prisma.PrismaPromise<Array<Prisma.ContestGetPayload<T>>>
 >;
 
 export type ContestListData = Unpack<

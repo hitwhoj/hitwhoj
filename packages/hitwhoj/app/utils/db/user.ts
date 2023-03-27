@@ -1,11 +1,12 @@
-import type { User, Prisma, PrismaPromise } from "@prisma/client";
+import type { User, Prisma } from "@prisma/client";
 import type { Unpack } from "../tools";
 
-type UserFindMany<T> = Prisma.CheckSelect<
-  T,
-  PrismaPromise<Array<User>>,
-  PrismaPromise<Array<Prisma.UserGetPayload<T>>>
->;
+type UserFindMany<T extends boolean | Prisma.UserArgs | null | undefined> =
+  Prisma.CheckSelect<
+    T,
+    Prisma.PrismaPromise<Array<User>>,
+    Prisma.PrismaPromise<Array<Prisma.UserGetPayload<T>>>
+  >;
 
 export type UserData = Unpack<
   Awaited<

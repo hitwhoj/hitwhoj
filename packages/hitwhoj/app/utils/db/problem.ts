@@ -1,11 +1,13 @@
-import type { Prisma, PrismaPromise, Problem } from "@prisma/client";
+import type { Prisma, Problem } from "@prisma/client";
 import { db } from "../server/db.server";
 import type { Unpack } from "../tools";
 
-type ProblemFindMany<T> = Prisma.CheckSelect<
+type ProblemFindMany<
+  T extends boolean | Prisma.ProblemArgs | null | undefined
+> = Prisma.CheckSelect<
   T,
-  PrismaPromise<Array<Problem>>,
-  PrismaPromise<Array<Prisma.ProblemGetPayload<T>>>
+  Prisma.PrismaPromise<Array<Problem>>,
+  Prisma.PrismaPromise<Array<Prisma.ProblemGetPayload<T>>>
 >;
 
 export type ProblemListData = Unpack<
