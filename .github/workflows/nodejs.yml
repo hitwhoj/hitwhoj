@@ -53,6 +53,7 @@ jobs:
 
       - name: Test
         run: |
+          yarn workspace hitwhoj run prisma migrate dev
           yarn workspace hitwhoj run prisma db seed
           yarn workspace hitwhoj run test
 
