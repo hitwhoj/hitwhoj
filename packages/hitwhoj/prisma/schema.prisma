@@ -340,7 +340,8 @@ model TeamMember {
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId String
 
-  role String
+  roleName String
+  role     TeamRole @relation(fields: [teamId, roleName], references: [teamId, role], onDelete: Cascade)
 
   @@id([userId, teamId])
 }
@@ -354,7 +355,9 @@ model TeamRole {
   description String
   privilege   Int
 
-  @@id([role, teamId])
+  teamMembers TeamMember[]
+
+  @@id([teamId, role])
 }
 
 model Record {
