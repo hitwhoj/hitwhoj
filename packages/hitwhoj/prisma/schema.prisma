@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
 }
 
 datasource db {
@@ -44,7 +45,7 @@ model User {
 
   participatedContests ContestParticipant[]
   attendedTeams        TeamMember[]
-
+  addExtraMember     ExtraTeamMember[]
   sentMessages          PrivateMessage[]     @relation("send")
   receivedMessages      PrivateMessage[]     @relation("receive")
   chatMessage           ChatMessage[]
@@ -53,8 +54,6 @@ model User {
   submitedClarifacation Clarification[]      @relation("submit")
   appliedClarification  Clarification[]      @relation("apply")
   clarificationReply    ClarificationReply[]
-
-  lockedProblems Problem[] @relation("lockedBy")
 }
 
 enum SystemUserRole {
@@ -123,10 +122,6 @@ model Problem {
 
   team   Team? @relation(fields: [teamId], references: [id])
   teamId Int?
-
-  /// 题目上锁后，只有上锁的用户可以修改
-  lockedBy    User? @relation("lockedBy", fields: [lockedByUid], references: [id])
-  lockedByUid Int?
 }
 
 model ProblemTag {
@@ -329,6 +324,9 @@ model Team {
   contests    Contest[]
   problems    Problem[]
   problemSets ProblemSet[]
+  extraMember ExtraTeamMember[]
+  extraRole   ExtraTeamRole[]
+  teamRole    TeamRole[]
 }
 
 model TeamMember {
@@ -338,15 +336,42 @@ model TeamMember {
   team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId Int
 
-  role TeamMemberRole @default(Member)
+  role String @default(Member)
 
   @@id([userId, teamId])
 }
-
+model TeamRole{
+    team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    teamId Int
+    role TeamMemberRole @default(Member)
+    description String
+    privilege Int
+    @@id([role, teamId])
+}
 enum TeamMemberRole {
   Owner
   Admin
   Member
+}
+
+model ExtraTeamRole{
+    team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    teamId Int
+    extraRole String @default("")
+    description String
+    privilege Int
+    @@id([extraRole, teamId])
+}
+//创建角色
+model ExtraTeamMember {
+   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   userId Int
+
+   team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+   teamId Int
+
+   role String @default("")
+   @@id([userId, teamId])
 }
 
 model Record {
