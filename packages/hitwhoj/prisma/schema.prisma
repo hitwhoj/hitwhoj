@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["interactiveTransactions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -43,9 +42,8 @@ model User {
   starredComments Comment[] @relation("starredComments")
   starredReplies  Reply[]   @relation("starredReplies")
 
-  participatedContests ContestParticipant[]
-  attendedTeams        TeamMember[]
-  addExtraMember     ExtraTeamMember[]
+  participatedContests  ContestParticipant[]
+  attendedTeams         TeamMember[]
   sentMessages          PrivateMessage[]     @relation("send")
   receivedMessages      PrivateMessage[]     @relation("receive")
   chatMessage           ChatMessage[]
@@ -120,8 +118,8 @@ model Problem {
   includedProblemSets ProblemSetProblem[]
   relatedRecords      Record[]
 
-  team   Team? @relation(fields: [teamId], references: [id])
-  teamId Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
 }
 
 model ProblemTag {
@@ -145,8 +143,8 @@ model ProblemSet {
   tags     ProblemSetTag[]
   problems ProblemSetProblem[]
 
-  team   Team? @relation(fields: [teamId], references: [id])
-  teamId Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
 }
 
 model ProblemSetProblem {
@@ -200,8 +198,9 @@ model Contest {
 
   relatedRecords Record[]
 
-  team          Team?           @relation(fields: [teamId], references: [id])
-  teamId        Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
+
   clarification Clarification[]
 }
 
@@ -306,7 +305,7 @@ model ClarificationReply {
 }
 
 model Team {
-  id   Int    @id @default(autoincrement())
+  id   String @id
   name String @unique
 
   createdAt   DateTime @default(now())
@@ -324,8 +323,6 @@ model Team {
   contests    Contest[]
   problems    Problem[]
   problemSets ProblemSet[]
-  extraMember ExtraTeamMember[]
-  extraRole   ExtraTeamRole[]
   teamRole    TeamRole[]
 }
 
@@ -333,45 +330,24 @@ model TeamMember {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
 
-  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId Int
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
 
-  role String @default(Member)
+  role String
 
   @@id([userId, teamId])
 }
-model TeamRole{
-    team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-    teamId Int
-    role TeamMemberRole @default(Member)
-    description String
-    privilege Int
-    @@id([role, teamId])
-}
-enum TeamMemberRole {
-  Owner
-  Admin
-  Member
-}
 
-model ExtraTeamRole{
-    team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-    teamId Int
-    extraRole String @default("")
-    description String
-    privilege Int
-    @@id([extraRole, teamId])
-}
-//创建角色
-model ExtraTeamMember {
-   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-   userId Int
+model TeamRole {
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
 
-   team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-   teamId Int
+  role String
 
-   role String @default("")
-   @@id([userId, teamId])
+  description String
+  privilege   Int
+
+  @@id([role, teamId])
 }
 
 model Record {
