@@ -12,7 +12,8 @@
   "resolutions": {
     "katex": "^0.15.3",
     "minimist": "^1.2.6",
-    "got": "^11.8.5"
+    "got": "^11.8.5",
+    "qs": "^6.9.7"
   },
   "devDependencies": {
     "husky": "^8.0.3",
