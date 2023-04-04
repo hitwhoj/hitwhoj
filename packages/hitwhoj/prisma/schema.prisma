@@ -121,8 +121,8 @@ model Problem {
   includedProblemSets ProblemSetProblem[]
   relatedRecords      Record[]
 
-  team   Team? @relation(fields: [teamId], references: [id])
-  teamId Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
 
   /// 题目上锁后，只有上锁的用户可以修改
   lockedBy    User? @relation("lockedBy", fields: [lockedByUid], references: [id])
@@ -150,8 +150,8 @@ model ProblemSet {
   tags     ProblemSetTag[]
   problems ProblemSetProblem[]
 
-  team   Team? @relation(fields: [teamId], references: [id])
-  teamId Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
 }
 
 model ProblemSetProblem {
@@ -205,8 +205,9 @@ model Contest {
 
   relatedRecords Record[]
 
-  team          Team?           @relation(fields: [teamId], references: [id])
-  teamId        Int?
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
+
   clarification Clarification[]
 }
 
@@ -311,7 +312,7 @@ model ClarificationReply {
 }
 
 model Team {
-  id   Int    @id @default(autoincrement())
+  id   String @id
   name String @unique
 
   createdAt   DateTime @default(now())
@@ -329,24 +330,34 @@ model Team {
   contests    Contest[]
   problems    Problem[]
   problemSets ProblemSet[]
+  teamRole    TeamRole[]
 }
 
 model TeamMember {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
 
-  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId Int
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
 
-  role TeamMemberRole @default(Member)
+  roleName String
+  role     TeamRole @relation(fields: [teamId, roleName], references: [teamId, role], onDelete: Cascade)
 
   @@id([userId, teamId])
 }
 
-enum TeamMemberRole {
-  Owner
-  Admin
-  Member
+model TeamRole {
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
+
+  role String
+
+  description String
+  privilege   Int
+
+  teamMembers TeamMember[]
+
+  @@id([teamId, role])
 }
 
 model Record {
