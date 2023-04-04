@@ -73,7 +73,7 @@ export class User {
     }
   }
 
-  team(teamId: number | null) {
+  team(teamId: string | null) {
     return new TeamUser(this, teamId);
   }
 

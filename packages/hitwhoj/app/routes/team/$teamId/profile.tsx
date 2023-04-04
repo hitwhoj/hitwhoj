@@ -1,6 +1,6 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, useLoaderData, useTransition } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
@@ -8,21 +8,27 @@ import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { InvitationType, TeamMemberRole } from "@prisma/client";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { InvitationType } from "@prisma/client";
 import { Permissions } from "~/utils/permission/permission";
-import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed } from "@preact/signals-react";
-import { useUser } from "~/utils/context";
-import { useToasts } from "~/utils/toast";
-import { useEffect } from "react";
-
+import { useContext, useEffect } from "react";
+import { UserContext } from "~/utils/context/user";
+import { ToastContext } from "~/utils/context/toast";
+const TeamMemberRole = {
+  Owner: "Owner",
+  Admin: "Admin",
+  Member: "Member",
+};
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-  const [hasViewPerm] = await self
+  //
+  const hasViewPerm = await self
     .team(teamId)
-    .hasPermission(Permissions.PERM_TEAM_VIEW_INTERNAL);
-
+    .hasPrivilegeOrPermission(
+      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
+      Permissions.PERM_TEAM_VIEW_INTERNAL
+    );
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: {
@@ -106,81 +112,81 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 });
 
 export default function TeamDetail() {
-  const loaderData = useSignalLoaderData<typeof loader>();
-  const team = useComputed(() => loaderData.value.team);
-  const hasViewPerm = useComputed(() => loaderData.value.hasViewPerm);
+  const { team, hasViewPerm } = useLoaderData<typeof loader>();
+  const self = useContext(UserContext);
 
-  const self = useUser();
+  const { state, type } = useTransition();
+  const isActionReload = state === "loading" && type === "actionReload";
+  const isActionSubmit = state === "submitting" && type === "actionSubmission";
+  const isLoading = isActionReload && isActionSubmit;
 
-  const transition = useSignalTransition();
+  const isNotMember = self && !hasViewPerm;
 
-  const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
-
-  const Toasts = useToasts();
+  const Toasts = useContext(ToastContext);
 
   useEffect(() => {
-    if (transition.actionSuccess) {
+    if (isActionReload) {
       Toasts.success("成功加入团队");
     }
-  }, [transition.actionSuccess]);
+  }, [isActionReload]);
 
   return (
     <>
       <table>
         <thead>
-          <tr>
-            <th>团队信息</th>
-          </tr>
+        <tr>
+          <th>团队信息</th>
+        </tr>
         </thead>
         <tbody>
-          <tr>
-            <th>创建时间</th>
-            <td>{formatDateTime(team.value.createdAt)}</td>
-          </tr>
-          <tr>
-            <th>成员数量</th>
-            <td>{team.value._count.members}</td>
-          </tr>
-          <tr>
-            <th>题目数量</th>
-            <td>{team.value._count.problems}</td>
-          </tr>
-          <tr>
-            <th>题单数量</th>
-            <td>{team.value._count.problemSets}</td>
-          </tr>
-          <tr>
-            <th>比赛数量</th>
-            <td>{team.value._count.contests}</td>
-          </tr>
+        <tr>
+          <th>创建时间</th>
+          <td>{formatDateTime(team.createdAt)}</td>
+        </tr>
+        <tr>
+          <th>成员数量</th>
+          <td>{team._count.members}</td>
+        </tr>
+        <tr>
+          <th>题目数量</th>
+          <td>{team._count.problems}</td>
+        </tr>
+        <tr>
+          <th>题单数量</th>
+          <td>{team._count.problemSets}</td>
+        </tr>
+        <tr>
+          <th>比赛数量</th>
+          <td>{team._count.contests}</td>
+        </tr>
         </tbody>
       </table>
 
-      <Markdown>{team.value.description}</Markdown>
+      <Markdown>{team.description}</Markdown>
 
       {isNotMember &&
-        (team.value.invitationType === InvitationType.NONE ? (
-          <div className="alert alert-info">该团队未开放申请加入</div>
-        ) : (
-          <Form method="post" className="flex gap-4">
-            {team.value.invitationType === InvitationType.CODE && (
-              <input
-                className="input input-bordered"
-                name="code"
-                placeholder="请输入邀请码"
-                required
-                disabled={transition.isRunning}
-              />
-            )}
-            <button
-              className="btn btn-primary"
-              type="submit"
-              disabled={transition.isRunning}
-            >
-              加入团队
-            </button>
-          </Form>
-        ))}
+      (team.invitationType === InvitationType.NONE ? (
+        <div className="alert alert-info">该团队未开放申请加入</div>
+      ) : (
+        <Form method="post" className="flex gap-4">
+          {team.invitationType === InvitationType.CODE && (
+            <input
+              className="input input-bordered"
+              name="code"
+              placeholder="请输入邀请码"
+              required
+              disabled={isLoading}
+            />
+          )}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isLoading}
+          >
+            加入团队
+          </button>
+        </Form>
+      ))}
     </>
   );
 }
