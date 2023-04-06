@@ -9,53 +9,51 @@ import { HiOutlinePlus } from "react-icons/hi";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
-  if (self.userId !== null) {
-    const user = await db.user.findUnique({
-      where: {
-        id: self.userId,
-      },
-      select: searchUserData,
-    });
-    if (!user) {
-      throw new Response("您还没有登录", { status: 404 });
-    }
-    const teams = await db.teamMember.findMany({
-      where: {
-        userId: self.userId,
-      },
-    });
-    let domains = [];
-    for (let i = 0; i < teams.length; i++) {
-      let item = teams[i];
-      let team = await db.team.findUnique({
-        where: {
-          id: item.teamId,
-        },
-      });
-      const [hasEditPriv] = await self
-        .team(item.teamId)
-        .hasPrivilege(
-          PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
-          PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
-        );
-      team = Object.assign(team, item);
-      team = Object.assign(team, hasEditPriv);
-      domains.push(team);
-    }
-    return json({ user, domains });
-  } else {
+  if (!self.userId) {
     throw new Response("User not found", { status: 404 });
   }
+  const user = await db.user.findUnique({
+    where: {
+      id: self.userId,
+    },
+    select: searchUserData,
+  });
+  if (!user) {
+    throw new Response("您还没有登录", { status: 404 });
+  }
+  const teams = await db.teamMember.findMany({
+    where: {
+      userId: self.userId,
+    },
+  });
+  let domains = [];
+  for (let i = 0; i < teams.length; i++) {
+    let item = teams[i];
+    let team = await db.team.findUnique({
+      where: {
+        id: item.teamId,
+      },
+    });
+    const [hasEditPriv] = await self
+      .newTeam(item.teamId)
+      .hasPrivilege(
+        PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
+      );
+    team = Object.assign(team, item);
+    team = Object.assign(team, {hasEditPriv:hasEditPriv});
+    domains.push(team);
+  }
+  return json({ user, domains });
 }
-export function TbodyCompoent(props: {
-  name: any;
-  role: any;
-  action: any;
-  hasPrivilege: any;
+export function TbodyComponent(props: {
+  name: string;
+  role: string;
+  action: string;
+  hasPrivilege: boolean;
 }) {
   const { name, role, action, hasPrivilege } = props;
-  const link = "/team/".concat(action).concat("/profile");
-  const config = "/team/".concat(action).concat("/role");
+  const link = `/team/${action}/profile`;
+  const config = `/team/${action}/role`;
   return (
     <tbody>
     <tr key={name}>
@@ -64,7 +62,7 @@ export function TbodyCompoent(props: {
         <span className="badge">{role}</span>
       </td>
       <td>
-        {action == 0 ? (
+        {action == '0' ? (
           <Link to="/">
             <span>查看</span>
           </Link>
@@ -92,7 +90,6 @@ export function TbodyCompoent(props: {
 }
 export default function Domain() {
   const { user, domains } = useLoaderData<typeof loader>();
-  console.log(domains);
   return (
     <div>
       <h1 className="flex items-center justify-between">
@@ -112,15 +109,15 @@ export default function Domain() {
           <th>动作</th>
         </tr>
         </thead>
-        <TbodyCompoent
+        <TbodyComponent
           name={"System"}
           role={user.role}
-          action={0}
-          hasPrivilege={-1}
+          action={'0'}
+          hasPrivilege={false}
         />
         {domains.map((item) => {
           return item?.id ?? null ? (
-            <TbodyCompoent
+            <TbodyComponent
               key={item.id}
               hasPrivilege={item.hasEditPriv}
               name={item.name}

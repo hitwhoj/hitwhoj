@@ -1,10 +1,10 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
+import { TeamMemberRole } from "@prisma/client";
 import { invariant } from "~/utils/invariant";
 import { idScheme, teamMemberRoleScheme } from "~/utils/scheme";
-import { useContext, useEffect } from "react";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -15,12 +15,11 @@ import {
 } from "~/utils/db/team";
 import { selectUserData } from "~/utils/db/user";
 import { HiOutlineCog, HiOutlineLogout, HiOutlinePlus } from "react-icons/hi";
-import { ToastContext } from "~/utils/context/toast";
-const TeamMemberRole = {
-  Owner: "Owner",
-  Admin: "Admin",
-  Member: "Member",
-};
+import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import { useToasts } from "~/utils/toast";
+import { useEffect } from "react";
+
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(idScheme, params.teamId);
   const self = await findRequestUser(request);
@@ -151,20 +150,15 @@ export async function action({ params, request }: ActionArgs) {
 }
 
 function DeleteMember({ id }: { id: number }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (fetcher.actionSuccess) {
       Toasts.success("踢出成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
 
   return (
     <fetcher.Form
@@ -178,7 +172,7 @@ function DeleteMember({ id }: { id: number }) {
         type="submit"
         name="_action"
         value={ActionType.DeleteMember}
-        disabled={isLoading}
+        disabled={fetcher.isRunning}
       >
         <HiOutlineLogout className="h-6 w-6" />
       </button>
@@ -187,20 +181,15 @@ function DeleteMember({ id }: { id: number }) {
 }
 
 function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
-  const fetcher = useFetcher();
-  const isActionSubmit =
-    fetcher.state === "submitting" && fetcher.type === "actionSubmission";
-  const isActionReload =
-    fetcher.state === "loading" && fetcher.type === "actionReload";
-  const isLoading = isActionSubmit || isActionReload;
+  const fetcher = useSignalFetcher();
 
-  const Toasts = useContext(ToastContext);
+  const Toasts = useToasts();
 
   useEffect(() => {
-    if (isActionReload) {
+    if (fetcher.actionSuccess) {
       Toasts.success("设定成员角色成功");
     }
-  }, [isActionReload]);
+  }, [fetcher.actionSuccess]);
 
   const isOwner = role === "Owner";
   const isAdmin = role === "Admin";
@@ -213,13 +202,13 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
       <label tabIndex={0} className="btn btn-square">
         <HiOutlineCog className="h-6 w-6" />
       </label>
-      <ul className="dropdown-content menu rounded-box w-72 bg-base-300 p-2 shadow-2xl">
+      <ul className="dropdown-content menu rounded-box bg-base-300 w-72 p-2 shadow-2xl">
         <li className={isOwner ? "disabled" : ""}>
           <button
             type="submit"
             name="role"
             value={TeamMemberRole.Owner}
-            disabled={isOwner || isLoading}
+            disabled={isOwner || fetcher.isRunning}
           >
             设置为所有人
           </button>
@@ -229,7 +218,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Admin}
-            disabled={isAdmin || isLoading}
+            disabled={isAdmin || fetcher.isRunning}
           >
             设置为管理员
           </button>
@@ -239,7 +228,7 @@ function SetMemberRole({ id, role }: { id: number; role: TeamMemberRole }) {
             type="submit"
             name="role"
             value={TeamMemberRole.Member}
-            disabled={isMember || isLoading}
+            disabled={isMember || fetcher.isRunning}
           >
             设置为成员
           </button>
@@ -256,19 +245,20 @@ const memberRoleTranslation: Record<TeamMemberRole, string> = {
 };
 
 export default function MemberList() {
-  const {
-    members,
-    hasEditPerm,
-    hasInvitePerm,
-    hasKickAdminPerm,
-    hasKickMemberPerm,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const members = useComputed(() => loaderData.value.members);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
+  const hasInvitePerm = useComputed(() => loaderData.value.hasInvitePerm);
+  const hasKickAdminPerm = useComputed(() => loaderData.value.hasKickAdminPerm);
+  const hasKickMemberPerm = useComputed(
+    () => loaderData.value.hasKickMemberPerm
+  );
 
   return (
     <>
       <h2 className="flex items-center justify-between">
         <span>团队成员</span>
-        {hasInvitePerm && (
+        {hasInvitePerm.value && (
           <button className="btn btn-primary gap-2">
             <HiOutlinePlus />
             <span>添加成员</span>
@@ -277,17 +267,17 @@ export default function MemberList() {
       </h2>
 
       <div className="not-prose grid grid-cols-1 gap-4 md:grid-cols-2">
-        {members.map((member) => (
+        {members.value.map((member) => (
           <div
             key={member.user.id}
-            className="card overflow-visible bg-base-200"
+            className="card bg-base-200 overflow-visible"
           >
             <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <UserAvatar
                     user={member.user}
-                    className="h-16 w-16 shrink-0 bg-base-100 text-2xl"
+                    className="bg-base-100 h-16 w-16 shrink-0 text-2xl"
                   />
                   <div>
                     <Link
@@ -310,13 +300,13 @@ export default function MemberList() {
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
-                  {hasEditPerm && (
+                  {hasEditPerm.value && (
                     <SetMemberRole id={member.user.id} role={member.role} />
                   )}
-                  {hasKickAdminPerm && member.role === "Admin" && (
+                  {hasKickAdminPerm.value && member.role === "Admin" && (
                     <DeleteMember id={member.user.id} />
                   )}
-                  {hasKickMemberPerm && member.role === "Member" && (
+                  {hasKickMemberPerm.value && member.role === "Member" && (
                     <DeleteMember id={member.user.id} />
                   )}
                 </div>

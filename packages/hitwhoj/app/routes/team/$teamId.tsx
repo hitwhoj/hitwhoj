@@ -1,27 +1,28 @@
-import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { NavLink, Outlet } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { idScheme } from "~/utils/scheme";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import { HiOutlineUserGroup } from "react-icons/hi";
-import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { useComputed } from "@preact/signals-react";
+import {PERM_TEAM} from "~/utils/new-permission/privilege";
+import {teamIdScheme} from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-
   //1. 加入priv
   const [hasViewPerm] = await self
-    .team(teamId)
+    .newTeam(teamId)
     .hasPrivilegeOrPermission(
       PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
       Permissions.PERM_TEAM_VIEW_INTERNAL
     );
   const [hasEditPerm] = await self
-    .team(teamId)
+    .newTeam(teamId)
     .hasPrivilegeOrPermission(
       PERM_TEAM.PERM_TEAM_EDIT_INTERNAL,
       Permissions.PERM_TEAM_EDIT_INTERNAL
@@ -39,32 +40,35 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export default function Record() {
-  const { team, hasEditPerm, hasViewPerm } = useLoaderData<typeof loader>();
+  const loaderData = useSignalLoaderData<typeof loader>();
+  const team = useComputed(() => loaderData.value.team);
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
+  const hasViewPerm = useComputed(() => loaderData.value.hasViewPerm);
 
   return (
     <>
       <h1 className="flex items-center gap-4">
         <HiOutlineUserGroup className="shrink-0" />
-        <span>{team.name}</span>
+        <span>{team.value.name}</span>
       </h1>
 
       <div className="not-prose tabs tabs-boxed bg-base-100">
         <NavLink className="tab" to="profile">
           信息
         </NavLink>
-        {hasViewPerm && (
+        {hasViewPerm.value && (
+          <NavLink className="tab" to="members">
+            成员
+          </NavLink>
+        )}
+        {hasViewPerm.value && (
           <NavLink className="tab" to="contest">
             比赛
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="settings">
             设置
-          </NavLink>
-        )}
-        {hasViewPerm && (
-          <NavLink className="tab" to="members">
-            成员
           </NavLink>
         )}
         {hasEditPerm && (
@@ -83,6 +87,7 @@ export default function Record() {
           </NavLink>
         )}
       </div>
+
       <Outlet />
     </>
   );

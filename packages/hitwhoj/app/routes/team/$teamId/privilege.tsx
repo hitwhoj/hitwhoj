@@ -1,7 +1,7 @@
 import type { LoaderArgs, ActionArgs } from "@remix-run/node";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
-import { idScheme, privilegeScheme } from "~/utils/scheme";
+import { privilegeScheme} from "~/utils/scheme";
 import { json } from "@remix-run/node";
 import {
   Form,
@@ -18,12 +18,13 @@ import {
   getAllDomainPermission,
   getAllRolesAndPrivilege,
 } from "~/utils/domain/role";
+import {teamIdScheme} from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   await self
-    .team(teamId)
+    .newTeam(teamId)
     .checkPrivilege(
       PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
       PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
@@ -33,7 +34,7 @@ export async function loader({ request, params }: LoaderArgs) {
       teamId: teamId,
     },
   });
-  let roles: any[] = [];
+  let roles = [];
   for (let i = 0; i < teamMember.length; i++) {
     const item = teamMember[i];
     const user = await db.user.findUnique({
@@ -49,11 +50,14 @@ export async function loader({ request, params }: LoaderArgs) {
       teamId: teamId,
     },
   });
-  const Allroles = await getAllRolesAndPrivilege({ roles, teamRole, teamId });
+  const Allroles = await getAllRolesAndPrivilege(roles, teamRole, teamId);
   return json({ roles, teamId, teamRole, Allroles });
 }
+enum ActionType {
+  ChangePrivilege = "changePrivilege",
+}
 export async function action({ request, params }: ActionArgs) {
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   const form = await request.formData();
@@ -61,16 +65,8 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     //1.更新一下,要加事物
     case ActionType.ChangePrivilege: {
-      const role = form.get("role");
-      let privilege = invariant(privilegeScheme, form.get("privilege"));
-      const domainPrivilege = invariant(
-        privilegeScheme,
-        form.get("domainPrivilege")
-      );
-      privilege =
-        (privilege & domainPrivilege) === domainPrivilege
-          ? privilege - domainPrivilege
-          : domainPrivilege + privilege;
+      const role = String(form.get("role"));
+      const privilege = invariant(privilegeScheme, form.get("privilege"));
       if (role) {
         await db.teamRole.update({
           where: { teamId_role: { teamId: teamId, role: role } },
@@ -82,28 +78,24 @@ export async function action({ request, params }: ActionArgs) {
   }
   throw new Response("Invalid action", { status: 400 });
 }
-enum ActionType {
-  ChangePrivilege = "changePrivilege",
-}
 //priv:
 function CheckBoxComponent(props: {
-  privilege: any;
-  DomainPrivilege: any;
-  role: any;
+  privilege: number;
+  domainPrivilege: number;
+  role: string;
 }) {
   const privilege = props.privilege;
-  const DomainPrivilege = props.DomainPrivilege;
+  const domainPrivilege = props.domainPrivilege;
   const role = props.role;
   const [checked, changeChecked] = useState(
-    (DomainPrivilege & privilege) === DomainPrivilege
+    (domainPrivilege & privilege) === domainPrivilege
   );
   const { state } = useTransition();
   const fetcher = useFetcher();
   const isUpdating = state !== "idle" || role == "Owner";
   let changeHandler = (event: any) => {
     let formData = new FormData();
-    formData.append("privilege", privilege);
-    formData.append("domainPrivilege", DomainPrivilege);
+    formData.append("privilege", String(privilege ^ domainPrivilege));
     formData.append("role", role);
     formData.append("_action", ActionType.ChangePrivilege);
     fetcher.submit(formData, { method: "post" });
@@ -149,7 +141,7 @@ export default function Privilege() {
                     key={temp.role}
                     role={temp.role}
                     privilege={temp.privilege}
-                    DomainPrivilege={item.privilege}
+                    domainPrivilege={item.privilege}
                   />
                 );
               })}

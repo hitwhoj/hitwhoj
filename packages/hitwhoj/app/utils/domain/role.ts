@@ -1,15 +1,26 @@
 import { db } from "~/utils/server/db.server";
 import { json } from "@remix-run/node";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import {number, string} from "zod";
 
 export const TeamMemberRole = {
   Owner: "Owner",
   Admin: "Admin",
   Member: "Member",
 };
-export function countRoles(props: { roles: any; teamRole: any }) {
-  const roles = props.roles;
-  const teamRole = props.teamRole;
+export const TeamMember = {
+  userId:number,
+  teamId:string,
+  roleName:string
+}
+export const TeamRole = {
+  teamId:string,
+  role:string,
+  description:string,
+  privilege: number
+}
+
+export function countRoles(roles,teamRole) {
   let ArrayRoles = [];
   ArrayRoles.push({ role: "Owner", count: 0, description: "系统定义的角色" });
   ArrayRoles.push({ role: "Admin", count: 0, description: "系统定义的角色" });
@@ -45,8 +56,7 @@ export function countRoles(props: { roles: any; teamRole: any }) {
   return ArrayRoles;
 }
 
-export function getAllRoles(props: { roles: any }) {
-  const roles = props.roles;
+export function getAllRoles(roles) {
   let AllRoles = ["Owner", "Admin", "Member"];
   for (let i = 0; i < roles.length; i++) {
     AllRoles = [...AllRoles, roles[i].roleName];
@@ -54,20 +64,14 @@ export function getAllRoles(props: { roles: any }) {
   return AllRoles;
 }
 
-export async function getAllRolesAndPrivilege(props: {
-  roles: any;
-  teamRole: any;
-  teamId: number;
-}) {
-  const roles = props.roles;
-  const teamRole = props.teamRole;
-  let allRoles = countRoles({ roles, teamRole });
+export async function getAllRolesAndPrivilege(roles, teamRole, teamId) {
+  let allRoles = countRoles(roles,teamRole);
   let AllRoles = [{ role: "Owner", privilege: -1 }];
   for (let i = 0; i < allRoles.length; i++) {
     if (allRoles[i].role !== "Owner") {
       const role = await db.teamRole.findUnique({
         where: {
-          teamId_role: { teamId: props.teamId, role: allRoles[i].role },
+          teamId_role: { teamId: teamId, role: allRoles[i].role },
         },
       });
       if (role) {

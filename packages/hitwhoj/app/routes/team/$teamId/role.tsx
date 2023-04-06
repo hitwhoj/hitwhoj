@@ -1,7 +1,6 @@
 import type { LoaderArgs, ActionArgs } from "@remix-run/node";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
-import { idScheme } from "~/utils/scheme";
 import { json } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
@@ -10,12 +9,13 @@ import { Privileges } from "~/utils/permission/privilege";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { countRoles, getAllRolesAndPrivilege } from "~/utils/domain/role";
 import { HiOutlinePlus } from "react-icons/hi";
+import {teamIdScheme, teamRoleScheme} from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   await self
-    .team(teamId)
+    .newTeam(teamId)
     .checkPrivilege(
       PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
       PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderArgs) {
       teamId: teamId,
     },
   });
-  let roles: any[] = [];
+  let roles = [];
   for (let i = 0; i < teamMember.length; i++) {
     const item = teamMember[i];
     const user = await db.user.findUnique({
@@ -41,12 +41,12 @@ export async function loader({ request, params }: LoaderArgs) {
       teamId: teamId,
     },
   });
-  const Allroles = await getAllRolesAndPrivilege({ roles, teamRole, teamId });
+  const Allroles = await getAllRolesAndPrivilege(roles, teamRole, teamId);
   return json({ roles, teamId, teamRole, Allroles });
 }
 const TeamMemberRole = ["Owner", "Admin", "Member"];
 export async function action({ request, params }: ActionArgs) {
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
 
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     case ActionType.CreateRole: {
       //1.要开事务
-      const role = String(form.get("role"));
+      const role = invariant(teamRoleScheme,form.get("role"));
       if (TeamMemberRole.includes(role)) {
         throw new Response("Role已经存在", { status: 404 });
       }
@@ -85,7 +85,7 @@ enum ActionType {
 function DomainRole(props: { roles: any; teamRole: any }) {
   const roles = props.roles;
   const teamRole = props.teamRole;
-  const ArrayRoles = countRoles({ roles, teamRole });
+  const ArrayRoles = countRoles(roles, teamRole);
   return (
     <div>
       <table className="not-prose table-compact table w-full">

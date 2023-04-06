@@ -4,6 +4,7 @@ import type { UserPermission } from "../permission/user";
 import type { Privilege } from "../privilege";
 import { ChatRoomUser } from "./room";
 import { TeamUser } from "./team";
+import {NewTeamUser} from "~/utils/new-permission/team";
 
 /**
  * 用于当前登录用户的权限检查
@@ -76,8 +77,11 @@ export class User {
   team(teamId: string | null) {
     return new TeamUser(this, teamId);
   }
-
   room(roomId: number | null) {
     return new ChatRoomUser(this, roomId);
+  }
+  //加入了newTeam,在这里进入新权限判定
+  newTeam(teamId: string | null) {
+    return new NewTeamUser(this,teamId);
   }
 }

@@ -12,12 +12,13 @@ import { Privileges } from "~/utils/permission/privilege";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { getAllRolesAndPrivilege } from "~/utils/domain/role";
 import { HiOutlinePlus } from "react-icons/hi";
+import {teamIdScheme, teamRoleScheme} from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   await self
-    .team(teamId)
+    .newTeam(teamId)
     .checkPrivilege(
       PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
       PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
@@ -43,11 +44,15 @@ export async function loader({ request, params }: LoaderArgs) {
       teamId: teamId,
     },
   });
-  const Allroles = await getAllRolesAndPrivilege({ roles, teamRole, teamId });
+  const Allroles = await getAllRolesAndPrivilege(roles, teamRole, teamId);
   return json({ roles, teamId, teamRole, Allroles });
 }
+enum ActionType {
+  ChangeRole = "changeRole",
+  AddUser = "addUser",
+}
 export async function action({ request, params }: ActionArgs) {
-  const teamId = invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   const form = await request.formData();
@@ -55,14 +60,17 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     case ActionType.ChangeRole: {
       //1.更新一下,要加事物
-      const role = form.get("role");
+      const role = invariant(teamRoleScheme,form.get("role"));
       const userId = invariant(idScheme, form.get("userId"));
       const oldRole = await db.teamMember.findUnique({
         where: {
           userId_teamId: { userId: userId, teamId },
         },
       });
-      if (role !== oldRole) {
+      if(!oldRole){
+        throw new Response("原角色不存在", { status: 403 });
+      }
+      if (role !== oldRole.roleName) {
         await db.teamMember.update({
           where: {
             userId_teamId: { userId: userId, teamId },
@@ -104,13 +112,9 @@ export async function action({ request, params }: ActionArgs) {
   }
   throw new Response("Invalid action", { status: 400 });
 }
-enum ActionType {
-  ChangeRole = "changeRole",
-  AddUser = "addUser",
-}
 export default function Users() {
   const { roles, teamRole } = useLoaderData<typeof loader>();
-  const Allroles = countRoles({ roles, teamRole });
+  const Allroles = countRoles(roles, teamRole);
   const fetcher = useFetcher();
   let selectHandler = (event: any, id: string) => {
     let formData = new FormData();
