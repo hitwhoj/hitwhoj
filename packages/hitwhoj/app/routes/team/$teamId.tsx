@@ -4,12 +4,11 @@ import { invariant } from "~/utils/invariant";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { HiOutlineUserGroup } from "react-icons/hi";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
-import {PERM_TEAM} from "~/utils/new-permission/privilege";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
@@ -17,15 +16,13 @@ export async function loader({ request, params }: LoaderArgs) {
   //1. 加入priv
   const [hasViewPerm] = await self
     .newTeam(teamId)
-    .hasPrivilegeOrPermission(
-      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
-      Permissions.PERM_TEAM_VIEW_INTERNAL
+    .hasPrivilege(
+      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL
     );
   const [hasEditPerm] = await self
     .newTeam(teamId)
-    .hasPrivilegeOrPermission(
-      PERM_TEAM.PERM_TEAM_EDIT_INTERNAL,
-      Permissions.PERM_TEAM_EDIT_INTERNAL
+    .hasPrivilege(
+      PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
     );
   const team = await db.team.findUnique({
     where: { id: teamId },
@@ -71,17 +68,17 @@ export default function Record() {
             设置
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="users">
             用户
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="role">
             角色
           </NavLink>
         )}
-        {hasEditPerm && (
+        {hasEditPerm.value && (
           <NavLink className="tab" to="privilege">
             权限
           </NavLink>

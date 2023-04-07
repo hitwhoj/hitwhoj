@@ -9,25 +9,21 @@ import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { InvitationType } from "@prisma/client";
-import { Permissions } from "~/utils/permission/permission";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { useUser } from "~/utils/context";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
-import {PERM_TEAM} from "~/utils/new-permission/privilege";
-import {TeamMemberRole} from "~/utils/domain/role";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { TeamMemberRole } from "~/utils/domain/role";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   const hasViewPerm = await self
     .newTeam(teamId)
-    .hasPrivilegeOrPermission(
-      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
-      Permissions.PERM_TEAM_VIEW_INTERNAL
-    );
+    .hasPrivilege(PERM_TEAM.PERM_TEAM_VIEW_INTERNAL);
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: {
@@ -132,59 +128,59 @@ export default function TeamDetail() {
     <>
       <table>
         <thead>
-        <tr>
-          <th>团队信息</th>
-        </tr>
+          <tr>
+            <th>团队信息</th>
+          </tr>
         </thead>
         <tbody>
-        <tr>
-          <th>创建时间</th>
-          <td>{formatDateTime(team.value.createdAt)}</td>
-        </tr>
-        <tr>
-          <th>成员数量</th>
-          <td>{team.value._count.members}</td>
-        </tr>
-        <tr>
-          <th>题目数量</th>
-          <td>{team.value._count.problems}</td>
-        </tr>
-        <tr>
-          <th>题单数量</th>
-          <td>{team.value._count.problemSets}</td>
-        </tr>
-        <tr>
-          <th>比赛数量</th>
-          <td>{team.value._count.contests}</td>
-        </tr>
+          <tr>
+            <th>创建时间</th>
+            <td>{formatDateTime(team.value.createdAt)}</td>
+          </tr>
+          <tr>
+            <th>成员数量</th>
+            <td>{team.value._count.members}</td>
+          </tr>
+          <tr>
+            <th>题目数量</th>
+            <td>{team.value._count.problems}</td>
+          </tr>
+          <tr>
+            <th>题单数量</th>
+            <td>{team.value._count.problemSets}</td>
+          </tr>
+          <tr>
+            <th>比赛数量</th>
+            <td>{team.value._count.contests}</td>
+          </tr>
         </tbody>
       </table>
 
       <Markdown>{team.value.description}</Markdown>
 
       {isNotMember &&
-      (team.value.invitationType === InvitationType.NONE ? (
-        <div className="alert alert-info">该团队未开放申请加入</div>
-      ) : (
-        <Form method="post" className="flex gap-4">
-          {team.value.invitationType === InvitationType.CODE && (
-            <input
-              className="input input-bordered"
-              name="code"
-              placeholder="请输入邀请码"
-              required
+        (team.value.invitationType === InvitationType.NONE ? (
+          <div className="alert alert-info">该团队未开放申请加入</div>
+        ) : (
+          <Form method="post" className="flex gap-4">
+            {team.value.invitationType === InvitationType.CODE && (
+              <input
+                className="input input-bordered"
+                name="code"
+                placeholder="请输入邀请码"
+                required
+                disabled={transition.isRunning}
+              />
+            )}
+            <button
+              className="btn btn-primary"
+              type="submit"
               disabled={transition.isRunning}
-            />
-          )}
-          <button
-            className="btn btn-primary"
-            type="submit"
-            disabled={transition.isRunning}
-          >
-            加入团队
-          </button>
-        </Form>
-      ))}
+            >
+              加入团队
+            </button>
+          </Form>
+        ))}
     </>
   );
 }
