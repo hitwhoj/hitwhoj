@@ -97,7 +97,7 @@ function CheckBoxComponent(props: { user: any; privilege: any }) {
             checked={checked}
             className="checkbox checkbox-primary"
             disabled={isUpdating}
-            onChange={() => changeHandler(event)}
+            onChange={(event) => changeHandler(event)}
           />
         </Form>
       </td>
