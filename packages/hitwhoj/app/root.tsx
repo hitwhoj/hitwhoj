@@ -26,7 +26,8 @@ import {
   HiOutlineChevronRight,
   HiOutlineCode,
   HiOutlineCollection,
-  HiOutlineColorSwatch, HiOutlineGlobeAlt,
+  HiOutlineColorSwatch,
+  HiOutlineGlobeAlt,
   HiOutlineHome,
   HiOutlineMenu,
   HiOutlineQuestionMarkCircle,
@@ -36,7 +37,8 @@ import {
 import {
   AiOutlineHistory,
   AiOutlineProfile,
-  AiOutlineQq, AiOutlineSearch,
+  AiOutlineQq,
+  AiOutlineSearch,
   AiOutlineTrophy,
   AiOutlineWechat,
 } from "react-icons/ai";
@@ -177,161 +179,161 @@ export default function App() {
 
   return (
     <html lang="zh-Hans" data-theme={theme.value}>
-    <head>
-      <meta charSet="utf-8" />
-      <meta name="viewport" content="width=device-width,initial-scale=1" />
-      <meta
-        name="color-scheme"
-        content={darkThemes.includes(theme.value) ? "dark" : "light"}
-      />
-      <Meta />
-      <Links />
-    </head>
-    <body className="relative font-sans">
-    <div
-      className={`drawer bg-base-100 ${
-        menuSignal.value ? "drawer-mobile" : ""
-      }`}
-    >
-      <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
-      {/* 整个网站右边部分 */}
-      <div className="drawer-content flex h-full flex-col">
-        {/* 顶部导航栏 */}
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta
+          name="color-scheme"
+          content={darkThemes.includes(theme.value) ? "dark" : "light"}
+        />
+        <Meta />
+        <Links />
+      </head>
+      <body className="relative font-sans">
         <div
-          className={`sticky top-0 z-30 backdrop-blur transition-all ${
-            menuSignal.value ? "" : "-translate-y-full"
+          className={`drawer bg-base-100 ${
+            menuSignal.value ? "drawer-mobile" : ""
           }`}
         >
-          <nav className="navbar flex w-full justify-end gap-4">
-            <div className="flex flex-1 gap-2 lg:hidden">
-              <label
-                className="btn btn-ghost btn-square"
-                htmlFor="drawer-menu"
-              >
-                <HiOutlineMenu className="h-6 w-6" />
-              </label>
-              <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
-                <span className="text-primary lowercase">hitwh</span>
-                <span>OJ</span>
-              </Link>
-            </div>
-            {/* 主题切换按钮 */}
-            <div className="dropdown dropdown-end">
-              <div className="btn btn-ghost gap-2 normal-case" tabIndex={0}>
-                <HiOutlineColorSwatch className="h-6 w-6" />
-                <span className="hidden md:inline-block">主题</span>
-                <HiOutlineChevronDown className="hidden h-3 w-3 md:block" />
-              </div>
-              <div className="dropdown-content rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto shadow-2xl">
-                <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
-                  {themes.map((iter) => (
-                    <div
-                      key={iter}
-                      data-theme={iter}
-                      className={`text-base-content cursor-pointer rounded-lg p-3 font-sans font-bold outline-2 outline-offset-2${
-                        theme.value === iter ? " outline" : ""
-                      }`}
-                      onClick={() => (theme.value = iter)}
-                    >
-                      {iter}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* 用户头像 */}
-            {user.value ? (
-              <div className="dropdown-end dropdown h-12 w-12">
-                <UserAvatar
-                  user={user.value}
-                  tabIndex={0}
-                  className="bg-base-300 h-12 w-12 cursor-pointer text-2xl"
-                />
-                <ul className="dropdown-content menu rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 w-52 p-4 shadow-2xl">
-                  <li>
-                    <Link to={`/user/${user.value.id}`}>
-                      <AiOutlineProfile />
-                      <span>资料</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/chat/user">
-                      <HiOutlineChat />
-                      <span>聊天</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/search">
-                      <AiOutlineSearch />
-                      <span>搜索用户</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/domain">
-                      <HiOutlineGlobeAlt />
-                      <span>我的团队</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <fetcher.Form action="/logout" method="post">
-                      <HiLogout />
-                      <button type="submit">退出登录</button>
-                    </fetcher.Form>
-                  </li>
-                </ul>
-              </div>
-            ) : (
-              <>
-                <Link className="btn btn-outline" to="/login">
-                  登录
-                </Link>
-                <Link className="btn btn-primary" to="/register">
-                  注册
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-        {/* 中间部分 */}
-        <div className="flex-1 p-6">
-          <div className="prose w-full max-w-4xl">
-            <ThemeContext.Provider value={theme.value}>
-              <UserContext.Provider value={user.value && user.value.id}>
-                <Outlet />
-              </UserContext.Provider>
-            </ThemeContext.Provider>
-          </div>
-        </div>
-        {/* 底部 */}
-        <footer className="footer bg-neutral text-neutral-content p-10">
-          {/* About */}
-          <div>
-            <span className="footer-title">About</span>
-            <a
-              href="https://www.hitwh.edu.cn/"
-              target="_blank"
-              rel="noreferrer"
+          <input id="drawer-menu" type="checkbox" className="drawer-toggle" />
+          {/* 整个网站右边部分 */}
+          <div className="drawer-content flex h-full flex-col">
+            {/* 顶部导航栏 */}
+            <div
+              className={`sticky top-0 z-30 backdrop-blur transition-all ${
+                menuSignal.value ? "" : "-translate-y-full"
+              }`}
             >
+              <nav className="navbar flex w-full justify-end gap-4">
+                <div className="flex flex-1 gap-2 lg:hidden">
+                  <label
+                    className="btn btn-ghost btn-square"
+                    htmlFor="drawer-menu"
+                  >
+                    <HiOutlineMenu className="h-6 w-6" />
+                  </label>
+                  <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
+                    <span className="text-primary lowercase">hitwh</span>
+                    <span>OJ</span>
+                  </Link>
+                </div>
+                {/* 主题切换按钮 */}
+                <div className="dropdown dropdown-end">
+                  <div className="btn btn-ghost gap-2 normal-case" tabIndex={0}>
+                    <HiOutlineColorSwatch className="h-6 w-6" />
+                    <span className="hidden md:inline-block">主题</span>
+                    <HiOutlineChevronDown className="hidden h-3 w-3 md:block" />
+                  </div>
+                  <div className="dropdown-content rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto shadow-2xl">
+                    <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
+                      {themes.map((iter) => (
+                        <div
+                          key={iter}
+                          data-theme={iter}
+                          className={`text-base-content cursor-pointer rounded-lg p-3 font-sans font-bold outline-2 outline-offset-2${
+                            theme.value === iter ? " outline" : ""
+                          }`}
+                          onClick={() => (theme.value = iter)}
+                        >
+                          {iter}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* 用户头像 */}
+                {user.value ? (
+                  <div className="dropdown-end dropdown h-12 w-12">
+                    <UserAvatar
+                      user={user.value}
+                      tabIndex={0}
+                      className="bg-base-300 h-12 w-12 cursor-pointer text-2xl"
+                    />
+                    <ul className="dropdown-content menu rounded-t-box rounded-b-box bg-base-200 text-base-content top-0 mt-16 w-52 p-4 shadow-2xl">
+                      <li>
+                        <Link to={`/user/${user.value.id}`}>
+                          <AiOutlineProfile />
+                          <span>资料</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/chat/user">
+                          <HiOutlineChat />
+                          <span>聊天</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/search">
+                          <AiOutlineSearch />
+                          <span>搜索用户</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/domain">
+                          <HiOutlineGlobeAlt />
+                          <span>我的团队</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <fetcher.Form action="/logout" method="post">
+                          <HiLogout />
+                          <button type="submit">退出登录</button>
+                        </fetcher.Form>
+                      </li>
+                    </ul>
+                  </div>
+                ) : (
+                  <>
+                    <Link className="btn btn-outline" to="/login">
+                      登录
+                    </Link>
+                    <Link className="btn btn-primary" to="/register">
+                      注册
+                    </Link>
+                  </>
+                )}
+              </nav>
+            </div>
+            {/* 中间部分 */}
+            <div className="flex-1 p-6">
+              <div className="prose w-full max-w-4xl">
+                <ThemeContext.Provider value={theme.value}>
+                  <UserContext.Provider value={user.value && user.value.id}>
+                    <Outlet />
+                  </UserContext.Provider>
+                </ThemeContext.Provider>
+              </div>
+            </div>
+            {/* 底部 */}
+            <footer className="footer bg-neutral text-neutral-content p-10">
+              {/* About */}
+              <div>
+                <span className="footer-title">About</span>
+                <a
+                  href="https://www.hitwh.edu.cn/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div
+                    className="bg-neutral-content h-[48px] w-[221px]"
+                    style={{
+                      maskImage: `url(${hitwh})`,
+                      maskSize: "cover",
+                      WebkitMaskImage: `url(${hitwh})`,
+                      WebkitMaskSize: "cover",
+                    }}
+                  />
+                </a>
+                <p>
+                  HITwh OJ Dev Team. Presents
+                  <br />
+                  Providing unstable service since 2022
+                </p>
+              </div>
+              {/* Advertisement */}
               <div
-                className="bg-neutral-content h-[48px] w-[221px]"
-                style={{
-                  maskImage: `url(${hitwh})`,
-                  maskSize: "cover",
-                  WebkitMaskImage: `url(${hitwh})`,
-                  WebkitMaskSize: "cover",
-                }}
-              />
-            </a>
-            <p>
-              HITwh OJ Dev Team. Presents
-              <br />
-              Providing unstable service since 2022
-            </p>
-          </div>
-          {/* Advertisement */}
-          <div
-            className={showFooterAdvertise.value ? "max-w-sm" : "hidden"}
-          >
+                className={showFooterAdvertise.value ? "max-w-sm" : "hidden"}
+              >
                 <span className="footer-title">
                   Advertisement
                   <button
@@ -341,183 +343,183 @@ export default function App() {
                     <HiX />
                   </button>
                 </span>
-            <div className="carousel w-full">
-              {ads.map((ad, idx) => (
-                <div
-                  key={idx}
-                  id={`advertise-${idx}`}
-                  className="card carousel-item card-side w-full"
-                >
-                  <figure>
-                    <img
-                      src={ad.image}
-                      alt="ad"
-                      className="h-24 w-24 cursor-pointer"
-                      onClick={() => Toasts.info("您获得了「屠龙宝刀」*1")}
-                    />
-                  </figure>
-                  <div className="card-body">
-                    <div className="card-title">{ad.title}</div>
-                    <p>{ad.content}</p>
-                    <div className="card-actions justify-end">
-                      <a
-                        className="btn btn-circle btn-sm"
-                        href={`#advertise-${
-                          (idx - 1 + ads.length) % ads.length
-                        }`}
-                      >
-                        <HiOutlineChevronLeft />
-                      </a>
-                      <a
-                        className="btn btn-circle btn-sm"
-                        href={`#advertise-${(idx + 1) % ads.length}`}
-                      >
-                        <HiOutlineChevronRight />
-                      </a>
+                <div className="carousel w-full">
+                  {ads.map((ad, idx) => (
+                    <div
+                      key={idx}
+                      id={`advertise-${idx}`}
+                      className="card carousel-item card-side w-full"
+                    >
+                      <figure>
+                        <img
+                          src={ad.image}
+                          alt="ad"
+                          className="h-24 w-24 cursor-pointer"
+                          onClick={() => Toasts.info("您获得了「屠龙宝刀」*1")}
+                        />
+                      </figure>
+                      <div className="card-body">
+                        <div className="card-title">{ad.title}</div>
+                        <p>{ad.content}</p>
+                        <div className="card-actions justify-end">
+                          <a
+                            className="btn btn-circle btn-sm"
+                            href={`#advertise-${
+                              (idx - 1 + ads.length) % ads.length
+                            }`}
+                          >
+                            <HiOutlineChevronLeft />
+                          </a>
+                          <a
+                            className="btn btn-circle btn-sm"
+                            href={`#advertise-${(idx + 1) % ads.length}`}
+                          >
+                            <HiOutlineChevronRight />
+                          </a>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          {/* Contact */}
-          <div>
-            <span className="footer-title">Contact</span>
-            <div className="grid grid-flow-col gap-4">
-              <a
-                target="_blank"
-                href={qqlink}
-                className="tooltip tooltip-bottom tooltip-info"
-                data-tip="HITwh OJ 反馈×吹水"
-                rel="noreferrer"
-              >
-                <AiOutlineQq className="h-6 w-6" />
-              </a>
-              <span
-                className="tooltip tooltip-bottom tooltip-info"
-                data-tip="很遗憾，我们并没有微信反馈群~"
-              >
+              </div>
+              {/* Contact */}
+              <div>
+                <span className="footer-title">Contact</span>
+                <div className="grid grid-flow-col gap-4">
+                  <a
+                    target="_blank"
+                    href={qqlink}
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="HITwh OJ 反馈×吹水"
+                    rel="noreferrer"
+                  >
+                    <AiOutlineQq className="h-6 w-6" />
+                  </a>
+                  <span
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="很遗憾，我们并没有微信反馈群~"
+                  >
                     <AiOutlineWechat className="h-6 w-6" />
                   </span>
-              <a
-                href="https://t.me/hitwhmoe"
-                target="_blank"
-                rel="noreferrer"
-                className="tooltip tooltip-bottom tooltip-info"
-                data-tip="@hitwhmoe"
-              >
-                <FaTelegramPlane className="h-6 w-6" />
-              </a>
-              <a
-                href="https://matrix.to/#/#hitwh:mozilla.org"
-                target="_blank"
-                rel="noreferrer"
-                className="tooltip tooltip-bottom tooltip-info"
-                data-tip="#hitwh:mozilla.org"
-              >
-                <SiElement className="h-6 w-6" />
-              </a>
-            </div>
+                  <a
+                    href="https://t.me/hitwhmoe"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="@hitwhmoe"
+                  >
+                    <FaTelegramPlane className="h-6 w-6" />
+                  </a>
+                  <a
+                    href="https://matrix.to/#/#hitwh:mozilla.org"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="tooltip tooltip-bottom tooltip-info"
+                    data-tip="#hitwh:mozilla.org"
+                  >
+                    <SiElement className="h-6 w-6" />
+                  </a>
+                </div>
+              </div>
+            </footer>
           </div>
-        </footer>
-      </div>
-      {/* 左侧目录部分 */}
-      <div className="drawer-side">
-        <label htmlFor="drawer-menu" className="drawer-overlay" />
-        <aside className="bg-base-200 flex h-full w-80 flex-col">
-          <div className="sticky top-0 hidden items-center gap-2 px-4 py-2 lg:flex">
-            <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
-              <span className="text-primary lowercase">hitwh</span>
-              <span>OJ</span>
-            </Link>
-            <a
-              className="link link-hover font-mono text-xs text-opacity-50"
-              href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {version}
-            </a>
+          {/* 左侧目录部分 */}
+          <div className="drawer-side">
+            <label htmlFor="drawer-menu" className="drawer-overlay" />
+            <aside className="bg-base-200 flex h-full w-80 flex-col">
+              <div className="sticky top-0 hidden items-center gap-2 px-4 py-2 lg:flex">
+                <Link className="flex-0 btn btn-ghost px-2 text-3xl" to="/">
+                  <span className="text-primary lowercase">hitwh</span>
+                  <span>OJ</span>
+                </Link>
+                <a
+                  className="link link-hover font-mono text-xs text-opacity-50"
+                  href="https://git.hit.edu.cn/hitwhoj/hitwhoj"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {version}
+                </a>
+              </div>
+              <ul className="menu text-base-content w-80 flex-1 overflow-y-auto p-4">
+                <li>
+                  <NavLink className="flex gap-4" to="/">
+                    <HiOutlineHome className="h-6 w-6" />
+                    <span>首页</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/problem">
+                    <HiOutlineBookOpen className="h-6 w-6" />
+                    <span>题目</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/problemset">
+                    <HiOutlineCollection className="h-6 w-6" />
+                    <span>题单</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/contest">
+                    <AiOutlineTrophy className="h-6 w-6" />
+                    <span>比赛</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/team">
+                    <HiOutlineUserGroup className="h-6 w-6" />
+                    <span>团队</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    className="flex gap-4"
+                    to={user.value ? `/record?uid=${user.value.id}` : "/record"}
+                  >
+                    <AiOutlineHistory className="h-6 w-6" />
+                    <span>评测</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/docs">
+                    <HiOutlineQuestionMarkCircle className="h-6 w-6" />
+                    <span>文档</span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="flex gap-4" to="/playground">
+                    <HiOutlineCode className="h-6 w-6" />
+                    <span>在线编程</span>
+                  </NavLink>
+                </li>
+              </ul>
+            </aside>
           </div>
-          <ul className="menu text-base-content w-80 flex-1 overflow-y-auto p-4">
-            <li>
-              <NavLink className="flex gap-4" to="/">
-                <HiOutlineHome className="h-6 w-6" />
-                <span>首页</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/problem">
-                <HiOutlineBookOpen className="h-6 w-6" />
-                <span>题目</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/problemset">
-                <HiOutlineCollection className="h-6 w-6" />
-                <span>题单</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/contest">
-                <AiOutlineTrophy className="h-6 w-6" />
-                <span>比赛</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/team">
-                <HiOutlineUserGroup className="h-6 w-6" />
-                <span>团队</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="flex gap-4"
-                to={user.value ? `/record?uid=${user.value.id}` : "/record"}
-              >
-                <AiOutlineHistory className="h-6 w-6" />
-                <span>评测</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/docs">
-                <HiOutlineQuestionMarkCircle className="h-6 w-6" />
-                <span>文档</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink className="flex gap-4" to="/playground">
-                <HiOutlineCode className="h-6 w-6" />
-                <span>在线编程</span>
-              </NavLink>
-            </li>
-          </ul>
-        </aside>
-      </div>
-    </div>
-    {/* 顶部弹窗 */}
-    {toastSignal.value.length > 0 && (
-      <div
-        // 屏蔽外部盒子的点击事件
-        className="toast toast-center toast-top pointer-events-none w-full items-center"
-      >
-        {toastSignal.value.map((toast, index) => (
+        </div>
+        {/* 顶部弹窗 */}
+        {toastSignal.value.length > 0 && (
           <div
-            // 恢复内部元素的点击事件
-            className="pointer-events-auto max-w-sm"
-            key={index}
+            // 屏蔽外部盒子的点击事件
+            className="toast toast-center toast-top pointer-events-none w-full items-center"
           >
-            <div className={`alert ${alertClassName[toast.type]}`}>
-              <span>{toast.message}</span>
-            </div>
+            {toastSignal.value.map((toast, index) => (
+              <div
+                // 恢复内部元素的点击事件
+                className="pointer-events-auto max-w-sm"
+                key={index}
+              >
+                <div className={`alert ${alertClassName[toast.type]}`}>
+                  <span>{toast.message}</span>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    )}
-    <ScrollRestoration />
-    <Scripts />
-    {process.env.NODE_ENV === "development" && <LiveReload />}
-    </body>
+        )}
+        <ScrollRestoration />
+        <Scripts />
+        {process.env.NODE_ENV === "development" && <LiveReload />}
+      </body>
     </html>
   );
 }

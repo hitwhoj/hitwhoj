@@ -22,7 +22,7 @@ import { useComputed, useSignal } from "@preact/signals-react";
 import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(teamIdScheme, params.teamId);
@@ -138,12 +138,12 @@ export async function action({ params, request }: ActionArgs) {
 type LoaderData = SerializeFrom<typeof loader>;
 
 function EditProfile({
-                       name,
-                       description,
-                       invitationType: type,
-                       invitationCode: code,
-                       allowMembersInvite: allow,
-                     }: LoaderData["profile"]) {
+  name,
+  description,
+  invitationType: type,
+  invitationCode: code,
+  allowMembersInvite: allow,
+}: LoaderData["profile"]) {
   const fetcher = useSignalFetcher();
 
   const Toasts = useToasts();

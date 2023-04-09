@@ -36,11 +36,9 @@ export async function loader({ request }: LoaderArgs) {
     });
     const [hasEditPriv] = await self
       .newTeam(item.teamId)
-      .hasPrivilege(
-        PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
-      );
+      .hasPrivilege(PERM_TEAM.PERM_TEAM_EDIT_INTERNAL);
     team = Object.assign(team, item);
-    team = Object.assign(team, {hasEditPriv:hasEditPriv});
+    team = Object.assign(team, { hasEditPriv: hasEditPriv });
     domains.push(team);
   }
   return json({ user, domains });
@@ -56,35 +54,35 @@ export function TbodyComponent(props: {
   const config = `/team/${action}/role`;
   return (
     <tbody>
-    <tr key={name}>
-      <td>{name}</td>
-      <td>
-        <span className="badge">{role}</span>
-      </td>
-      <td>
-        {action == '0' ? (
-          <Link to="/">
-            <span>查看</span>
-          </Link>
-        ) : (
-          <>
-            <Link to={link}>
+      <tr key={name}>
+        <td>{name}</td>
+        <td>
+          <span className="badge">{role}</span>
+        </td>
+        <td>
+          {action == "0" ? (
+            <Link to="/">
               <span>查看</span>
             </Link>
-            {hasPrivilege || role === "Owner" ? (
-              <>
-                ,
-                <Link to={config}>
-                  <span>管理</span>
-                </Link>
-              </>
-            ) : (
-              <></>
-            )}
-          </>
-        )}
-      </td>
-    </tr>
+          ) : (
+            <>
+              <Link to={link}>
+                <span>查看</span>
+              </Link>
+              {hasPrivilege || role === "Owner" ? (
+                <>
+                  ,
+                  <Link to={config}>
+                    <span>管理</span>
+                  </Link>
+                </>
+              ) : (
+                <></>
+              )}
+            </>
+          )}
+        </td>
+      </tr>
     </tbody>
   );
 }
@@ -103,16 +101,16 @@ export default function Domain() {
       </h1>
       <table className="not-prose table-compact table w-full">
         <thead>
-        <tr>
-          <th>名称</th>
-          <th>我的角色</th>
-          <th>动作</th>
-        </tr>
+          <tr>
+            <th>名称</th>
+            <th>我的角色</th>
+            <th>动作</th>
+          </tr>
         </thead>
         <TbodyComponent
           name={"System"}
           role={user.role}
-          action={'0'}
+          action={"0"}
           hasPrivilege={false}
         />
         {domains.map((item) => {

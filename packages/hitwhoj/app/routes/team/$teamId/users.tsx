@@ -12,7 +12,7 @@ import { Privileges } from "~/utils/permission/privilege";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { getAllRolesAndPrivilege } from "~/utils/domain/role";
 import { HiOutlinePlus } from "react-icons/hi";
-import {teamIdScheme, teamRoleScheme} from "~/utils/new-permission/scheme";
+import { teamIdScheme, teamRoleScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -60,14 +60,14 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     case ActionType.ChangeRole: {
       //1.更新一下,要加事物
-      const role = invariant(teamRoleScheme,form.get("role"));
+      const role = invariant(teamRoleScheme, form.get("role"));
       const userId = invariant(idScheme, form.get("userId"));
       const oldRole = await db.teamMember.findUnique({
         where: {
           userId_teamId: { userId: userId, teamId },
         },
       });
-      if(!oldRole){
+      if (!oldRole) {
         throw new Response("原角色不存在", { status: 403 });
       }
       if (role !== oldRole.roleName) {
@@ -167,32 +167,32 @@ export default function Users() {
       <div>
         <table className="not-prose table-compact table w-full">
           <thead>
-          <tr>
-            <th>用户ID</th>
-            <th>用户名</th>
-            <th>角色</th>
-          </tr>
+            <tr>
+              <th>用户ID</th>
+              <th>用户名</th>
+              <th>角色</th>
+            </tr>
           </thead>
           <tbody>
-          {roles.map((role) => {
-            return (
-              <tr key={role.user.id}>
-                <td>{role.user.id}</td>
-                <td>{role.user.username}</td>
-                <td>
-                  <select
-                    className="select select-primary"
-                    defaultValue={role.item.roleName}
-                    onChange={() => selectHandler(event, role.item.userId)}
-                  >
-                    {Allroles.map((item) => {
-                      return <option key={item.role}>{item.role}</option>;
-                    })}
-                  </select>
-                </td>
-              </tr>
-            );
-          })}
+            {roles.map((role) => {
+              return (
+                <tr key={role.user.id}>
+                  <td>{role.user.id}</td>
+                  <td>{role.user.username}</td>
+                  <td>
+                    <select
+                      className="select select-primary"
+                      defaultValue={role.item.roleName}
+                      onChange={() => selectHandler(event, role.item.userId)}
+                    >
+                      {Allroles.map((item) => {
+                        return <option key={item.role}>{item.role}</option>;
+                      })}
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

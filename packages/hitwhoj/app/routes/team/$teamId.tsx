@@ -16,14 +16,10 @@ export async function loader({ request, params }: LoaderArgs) {
   //1. 加入priv
   const [hasViewPerm] = await self
     .newTeam(teamId)
-    .hasPrivilege(
-      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL
-    );
+    .hasPrivilege(PERM_TEAM.PERM_TEAM_VIEW_INTERNAL);
   const [hasEditPerm] = await self
     .newTeam(teamId)
-    .hasPrivilege(
-      PERM_TEAM.PERM_TEAM_EDIT_INTERNAL
-    );
+    .hasPrivilege(PERM_TEAM.PERM_TEAM_EDIT_INTERNAL);
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: { name: true },

@@ -112,29 +112,29 @@ function SearchComponent(props: { users: any; temp: any }) {
     return (
       <table className="not-prose table-compact table w-full">
         <thead>
-        <PrivilegeComponent />
+          <PrivilegeComponent />
         </thead>
         <tbody>
-        {usersLef.map((user: any) => {
-          return (
-            <tr key={user.username}>
-              <td>
-                <UserLink user={user} />
-              </td>
-              <td>
-                {user.role === SystemUserRole.Admin ? (
-                  <span className="badge badge-primary">管理员</span>
-                ) : user.role === SystemUserRole.Root ? (
-                  <span className="badge badge-secondary">超级用户</span>
-                ) : (
-                  <span className="badge">用户</span>
-                )}
-              </td>
-              <CheckBoxComponent user={user} privilege={2} />
-              <CheckBoxComponent user={user} privilege={1} />
-            </tr>
-          );
-        })}
+          {usersLef.map((user: any) => {
+            return (
+              <tr key={user.username}>
+                <td>
+                  <UserLink user={user} />
+                </td>
+                <td>
+                  {user.role === SystemUserRole.Admin ? (
+                    <span className="badge badge-primary">管理员</span>
+                  ) : user.role === SystemUserRole.Root ? (
+                    <span className="badge badge-secondary">超级用户</span>
+                  ) : (
+                    <span className="badge">用户</span>
+                  )}
+                </td>
+                <CheckBoxComponent user={user} privilege={2} />
+                <CheckBoxComponent user={user} privilege={1} />
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     );
@@ -142,30 +142,30 @@ function SearchComponent(props: { users: any; temp: any }) {
     return (
       <table className="not-prose table-compact table w-full">
         <thead>
-        <tr>
-          <th>成员</th>
-          <th>角色</th>
-        </tr>
+          <tr>
+            <th>成员</th>
+            <th>角色</th>
+          </tr>
         </thead>
         <tbody>
-        {usersLef.map((user: any) => {
-          return (
-            <tr key={user.username}>
-              <td>
-                <UserLink user={user} />
-              </td>
-              <td>
-                {user.role === SystemUserRole.Admin ? (
-                  <span className="badge badge-primary">管理员</span>
-                ) : user.role === SystemUserRole.Root ? (
-                  <span className="badge badge-secondary">超级用户</span>
-                ) : (
-                  <span className="badge">用户</span>
-                )}
-              </td>
-            </tr>
-          );
-        })}
+          {usersLef.map((user: any) => {
+            return (
+              <tr key={user.username}>
+                <td>
+                  <UserLink user={user} />
+                </td>
+                <td>
+                  {user.role === SystemUserRole.Admin ? (
+                    <span className="badge badge-primary">管理员</span>
+                  ) : user.role === SystemUserRole.Root ? (
+                    <span className="badge badge-secondary">超级用户</span>
+                  ) : (
+                    <span className="badge">用户</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     );

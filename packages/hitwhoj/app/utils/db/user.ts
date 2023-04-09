@@ -26,7 +26,6 @@ export const selectUserData = {
   premium: true,
 } as const;
 
-
 export const searchUserData = {
   id: true,
   username: true,

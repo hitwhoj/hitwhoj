@@ -1,7 +1,7 @@
 import type { ContestParticipantRole } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
 import type { ContestPermission } from "../permission/contest";
-import type { NewTeamUser} from "~/utils/new-permission/team";
+import type { NewTeamUser } from "~/utils/new-permission/team";
 
 export class NewContestUser {
   readonly team: NewTeamUser;

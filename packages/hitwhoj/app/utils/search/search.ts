@@ -1,7 +1,7 @@
 /**
  * search传入的参数
  *
- */ import {boolean, number, string} from "zod";
+ */ import { boolean, number, string } from "zod";
 
 export class SearchUser {
   constructor(
@@ -15,13 +15,13 @@ export class SearchUser {
     public avatar: string
   ) {}
 }
-export const SearchUserDto ={
-    id: number,
-    username: string,
-    nickname: string,
-    role: string,
-    privilege: number,
-    bio: string,
-    premium: boolean,
-    avatar: string
-}
+export const SearchUserDto = {
+  id: number,
+  username: string,
+  nickname: string,
+  role: string,
+  privilege: number,
+  bio: string,
+  premium: boolean,
+  avatar: string,
+};

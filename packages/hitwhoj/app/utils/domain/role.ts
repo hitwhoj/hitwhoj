@@ -1,7 +1,7 @@
 import { db } from "~/utils/server/db.server";
 import { json } from "@remix-run/node";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
-import {number, string} from "zod";
+import { number, string } from "zod";
 
 export const TeamMemberRole = {
   Owner: "Owner",
@@ -9,18 +9,18 @@ export const TeamMemberRole = {
   Member: "Member",
 };
 export const TeamMember = {
-  userId:number,
-  teamId:string,
-  roleName:string
-}
+  userId: number,
+  teamId: string,
+  roleName: string,
+};
 export const TeamRole = {
-  teamId:string,
-  role:string,
-  description:string,
-  privilege: number
-}
+  teamId: string,
+  role: string,
+  description: string,
+  privilege: number,
+};
 
-export function countRoles(roles,teamRole) {
+export function countRoles(roles, teamRole) {
   let ArrayRoles = [];
   ArrayRoles.push({ role: "Owner", count: 0, description: "系统定义的角色" });
   ArrayRoles.push({ role: "Admin", count: 0, description: "系统定义的角色" });
@@ -65,7 +65,7 @@ export function getAllRoles(roles) {
 }
 
 export async function getAllRolesAndPrivilege(roles, teamRole, teamId) {
-  let allRoles = countRoles(roles,teamRole);
+  let allRoles = countRoles(roles, teamRole);
   let AllRoles = [{ role: "Owner", privilege: -1 }];
   for (let i = 0; i < allRoles.length; i++) {
     if (allRoles[i].role !== "Owner") {

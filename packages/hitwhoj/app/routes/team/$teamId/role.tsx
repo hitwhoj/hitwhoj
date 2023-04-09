@@ -9,7 +9,7 @@ import { Privileges } from "~/utils/permission/privilege";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { countRoles, getAllRolesAndPrivilege } from "~/utils/domain/role";
 import { HiOutlinePlus } from "react-icons/hi";
-import {teamIdScheme, teamRoleScheme} from "~/utils/new-permission/scheme";
+import { teamIdScheme, teamRoleScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     case ActionType.CreateRole: {
       //1.要开事务
-      const role = invariant(teamRoleScheme,form.get("role"));
+      const role = invariant(teamRoleScheme, form.get("role"));
       if (TeamMemberRole.includes(role)) {
         throw new Response("Role已经存在", { status: 404 });
       }
@@ -90,22 +90,22 @@ function DomainRole(props: { roles: any; teamRole: any }) {
     <div>
       <table className="not-prose table-compact table w-full">
         <thead>
-        <tr>
-          <th>角色</th>
-          <th>说明</th>
-          <th>用户数</th>
-        </tr>
+          <tr>
+            <th>角色</th>
+            <th>说明</th>
+            <th>用户数</th>
+          </tr>
         </thead>
         <tbody>
-        {ArrayRoles.map((item) => {
-          return (
-            <tr key={item.role}>
-              <td>{item.role}</td>
-              <td>{item.description}</td>
-              <td>{item.count}</td>
-            </tr>
-          );
-        })}
+          {ArrayRoles.map((item) => {
+            return (
+              <tr key={item.role}>
+                <td>{item.role}</td>
+                <td>{item.description}</td>
+                <td>{item.count}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
