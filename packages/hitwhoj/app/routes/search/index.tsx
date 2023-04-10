@@ -48,11 +48,7 @@ export async function action({ request }: ActionArgs) {
     if (!user) {
       throw new Response("User not found", { status: 404 });
     }
-    let privilege = invariant(privilegeScheme, form.get("privilege"));
-    privilege =
-      (user.privilege & privilege) === privilege
-        ? user.privilege - privilege
-        : user.privilege + privilege;
+    const privilege = invariant(privilegeScheme, form.get("privilege"));
     await db.user.update({
       where: { id: user.id },
       data: { privilege },
@@ -61,20 +57,25 @@ export async function action({ request }: ActionArgs) {
   return null;
 }
 //定义tr下面的权限
-function PrivilegeComponent() {
+function PrivilegeComponent(props: { hasPrivilege }) {
+  const hasPrivilege = props.hasPrivilege;
   return (
     <tr>
       <th>成员</th>
       <th>角色</th>
-      <th>操作权限</th>
-      <th>登录权限</th>
+      {hasPrivilege && (
+        <>
+          <th>操作权限</th>
+          <th>登录权限</th>
+        </>
+      )}
     </tr>
   );
 }
 
-function CheckBoxComponent(props: { user: any; privilege: any }) {
+function CheckBoxComponent(props: { user; privilege }) {
   const user = props.user;
-  let privilege = props.privilege;
+  const privilege = props.privilege;
   const [checked, changeChecked] = useState(
     (user.privilege & privilege) === privilege
   );
@@ -84,7 +85,7 @@ function CheckBoxComponent(props: { user: any; privilege: any }) {
   let changeHandler = (event: any) => {
     let formData = new FormData();
     formData.append("userId", user.id);
-    formData.append("privilege", privilege);
+    formData.append("privilege", privilege ^ user.privilege);
     fetcher.submit(formData, { method: "post" });
     changeChecked(event.target.checked);
   };
@@ -97,7 +98,7 @@ function CheckBoxComponent(props: { user: any; privilege: any }) {
             checked={checked}
             className="checkbox checkbox-primary"
             disabled={isUpdating}
-            onChange={() => changeHandler(event)}
+            onChange={(event) => changeHandler(event)}
           />
         </Form>
       </td>
@@ -105,71 +106,52 @@ function CheckBoxComponent(props: { user: any; privilege: any }) {
   );
 }
 //子组件
-function SearchComponent(props: { users: any; temp: any }) {
+function SearchComponent(props: { users; temp }) {
   const usersLef = props.users;
   const temp = props.temp;
-  if (temp.role === SystemUserRole.Admin || temp.role === SystemUserRole.Root) {
-    return (
+  const hasPrivilege =
+    temp.role === SystemUserRole.Admin || temp.role === SystemUserRole.Root;
+  return (
+    <div>
       <table className="not-prose table-compact table w-full">
         <thead>
-        <PrivilegeComponent />
+          <PrivilegeComponent hasPrivilege={hasPrivilege} />
         </thead>
         <tbody>
-        {usersLef.map((user: any) => {
-          return (
-            <tr key={user.username}>
-              <td>
-                <UserLink user={user} />
-              </td>
-              <td>
-                {user.role === SystemUserRole.Admin ? (
-                  <span className="badge badge-primary">管理员</span>
-                ) : user.role === SystemUserRole.Root ? (
-                  <span className="badge badge-secondary">超级用户</span>
-                ) : (
-                  <span className="badge">用户</span>
+          {usersLef.map((user) => {
+            return (
+              <tr key={user.username}>
+                <td>
+                  <UserLink user={user} />
+                </td>
+                <td>
+                  {user.role === SystemUserRole.Admin ? (
+                    <span className="badge badge-primary">管理员</span>
+                  ) : user.role === SystemUserRole.Root ? (
+                    <span className="badge badge-secondary">超级用户</span>
+                  ) : (
+                    <span className="badge">用户</span>
+                  )}
+                </td>
+                {hasPrivilege && (
+                  <>
+                    <CheckBoxComponent
+                      user={user}
+                      privilege={Privileges.PRIV_OPERATE}
+                    />
+                    <CheckBoxComponent
+                      user={user}
+                      privilege={Privileges.PRIV_LOGIN}
+                    />
+                  </>
                 )}
-              </td>
-              <CheckBoxComponent user={user} privilege={2} />
-              <CheckBoxComponent user={user} privilege={1} />
-            </tr>
-          );
-        })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-    );
-  } else {
-    return (
-      <table className="not-prose table-compact table w-full">
-        <thead>
-        <tr>
-          <th>成员</th>
-          <th>角色</th>
-        </tr>
-        </thead>
-        <tbody>
-        {usersLef.map((user: any) => {
-          return (
-            <tr key={user.username}>
-              <td>
-                <UserLink user={user} />
-              </td>
-              <td>
-                {user.role === SystemUserRole.Admin ? (
-                  <span className="badge badge-primary">管理员</span>
-                ) : user.role === SystemUserRole.Root ? (
-                  <span className="badge badge-secondary">超级用户</span>
-                ) : (
-                  <span className="badge">用户</span>
-                )}
-              </td>
-            </tr>
-          );
-        })}
-        </tbody>
-      </table>
-    );
-  }
+    </div>
+  );
 }
 export default function Search() {
   //获得所有用户数据

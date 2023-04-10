@@ -1,7 +1,7 @@
 import type { LoaderArgs, ActionArgs } from "@remix-run/node";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
-import { privilegeScheme} from "~/utils/scheme";
+import { privilegeScheme } from "~/utils/scheme";
 import { json } from "@remix-run/node";
 import {
   Form,
@@ -18,7 +18,7 @@ import {
   getAllDomainPermission,
   getAllRolesAndPrivilege,
 } from "~/utils/domain/role";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -93,7 +93,7 @@ function CheckBoxComponent(props: {
   const { state } = useTransition();
   const fetcher = useFetcher();
   const isUpdating = state !== "idle" || role == "Owner";
-  let changeHandler = (event: any) => {
+  let changeHandler = (event) => {
     let formData = new FormData();
     formData.append("privilege", String(privilege ^ domainPrivilege));
     formData.append("role", role);
@@ -110,7 +110,7 @@ function CheckBoxComponent(props: {
             checked={checked}
             className="checkbox checkbox-primary"
             disabled={isUpdating}
-            onChange={() => changeHandler(event)}
+            onChange={(event) => changeHandler(event)}
           />
         </Form>
       </td>
@@ -125,29 +125,29 @@ export default function Privilege() {
     <div>
       <table className="not-prose table-compact table w-full">
         <thead>
-        <tr>
-          <th>权限</th>
-          {Allroles.map((item) => {
-            return <th key={item.role}>{item.role}</th>;
+          <tr>
+            <th>权限</th>
+            {Allroles.map((item) => {
+              return <th key={item.role}>{item.role}</th>;
+            })}
+          </tr>
+          {AllPermissions.map((item) => {
+            return (
+              <tr key={item.id}>
+                <td>{item.permName}</td>
+                {Allroles.map((temp) => {
+                  return (
+                    <CheckBoxComponent
+                      key={temp.role}
+                      role={temp.role}
+                      privilege={temp.privilege}
+                      domainPrivilege={item.privilege}
+                    />
+                  );
+                })}
+              </tr>
+            );
           })}
-        </tr>
-        {AllPermissions.map((item) => {
-          return (
-            <tr key={item.id}>
-              <td>{item.permName}</td>
-              {Allroles.map((temp) => {
-                return (
-                  <CheckBoxComponent
-                    key={temp.role}
-                    role={temp.role}
-                    privilege={temp.privilege}
-                    domainPrivilege={item.privilege}
-                  />
-                );
-              })}
-            </tr>
-          );
-        })}
         </thead>
       </table>
     </div>
