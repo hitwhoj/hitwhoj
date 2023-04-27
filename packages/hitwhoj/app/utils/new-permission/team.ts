@@ -43,7 +43,6 @@ export class NewTeamUser {
       this.role ??= "Guest";
       this.privilege ??= null;
     }
-    console.log(this.role, this.privilege);
     return { role: this.role, privilege: this.privilege };
   }
   async hasPrivilege(...privileges: number[]) {

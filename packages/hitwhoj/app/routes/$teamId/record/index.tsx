@@ -13,8 +13,6 @@ import { invariant } from "~/utils/invariant";
 import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
-import Header from "~/routes/Drawer/Header";
-import Footer from "~/routes/Drawer/Footer";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 const PAGE_SIZE = 15;
@@ -93,13 +91,12 @@ export default function RecordList() {
 
   return (
     <>
-      <Header />
       <h1>评测记录</h1>
 
       <Form
         className="flex flex-row flex-wrap items-end justify-between gap-4"
         method="get"
-        action={`${teamId}/record`}
+        action={`/${teamId}/record`}
       >
         <div className="form-control flex-1">
           <label className="label">
@@ -183,7 +180,6 @@ export default function RecordList() {
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
-      <Footer />
     </>
   );
 }

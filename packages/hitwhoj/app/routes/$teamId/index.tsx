@@ -1,5 +1,5 @@
 import { json, redirect } from "@remix-run/node";
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { Form, Link } from "@remix-run/react";
 import { ProblemLink } from "~/src/newLink/ProblemLink";
 import { selectContestListData } from "~/utils/db/contest";
@@ -15,18 +15,17 @@ import { formatDateTime, formatDurationTime } from "~/utils/tools";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
 import { useComputed } from "@preact/signals-react";
-import { Privileges } from "~/utils/permission/privilege";
-import { InvitationType } from "@prisma/client";
-import { TeamMemberRole } from "~/utils/domain/role";
-import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { Markdown } from "~/src/Markdown";
+import { InvitationType } from "@prisma/client";
 import { useUser } from "~/utils/context";
-import { useToasts } from "~/utils/toast";
-import { useEffect } from "react";
-
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { Privileges } from "~/utils/permission/privilege";
+import { TeamMemberRole } from "~/utils/domain/role";
 const problemPageSize = 7;
 const contestSize = 4;
-
+export const meta: MetaFunction = () => ({
+  title: "首页 - HITwh OJ",
+});
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
@@ -85,9 +84,6 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({ problems, contests, teamId, hasViewPerm, team });
 }
 
-const QQ_LINK =
-  "https://qm.qq.com/cgi-bin/qm/qr?k=uFHY05vPwIamUXG6L-xDQvhkA0acwZqA&jump_from=webapi&authKey=96ylLScWBoTxF6zMOsP7wdIbC/7PN1bMs5T74AIOpqeBE6h4NAGnYx/ngkxkVhyx";
-const ISSUE_LINK = "https://git.hit.edu.cn/hitwhoj/hitwhoj/-/issues";
 enum ActionType {
   joinTeam = "joinTeam",
   jumpProblem = "jumpProblem",
@@ -163,16 +159,7 @@ export default function Index() {
 
   const transition = useSignalTransition();
 
-  const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
-
-  const Toasts = useToasts();
-  console.log(team);
-  useEffect(() => {
-    if (transition.actionSuccess) {
-      Toasts.success("成功加入团队");
-    }
-  }, [transition.actionSuccess]);
-
+  const isNotMember = useComputed(() => self.value && !hasViewPerm.value.at(0));
   return (
     <>
       <h1>Welcome to HITwh OJ</h1>
@@ -190,28 +177,61 @@ export default function Index() {
         </div>
         <div className="card bg-base-200 col-span-8 row-span-2">
           <div className="card-body">
-            <h2 className="card-title">通知公告</h2>
-            <p className="flex items-center">
-              欢迎加入 HITwh OJ 反馈 QQ 群：
-              <a
-                className="underline"
-                href={QQ_LINK}
-                target="_blank"
-                rel="noreferrer"
-              >
-                721141362
-              </a>
-            </p>
-            <p>
-              <a
-                className="underline"
-                href={ISSUE_LINK}
-                target="_blank"
-                rel="noreferrer"
-              >
-                如果您发现有什么 BUG，可以在这里提交 issue
-              </a>
-            </p>
+            <h2 className="card-title">团队信息</h2>
+            <div>
+              <table>
+                <tbody>
+                  <tr>
+                    <th>创建时间</th>
+                    <td>{formatDateTime(team.value.createdAt)}</td>
+                  </tr>
+                  <tr>
+                    <th>成员数量</th>
+                    <td>{team.value._count.members}</td>
+                  </tr>
+                  <tr>
+                    <th>题目数量</th>
+                    <td>{team.value._count.problems}</td>
+                  </tr>
+                  <tr>
+                    <th>题单数量</th>
+                    <td>{team.value._count.problemSets}</td>
+                  </tr>
+                  <tr>
+                    <th>比赛数量</th>
+                    <td>{team.value._count.contests}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <Markdown>{team.value.description}</Markdown>
+
+              {isNotMember.value &&
+                (team.value.invitationType === InvitationType.NONE ? (
+                  <div className="alert alert-info">该团队未开放申请加入</div>
+                ) : (
+                  <Form method="post" className="flex gap-4">
+                    {team.value.invitationType === InvitationType.CODE && (
+                      <input
+                        className="input input-bordered"
+                        name="code"
+                        placeholder="请输入邀请码"
+                        required
+                        disabled={transition.isRunning}
+                      />
+                    )}
+                    <button
+                      className="btn btn-primary"
+                      type="submit"
+                      disabled={transition.isRunning}
+                      name="_action"
+                      value={ActionType.joinTeam}
+                    >
+                      加入团队
+                    </button>
+                  </Form>
+                ))}
+            </div>
           </div>
         </div>
         <div className="stats bg-base-200 col-span-4">
@@ -247,63 +267,6 @@ export default function Index() {
             </Form>
           </div>
         </div>
-        <div>
-          <table>
-            <thead>
-              <tr>
-                <th>团队信息</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>创建时间</th>
-                <td>{formatDateTime(team.value.createdAt)}</td>
-              </tr>
-              <tr>
-                <th>成员数量</th>
-                <td>{team.value._count.members}</td>
-              </tr>
-              <tr>
-                <th>题目数量</th>
-                <td>{team.value._count.problems}</td>
-              </tr>
-              <tr>
-                <th>题单数量</th>
-                <td>{team.value._count.problemSets}</td>
-              </tr>
-              <tr>
-                <th>比赛数量</th>
-                <td>{team.value._count.contests}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <Markdown>{team.value.description}</Markdown>
-
-          {isNotMember &&
-            (team.value.invitationType === InvitationType.NONE ? (
-              <div className="alert alert-info">该团队未开放申请加入</div>
-            ) : (
-              <Form method="post" className="flex gap-4">
-                {team.value.invitationType === InvitationType.CODE && (
-                  <input
-                    className="input input-bordered"
-                    name="code"
-                    placeholder="请输入邀请码"
-                    required
-                    disabled={transition.isRunning}
-                  />
-                )}
-                <button
-                  className="btn btn-primary"
-                  type="submit"
-                  disabled={transition.isRunning}
-                >
-                  加入团队
-                </button>
-              </Form>
-            ))}
-        </div>
         <div className="card bg-base-200 col-span-8 md:col-span-6">
           <div className="card-body">
             <h2 className="card-title">近期比赛</h2>
@@ -312,7 +275,7 @@ export default function Index() {
                 <Link
                   className="card bg-base-100"
                   key={contest.id}
-                  to={`${teamId}/contest/${contest.id}`}
+                  to={`/${teamId}/contest/${contest.id}`}
                 >
                   <div className="card-body">
                     <h2 className="card-title">
