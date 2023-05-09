@@ -5,7 +5,6 @@ import {
   SystemUserRole,
   InvitationType,
 } from "@prisma/client";
-import { TeamMemberRole } from "~/utils/domain/role";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
 import { passwordHash } from "~/utils/tools";
@@ -19,16 +18,6 @@ function hash(password: string): string {
 }
 
 async function seed() {
-  await prisma.problemTag.createMany({
-    data: [
-      { name: "math" },
-      { name: "algorithm" },
-      { name: "easy" },
-      { name: "medium" },
-      { name: "hard" },
-    ],
-  });
-
   const { id: alice } = await prisma.user.create({
     data: {
       email: "alice@hit.edu.cn",
@@ -120,7 +109,7 @@ async function seed() {
   await prisma.teamRole.create({
     data: {
       teamId: team1,
-      role: TeamMemberRole.Owner,
+      role: "Owner",
       description: "",
       privilege: PERM_TEAM.PERM_OWNER,
     },
@@ -128,7 +117,7 @@ async function seed() {
   await prisma.teamRole.create({
     data: {
       teamId: team1,
-      role: TeamMemberRole.Admin,
+      role: "Admin",
       description: "",
       privilege: PERM_TEAM.PERM_ADMIN,
     },
@@ -136,7 +125,7 @@ async function seed() {
   await prisma.teamRole.create({
     data: {
       teamId: team1,
-      role: TeamMemberRole.Member,
+      role: "Member",
       description: "",
       privilege: PERM_TEAM.PERM_MEMBER,
     },
@@ -145,36 +134,29 @@ async function seed() {
     data: {
       userId: alice,
       teamId: team1,
-      roleName: TeamMemberRole.Owner,
+      roleName: "Owner",
     },
   });
   await prisma.teamMember.create({
     data: {
       userId: bob,
       teamId: team1,
-      roleName: TeamMemberRole.Admin,
+      roleName: "Admin",
     },
   });
   await prisma.teamMember.create({
     data: {
       userId: cherry,
       teamId: team1,
-      roleName: TeamMemberRole.Member,
+      roleName: "Member",
     },
   });
-  const { id: team2 } = await prisma.team.create({
+  await prisma.team.create({
     data: {
       id: "2",
       name: "team2",
       invitationType: InvitationType.CODE,
       invitationCode: "114514",
-    },
-  });
-  await prisma.teamMember.create({
-    data: {
-      userId: alice,
-      teamId: team2,
-      roleName: TeamMemberRole.Owner,
     },
   });
   const { id: p1 } = await prisma.problem.create({
