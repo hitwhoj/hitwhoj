@@ -10,6 +10,7 @@ import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
 import { passwordHash } from "~/utils/tools";
 import { File } from "@remix-run/node/dist/fetch";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const prisma = new PrismaClient();
 
@@ -89,10 +90,55 @@ async function seed() {
       role: SystemUserRole.User,
     },
   });
+
+  await prisma.user.createMany({
+    data: [
+      {
+        username: "Alice2",
+        password: hash("alice2"),
+        role: SystemUserRole.Root,
+      },
+      { username: "Bob2", password: hash("bob2"), role: SystemUserRole.Admin },
+      {
+        username: "Cherry2",
+        password: hash("cherry2"),
+        role: SystemUserRole.User,
+      },
+      {
+        username: "David2",
+        password: hash("david2"),
+        role: SystemUserRole.User,
+      },
+    ],
+  });
   const { id: team1 } = await prisma.team.create({
     data: {
       id: "1",
       name: "system",
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: TeamMemberRole.Owner,
+      description: "",
+      privilege: PERM_TEAM.PERM_OWNER,
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: TeamMemberRole.Admin,
+      description: "",
+      privilege: PERM_TEAM.PERM_ADMIN,
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: TeamMemberRole.Member,
+      description: "",
+      privilege: PERM_TEAM.PERM_MEMBER,
     },
   });
   await prisma.teamMember.create({
