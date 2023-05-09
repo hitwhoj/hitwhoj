@@ -192,7 +192,6 @@ int main() {
 }
 \`\`\`
 `,
-      tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
 
@@ -286,9 +285,6 @@ this is language whatthefuck
 ~~~
 `,
       private: false,
-      tags: {
-        connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],
-      },
     },
   });
 
@@ -308,7 +304,6 @@ this is language whatthefuck
           { userId: alice, role: ContestParticipantRole.Contestant },
         ],
       },
-      tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
       problems: {
         create: [
           { rank: 1, problemId: p1 },
@@ -333,7 +328,6 @@ this is language whatthefuck
           { userId: cherry, role: ContestParticipantRole.Contestant },
         ],
       },
-      tags: { create: [{ name: "a-soul" }] },
       problems: {
         create: [
           { rank: 1, problemId: p2 },
@@ -349,7 +343,6 @@ this is language whatthefuck
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
 
-      tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: {
         create: [
           { problemId: p1, rank: 1 },
@@ -365,7 +358,6 @@ this is language whatthefuck
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
 
-      tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: {
         create: [
           { problemId: p2, rank: 1 },
@@ -381,7 +373,6 @@ this is language whatthefuck
       title: "嘉然可爱捏",
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
-      tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: {
         create: [{ problemId: p2, rank: 1 }],
       },
