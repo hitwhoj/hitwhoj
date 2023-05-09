@@ -5,7 +5,6 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import {
   findProblemSetPrivacy,
   findProblemSetTeam,
@@ -13,24 +12,27 @@ import {
 import { HiOutlineEyeOff, HiOutlineTag } from "react-icons/hi";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-  const team = self.team(await findProblemSetTeam(problemSetId));
-  await team.checkPermission(
+  const team = self.newTeam(await findProblemSetTeam(problemSetId));
+  await team.checkPrivilege(
     (await findProblemSetPrivacy(problemSetId))
-      ? Permissions.PERM_VIEW_PROBLEM_SET
-      : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+      ? PERM_TEAM.PERM_VIEW_PROBLEM_SET
+      : PERM_TEAM.PERM_VIEW_PROBLEM_SET_PUBLIC
   );
-  const [hasEditPerm] = await team.hasPermission(
-    Permissions.PERM_EDIT_PROBLEM_SET
+  const [hasEditPerm] = await team.hasPrivilege(
+    PERM_TEAM.PERM_EDIT_PROBLEM_SET
   );
 
-  const problemSet = await db.problemSet.findUnique({
-    where: { id: problemSetId },
+  const problemSet = await db.problemSet.findFirst({
+    where: { id: problemSetId, teamId: teamId },
     select: {
       title: true,
       description: true,

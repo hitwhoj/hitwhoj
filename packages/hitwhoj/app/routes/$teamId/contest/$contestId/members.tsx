@@ -4,7 +4,6 @@ import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { idScheme, contestParticipantRoleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestParticipantRole } from "@prisma/client";
@@ -15,15 +14,15 @@ import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_EDIT_CONTEST);
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
 
   const members = await db.contestParticipant.findMany({
     where: {
@@ -48,9 +47,8 @@ export async function action({ params, request }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_EDIT_CONTEST);
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
 
   const form = await request.formData();
   const _action = form.get("_action");

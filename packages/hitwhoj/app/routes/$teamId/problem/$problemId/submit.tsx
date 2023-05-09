@@ -8,20 +8,21 @@ import { invariant } from "~/utils/invariant";
 import { codeScheme, idScheme, languageScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 import { judge } from "~/utils/server/judge/manager.server";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(
       (await findProblemPrivacy(problemId))
-        ? Permissions.PERM_VIEW_PROBLEM
-        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+        ? PERM_TEAM.PERM_VIEW_PROBLEM
+        : PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC
     );
 
   const problem = await db.problem.findUnique({
@@ -46,14 +47,15 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 
 export async function action({ request, params }: ActionArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(
       (await findProblemPrivacy(problemId))
-        ? Permissions.PERM_VIEW_PROBLEM
-        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+        ? PERM_TEAM.PERM_VIEW_PROBLEM
+        : PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC
     );
 
   const problem = await db.problem.findUnique({
@@ -85,7 +87,7 @@ export async function action({ request, params }: ActionArgs) {
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
   judge.push(recordId);
 
-  return redirect(`/record/${recordId}`);
+  return redirect(`/${teamId}/record/${recordId}`);
 }
 
 export default function ProblemSubmit() {

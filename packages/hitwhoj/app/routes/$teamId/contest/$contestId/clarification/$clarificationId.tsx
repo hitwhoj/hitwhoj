@@ -19,6 +19,7 @@ import { selectUserData } from "~/utils/db/user";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
@@ -27,9 +28,8 @@ export async function loader({ request, params }: LoaderArgs) {
   });
   const self = await findRequestUser(request);
   const [canReply] = await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .hasPermission(Permissions.PERM_REPLY_CONTEST_CLARIFICATION);
+    .newTeam(await findContestTeam(contestId))
+    .hasPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
 
   const clarification = await db.clarification.findUnique({
     where: { id: clarificationId },

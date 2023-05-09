@@ -4,9 +4,9 @@ import { json } from "@remix-run/node";
 import { Form, Link } from "@remix-run/react";
 import { HiOutlineFilter } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
-import { ProblemLink } from "~/src/problem/ProblemLink";
+import { ProblemLink } from "~/src/newLink/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
-import { UserLink } from "~/src/user/UserLink";
+import { UserLink } from "~/src/newLink/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
@@ -151,15 +151,15 @@ export default function RecordList() {
             <tr key={record.id}>
               <th className="text-center">{record.id}</th>
               <td>
-                <Link to={`/record/${record.id}`}>
+                <Link to={`/${teamId}/record/${record.id}`}>
                   <RecordStatus status={record.status} />
                 </Link>
               </td>
               <td className="hidden md:table-cell">
-                <ProblemLink problem={record.problem} />
+                <ProblemLink problem={record.problem} teamId={teamId.value} />
               </td>
               <td>
-                <UserLink user={record.submitter} />
+                <UserLink user={record.submitter} teamId={teamId.value} />
               </td>
               <td className="hidden xl:table-cell">
                 <span

@@ -8,9 +8,9 @@ import { invariant } from "~/utils/invariant";
 import { pageScheme } from "~/utils/scheme";
 import { Pagination } from "~/src/Pagination";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { Privileges } from "~/utils/new-permission/privilege";
 
 export const meta: MetaFunction = () => ({
   title: "团队列表 - HITwh OJ",
@@ -20,9 +20,7 @@ const PAGE_SIZE = 15;
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const [hasCreatePerm] = await self.hasPermission(
-    Permissions.PERM_TEAM_CREATE
-  );
+  const [hasCreatePerm] = await self.hasPrivilege(Privileges.PRIV_TEAM_CREATE);
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
@@ -33,7 +31,7 @@ export async function loader({ request }: LoaderArgs) {
   }
 
   const teams = await db.team.findMany({
-    orderBy: { name: "asc" },
+    orderBy: { id: "asc" },
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
   });

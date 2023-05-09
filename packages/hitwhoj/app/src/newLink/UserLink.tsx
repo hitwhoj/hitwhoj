@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
 import type { UserData } from "~/utils/db/user";
-import { UserAvatar } from "./UserAvatar";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 type Props = {
   user: UserData;
@@ -10,7 +10,7 @@ type Props = {
 export function UserLink({ user, teamId }: Props) {
   return (
     <div className="dropdown dropdown-top dropdown-hover">
-      <Link tabIndex={0} className="link" to={`${teamId}/user/${user.id}`}>
+      <Link tabIndex={0} className="link" to={`/${teamId}/user/${user.id}`}>
         {user.nickname ? (
           <>
             {user.nickname}{" "}

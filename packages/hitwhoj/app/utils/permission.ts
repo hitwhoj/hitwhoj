@@ -1,4 +1,3 @@
-import type { TeamMemberRole } from "@prisma/client";
 import { User } from "./permission/role/user";
 import { db } from "./server/db.server";
 import { getSession } from "./sessions";
@@ -31,7 +30,7 @@ export async function getProblemTeam(problemId: number) {
   return problem && problem.teamId;
 }
 
-export async function getTeamMember(teamId: number | null, userId: number) {
+export async function getTeamMember(teamId: string | null, userId: number) {
   if (!teamId) return null;
 
   const member = await db.teamMember.findUnique({
@@ -40,14 +39,4 @@ export async function getTeamMember(teamId: number | null, userId: number) {
   });
 
   return member && member.role;
-}
-
-export function isTeamOwner(role: TeamMemberRole | null) {
-  return role === "Owner";
-}
-export function isTeamAdmin(role: TeamMemberRole | null) {
-  return role === "Owner" || role === "Admin";
-}
-export function isTeamMember(role: TeamMemberRole | null) {
-  return role === "Owner" || role === "Admin" || role === "Member";
 }

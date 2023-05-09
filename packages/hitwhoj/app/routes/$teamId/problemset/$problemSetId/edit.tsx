@@ -12,7 +12,6 @@ import {
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { findProblemSetTeam } from "~/utils/db/problemset";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
@@ -21,16 +20,17 @@ import { useComputed } from "@preact/signals-react";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
+  await self.newTeam(teamId).checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM_SET);
 
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
@@ -56,8 +56,8 @@ export async function loader({ request, params }: LoaderArgs) {
   if (!problemSet) {
     throw new Response("Problem Set not found", { status: 404 });
   }
-
-  return json({ problemSet });
+  console.log(problemSet);
+  return json({ problemSet, teamId });
 }
 
 enum ActionType {
@@ -72,10 +72,11 @@ export async function action({ request, params }: ActionArgs) {
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  //const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
+    .newTeam(await findProblemSetTeam(problemSetId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM_SET);
 
   const form = await request.formData();
   const _action = form.get("_action");
@@ -83,7 +84,6 @@ export async function action({ request, params }: ActionArgs) {
   switch (_action) {
     case ActionType.CreateProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
-
       await db.$transaction(async (db) => {
         const {
           _max: { rank },
@@ -91,16 +91,14 @@ export async function action({ request, params }: ActionArgs) {
           where: { problemSetId },
           _max: { rank: true },
         });
-
         await db.problemSetProblem.create({
           data: {
-            problemSetId,
-            problemId,
+            problemId: problemId,
+            problemSetId: problemSetId,
             rank: (rank ?? 0) + 1,
           },
         });
       });
-
       return null;
     }
 
@@ -246,7 +244,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function ProblemSetEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problemSet = useComputed(() => loaderData.value.problemSet);
-
+  const teamId = useComputed(() => loaderData.value.teamId);
   const transition = useSignalTransition();
 
   const Toasts = useToasts();
@@ -326,6 +324,7 @@ export default function ProblemSetEdit() {
         deleteAction={ActionType.DeleteProblem}
         moveUpAction={ActionType.MoveProblemUp}
         moveDownAction={ActionType.MoveProblemDown}
+        teamId={teamId.value}
       />
     </>
   );

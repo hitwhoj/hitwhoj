@@ -5,7 +5,13 @@ import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { json } from "@remix-run/node";
-import { Form, NavLink, useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  NavLink,
+  useFetcher,
+  useLoaderData,
+} from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { searchUserData } from "~/utils/db/user";
 import { Privileges } from "~/utils/permission/privilege";
@@ -13,18 +19,23 @@ import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import { getAllRolesAndPrivilege } from "~/utils/domain/role";
 import { HiOutlinePlus, HiOutlineUserGroup } from "react-icons/hi";
 import { teamIdScheme, teamRoleScheme } from "~/utils/new-permission/scheme";
+import { UserAvatar } from "~/src/user/UserAvatar";
 
 type item = {
-  userId: number,
-  teamId: string,
-  roleName: string
-}
+  userId: number;
+  teamId: string;
+  roleName: string;
+};
 type user = {
-  id: number,
-  username: string,
-  role: string,
-  privilege: number
-}
+  id: number;
+  username: string;
+  nickname: string;
+  role: string;
+  privilege: number;
+  avatar: string;
+  bio: string;
+  premium: boolean;
+};
 type Props = {
   user: user;
   item: item;
@@ -35,7 +46,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const team = await db.team.findUnique({
     where: { id: teamId },
   });
-  if(!team){
+  if (!team) {
     throw new Response("团队不存在", { status: 404 });
   }
   await self
@@ -216,21 +227,40 @@ export default function Users() {
           <tbody>
             {roles.map((role) => {
               return (
-                <tr key={role.user.id}>
-                  <td>{role.user.id}</td>
-                  <td>{role.user.username}</td>
-                  <td>
-                    <select
-                      className="select select-primary"
-                      defaultValue={role.item.roleName}
-                      onChange={() => selectHandler(event, role.item.userId.toString())}
-                    >
-                      {Allroles.map((item) => {
-                        return <option key={item.role}>{item.role}</option>;
-                      })}
-                    </select>
-                  </td>
-                </tr>
+                <>
+                  <tr key={role.user.id}>
+                    <td>{role.user.id}</td>
+                    <td>
+                      <div className="flex items-center gap-4">
+                        <UserAvatar
+                          user={role.user}
+                          className="bg-base-100 h-16 w-16 shrink-0 text-2xl"
+                        />
+                        <div>
+                          <Link
+                            to={`/${team.id}/user/${role.user.id}`}
+                            className="link link-hover block font-bold"
+                          >
+                            {role.user.username}
+                          </Link>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <select
+                        className="select select-primary"
+                        defaultValue={role.item.roleName}
+                        onChange={() =>
+                          selectHandler(event, role.item.userId.toString())
+                        }
+                      >
+                        {Allroles.map((item) => {
+                          return <option key={item.role}>{item.role}</option>;
+                        })}
+                      </select>
+                    </td>
+                  </tr>
+                </>
               );
             })}
           </tbody>

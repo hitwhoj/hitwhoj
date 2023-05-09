@@ -11,10 +11,10 @@ import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType } from "./events";
 import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
-import { Permissions } from "~/utils/permission/permission";
 import { HiOutlineSave } from "react-icons/hi";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 interface Problem {
   count: number;
@@ -28,10 +28,8 @@ export async function loader({ request, params }: LoaderArgs) {
   // 获取导出权限
   const self = await findRequestUser(request);
   const [canExport] = await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .hasPermission(Permissions.PERM_EXPORT_CONTEST_BOARD);
-
+    .newTeam(await findContestTeam(contestId))
+    .hasPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
   // 获取比赛所含题目信息
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -187,7 +185,7 @@ export default function RankView() {
 
   return (
     <>
-      {canExport && (
+      {canExport.value && (
         <div className="flex w-full items-center justify-end">
           <button
             className="btn btn-primary btn-sm gap-2 font-normal"

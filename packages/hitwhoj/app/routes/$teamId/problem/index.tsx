@@ -4,7 +4,6 @@ import { Link } from "@remix-run/react";
 import { selectProblemListData } from "~/utils/db/problem";
 import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
 import { pageScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
@@ -13,6 +12,7 @@ import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
 import { ProblemLink } from "~/src/newLink/ProblemLink";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const PAGE_SIZE = 15;
 
@@ -20,11 +20,11 @@ export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const [viewAll, viewPublic, hasCreatePerm] = await self
-    .team(null)
-    .hasPermission(
-      Permissions.PERM_VIEW_PROBLEM,
-      Permissions.PERM_VIEW_PROBLEM_PUBLIC,
-      Permissions.PERM_CREATE_PROBLEM
+    .newTeam(teamId)
+    .hasPrivilege(
+      PERM_TEAM.PERM_VIEW_PROBLEM,
+      PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC,
+      PERM_TEAM.PERM_CREATE_PROBLEM
     );
 
   const url = new URL(request.url);
@@ -108,7 +108,7 @@ export default function ProblemIndex() {
             <tr key={problem.id}>
               <th className="text-center">{problem.id}</th>
               <td>
-                <ProblemLink problem={problem} teamId={teamId} />
+                <ProblemLink problem={problem} teamId={teamId.value} />
               </td>
               <td>{problem._count.relatedRecords}</td>
             </tr>

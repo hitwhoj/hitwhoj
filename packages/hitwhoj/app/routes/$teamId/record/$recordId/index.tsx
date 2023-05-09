@@ -7,13 +7,13 @@ import { idScheme } from "~/utils/scheme";
 import Highlighter from "~/src/Highlighter";
 import { RecordStatus } from "~/src/record/RecordStatus";
 import { RecordTimeMemory } from "~/src/record/RecordTimeMemory";
-import { UserLink } from "~/src/user/UserLink";
-import { ContestLink } from "~/src/contest/ContestLink";
+import { UserLink } from "~/src/newLink/UserLink";
+import { ContestLink } from "~/src/newLink/ContestLink";
 import { selectUserData } from "~/utils/db/user";
 import type { MessageType } from "./events";
 import { selectContestListData } from "~/utils/db/contest";
 import { selectProblemListData } from "~/utils/db/problem";
-import { ProblemLink } from "~/src/problem/ProblemLink";
+import { ProblemLink } from "~/src/newLink/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
 import {
@@ -28,9 +28,11 @@ import type { SubtaskResult } from "~/utils/server/judge/judge.types";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const recordId = invariant(idScheme, params.recordId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   const user = await findRecordUser(recordId);
   const [allowCode] = await self
@@ -67,7 +69,7 @@ export async function loader({ request, params }: LoaderArgs) {
     ? (await s3.readFile(`/record/${record.id}`)).toString()
     : "";
 
-  return json({ record, code });
+  return json({ record, code, teamId });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -78,7 +80,7 @@ export default function RecordView() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const record = useSynchronized(() => loaderData.value.record);
   const code = useComputed(() => loaderData.value.code);
-
+  const teamId = useComputed(() => loaderData.value.teamId);
   useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
       `./${record.value.id}/events`
@@ -116,16 +118,16 @@ export default function RecordView() {
       <div className="my-4 flex flex-wrap gap-4">
         <span>
           <span className="opacity-60">用户：</span>
-          <UserLink user={record.value.submitter} />
+          <UserLink user={record.value.submitter} teamId={teamId.value} />
         </span>
         <span>
           <span className="opacity-60">题目：</span>
-          <ProblemLink problem={record.value.problem} />
+          <ProblemLink problem={record.value.problem} teamId={teamId.value} />
         </span>
         {record.value.contest && (
           <span>
             <span className="opacity-60">比赛：</span>
-            <ContestLink contest={record.value.contest} />
+            <ContestLink contest={record.value.contest} teamId={teamId.value} />
           </span>
         )}
       </div>

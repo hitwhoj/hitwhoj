@@ -1,21 +1,21 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
+import { TeamMemberRole } from "~/utils/domain/role";
 import { redirect } from "@remix-run/node";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { teamNameScheme } from "~/utils/scheme";
-import { TeamMemberRole } from "@prisma/client";
 import { findRequestUser } from "~/utils/permission";
 import { Form } from "@remix-run/react";
-import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/new-permission/privilege";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.checkPermission(Permissions.PERM_TEAM_CREATE);
+  await self.checkPrivilege(Privileges.PRIV_TEAM_CREATE);
 
   return null;
 }
@@ -27,26 +27,53 @@ export const meta: MetaFunction = () => ({
 export async function action({ request }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.checkPermission(Permissions.PERM_TEAM_CREATE);
+  await self.checkPrivilege(Privileges.PRIV_TEAM_CREATE);
 
   const form = await request.formData();
   const name = invariant(teamNameScheme, form.get("name"));
-
+  const team = await db.team.findUnique({
+    where: {
+      name: name,
+    },
+  });
+  if (team) {
+    throw new Response("团队已存在", { status: 403 });
+  }
   const { id: teamId } = await db.team.create({
     data: {
-      name: name,
+      id: name,
+      name,
+      teamRole: {
+        create: [
+          {
+            role: TeamMemberRole.Owner,
+            description: "",
+            privilege: PERM_TEAM.PERM_OWNER,
+          },
+          {
+            role: TeamMemberRole.Admin,
+            description: "",
+            privilege: PERM_TEAM.PERM_ADMIN,
+          },
+          {
+            role: TeamMemberRole.Member,
+            description: "",
+            privilege: PERM_TEAM.PERM_MEMBER,
+          },
+        ],
+      },
       members: {
         create: [
           {
             userId: self.userId!,
-            role: TeamMemberRole.Owner,
+            roleName: TeamMemberRole.Owner,
           },
         ],
       },
     },
   });
 
-  return redirect(`/team/${teamId}/settings`);
+  return redirect(`/${teamId}/control/settings`);
 }
 
 export default function NewTeam() {

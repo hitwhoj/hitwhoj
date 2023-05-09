@@ -7,7 +7,6 @@ import { Markdown } from "~/src/Markdown";
 import { selectProblemListData } from "~/utils/db/problem";
 import { ProblemLink } from "~/src/newLink/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import {
   findProblemSetPrivacy,
   findProblemSetTeam,
@@ -16,6 +15,7 @@ import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const PAGE_SIZE = 15;
 
@@ -26,11 +26,11 @@ export async function loader({ request, params }: LoaderArgs) {
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(
+    .newTeam(await findProblemSetTeam(problemSetId))
+    .checkPrivilege(
       (await findProblemSetPrivacy(problemSetId))
-        ? Permissions.PERM_VIEW_PROBLEM_SET
-        : Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC
+        ? PERM_TEAM.PERM_VIEW_PROBLEM_SET
+        : PERM_TEAM.PERM_VIEW_PROBLEM_SET_PUBLIC
     );
 
   const url = new URL(request.url);
@@ -107,7 +107,7 @@ export default function ProblemSetIndex() {
             <tr key={problem.problem.id}>
               <td className="text-center">{problem.rank}</td>
               <td>
-                <ProblemLink problem={problem.problem} teamId={teamId} />
+                <ProblemLink problem={problem.problem} teamId={teamId.value} />
               </td>
             </tr>
           ))}

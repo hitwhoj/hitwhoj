@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useBeforeUnload } from "@remix-run/react";
+import { Link, NavLink, Outlet } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import type { LoaderArgs } from "@remix-run/node";
@@ -30,14 +30,14 @@ import {
   AiOutlineSearch,
   AiOutlineTrophy,
 } from "react-icons/ai";
-import { menuSignal, ThemeContext } from "~/utils/context";
+import { menuSignal, ThemeContextTest } from "~/utils/context";
 import Footer from "~/routes/Drawer/Footer";
 import type { Theme } from "~/utils/theme";
 import { themes } from "~/utils/theme";
 import { UserAvatar } from "~/src/user/UserAvatar";
 import { selectUserData } from "~/utils/db/user";
 import { getCookie } from "~/utils/cookies";
-import { useCallback, useContext, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType } from "~/routes/chat/events";
 import type { ActionData } from "~/routes/logout";
@@ -85,28 +85,12 @@ export async function loader({ request, params }: LoaderArgs) {
 export default function Record() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const theme = useSignal(loaderData.value.theme);
-  const themeContext = useContext(ThemeContext);
+  const themeContext = useContext(ThemeContextTest);
   const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
   const teamId = useComputed(() => loaderData.value.teamId ?? 1);
   const userId = useComputed(() => loaderData.value.userId ?? null);
   const user = useComputed(() => loaderData.value.user);
   const Toasts = useToasts();
-  useEffect(() => {
-    // if did not set theme ever
-    if (!document.cookie.includes("theme=")) {
-      // and if system theme is dark
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        theme.value = "dark";
-      }
-    }
-  }, []);
-  // save theme before unload
-  useBeforeUnload(
-    useCallback(() => {
-      document.cookie = `theme=${theme.value}; Path=/; Max-Age=31536000; SameSite=Lax;`;
-    }, [theme.value])
-  );
-  // subscribe to PMs
   useSignalEffect(() => {
     if (userId.value) {
       // 订阅新私聊消息

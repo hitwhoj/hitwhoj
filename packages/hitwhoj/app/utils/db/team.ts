@@ -1,6 +1,6 @@
 import { db } from "../server/db.server";
 
-export async function findTeamAllowMembersInvite(teamId: number) {
+export async function findTeamAllowMembersInvite(teamId: string) {
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: { allowMembersInvite: true },
@@ -13,7 +13,7 @@ export async function findTeamAllowMembersInvite(teamId: number) {
   return team.allowMembersInvite;
 }
 
-export async function findTeamMemberRole(teamId: number, userId: number) {
+export async function findTeamMemberRole(teamId: string, userId: number) {
   const member = await db.teamMember.findUnique({
     where: { userId_teamId: { teamId, userId } },
     select: { role: true },

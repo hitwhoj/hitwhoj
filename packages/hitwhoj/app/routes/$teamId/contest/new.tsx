@@ -14,26 +14,27 @@ import { ContestSystem } from "@prisma/client";
 import { adjustTimezone } from "~/utils/time";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
+  await self.newTeam(teamId).checkPrivilege(PERM_TEAM.PERM_CREATE_CONTEST);
 
   return null;
 }
 
-export async function action({ request,params}: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.team(null).checkPermission(Permissions.PERM_CREATE_CONTEST);
+  await self.newTeam(teamId).checkPrivilege(PERM_TEAM.PERM_CREATE_CONTEST);
 
   const form = await request.formData();
 

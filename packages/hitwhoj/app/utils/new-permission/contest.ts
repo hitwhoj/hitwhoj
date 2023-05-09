@@ -1,13 +1,12 @@
 import type { ContestParticipantRole } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
-import type { ContestPermission } from "../permission/contest";
-import type { NewTeamUser} from "~/utils/new-permission/team";
+import type { NewTeamUser } from "~/utils/new-permission/team";
 
 export class NewContestUser {
   readonly team: NewTeamUser;
   readonly contestId: number | null;
   private role: ContestParticipantRole | "Guest" | null = null;
-
+  private privilege: number | null = null;
   constructor(team: NewTeamUser, contestId: number | null) {
     this.team = team;
     this.contestId = contestId;
@@ -30,40 +29,19 @@ export class NewContestUser {
       this.role ??= "Guest";
     }
 
-    return { role: this.role };
+    return { role: this.role, privilege: this.privilege ?? null };
   }
 
-  async hasPermission(...permissions: ContestPermission[]) {
-    const { role } = await this.initialize();
-
-    const fallback = await this.team.hasPermission(
-      ...permissions.map(({ fallback }) => fallback)
+  async hasPrivilege(...privileges: number[]) {
+    const { privilege } = await this.initialize();
+    return privileges.map(
+      (item) => privilege !== null && (privilege & item) === item
     );
-
-    if (!this.contestId) return fallback;
-
-    return permissions.map((permission, index) => {
-      if (fallback[index]) return true;
-
-      switch (role) {
-        case "Mod":
-          return permission.mod;
-        case "Jury":
-          return permission.jury;
-        case "Contestant":
-          return permission.contestant;
-        case "Guest":
-          return permission.guest;
-        default:
-          return false;
-      }
-    });
   }
-
-  async checkPermission(...permissions: ContestPermission[]) {
-    const perms = await this.hasPermission(...permissions);
-    if (perms.some((perm) => !perm)) {
-      throw new Response("Permission denied", { status: 403 });
+  async checkPrivilege(...privileges: number[]) {
+    const privilege = await this.hasPrivilege(...privileges);
+    if (privilege.some((item) => !item)) {
+      throw new Response("Privilege denied", { status: 403 });
     }
   }
 }

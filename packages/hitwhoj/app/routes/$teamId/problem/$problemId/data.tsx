@@ -12,7 +12,6 @@ import { idScheme, uuidScheme } from "~/utils/scheme";
 import { handler } from "~/utils/server/handler.server";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { findProblemTeam } from "~/utils/db/problem";
 import { FileList } from "~/src/file/FileList";
 import { FileUploader } from "~/src/file/FileUploader";
@@ -39,14 +38,17 @@ import { useSignalFetcher, useSignalLoaderData } from "~/utils/hooks";
 import type { Signal } from "@preact/signals-react";
 import { useComputed, useSignal } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -68,7 +70,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const config =
     file && (await s3.readFile(`/file/${file.id}`)).toString("utf-8");
 
-  return json({ problem, config });
+  return json({ problem, config, teamId });
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
@@ -88,8 +90,8 @@ export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM);
 
   const form = await unstable_parseMultipartFormData(request, handler);
 
@@ -647,7 +649,7 @@ export default function ProblemData() {
   const files = useComputed(() => loaderData.value.problem.files);
   const data = useComputed(() => loaderData.value.problem.data);
   const config = useComputed(() => loaderData.value.config);
-
+  //const teamId = useComputed(()=>loaderData.value.teamId);
   const defaultConfig = useComputed<ConfigJson>(() =>
     config.value ? JSON.parse(config.value) : { type: "default", subtasks: [] }
   );

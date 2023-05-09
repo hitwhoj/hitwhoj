@@ -6,7 +6,6 @@ import { selectContestListData } from "~/utils/db/contest";
 import { selectProblemListData } from "~/utils/db/problem";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
@@ -30,13 +29,12 @@ export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const [viewPublicProblems] = await self
-    .team(null)
-    .hasPermission(Permissions.PERM_VIEW_PROBLEM_PUBLIC);
+    .newTeam(teamId)
+    .hasPrivilege(PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC);
   const [viewPublicContests] = await self
-    .team(null)
-    .contest(null)
-    .hasPermission(Permissions.PERM_VIEW_CONTEST_PUBLIC);
-  const hasViewPerm = await self
+    .newTeam(teamId)
+    .hasPrivilege(PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC);
+  const [hasViewPerm] = await self
     .newTeam(teamId)
     .hasPrivilege(PERM_TEAM.PERM_TEAM_VIEW_INTERNAL);
   const team = await db.team.findUnique({
@@ -95,6 +93,12 @@ export async function action({ request, params }: ActionArgs) {
     case ActionType.jumpProblem: {
       const pid = invariant(idScheme, form.get("pid"));
       const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
+      const problem = await db.problem.findMany({
+        where: { id: pid, teamId: teamId },
+      });
+      if (!problem) {
+        throw new Response("团队中不存在此题", { status: 404 });
+      }
       return redirect(`/${teamId}/problem/${pid}`);
     }
     case ActionType.joinTeam: {
@@ -102,7 +106,7 @@ export async function action({ request, params }: ActionArgs) {
       const self = await findRequestUser(request);
       await self.checkPrivilege(Privileges.PRIV_OPERATE);
       await db.$transaction(async (db) => {
-        const team = await db.team.findUnique({
+        const team = await db.team.findMany({
           where: { id: teamId },
           select: { invitationType: true, invitationCode: true },
         });
@@ -159,10 +163,10 @@ export default function Index() {
 
   const transition = useSignalTransition();
 
-  const isNotMember = useComputed(() => self.value && !hasViewPerm.value.at(0));
+  const isNotMember = useComputed(() => self.value && !hasViewPerm.value);
   return (
     <>
-      <h1>Welcome to HITwh OJ</h1>
+      <h1>Welcome to {team.value.name} 团队</h1>
       <div className="not-prose grid grid-cols-8 place-content-between gap-4 md:grid-cols-12">
         <div className="card bg-info text-info-content col-span-8 md:col-span-12">
           <div className="card-body">

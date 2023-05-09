@@ -5,15 +5,15 @@ import { db } from "~/utils/server/db.server";
 import { searchUserData } from "~/utils/db/user";
 import { Link, useLoaderData } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
-type Props = {
-  id: string,
-  name: string,
-  userId:number,
-  teamId:string,
-  roleName:string,
-  hasEditPriv:boolean
-}
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
+type Props = {
+  id: string;
+  name: string;
+  userId: number;
+  teamId: string;
+  roleName: string;
+  hasEditPriv: boolean;
+};
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
   if (!self.userId) {
@@ -40,18 +40,17 @@ export async function loader({ request }: LoaderArgs) {
       where: {
         id: item.teamId,
       },
-      select:{
-        id:true,
-        name:true,
-      }
+      select: {
+        id: true,
+        name: true,
+      },
     });
+    let result: Props;
     const [hasEditPriv] = await self
       .newTeam(item.teamId)
       .hasPrivilege(PERM_TEAM.PERM_TEAM_EDIT_INTERNAL);
-    team = Object.assign(team, item);
-    team = Object.assign(team, { hasEditPriv: hasEditPriv });
-    domains.push(team);
-    console.log('temp:',team)
+    result = Object.assign({}, team, item, { hasEditPriv: hasEditPriv });
+    domains.push(result);
   }
   return json({ user, domains });
 }

@@ -6,20 +6,20 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(
       (await findProblemPrivacy(problemId))
-        ? Permissions.PERM_VIEW_PROBLEM
-        : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+        ? PERM_TEAM.PERM_VIEW_PROBLEM
+        : PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC
     );
 
   const problem = await db.problem.findUnique({

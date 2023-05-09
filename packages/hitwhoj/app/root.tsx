@@ -23,14 +23,11 @@ import { themes } from "./utils/theme";
 import adimg from "./assets/ad.jpg";
 import hitwh from "./assets/hitwh.png";
 import qqgroup from "./assets/qq.svg";
-import { useSignalFetcher, useSignalLoaderData } from "./utils/hooks";
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals-react";
-import { ThemeContext, UserContext } from "./utils/context";
+import { useSignalLoaderData } from "./utils/hooks";
+import { useComputed, useSignal } from "@preact/signals-react";
+import { ThemeContext, ThemeContextTest, UserContext } from "./utils/context";
 import { useCallback, useEffect } from "react";
-import { toastSignal, useToasts } from "~/utils/toast";
-import { fromEventSource } from "~/utils/eventSource";
-import type { MessageType } from "~/routes/chat/events";
-import type { ActionData } from "~/routes/logout";
+import { toastSignal } from "~/utils/toast";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: style },
@@ -55,7 +52,6 @@ export async function loader({ request }: LoaderArgs) {
   if (!self.userId) {
     return json({ theme: theme as Theme, user: null });
   }
-
   const user = await db.user.findUnique({
     where: { id: self.userId! },
     select: selectUserData,
@@ -72,8 +68,6 @@ export default function App() {
 
   const theme = useSignal(loaderData.value.theme);
   const user = useComputed(() => loaderData.value.user);
-  const userId = useComputed(() => loaderData.value.user?.id ?? null);
-  const Toasts = useToasts();
   useEffect(() => {
     // if did not set theme ever
     if (!document.cookie.includes("theme=")) {
@@ -89,32 +83,6 @@ export default function App() {
       document.cookie = `theme=${theme.value}; Path=/; Max-Age=31536000; SameSite=Lax;`;
     }, [theme.value])
   );
-  // subscribe to PMs
-  useSignalEffect(() => {
-    if (userId.value) {
-      // 订阅新私聊消息
-      const subscription = fromEventSource<MessageType>(
-        "/chat/events"
-      ).subscribe((message) => {
-        Toasts.info(
-          `收到来自 ${message.from.nickname || message.from.username} 的新消息`
-        );
-      });
-
-      return () => subscription.unsubscribe();
-    }
-  });
-
-  const fetcher = useSignalFetcher<ActionData>();
-  useEffect(() => {
-    if (fetcher.actionSuccess && fetcher.data) {
-      if (fetcher.data.success) {
-        Toasts.success("退出登录成功");
-      } else {
-        Toasts.error(fetcher.data.reason ?? "退出登录失败");
-      }
-    }
-  }, [fetcher.actionSuccess]);
   return (
     <html lang="zh-Hans" data-theme={theme.value}>
       <head>
@@ -128,9 +96,11 @@ export default function App() {
         <Links />
       </head>
       <body className="relative font-sans">
-        <ThemeContext.Provider value={theme}>
+        <ThemeContext.Provider value={theme.value}>
           <UserContext.Provider value={user.value && user.value.id}>
-            <Outlet />
+            <ThemeContextTest.Provider value={theme}>
+              <Outlet />
+            </ThemeContextTest.Provider>
           </UserContext.Provider>
         </ThemeContext.Provider>
         {/*顶部弹窗 */}

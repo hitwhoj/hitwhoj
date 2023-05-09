@@ -5,25 +5,27 @@ import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 import { HiOutlineEyeOff, HiOutlineTag, HiOutlineX } from "react-icons/hi";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-  const team = self.team(await findProblemTeam(problemId));
-  await team.checkPermission(
+  const team = self.newTeam(await findProblemTeam(problemId));
+  await team.checkPrivilege(
     (await findProblemPrivacy(problemId))
-      ? Permissions.PERM_VIEW_PROBLEM
-      : Permissions.PERM_VIEW_PROBLEM_PUBLIC
+      ? PERM_TEAM.PERM_VIEW_PROBLEM
+      : PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC
   );
-  const [hasEditPerm] = await team.hasPermission(Permissions.PERM_EDIT_PROBLEM);
+  const [hasEditPerm] = await team.hasPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM);
 
-  const problem = await db.problem.findUnique({
-    where: { id: problemId },
+  const problem = await db.problem.findFirst({
+    where: { id: problemId, teamId: teamId },
     select: {
       id: true,
       title: true,

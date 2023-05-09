@@ -13,7 +13,6 @@ import { invariant } from "~/utils/invariant";
 import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
-import Header from "~/routes/Drawer/Header";
 import Footer from "~/routes/Drawer/Footer";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
 
@@ -93,7 +92,6 @@ export default function RecordList() {
 
   return (
     <>
-      <Header />
       <h1>评测记录</h1>
 
       <Form

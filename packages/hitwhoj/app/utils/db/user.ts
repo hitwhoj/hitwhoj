@@ -29,6 +29,10 @@ export const selectUserData = {
 export const searchUserData = {
   id: true,
   username: true,
-  role: true,
+  nickname: true,
   privilege: true,
+  role: true,
+  avatar: true,
+  bio: true,
+  premium: true,
 };

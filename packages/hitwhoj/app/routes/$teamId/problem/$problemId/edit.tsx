@@ -12,7 +12,6 @@ import { selectUserData } from "~/utils/db/user";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import {
   descriptionScheme,
@@ -23,14 +22,15 @@ import {
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { useToasts } from "~/utils/toast";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM);
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
@@ -69,8 +69,8 @@ export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findProblemTeam(problemId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM);
+    .newTeam(await findProblemTeam(problemId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_PROBLEM);
 
   const form = await request.formData();
   const title = invariant(titleScheme, form.get("title"));

@@ -9,19 +9,19 @@ import { contentScheme, idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { findContestTeam } from "~/utils/db/contest";
-import { Permissions } from "~/utils/permission/permission";
 import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ params, request }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION);
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC);
 
   const problems = await db.contestProblem.findMany({
     where: { contestId },
@@ -122,11 +122,11 @@ export default function ClarificationSubmit() {
 
 export async function action({ request, params }: ActionArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION);
+    .newTeam(await findContestTeam(contestId))
+    .hasPrivilege(PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC);
 
   const form = await request.formData();
   const rank = invariant(idScheme, form.get("rank"));
@@ -142,5 +142,7 @@ export async function action({ request, params }: ActionArgs) {
     select: { id: true },
   });
 
-  return redirect(`/contest/${contestId}/clarification/${clarification.id}`);
+  return redirect(
+    `/${teamId}/contest/${contestId}/clarification/${clarification.id}`
+  );
 }

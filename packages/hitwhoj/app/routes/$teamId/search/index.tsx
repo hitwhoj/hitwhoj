@@ -8,17 +8,29 @@ import {
 } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { useState } from "react";
-import { UserLink } from "~/src/user/UserLink";
+import { UserLink } from "~/src/newLink/UserLink";
 import { SystemUserRole } from "@prisma/client";
 import { searchUserData } from "~/utils/db/user";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { idScheme, privilegeScheme } from "~/utils/scheme";
 import { Privileges } from "~/utils/permission/privilege";
-
+import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { getAllSystemPermission } from "~/utils/domain/role";
+type User = {
+  id: number;
+  username: string;
+  nickname: string;
+  role: SystemUserRole;
+  privilege: number;
+  avatar: string;
+  bio: string;
+  premium: boolean;
+};
 //从输入库查询所有user 同时定义了selectUserPrivilege缩小查询范围
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   if (self.userId !== null) {
     const temp = await db.user.findUnique({
       where: {
@@ -26,10 +38,14 @@ export async function loader({ request }: LoaderArgs) {
       },
       select: searchUserData,
     });
+    if (!temp) {
+      throw new Response("User not found", { status: 404 });
+    }
     const users = await db.user.findMany({
+      orderBy: { id: "asc" },
       select: searchUserData,
     });
-    return json({ users, temp });
+    return json({ users, temp, teamId });
   } else {
     throw new Response("User not found", { status: 404 });
   }
@@ -57,23 +73,25 @@ export async function action({ request }: ActionArgs) {
   return null;
 }
 //定义tr下面的权限
-function PrivilegeComponent(props: { hasPrivilege }) {
+function PrivilegeComponent(props: { hasPrivilege: boolean }) {
   const hasPrivilege = props.hasPrivilege;
+  const perm = getAllSystemPermission();
   return (
     <tr>
       <th>成员</th>
       <th>角色</th>
       {hasPrivilege && (
         <>
-          <th>操作权限</th>
-          <th>登录权限</th>
+          {perm.map((item) => {
+            return <th key={item.id}>{item.permName}</th>;
+          })}
         </>
       )}
     </tr>
   );
 }
 
-function CheckBoxComponent(props: { user; privilege }) {
+function CheckBoxComponent(props: { user: User; privilege: number }) {
   const user = props.user;
   const privilege = props.privilege;
   const [checked, changeChecked] = useState(
@@ -84,8 +102,8 @@ function CheckBoxComponent(props: { user; privilege }) {
   const isUpdating = state !== "idle";
   let changeHandler = (event: any) => {
     let formData = new FormData();
-    formData.append("userId", user.id);
-    formData.append("privilege", privilege ^ user.privilege);
+    formData.append("userId", user.id.toString());
+    formData.append("privilege", (privilege ^ user.privilege).toString());
     fetcher.submit(formData, { method: "post" });
     changeChecked(event.target.checked);
   };
@@ -106,11 +124,13 @@ function CheckBoxComponent(props: { user; privilege }) {
   );
 }
 //子组件
-function SearchComponent(props: { users; temp }) {
+function SearchComponent(props: { users: User[]; temp: User; teamId: string }) {
   const usersLef = props.users;
   const temp = props.temp;
+  const teamId = props.teamId;
   const hasPrivilege =
     temp.role === SystemUserRole.Admin || temp.role === SystemUserRole.Root;
+  const perm = getAllSystemPermission();
   return (
     <div>
       <table className="not-prose table-compact table w-full">
@@ -119,10 +139,11 @@ function SearchComponent(props: { users; temp }) {
         </thead>
         <tbody>
           {usersLef.map((user) => {
+            // @ts-ignore
             return (
               <tr key={user.username}>
                 <td>
-                  <UserLink user={user} />
+                  <UserLink user={user} teamId={teamId} />
                 </td>
                 <td>
                   {user.role === SystemUserRole.Admin ? (
@@ -135,14 +156,15 @@ function SearchComponent(props: { users; temp }) {
                 </td>
                 {hasPrivilege && (
                   <>
-                    <CheckBoxComponent
-                      user={user}
-                      privilege={Privileges.PRIV_OPERATE}
-                    />
-                    <CheckBoxComponent
-                      user={user}
-                      privilege={Privileges.PRIV_LOGIN}
-                    />
+                    {perm.map((item) => {
+                      return (
+                        <CheckBoxComponent
+                          key={item.id}
+                          user={user}
+                          privilege={item.privilege}
+                        />
+                      );
+                    })}
                   </>
                 )}
               </tr>
@@ -155,7 +177,7 @@ function SearchComponent(props: { users; temp }) {
 }
 export default function Search() {
   //获得所有用户数据
-  const { users, temp } = useLoaderData<typeof loader>();
+  const { users, temp, teamId } = useLoaderData<typeof loader>();
   const [usersLef, setUserLef] = useState(users);
   //获得输入框的数据
   const [userName, setUserName] = useState("");
@@ -189,7 +211,7 @@ export default function Search() {
           onChange={changeHandler}
         />
       </div>
-      <SearchComponent users={usersLef} temp={temp} />
+      <SearchComponent users={usersLef} temp={temp} teamId={teamId} />
     </div>
   );
 }

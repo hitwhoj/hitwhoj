@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { invariant } from "~/utils/invariant";
-import { idScheme, teamInvitationCodeScheme } from "~/utils/scheme";
+import { teamInvitationCodeScheme } from "~/utils/scheme";
 import { Markdown } from "~/src/Markdown";
 import { formatDateTime } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
@@ -50,7 +50,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export const action = async ({ params, request }: ActionArgs) => {
-  const teamId = invariant(idScheme, params.teamId);
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
 

@@ -6,7 +6,7 @@ import {
 import type { ProblemListData } from "~/utils/db/problem";
 import { useSignalFetcher } from "~/utils/hooks";
 import ProblemEditorCreator from "./ProblemEditorCreator";
-import { ProblemLink } from "./ProblemLink";
+import { ProblemLink } from "~/src/newLink/ProblemLink";
 
 type ProblemEditorOperationsProps = {
   pid: number;
@@ -60,6 +60,7 @@ type ProblemEditorProps = {
   deleteAction: string;
   moveUpAction: string;
   moveDownAction: string;
+  teamId: string;
 };
 
 /**
@@ -78,6 +79,7 @@ export function ProblemEditor(props: ProblemEditorProps) {
       <ProblemEditorCreator
         createAction={props.createAction}
         existProblem={props.problems.map(({ id }) => id)}
+        teamId={props.teamId}
       />
 
       <table className="not-prose table w-full">
@@ -93,7 +95,7 @@ export function ProblemEditor(props: ProblemEditorProps) {
             <tr key={problem.id}>
               <th className="text-center">{problem.id}</th>
               <td>
-                <ProblemLink problem={problem} />
+                <ProblemLink problem={problem} teamId={props.teamId} />
               </td>
               <td>
                 <ProblemEditorOperations

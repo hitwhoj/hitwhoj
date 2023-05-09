@@ -24,27 +24,30 @@ import type { MessageType as AssignMessageType } from "./$contestId/clarificatio
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { useToasts } from "~/utils/toast";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
+  const priv = self.newTeam(await findContestTeam(contestId));
   const perm = self.team(await findContestTeam(contestId)).contest(contestId);
-  await perm.checkPermission(
+  await priv.checkPrivilege(
     (await findContestPrivacy(contestId))
-      ? Permissions.PERM_VIEW_CONTEST
-      : Permissions.PERM_VIEW_CONTEST_PUBLIC
+      ? PERM_TEAM.PERM_VIEW_CONTEST
+      : PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC
   );
   const status = await findContestStatus(contestId);
-  const [hasEditPerm, hasViewProblemPerm, isContestants] =
-    await perm.hasPermission(
-      Permissions.PERM_EDIT_CONTEST,
-      status === "Pending"
-        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
-        : status === "Running"
-        ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
-        : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
-      ContestPermission.Contestants
-    );
+  const [hasEditPerm] = await priv.hasPrivilege(
+    PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC
+  );
+  const [hasViewProblemPerm, isContestants] = await perm.hasPermission(
+    status === "Pending"
+      ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_BEFORE
+      : status === "Running"
+      ? Permissions.PERM_VIEW_CONTEST_PROBLEMS_DURING
+      : Permissions.PERM_VIEW_CONTEST_PROBLEMS_AFTER,
+    ContestPermission.Contestants
+  );
   // const [canSubmit, canReply] = perm.hasPermission(
   //   Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION,
   //   Permissions.PERM_REPLY_CONTEST_CLARIFICATION
@@ -97,21 +100,21 @@ export default function ContestView() {
   const teamId = useComputed(() => loaderData.value.teamId);
   useEffect(() => {
     const subsctiption = fromEventSource<ResolveMessageType>(
-      `/contest/${contestId}/clarification/events/resolve`
+      `/${teamId}/contest/${contestId}/clarification/events/resolve`
     ).subscribe(() => Toasts.info("您提交的反馈已经被标记为解决"));
     return () => subsctiption.unsubscribe();
   }, []);
 
   useEffect(() => {
     const subsctiption = fromEventSource<ReplyMessageType>(
-      `/contest/${contestId}/clarification/events/reply`
+      `/${teamId}/contest/${contestId}/clarification/events/reply`
     ).subscribe(({ content }) => Toasts.info(`收到新的反馈回复：${content}`));
     return () => subsctiption.unsubscribe();
   }, []);
 
   useEffect(() => {
     const subsctiption = fromEventSource<AssignMessageType>(
-      `/contest/${contestId}/clarification/events/assign`
+      `/${teamId}/contest/${contestId}/clarification/events/assign`
     ).subscribe(() => Toasts.info("您提交的反馈正在被审理"));
     return () => subsctiption.unsubscribe();
   }, []);
@@ -136,7 +139,11 @@ export default function ContestView() {
           </span>
         )}
         {contest.value.tags.map(({ name }) => (
-          <Link className="badge gap-1" to={`/contest/tag/${name}`} key={name}>
+          <Link
+            className="badge gap-1"
+            to={`/${teamId}/contest/tag/${name}`}
+            key={name}
+          >
             <HiOutlineTag />
             <span>{name}</span>
           </Link>

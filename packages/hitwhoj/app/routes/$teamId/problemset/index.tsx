@@ -3,7 +3,6 @@ import { json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { ProblemSetLink } from "~/src/newLink/ProblemSetLink";
-import { Permissions } from "~/utils/permission/permission";
 import { HiOutlinePlus } from "react-icons/hi";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
@@ -12,6 +11,7 @@ import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const PAGE_SIZE = 15;
 
@@ -19,11 +19,11 @@ export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const [viewAll, viewPublic, hasEditPerm] = await self
-    .team(null)
-    .hasPermission(
-      Permissions.PERM_VIEW_PROBLEM_SET,
-      Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC,
-      Permissions.PERM_EDIT_PROBLEM_SET
+    .newTeam(teamId)
+    .hasPrivilege(
+      PERM_TEAM.PERM_VIEW_PROBLEM_SET,
+      PERM_TEAM.PERM_VIEW_PROBLEM_SET_PUBLIC,
+      PERM_TEAM.PERM_EDIT_PROBLEM_SET
     );
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
@@ -110,7 +110,7 @@ export default function ProblemsetList() {
             <tr key={problemset.id}>
               <th className="text-center">{problemset.id}</th>
               <td>
-                <ProblemSetLink problemset={problemset} teamId={teamId} />
+                <ProblemSetLink problemset={problemset} teamId={teamId.value} />
               </td>
               <td>{problemset._count.problems}</td>
             </tr>

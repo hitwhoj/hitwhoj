@@ -1,26 +1,35 @@
 import { db } from "~/utils/server/db.server";
 import { json } from "@remix-run/node";
-import { PERM_TEAM } from "~/utils/new-permission/privilege";
-import {number, string} from "zod";
-
+import { PERM_TEAM, Privileges } from "~/utils/new-permission/privilege";
+import { number, string } from "zod";
 export const TeamMemberRole = {
   Owner: "Owner",
   Admin: "Admin",
   Member: "Member",
+  Guest: "Guest",
 };
 export const TeamMember = {
-  userId:number,
-  teamId:string,
-  roleName:string
-}
+  userId: number,
+  teamId: string,
+  roleName: string,
+};
 export const TeamRole = {
-  teamId:string,
-  role:string,
-  description:string,
-  privilege: number
-}
-
-export function countRoles(roles,teamRole) {
+  teamId: string,
+  role: string,
+  description: string,
+  privilege: number,
+};
+type Roles = {
+  item: { userId: number; teamId: string; roleName: string };
+  user: { id: number; username: string; role: string; privilege: number };
+};
+type TeamRoles = {
+  teamId: string;
+  role: string;
+  description: string;
+  privilege: number;
+};
+export function countRoles(roles: Roles[], teamRole: TeamRoles[]) {
   let ArrayRoles = [];
   ArrayRoles.push({ role: "Owner", count: 0, description: "系统定义的角色" });
   ArrayRoles.push({ role: "Admin", count: 0, description: "系统定义的角色" });
@@ -56,16 +65,20 @@ export function countRoles(roles,teamRole) {
   return ArrayRoles;
 }
 
-export function getAllRoles(roles) {
+export function getAllRoles(roles: Roles[]) {
   let AllRoles = ["Owner", "Admin", "Member"];
   for (let i = 0; i < roles.length; i++) {
-    AllRoles = [...AllRoles, roles[i].roleName];
+    AllRoles = [...AllRoles, roles[i].item.roleName];
   }
   return AllRoles;
 }
 
-export async function getAllRolesAndPrivilege(roles, teamRole, teamId) {
-  let allRoles = countRoles(roles,teamRole);
+export async function getAllRolesAndPrivilege(
+  roles: Roles[],
+  teamRole: TeamRoles[],
+  teamId: string
+) {
+  let allRoles = countRoles(roles, teamRole);
   let AllRoles = [{ role: "Owner", privilege: -1 }];
   for (let i = 0; i < allRoles.length; i++) {
     if (allRoles[i].role !== "Owner") {
@@ -100,18 +113,18 @@ export function getAllDomainPermission() {
   const prem = [];
   prem.push({
     id: 1,
-    permName: "团队修改成员的角色",
-    privilege: PERM_TEAM.PERM_TEAM_EDIT_MEMBER_ROLE,
-  });
-  prem.push({
-    id: 2,
     permName: "查看团队内部信息",
     privilege: PERM_TEAM.PERM_TEAM_VIEW_INTERNAL,
   });
   prem.push({
-    id: 3,
+    id: 2,
     permName: "修改团队内部信息",
     privilege: PERM_TEAM.PERM_TEAM_EDIT_INTERNAL,
+  });
+  prem.push({
+    id: 3,
+    permName: "团队修改成员的角色",
+    privilege: PERM_TEAM.PERM_TEAM_EDIT_MEMBER_ROLE,
   });
   prem.push({
     id: 4,
@@ -125,17 +138,90 @@ export function getAllDomainPermission() {
   });
   prem.push({
     id: 6,
-    permName: "管理员直接邀请其他成员加入",
-    privilege: PERM_TEAM.PERM_TEAM_INVITE_ADMIN,
+    permName: "邀请成员加入",
+    privilege: PERM_TEAM.PERM_TEAM_INVITE_MEMBER,
   });
   prem.push({
     id: 7,
-    permName: "团队成员直接邀请其他成员加入",
-    privilege: PERM_TEAM.PERM_TEAM_INVITE_MEMBER,
+    permName: "添加比赛",
+    privilege: PERM_TEAM.PERM_CREATE_CONTEST,
+  });
+  prem.push({
+    id: 8,
+    permName: "查看全部的比赛",
+    privilege: PERM_TEAM.PERM_VIEW_CONTEST,
+  });
+  prem.push({
+    id: 9,
+    permName: "查看公开的比赛",
+    privilege: PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC,
+  });
+  prem.push({
+    id: 10,
+    permName: "编辑比赛",
+    privilege: PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC,
+  });
+  prem.push({
+    id: 11,
+    permName: "创建题目",
+    privilege: PERM_TEAM.PERM_CREATE_PROBLEM,
+  });
+  prem.push({
+    id: 12,
+    permName: "查看所有题目",
+    privilege: PERM_TEAM.PERM_VIEW_PROBLEM,
+  });
+  prem.push({
+    id: 13,
+    permName: "查看公开的题目",
+    privilege: PERM_TEAM.PERM_VIEW_PROBLEM_PUBLIC,
+  });
+  prem.push({
+    id: 14,
+    permName: "编辑题目",
+    privilege: PERM_TEAM.PERM_EDIT_PROBLEM,
+  });
+  prem.push({
+    id: 15,
+    permName: "添加题单",
+    privilege: PERM_TEAM.PERM_CREATE_PROBLEM_SET,
+  });
+  prem.push({
+    id: 16,
+    permName: "查看所有题单",
+    privilege: PERM_TEAM.PERM_VIEW_PROBLEM_SET,
+  });
+  prem.push({
+    id: 17,
+    permName: "查看公开的题单",
+    privilege: PERM_TEAM.PERM_VIEW_PROBLEM_SET_PUBLIC,
+  });
+  prem.push({
+    id: 18,
+    permName: "编辑题单",
+    privilege: PERM_TEAM.PERM_EDIT_PROBLEM_SET,
   });
   return prem;
 }
-
+export function getAllSystemPermission() {
+  const prem = [];
+  prem.push({
+    id: 1,
+    permName: "登录权限",
+    privilege: Privileges.PRIV_LOGIN,
+  });
+  prem.push({
+    id: 2,
+    permName: "操作权限",
+    privilege: Privileges.PRIV_OPERATE,
+  });
+  prem.push({
+    id: 3,
+    permName: "创建团队",
+    privilege: Privileges.PRIV_TEAM_CREATE,
+  });
+  return prem;
+}
 export async function getUserAndRole(userId: number) {
   const teams = await db.teamMember.findMany({
     where: {

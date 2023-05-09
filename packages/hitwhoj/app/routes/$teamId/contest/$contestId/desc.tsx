@@ -12,7 +12,6 @@ import {
   formatRelativeDateTime,
 } from "~/utils/tools";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import {
   findContestParticipantRole,
   findContestPrivacy,
@@ -22,17 +21,17 @@ import {
 import { HiOutlineBookOpen, HiOutlineClock } from "react-icons/hi";
 import { useComputed } from "@preact/signals-react";
 import { useSignalLoaderData } from "~/utils/hooks";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(
       (await findContestPrivacy(contestId))
-        ? Permissions.PERM_VIEW_CONTEST
-        : Permissions.PERM_VIEW_CONTEST_PUBLIC
+        ? PERM_TEAM.PERM_VIEW_CONTEST
+        : PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC
     );
 
   const contest = await db.contest.findUnique({

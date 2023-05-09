@@ -11,40 +11,40 @@ import {
   useTransition,
 } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
-import { ChangeEvent, useState} from "react";
-import {searchUserData} from "~/utils/db/user";
-import {Privileges} from "~/utils/permission/privilege";
-import {PERM_TEAM} from "~/utils/new-permission/privilege";
+import { useState } from "react";
+import { searchUserData } from "~/utils/db/user";
+import { Privileges } from "~/utils/permission/privilege";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 import {
   getAllDomainPermission,
   getAllRolesAndPrivilege,
 } from "~/utils/domain/role";
-import {teamIdScheme} from "~/utils/new-permission/scheme";
-import {HiOutlineUserGroup} from "react-icons/hi";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { HiOutlineUserGroup } from "react-icons/hi";
 
 type item = {
-  userId: number,
-  teamId: string,
-  roleName: string
-}
+  userId: number;
+  teamId: string;
+  roleName: string;
+};
 type user = {
-  id: number,
-  username: string,
-  role: string,
-  privilege: number
-}
+  id: number;
+  username: string;
+  role: string;
+  privilege: number;
+};
 type Props = {
   user: user;
   item: item;
 };
 
-export async function loader({request, params}: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const teamId = invariant(teamIdScheme, params.teamId, {status: 404});
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const team = await db.team.findUnique({
-    where: {id: teamId},
+    where: { id: teamId },
   });
-  if(!team){
+  if (!team) {
     throw new Response("团队不存在", { status: 404 });
   }
   await self
@@ -68,7 +68,7 @@ export async function loader({request, params}: LoaderArgs) {
       select: searchUserData,
     });
     // @ts-ignore
-    roles = [...roles, {item, user}];
+    roles = [...roles, { item, user }];
   }
   const teamRole = await db.teamRole.findMany({
     where: {
@@ -76,15 +76,15 @@ export async function loader({request, params}: LoaderArgs) {
     },
   });
   const Allroles = await getAllRolesAndPrivilege(roles, teamRole, teamId);
-  return json({roles, teamId, team, teamRole, Allroles});
+  return json({ roles, teamId, team, teamRole, Allroles });
 }
 
 enum ActionType {
   ChangePrivilege = "changePrivilege",
 }
 
-export async function action({request, params}: ActionArgs) {
-  const teamId = invariant(teamIdScheme, params.teamId, {status: 404});
+export async function action({ request, params }: ActionArgs) {
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   const form = await request.formData();
@@ -96,14 +96,14 @@ export async function action({request, params}: ActionArgs) {
       const privilege = invariant(privilegeScheme, form.get("privilege"));
       if (role) {
         await db.teamRole.update({
-          where: {teamId_role: {teamId: teamId, role: role}},
-          data: {privilege: privilege},
+          where: { teamId_role: { teamId: teamId, role: role } },
+          data: { privilege: privilege },
         });
       }
       return null;
     }
   }
-  throw new Response("Invalid action", {status: 400});
+  throw new Response("Invalid action", { status: 400 });
 }
 
 //priv:
@@ -118,10 +118,15 @@ function CheckBoxComponent(props: {
   const [checked, changeChecked] = useState(
     (domainPrivilege & privilege) === domainPrivilege
   );
-  const {state} = useTransition();
+  console.log(
+    domainPrivilege,
+    privilege,
+    (domainPrivilege & privilege) === domainPrivilege
+  );
+  const { state } = useTransition();
   const fetcher = useFetcher();
   const isUpdating = state !== "idle" || role == "Owner";
-  let changeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+  let changeHandler = (event: any) => {
     let formData = new FormData();
     formData.append("privilege", String(privilege ^ domainPrivilege));
     formData.append("role", role);

@@ -28,7 +28,7 @@ model User {
   joinedAt  DateTime       @default(now())
   role      SystemUserRole @default(User)
   premium   Boolean        @default(false)
-  privilege Int            @default(3)
+  privilege Int            @default(7)
 
   sessions UserSession[]
 

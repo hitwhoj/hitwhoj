@@ -18,7 +18,6 @@ import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { selectProblemListData } from "~/utils/db/problem";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
 import { findContestTeam } from "~/utils/db/contest";
 import { z } from "zod";
 import { ProblemEditor } from "~/src/problem/ProblemEditor";
@@ -28,15 +27,17 @@ import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { TagsEditor } from "~/src/form/TagsEditor";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_EDIT_CONTEST);
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
 
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -69,7 +70,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest });
+  return json({ contest, teamId });
 }
 
 enum ActionType {
@@ -85,9 +86,8 @@ export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .checkPermission(Permissions.PERM_EDIT_CONTEST);
+    .newTeam(await findContestTeam(contestId))
+    .checkPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
 
   const form = await request.formData();
   const _action = form.get("_action");
@@ -282,7 +282,7 @@ export default function ContestEdit() {
   const transition = useSignalTransition();
 
   const Toasts = useToasts();
-
+  const teamId = useComputed(() => loaderData.value.teamId);
   useEffect(() => {
     if (transition.actionSuccess) {
       Toasts.success("更新成功");
@@ -479,6 +479,7 @@ export default function ContestEdit() {
         deleteAction={ActionType.DeleteProblem}
         moveUpAction={ActionType.MoveProblemUp}
         moveDownAction={ActionType.MoveProblemDown}
+        teamId={teamId.value}
       />
     </>
   );

@@ -10,11 +10,11 @@ import { selectContestListData } from "~/utils/db/contest";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
-import { Permissions } from "~/utils/permission/permission";
 import { pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime } from "~/utils/tools";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const PAGE_SIZE = 15;
 
@@ -22,14 +22,13 @@ export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const [hasCreatePerm] = await self
-    .team(null)
-    .hasPermission(Permissions.PERM_CREATE_CONTEST);
+    .newTeam(teamId)
+    .hasPrivilege(PERM_TEAM.PERM_CREATE_CONTEST);
   const [viewAll, viewPublic] = await self
-    .team(null)
-    .contest(null)
-    .hasPermission(
-      Permissions.PERM_VIEW_CONTEST,
-      Permissions.PERM_VIEW_CONTEST_PUBLIC
+    .newTeam(teamId)
+    .hasPrivilege(
+      PERM_TEAM.PERM_VIEW_CONTEST,
+      PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC
     );
 
   const url = new URL(request.url);

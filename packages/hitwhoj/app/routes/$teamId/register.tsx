@@ -11,6 +11,7 @@ import { useSignal } from "@preact/signals-react";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+import { TeamMemberRole } from "~/utils/domain/role";
 
 // TODO 完善注册功能
 export async function action({ request }: ActionArgs) {
@@ -36,7 +37,13 @@ export async function action({ request }: ActionArgs) {
   if (!result.success) {
     return json(result, 400);
   }
-
+  await db.teamMember.create({
+    data: {
+      userId: result.user.id,
+      teamId: "1",
+      roleName: TeamMemberRole.Member,
+    },
+  });
   return redirect("/1/", {
     headers: { "Set-Cookie": await commitSession(result.user.id) },
   });

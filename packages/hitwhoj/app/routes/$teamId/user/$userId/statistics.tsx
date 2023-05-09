@@ -94,7 +94,9 @@ export default function UserStatistics() {
   const theme = useTheme();
 
   const activityCalendarTheme = useComputed(() => {
+    // @ts-ignore
     const fromColor = defaultThemeColor[theme.value].base200;
+    // @ts-ignore
     const toColor = defaultThemeColor[theme.value].primary;
     const [level0, level1, level2, level3, level4] = getLevelColors(
       fromColor,

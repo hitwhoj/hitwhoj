@@ -1,9 +1,9 @@
-import { json, type LoaderArgs } from "@remix-run/node";
+import type { LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { findContestTeam } from "~/utils/db/contest";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
 import { idScheme } from "~/utils/scheme";
-import { Permissions } from "~/utils/permission/permission";
 import { db } from "~/utils/server/db.server";
 import { Link } from "@remix-run/react";
 import { HiOutlineArrowsExpand, HiOutlinePlus } from "react-icons/hi";
@@ -11,16 +11,16 @@ import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
   const self = await findRequestUser(request);
   const [canSubmit, canReply] = await self
-    .team(await findContestTeam(contestId))
-    .contest(contestId)
-    .hasPermission(
-      Permissions.PERM_SUBMIT_CONTEST_CLARIFICATION,
-      Permissions.PERM_REPLY_CONTEST_CLARIFICATION
+    .newTeam(await findContestTeam(contestId))
+    .hasPrivilege(
+      PERM_TEAM.PERM_VIEW_CONTEST_PUBLIC,
+      PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC
     );
 
   const problems = await db.contestProblem.findMany({
