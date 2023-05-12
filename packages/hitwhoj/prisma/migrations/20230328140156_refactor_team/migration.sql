@@ -131,7 +131,7 @@ ALTER TABLE "TeamMember" DROP CONSTRAINT "TeamMember_teamId_fkey";
   -- 删除原有主键、自增列和 id 字段
   ALTER TABLE "Team" DROP CONSTRAINT "Team_pkey";
   ALTER TABLE "Team" DROP COLUMN "id";
-  DROP SEQUENCE "Team_id_seq";
+  -- DROP SEQUENCE "Team_id_seq";
 
   -- 将临时字段重新命名为 id，并添加主键
   ALTER TABLE "Team" RENAME COLUMN "_id" TO "id";
