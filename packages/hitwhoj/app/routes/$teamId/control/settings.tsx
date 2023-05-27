@@ -11,7 +11,6 @@ import {
 import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { InvitationType } from "@prisma/client";
-import { Permissions } from "~/utils/permission/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { TeamPermission } from "~/utils/permission/permission/team";
 import { UserPermission } from "~/utils/permission/permission/user";
@@ -23,17 +22,18 @@ import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
 import { teamIdScheme } from "~/utils/new-permission/scheme";
 import { NavLink } from "@remix-run/react";
-import {PERM_TEAM} from "~/utils/new-permission/privilege";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = invariant(teamIdScheme, params.teamId);
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  const selfTeam = self.team(teamId);
-  const [hasEditPerm, hasLeavePerm] = await selfTeam.hasPermission(
-    Permissions.PERM_TEAM_EDIT_INTERNAL,
-    TeamPermission.Members.with(UserPermission.Nobody)
-  );
+  const [hasEditPerm, hasLeavePerm] = await self
+    .newTeam(teamId)
+    .hasPrivilege(
+      PERM_TEAM.PERM_TEAM_EDIT_INTERNAL,
+      PERM_TEAM.PERM_TEAM_VIEW_INTERNAL
+    );
   const team = await db.team.findUnique({
     where: { id: teamId },
     select: {
@@ -63,7 +63,7 @@ enum ActionType {
 }
 
 export async function action({ params, request }: ActionArgs) {
-  const teamId = invariant(teamIdScheme, params.teamId, {status: 404});
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
 

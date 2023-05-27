@@ -191,11 +191,14 @@ model Contest {
   /// 是否允许比赛开始后中途加入
   allowJoinAfterStart  Boolean                 @default(false)
 
-  beginTime DateTime
-  endTime   DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  beginTime     DateTime
+  endTime       DateTime
+  //封榜单时间
+  boardTime     DateTime
+  //
+  allowSeeBoard Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tags ContestTag[]
 

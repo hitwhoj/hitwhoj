@@ -25,6 +25,7 @@ export const selectContestListData = {
   endTime: true,
   system: true,
   private: true,
+  teamId: true,
   tags: {
     orderBy: { name: "asc" },
     select: {
@@ -114,4 +115,24 @@ export async function findContestParticipantRole(
   }
 
   return participation.role;
+}
+export function seeBoard(
+  system: string,
+  endTime: number,
+  boardTime: number,
+  allowSeeBoard: boolean
+) {
+  const now = new Date().getTime();
+  const flag = now < boardTime;
+  if (system == "OI") {
+    if (now < endTime) {
+      return allowSeeBoard && flag;
+    }
+  }
+  if (system == "ACM") {
+    if (now > endTime) {
+      return allowSeeBoard && flag;
+    }
+  }
+  return flag;
 }

@@ -5,7 +5,7 @@ import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import { ContestLink } from "~/src/contest/ContestLink";
+import { ContestLink } from "~/src/newLink/ContestLink";
 import { selectContestListData } from "~/utils/db/contest";
 import { formatNumber } from "~/utils/tools";
 import ActivityCalendar from "react-activity-calendar";
@@ -181,7 +181,7 @@ export default function UserStatistics() {
       <ul>
         {user.value.participatedContests.map(({ contest }) => (
           <li key={contest.id}>
-            <ContestLink contest={contest} />
+            <ContestLink contest={contest} teamId={contest.teamId} />
           </li>
         ))}
       </ul>

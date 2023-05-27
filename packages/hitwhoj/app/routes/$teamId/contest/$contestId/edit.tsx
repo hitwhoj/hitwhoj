@@ -47,6 +47,8 @@ export async function loader({ request, params }: LoaderArgs) {
       description: true,
       beginTime: true,
       endTime: true,
+      boardTime: true,
+      allowSeeBoard: true,
       system: true,
       private: true,
       registrationType: true,
@@ -211,10 +213,14 @@ export async function action({ request, params }: ActionArgs) {
         invariant(datetimeStringScheme, form.get("endTime")),
         timezone
       );
-
+      const boardTime = adjustTimezone(
+        invariant(datetimeStringScheme, form.get("boardTime")),
+        timezone
+      );
       const system = invariant(systemScheme, form.get("system"));
       const priv = form.has("private");
       const allowJoinAfterStart = form.has("joinAfterStart");
+      const allowSeeBoard = form.has("seeBoard");
       const registrationType = invariant(
         z.nativeEnum(ContestRegistrationType),
         form.get("registrationType")
@@ -233,9 +239,11 @@ export async function action({ request, params }: ActionArgs) {
             description,
             beginTime,
             endTime,
+            boardTime,
             system,
             private: priv,
             allowJoinAfterStart,
+            allowSeeBoard,
             registrationType,
             registrationPassword,
           },
@@ -367,7 +375,30 @@ export default function ContestEdit() {
             required
           />
         </div>
-
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">封榜时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="boardTime"
+            defaultValue={getDatetimeLocal(
+              new Date(contest.value.boardTime).getTime()
+            )}
+            required
+            disabled={transition.isRunning}
+          />
+          <input
+            type="hidden"
+            name="timezone"
+            value={new Date().getTimezoneOffset()}
+            required
+          />
+        </div>
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">比赛赛制</span>
@@ -449,6 +480,16 @@ export default function ContestEdit() {
               disabled={transition.isRunning}
             />
             <span className="label-text">允许比赛开始后中途加入</span>
+          </label>
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="seeBoard"
+              defaultChecked={contest.value.allowSeeBoard}
+              disabled={transition.isRunning}
+            />
+            <span className="label-text">允许用户在比赛时查看榜单</span>
           </label>
         </div>
 

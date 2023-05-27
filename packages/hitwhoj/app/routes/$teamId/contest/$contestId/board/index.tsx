@@ -10,11 +10,12 @@ import { UserLink } from "~/src/user/UserLink";
 import { fromEventSource } from "~/utils/eventSource";
 import type { MessageType } from "./events";
 import { findRequestUser } from "~/utils/permission";
-import { findContestTeam } from "~/utils/db/contest";
+import { findContestTeam, seeBoard } from "~/utils/db/contest";
 import { HiOutlineSave } from "react-icons/hi";
 import { useComputed, useSignalEffect } from "@preact/signals-react";
 import { useSignalLoaderData, useSynchronized } from "~/utils/hooks";
 import { PERM_TEAM } from "~/utils/new-permission/privilege";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 interface Problem {
   count: number;
@@ -24,12 +25,15 @@ interface Problem {
 
 export async function loader({ request, params }: LoaderArgs) {
   const contestId = invariant(idScheme, params.contestId, { status: 404 });
-
+  const teamId = invariant(teamIdScheme, params.teamId, { status: 404 });
   // 获取导出权限
   const self = await findRequestUser(request);
-  const [canExport] = await self
+  const [canExport, canSeeBoard] = await self
     .newTeam(await findContestTeam(contestId))
-    .hasPrivilege(PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC);
+    .hasPrivilege(
+      PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC,
+      PERM_TEAM.PERM_EDIT_CONTEST_PUBLIC
+    );
   // 获取比赛所含题目信息
   const contest = await db.contest.findUnique({
     where: { id: contestId },
@@ -37,6 +41,10 @@ export async function loader({ request, params }: LoaderArgs) {
       id: true,
       title: true,
       beginTime: true,
+      endTime: true,
+      boardTime: true,
+      allowSeeBoard: true,
+      system: true,
       problems: {
         orderBy: { rank: "asc" },
         select: { problemId: true, rank: true },
@@ -52,24 +60,32 @@ export async function loader({ request, params }: LoaderArgs) {
       },
     },
   });
-
+  if (!contest) {
+    throw new Response("该团队不存在", { status: 403 });
+  }
+  const flag = seeBoard(
+    contest.system,
+    contest.endTime.getTime(),
+    contest.boardTime.getTime(),
+    contest.allowSeeBoard
+  );
   if (!contest) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ canExport, contest });
+  return json({ teamId, canExport, contest, canSeeBoard: canSeeBoard || flag });
 }
 
 export default function RankView() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const canExport = useComputed(() => loaderData.value.canExport);
   const contest = useComputed(() => loaderData.value.contest);
-
+  const teamId = useComputed(() => loaderData.value.teamId);
   const records = useSynchronized(() => contest.value.relatedRecords);
-
+  const canSeeBoard = useComputed(() => loaderData.value.canSeeBoard);
   useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `/contest/${contest.value.id}/board/events`
+      `/${teamId}/contest/${contest.value.id}/board/events`
     ).subscribe((record) => {
       records.value = [...records.value, record];
     });
@@ -156,7 +172,9 @@ export default function RankView() {
       });
       return [
         user.rank,
+        user.submitter.id,
         user.submitter.username,
+        user.submitter.nickname,
         user.solved,
         user.penalty,
         ...problems,
@@ -164,7 +182,7 @@ export default function RankView() {
     });
     // add \ufeff to make excel recognize the csv file as utf-8
     let csv =
-      "\ufeff排名,选手,解题数,总罚时," +
+      "\ufeff排名,选手id,选手username,选手nickname,解题数,总罚时," +
       contest.value.problems
         .map((p) => String.fromCharCode(0x40 + p.rank))
         .join(",") +
@@ -196,57 +214,65 @@ export default function RankView() {
           </button>
         </div>
       )}
-      <table className="not-prose table w-full">
-        <thead>
-          <tr>
-            <th className="w-16 text-center">排名</th>
-            <th>选手</th>
-            <th className="w-16 text-center">解题数</th>
-            <th className="w-16 text-center">总罚时</th>
-            {contest.value.problems.map((problem) => (
-              <th key={problem.problemId} className="w-16 text-center">
-                {String.fromCharCode(0x40 + problem.rank)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {users.value.map((user) => (
-            <tr key={user.submitter.id}>
-              <th className="text-center">{user.rank}</th>
-              <td>
-                <UserLink user={user.submitter} />
-              </td>
-              <td className="text-center">{user.solved}</td>
-              <td className="text-center">{user.penalty}</td>
-              {contest.value.problems.map(({ problemId }) => {
-                const problem = user.problems.get(problemId);
-                if (!problem)
-                  return (
-                    <td key={problemId} className="text-center">
-                      -
-                    </td>
-                  );
-
-                return (
-                  <td
-                    key={problemId}
-                    className={
-                      problem.solved
-                        ? "bg-success text-success-content text-center"
-                        : "bg-error text-error-content text-center"
-                    }
-                  >
-                    {problem.solved
-                      ? `+${problem.count}/${problem.penalty}`
-                      : `-${problem.count}`}
+      {canSeeBoard.value ? (
+        <>
+          <table className="not-prose table w-full">
+            <thead>
+              <tr>
+                <th className="w-16 text-center">排名</th>
+                <th>选手</th>
+                <th className="w-16 text-center">解题数</th>
+                <th className="w-16 text-center">总罚时</th>
+                {contest.value.problems.map((problem) => (
+                  <th key={problem.problemId} className="w-16 text-center">
+                    {String.fromCharCode(0x40 + problem.rank)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.value.map((user) => (
+                <tr key={user.submitter.id}>
+                  <th className="text-center">{user.rank}</th>
+                  <td>
+                    <UserLink user={user.submitter} />
                   </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <td className="text-center">{user.solved}</td>
+                  <td className="text-center">{user.penalty}</td>
+                  {contest.value.problems.map(({ problemId }) => {
+                    const problem = user.problems.get(problemId);
+                    if (!problem)
+                      return (
+                        <td key={problemId} className="text-center">
+                          -
+                        </td>
+                      );
+
+                    return (
+                      <td
+                        key={problemId}
+                        className={
+                          problem.solved
+                            ? "bg-success text-success-content text-center"
+                            : "bg-error text-error-content text-center"
+                        }
+                      >
+                        {problem.solved
+                          ? `+${problem.count}/${problem.penalty}`
+                          : `-${problem.count}`}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <>
+          <h1>封榜中！</h1>
+        </>
+      )}
     </>
   );
 }

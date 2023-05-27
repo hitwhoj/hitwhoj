@@ -295,6 +295,8 @@ this is language whatthefuck
       description: "## Description\n\nThe example contest",
       beginTime: new Date(Date.now() + 3600000),
       endTime: new Date(Date.now() + 2 * 3600000),
+      allowSeeBoard: true,
+      boardTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
       participants: {
         create: [
@@ -316,6 +318,8 @@ this is language whatthefuck
   await prisma.contest.create({
     data: {
       teamId: team1,
+      allowSeeBoard: true,
+      boardTime: new Date(Date.now() + 2 * 3600000),
       title: "A-SOUL Contest",
       description: "## Description\n\nThe A-SOUL contest",
       beginTime: new Date(Date.now() - 3600000),

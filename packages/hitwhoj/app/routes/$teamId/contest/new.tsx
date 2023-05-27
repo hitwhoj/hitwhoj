@@ -51,6 +51,10 @@ export async function action({ request, params }: ActionArgs) {
     invariant(datetimeStringScheme, form.get("endTime")),
     timezone
   );
+  const boardTime = adjustTimezone(
+    invariant(datetimeStringScheme, form.get("boardTime")),
+    timezone
+  );
   const system = invariant(systemScheme, form.get("system"));
 
   const { id: contestId } = await db.contest.create({
@@ -60,6 +64,7 @@ export async function action({ request, params }: ActionArgs) {
       description,
       beginTime,
       endTime,
+      boardTime,
       system,
       participants: {
         create: {
@@ -149,7 +154,26 @@ export default function ContestNew() {
             value={new Date().getTimezoneOffset()}
           />
         </div>
-
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">封榜时间</span>
+            <span className="label-text-alt">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </span>
+          </label>
+          <input
+            className="input input-bordered"
+            type="datetime-local"
+            name="boardTime"
+            required
+            disabled={transition.isRunning}
+          />
+          <input
+            type="hidden"
+            name="timezone"
+            value={new Date().getTimezoneOffset()}
+          />
+        </div>
         <div className="form-control w-full max-w-xs">
           <label className="label">
             <span className="label-text">比赛赛制</span>
