@@ -8,6 +8,7 @@ import { useToasts } from "~/utils/toast";
 type ProblemEditorCreatorProps = {
   createAction: string;
   existProblem: number[];
+  teamId: string;
 };
 
 export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
@@ -19,7 +20,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-    fetch("/problem/data", { signal })
+    fetch(`/${props.teamId}/problem/data`, { signal })
       .then((res) => res.json() as Promise<LoaderData>)
       .then((data) => (problems.value = data.problems));
     return () => controller.abort();

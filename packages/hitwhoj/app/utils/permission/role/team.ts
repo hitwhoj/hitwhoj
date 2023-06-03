@@ -1,3 +1,4 @@
+// @ts-ignore
 import type { TeamMemberRole } from "@prisma/client";
 import { db } from "~/utils/server/db.server";
 import type { TeamPermission } from "../permission/team";
@@ -9,10 +10,10 @@ import type { User } from "./user";
  */
 export class TeamUser {
   readonly user: User;
-  readonly teamId: number | null;
+  readonly teamId: string | null;
   private role: TeamMemberRole | "Guest" | null = null;
 
-  constructor(user: User, teamId: number | null) {
+  constructor(user: User, teamId: string | null) {
     this.user = user;
     this.teamId = teamId;
   }

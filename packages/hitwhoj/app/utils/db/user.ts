@@ -25,3 +25,14 @@ export const selectUserData = {
   bio: true,
   premium: true,
 } as const;
+
+export const searchUserData = {
+  id: true,
+  username: true,
+  nickname: true,
+  privilege: true,
+  role: true,
+  avatar: true,
+  bio: true,
+  premium: true,
+};

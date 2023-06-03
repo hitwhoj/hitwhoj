@@ -4,12 +4,12 @@ import {
   PrismaClient,
   SystemUserRole,
   InvitationType,
-  TeamMemberRole,
 } from "@prisma/client";
 import { createProblemData, createUserFile } from "~/utils/files";
 import { readFile } from "fs/promises";
 import { passwordHash } from "~/utils/tools";
 import { File } from "@remix-run/node/dist/fetch";
+import { PERM_TEAM } from "~/utils/new-permission/privilege";
 
 const prisma = new PrismaClient();
 
@@ -18,16 +18,6 @@ function hash(password: string): string {
 }
 
 async function seed() {
-  await prisma.problemTag.createMany({
-    data: [
-      { name: "math" },
-      { name: "algorithm" },
-      { name: "easy" },
-      { name: "medium" },
-      { name: "hard" },
-    ],
-  });
-
   const { id: alice } = await prisma.user.create({
     data: {
       email: "alice@hit.edu.cn",
@@ -110,9 +100,68 @@ async function seed() {
       },
     ],
   });
-
+  const { id: team1 } = await prisma.team.create({
+    data: {
+      id: "1",
+      name: "system",
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: "Owner",
+      description: "",
+      privilege: PERM_TEAM.PERM_OWNER,
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: "Admin",
+      description: "",
+      privilege: PERM_TEAM.PERM_ADMIN,
+    },
+  });
+  await prisma.teamRole.create({
+    data: {
+      teamId: team1,
+      role: "Member",
+      description: "",
+      privilege: PERM_TEAM.PERM_MEMBER,
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: alice,
+      teamId: team1,
+      roleName: "Owner",
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: bob,
+      teamId: team1,
+      roleName: "Admin",
+    },
+  });
+  await prisma.teamMember.create({
+    data: {
+      userId: cherry,
+      teamId: team1,
+      roleName: "Member",
+    },
+  });
+  await prisma.team.create({
+    data: {
+      id: "2",
+      name: "team2",
+      invitationType: InvitationType.CODE,
+      invitationCode: "114514",
+    },
+  });
   const { id: p1 } = await prisma.problem.create({
     data: {
+      teamId: team1,
       title: "A + B Problem",
       description: `
 ## Description
@@ -143,7 +192,6 @@ int main() {
 }
 \`\`\`
 `,
-      tags: { connect: [{ name: "math" }, { name: "algorithm" }] },
     },
   });
 
@@ -197,6 +245,7 @@ int main() {
 
   const { id: p2 } = await prisma.problem.create({
     data: {
+      teamId: team1,
       title: "A + B + C Problem",
       description: `
 ## Description
@@ -236,18 +285,18 @@ this is language whatthefuck
 ~~~
 `,
       private: false,
-      tags: {
-        connect: [{ name: "algorithm" }, { name: "hard" }, { name: "math" }],
-      },
     },
   });
 
   await prisma.contest.create({
     data: {
+      teamId: team1,
       title: "A + B Contest",
       description: "## Description\n\nThe example contest",
       beginTime: new Date(Date.now() + 3600000),
       endTime: new Date(Date.now() + 2 * 3600000),
+      allowSeeBoard: true,
+      boardTime: new Date(Date.now() + 2 * 3600000),
       system: ContestSystem.ACM,
       participants: {
         create: [
@@ -257,7 +306,6 @@ this is language whatthefuck
           { userId: alice, role: ContestParticipantRole.Contestant },
         ],
       },
-      tags: { create: [{ name: "test" }, { name: "do-not-attend" }] },
       problems: {
         create: [
           { rank: 1, problemId: p1 },
@@ -269,6 +317,9 @@ this is language whatthefuck
 
   await prisma.contest.create({
     data: {
+      teamId: team1,
+      allowSeeBoard: true,
+      boardTime: new Date(Date.now() + 2 * 3600000),
       title: "A-SOUL Contest",
       description: "## Description\n\nThe A-SOUL contest",
       beginTime: new Date(Date.now() - 3600000),
@@ -281,7 +332,6 @@ this is language whatthefuck
           { userId: cherry, role: ContestParticipantRole.Contestant },
         ],
       },
-      tags: { create: [{ name: "a-soul" }] },
       problems: {
         create: [
           { rank: 1, problemId: p2 },
@@ -293,10 +343,10 @@ this is language whatthefuck
 
   await prisma.problemSet.create({
     data: {
+      teamId: team1,
       title: "Math Problem List",
       description: "## Description\n\nThe example problem list",
 
-      tags: { create: [{ name: "example" }, { name: "math" }] },
       problems: {
         create: [
           { problemId: p1, rank: 1 },
@@ -308,10 +358,10 @@ this is language whatthefuck
 
   await prisma.problemSet.create({
     data: {
+      teamId: team1,
       title: "关注嘉然，顿顿解馋",
       description: "b 站关注嘉然今天吃什么",
 
-      tags: { create: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: {
         create: [
           { problemId: p2, rank: 1 },
@@ -323,10 +373,10 @@ this is language whatthefuck
 
   await prisma.problemSet.create({
     data: {
+      teamId: team1,
       title: "嘉然可爱捏",
       description: "嘉然，我真的好喜欢你啊，mua~，为了你，我要听猫中毒",
 
-      tags: { connect: [{ name: "spam" }, { name: "嘉然(Diana)" }] },
       problems: {
         create: [{ problemId: p2, rank: 1 }],
       },
@@ -551,47 +601,6 @@ this is language whatthefuck
         commentId: comment2,
       },
     ],
-  });
-
-  const { id: team1 } = await prisma.team.create({
-    data: {
-      name: "team1",
-    },
-  });
-  await prisma.teamMember.create({
-    data: {
-      userId: alice,
-      teamId: team1,
-      role: TeamMemberRole.Owner,
-    },
-  });
-  await prisma.teamMember.create({
-    data: {
-      userId: bob,
-      teamId: team1,
-      role: TeamMemberRole.Admin,
-    },
-  });
-  await prisma.teamMember.create({
-    data: {
-      userId: cherry,
-      teamId: team1,
-      role: TeamMemberRole.Member,
-    },
-  });
-  const { id: team2 } = await prisma.team.create({
-    data: {
-      name: "team2",
-      invitationType: InvitationType.CODE,
-      invitationCode: "114514",
-    },
-  });
-  await prisma.teamMember.create({
-    data: {
-      userId: alice,
-      teamId: team2,
-      role: TeamMemberRole.Owner,
-    },
   });
 
   const { id: room1 } = await prisma.chatRoom.create({

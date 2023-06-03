@@ -8,10 +8,7 @@ type Props = {
 
 export function TeamLink({ team }: Props) {
   return (
-    <Link
-      className="link inline-flex items-center gap-2"
-      to={`/team/${team.id}`}
-    >
+    <Link className="link inline-flex items-center gap-2" to={`/${team.id}`}>
       <HiOutlineUserGroup />
       <span>{team.name}</span>
     </Link>

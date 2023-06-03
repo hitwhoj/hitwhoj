@@ -3,10 +3,10 @@ import {
   ContestSystem,
   InvitationType,
   ReportType,
-  TeamMemberRole,
   SystemUserRole,
   ContestParticipantRole,
 } from "@prisma/client";
+import { TeamMemberRole } from "~/utils/domain/role";
 
 /**
  * 数字 ID，非负整数

@@ -13,10 +13,12 @@ import { invariant } from "~/utils/invariant";
 import { nullableIdScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
+import Footer from "~/routes/Drawer/Footer";
+import { teamIdScheme } from "~/utils/new-permission/scheme";
 
 const PAGE_SIZE = 15;
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const url = new URL(request.url);
 
   const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
@@ -24,6 +26,8 @@ export async function loader({ request }: LoaderArgs) {
   const cid = invariant(nullableIdScheme, url.searchParams.get("cid"));
 
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+
+  const teamId = invariant(teamIdScheme, params.teamId) ?? "1";
   const totalRecords = await db.record.count({
     where: {
       contestId: cid || null,
@@ -64,7 +68,7 @@ export async function loader({ request }: LoaderArgs) {
   });
 
   return json(
-    { records, totalRecords, currentPage: page, uid, pid, cid },
+    { records, totalRecords, currentPage: page, uid, pid, cid, teamId },
     { status: 200 }
   );
 }
@@ -81,7 +85,7 @@ export default function RecordList() {
   const uid = useComputed(() => loaderData.value.uid);
   const pid = useComputed(() => loaderData.value.pid);
   const cid = useComputed(() => loaderData.value.cid);
-
+  const teamId = useComputed(() => loaderData.value.teamId);
   const totalPages = useComputed(() =>
     Math.ceil(totalRecords.value / PAGE_SIZE)
   );
@@ -93,7 +97,7 @@ export default function RecordList() {
       <Form
         className="flex flex-row flex-wrap items-end justify-between gap-4"
         method="get"
-        action="/record"
+        action={`${teamId}/record`}
       >
         <div className="form-control flex-1">
           <label className="label">
@@ -177,6 +181,7 @@ export default function RecordList() {
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
+      <Footer />
     </>
   );
 }
