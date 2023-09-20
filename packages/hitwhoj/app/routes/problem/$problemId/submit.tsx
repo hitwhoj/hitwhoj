@@ -106,7 +106,7 @@ export default function ProblemSubmit() {
           </option>
           <option value="c">C</option>
           <option value="cpp">C++</option>
-          <option value="java">Java</option>
+          <option value="py">Python3</option>
         </select>
       </div>
 
