@@ -83,7 +83,9 @@ export default function Index() {
               需要熟悉 nodejs 开发环境，有 React
               开发经验，有热情学习最新最前沿的前端技术栈。
             </p>
-            <p>详情请联系 QQ 3224177294 或者发送邮件到 contact#hitwh.moe。</p>
+            <p>
+              详情请联系 QQ 64174234（张老师）或者 QQ 2670529647（罗江楠）。
+            </p>
           </div>
         </div>
         <div className="card bg-base-200 col-span-8 row-span-2">
