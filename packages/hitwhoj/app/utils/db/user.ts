@@ -24,4 +24,6 @@ export const selectUserData = {
   avatar: true,
   bio: true,
   premium: true,
+  // 这里添加了studentId，用于存储学生的学号
+  studentId: true,
 } as const;
