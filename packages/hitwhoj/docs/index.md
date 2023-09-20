@@ -11,7 +11,7 @@
 
 ## 技术相关
 
-- [部署网站](/docs/deploy.md)
+- [部署网站](./docs/deploy.md)
 - [部署评测机](/docs/deploy-judge.md)
 - [开发说明](/docs/development.md)
 - [网站与评测机之间的通信协议](/docs/develop/judge-communication.md)

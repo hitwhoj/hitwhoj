@@ -158,7 +158,8 @@ export default function RankView() {
       });
       return [
         user.rank,
-        user.submitter.username,
+        user.submitter.nickname,
+        user.submitter.studentId,
         user.solved,
         user.penalty,
         ...problems,
@@ -166,7 +167,7 @@ export default function RankView() {
     });
     // add \ufeff to make excel recognize the csv file as utf-8
     let csv =
-      "\ufeff排名,选手,解题数,总罚时," +
+      "\ufeff排名,选手,学号,解题数,总罚时," +
       contest.value.problems
         .map((p) => String.fromCharCode(0x40 + p.rank))
         .join(",") +
