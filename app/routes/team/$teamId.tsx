@@ -64,6 +64,16 @@ export default function Record() {
             设置
           </NavLink>
         )}
+        {hasViewPerm.value && (
+          <NavLink className="tab" to="problemset">
+            题单
+          </NavLink>
+        )}
+        {/* {hasViewPerm.value && (
+          <NavLink className="tab" to="settings">
+            题目
+          </NavLink>
+        )} */}
       </div>
 
       <Outlet />
