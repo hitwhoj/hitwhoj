@@ -41,7 +41,7 @@ export default function ProblemSetNew() {
 
   return (
     <>
-      <h1>创建题单</h1>
+      <h1>创建公共题单</h1>
 
       <Form method="post" className="form-control w-full max-w-xs gap-4">
         <div className="form-control">

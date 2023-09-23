@@ -3,7 +3,7 @@ import { json, type LoaderArgs, type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
-import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
+import { TeamProblemSetLink } from "~/src/problemset/TeamProblemSetLink";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
 import { findRequestUser } from "~/utils/permission";
@@ -104,7 +104,7 @@ export default function ProblemsetList() {
                 {index + 1 + (Number(currentPage) - 1) * PAGE_SIZE}
               </th>
               <td>
-                <ProblemSetLink problemset={problemset} />
+                <TeamProblemSetLink problemset={problemset} />
               </td>
               <td>{problemset._count.problems}</td>
             </tr>
@@ -113,7 +113,7 @@ export default function ProblemsetList() {
       </table>
 
       <Pagination
-        action="/problemset"
+        action="/team/$teamId/problemset"
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />

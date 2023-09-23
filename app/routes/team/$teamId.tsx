@@ -69,11 +69,11 @@ export default function Record() {
             题单
           </NavLink>
         )}
-        {/* {hasViewPerm.value && (
-          <NavLink className="tab" to="settings">
+        {hasViewPerm.value && (
+          <NavLink className="tab" to="problem">
             题目
           </NavLink>
-        )} */}
+        )}
       </div>
 
       <Outlet />

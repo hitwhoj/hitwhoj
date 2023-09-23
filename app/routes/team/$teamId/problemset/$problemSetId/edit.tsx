@@ -1,37 +1,37 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { useComputed } from "@preact/signals-react";
+import {
+  type ActionArgs,
+  json,
+  type LoaderArgs,
+  type MetaFunction,
+} from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { db } from "~/utils/server/db.server";
+import { useEffect } from "react";
+import { MarkdownEditor } from "~/src/MarkdownEditor";
+import { TagsEditor } from "~/src/form/TagsEditor";
+import { selectProblemListData } from "~/utils/db/problem";
+import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { Privileges } from "~/utils/permission/privilege";
 import {
   descriptionScheme,
   idScheme,
   tagScheme,
   titleScheme,
 } from "~/utils/scheme";
-import { selectProblemListData } from "~/utils/db/problem";
-import { findRequestUser } from "~/utils/permission";
-import { Privileges } from "~/utils/permission/privilege";
-import { Permissions } from "~/utils/permission/permission";
-import { findProblemSetTeam } from "~/utils/db/problemset";
-import { ProblemEditor } from "~/src/problem/ProblemEditor";
-import { MarkdownEditor } from "~/src/MarkdownEditor";
-import { useSignalLoaderData, useSignalTransition } from "~/utils/hooks";
-import { useComputed } from "@preact/signals-react";
-import { TagsEditor } from "~/src/form/TagsEditor";
+import { db } from "~/utils/server/db.server";
 import { useToasts } from "~/utils/toast";
-import { useEffect } from "react";
-
+import { TeamProblemEditor } from "~/src/problem/TeamProblemEditor";
 export async function loader({ request, params }: LoaderArgs) {
-  const problemSetId = invariant(idScheme, params.problemSetId, {
+  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const problemSetId = await invariant(idScheme, params.problemSetId, {
     status: 404,
   });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
-
+  await self.team(teamId).checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
   const problemSet = await db.problemSet.findUnique({
     where: { id: problemSetId },
     select: {
@@ -52,11 +52,9 @@ export async function loader({ request, params }: LoaderArgs) {
       },
     },
   });
-
   if (!problemSet) {
     throw new Response("Problem Set not found", { status: 404 });
   }
-
   return json({ problemSet });
 }
 
@@ -69,21 +67,17 @@ enum ActionType {
 }
 
 export async function action({ request, params }: ActionArgs) {
-  const problemSetId = invariant(idScheme, params.problemSetId, {
+  const problemSetId = await invariant(idScheme, params.problemSetId, {
     status: 404,
   });
+  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
-  await self
-    .team(await findProblemSetTeam(problemSetId))
-    .checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
-
+  await self.team(teamId).checkPermission(Permissions.PERM_EDIT_PROBLEM_SET);
   const form = await request.formData();
   const _action = form.get("_action");
-
   switch (_action) {
     case ActionType.CreateProblem: {
-      const problemId = invariant(idScheme, form.get("pid"));
-
+      const problemId = await invariant(idScheme, form.get("pid"));
       await db.$transaction(async (db) => {
         const {
           _max: { rank },
@@ -100,13 +94,11 @@ export async function action({ request, params }: ActionArgs) {
           },
         });
       });
-
       return null;
     }
 
     case ActionType.DeleteProblem: {
       const problemId = invariant(idScheme, form.get("pid"));
-
       await db.$transaction(async () => {
         const { rank } = await db.problemSetProblem.delete({
           where: {
@@ -116,13 +108,11 @@ export async function action({ request, params }: ActionArgs) {
             },
           },
         });
-
         await db.problemSetProblem.updateMany({
           where: { rank: { gte: rank } },
           data: { rank: { decrement: 1 } },
         });
       });
-
       return null;
     }
 
@@ -235,14 +225,11 @@ export async function action({ request, params }: ActionArgs) {
       return null;
     }
   }
-
   throw new Response("I'm a teapot", { status: 418 });
 }
-
 export const meta: MetaFunction<typeof loader> = ({ data }) => ({
   title: `编辑题单: ${data?.problemSet.title} - HITwh OJ`,
 });
-
 export default function ProblemSetEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problemSet = useComputed(() => loaderData.value.problemSet);
@@ -259,7 +246,7 @@ export default function ProblemSetEdit() {
 
   return (
     <>
-      <h2>编辑公共题单信息</h2>
+      <h2>编辑团队题单信息</h2>
 
       <Form method="post" className="form-control gap-4">
         <div className="form-control w-full max-w-xs">
@@ -320,7 +307,7 @@ export default function ProblemSetEdit() {
 
       <h2>题目</h2>
 
-      <ProblemEditor
+      <TeamProblemEditor
         problems={problemSet.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}

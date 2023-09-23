@@ -3,11 +3,10 @@ import {
   HiOutlineChevronUp,
   HiOutlineTrash,
 } from "react-icons/hi";
-import type { ProblemListData } from "~/utils/db/problem";
+import { ProblemLink } from "~/src/problem/ProblemLink";
+import { type ProblemListData } from "~/utils/db/problem";
 import { useSignalFetcher } from "~/utils/hooks";
-import ProblemEditorCreator from "./ProblemEditorCreator";
-import { ProblemLink } from "./ProblemLink";
-
+import TeamProblemEditorCreator from "./TeamProblemEditorCreator";
 type ProblemEditorOperationsProps = {
   pid: number;
   first: boolean;
@@ -16,7 +15,6 @@ type ProblemEditorOperationsProps = {
   moveUpAction: string;
   moveDownAction: string;
 };
-
 function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
   const fetcher = useSignalFetcher();
 
@@ -24,7 +22,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
     <fetcher.Form method="post" className="inline-flex gap-2">
       <input type="hidden" name="pid" value={props.pid} />
       <button
-        className="btn btn-square btn-primary btn-error btn-sm"
+        className="btn btn-primary btn-error btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.deleteAction}
@@ -33,7 +31,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineTrash />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveUpAction}
@@ -42,7 +40,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineChevronUp />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveDownAction}
@@ -53,7 +51,6 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
     </fetcher.Form>
   );
 }
-
 type ProblemEditorProps = {
   problems: ProblemListData[];
   createAction: string;
@@ -61,21 +58,10 @@ type ProblemEditorProps = {
   moveUpAction: string;
   moveDownAction: string;
 };
-
-/**
- * 题单/比赛的题目列表编辑器
- *
- * ```jsx
- * <form method="post">
- *   <input name="pid" value={problem.id} />
- *   <input name="_action" value={createAction | deleteAction | moveUpAction | moveDownAction} />
- * </form>
- * ```
- */
-export function ProblemEditor(props: ProblemEditorProps) {
+export function TeamProblemEditor(props: ProblemEditorProps) {
   return (
     <>
-      <ProblemEditorCreator
+      <TeamProblemEditorCreator
         createAction={props.createAction}
         existProblem={props.problems.map(({ id }) => id)}
       />
@@ -84,7 +70,7 @@ export function ProblemEditor(props: ProblemEditorProps) {
         <thead>
           <tr>
             <th className="w-16" />
-            <th>公共题目</th>
+            <th>团队题目</th>
             <th className="w-16 text-center">操作</th>
           </tr>
         </thead>

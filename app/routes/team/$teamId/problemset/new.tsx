@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionArgs) {
     },
   });
 
-  return redirect(`/problemset/${problemSetId}/edit`);
+  return redirect(`/team/${teamId}/problemset/${problemSetId}/edit`);
 }
 
 export const meta: MetaFunction = () => ({
@@ -48,7 +48,7 @@ export default function ProblemSetNew() {
 
   return (
     <>
-      <h2>创建题单</h2>
+      <h2>创建团队题单</h2>
 
       <Form method="post" className="form-control w-full max-w-xs gap-4">
         <div className="form-control">
