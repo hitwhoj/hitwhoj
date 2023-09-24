@@ -3,6 +3,7 @@ import { json, type LoaderArgs, type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
+// import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { TeamProblemSetLink } from "~/src/problemset/TeamProblemSetLink";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
@@ -60,6 +61,7 @@ export async function loader({ request, params }: LoaderArgs) {
     hasEditPerm,
     totalProblemSets,
     currentPage: page,
+    teamId,
   });
 }
 export const meta: MetaFunction = () => ({
@@ -104,7 +106,10 @@ export default function ProblemsetList() {
                 {index + 1 + (Number(currentPage) - 1) * PAGE_SIZE}
               </th>
               <td>
-                <TeamProblemSetLink problemset={problemset} />
+                <TeamProblemSetLink
+                  problemset={problemset}
+                  teamId={loaderData.value.teamId}
+                />
               </td>
               <td>{problemset._count.problems}</td>
             </tr>
@@ -113,7 +118,7 @@ export default function ProblemsetList() {
       </table>
 
       <Pagination
-        action="/team/$teamId/problemset"
+        action="/problemset"
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />

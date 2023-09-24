@@ -6,6 +6,7 @@ import { useSignalFetcher } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 
 type ProblemEditorCreatorProps = {
+  teamId: number;
   createAction: string;
   existProblem: number[];
 };
@@ -19,7 +20,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-    fetch("/team/$teamId/problem/data", { signal })
+    fetch(`/team/${props.teamId}/problem/data`, { signal })
       .then((res) => res.json() as Promise<LoaderData>)
       .then((data) => (problems.value = data.problems));
     return () => controller.abort();

@@ -52,6 +52,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
   );
 }
 type ProblemEditorProps = {
+  teamId: number;
   problems: ProblemListData[];
   createAction: string;
   deleteAction: string;
@@ -62,6 +63,7 @@ export function TeamProblemEditor(props: ProblemEditorProps) {
   return (
     <>
       <TeamProblemEditorCreator
+        teamId={props.teamId}
         createAction={props.createAction}
         existProblem={props.problems.map(({ id }) => id)}
       />

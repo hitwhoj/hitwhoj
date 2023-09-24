@@ -24,6 +24,7 @@ import {
 import { db } from "~/utils/server/db.server";
 import { useToasts } from "~/utils/toast";
 import { TeamProblemEditor } from "~/src/problem/TeamProblemEditor";
+// import Problemset from "../$problemSetId";
 export async function loader({ request, params }: LoaderArgs) {
   const teamId = await invariant(idScheme, params.teamId, { status: 404 });
   const problemSetId = await invariant(idScheme, params.problemSetId, {
@@ -55,7 +56,7 @@ export async function loader({ request, params }: LoaderArgs) {
   if (!problemSet) {
     throw new Response("Problem Set not found", { status: 404 });
   }
-  return json({ problemSet });
+  return json({ problemSet, teamId });
 }
 
 enum ActionType {
@@ -246,7 +247,7 @@ export default function ProblemSetEdit() {
 
   return (
     <>
-      <h2>编辑团队题单信息</h2>
+      <h3>编辑团队题单信息</h3>
 
       <Form method="post" className="form-control gap-4">
         <div className="form-control w-full max-w-xs">
@@ -305,9 +306,10 @@ export default function ProblemSetEdit() {
         </div>
       </Form>
 
-      <h2>题目</h2>
+      <h3>题目</h3>
 
       <TeamProblemEditor
+        teamId={loaderData.value.teamId}
         problems={problemSet.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}
