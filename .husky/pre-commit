@@ -1,8 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-yarn
-
-yarn workspaces run precommit
-
-yarn fmt.staged
+yarn && yarn run precommit

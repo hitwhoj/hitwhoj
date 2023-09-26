@@ -5,3 +5,9 @@ node_modules
 
 *.log
 /.nyc_output
+
+/.cache
+/build
+/public/build
+/app/styles
+.env

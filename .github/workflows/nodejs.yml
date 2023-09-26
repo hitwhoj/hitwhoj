@@ -2,9 +2,9 @@ name: GitHub CI
 
 on:
   push:
-    branches: [dev]
+    branches: [master]
   pull_request:
-    branches: [dev]
+    branches: [master]
 
 jobs:
   build:
@@ -47,15 +47,15 @@ jobs:
 
       - name: Check formats and types
         run: |
-          yarn workspace hitwhoj run lint:check
-          yarn workspace hitwhoj run tsc
+          yarn run lint:check
+          yarn run tsc
           yarn run fmt.check
 
       - name: Test
         run: |
-          yarn workspace hitwhoj run prisma migrate dev
-          yarn workspace hitwhoj run prisma db seed
-          yarn workspace hitwhoj run test
+          yarn run prisma migrate dev
+          yarn run prisma db seed
+          yarn run test
 
       - name: Build
-        run: yarn workspace hitwhoj run build
+        run: yarn run build
