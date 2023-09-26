@@ -71,7 +71,7 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
           />
           <datalist id="search-problem">
             {datalist.value.map(({ id, title }) => (
-              <option key={id} value={`${id}. ${title}`} />
+              <option key={id} value={`${id}.${title}`} />
             ))}
           </datalist>
         </div>
