@@ -1,13 +1,12 @@
 image:
-  name: node:18
-  entrypoint:
-    ["/bin/bash", "-c", "ln -snf /bin/bash /bin/sh && /bin/bash -c $0"]
+  name: node@sha256:8cdf7234449f35e579f7491137807ddb3a089f028862f7ab69af437cc9f47ff1
 
-services:
-  - postgres:latest
-  - name: minio/minio
-    alias: minio
-    command: ["server", "/minio"]
+# @see https://gitlab.com/gitlab-org/gitlab-runner/-/issues/31049
+# services:
+#   - postgres
+#   - name: minio/minio
+#     alias: minio
+#     command: ["server", "/minio"]
 
 variables:
   POSTGRES_PASSWORD: mysecretpassword
@@ -39,11 +38,11 @@ test_build:
     - yarn run fmt.check
 
     # prisma & minio
-    - yarn run prisma migrate dev
+    # - yarn run prisma migrate dev
 
     # test
-    - yarn run prisma db seed
-    - yarn run test
+    # - yarn run prisma db seed
+    # - yarn run test
 
     # build
     - yarn run build
