@@ -31,16 +31,16 @@ test_build:
     - yarn install --cache-folder "$(realpath .)/.cache"
 
     # check format and type
-    - yarn workspace hitwhoj run lint:check
-    - yarn workspace hitwhoj run tsc
+    - yarn run lint:check
+    - yarn run tsc
     - yarn run fmt.check
 
     # prisma & minio
-    - yarn workspace hitwhoj run prisma migrate dev
+    - yarn run prisma migrate dev
 
     # test
-    - yarn workspace hitwhoj run prisma db seed
-    - yarn workspace hitwhoj run test
+    - yarn run prisma db seed
+    - yarn run test
 
     # build
-    - yarn workspace hitwhoj run build
+    - yarn run build
