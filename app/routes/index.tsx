@@ -100,8 +100,10 @@ export async function loader({ request }: LoaderArgs) {
     times: number;
   }[] = [];
 
-  activeRecord.map((record) => {
-    if (record.contest?.team) {
+  const teamSet = new Set();
+  activeRecord.forEach((record) => {
+    if (record.contest?.team && !teamSet.has(record.contest.team.id)) {
+      teamSet.add(record.contest.team.id);
       activeTeams.push({
         team: record.contest.team,
         submittedAt: record.submittedAt,
