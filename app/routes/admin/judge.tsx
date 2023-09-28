@@ -78,14 +78,6 @@ export default function JudgeAdmin() {
                   {judge.ip}:{judge.port}
                 </span>
               </p>
-              <div className="card-actions justify-end">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => alert("TODO: 还没写")}
-                >
-                  重连
-                </button>
-              </div>
             </div>
           </div>
         );

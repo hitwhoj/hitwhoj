@@ -13,6 +13,14 @@ export class JudgeManager {
     setInterval(() => {
       this.#dispatch();
     }, 3000);
+
+    setInterval(() => {
+      for (const judge of this.#judges) {
+        if (judge.status.status === "Offline") {
+          judge.connect();
+        }
+      }
+    }, 180_000);
   }
 
   /** 从数据库中加载评测机 */
