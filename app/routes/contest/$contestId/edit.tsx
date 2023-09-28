@@ -51,6 +51,7 @@ export async function loader({ request, params }: LoaderArgs) {
       registrationType: true,
       registrationPassword: true,
       allowJoinAfterStart: true,
+      isdeleted: true,
       tags: { select: { name: true } },
       problems: {
         orderBy: { rank: "asc" },
@@ -215,6 +216,7 @@ export async function action({ request, params }: ActionArgs) {
       const system = invariant(systemScheme, form.get("system"));
       const priv = form.has("private");
       const allowJoinAfterStart = form.has("joinAfterStart");
+      const isdeleted = form.has("isdeleted");
       const registrationType = invariant(
         z.nativeEnum(ContestRegistrationType),
         form.get("registrationType")
@@ -238,6 +240,7 @@ export async function action({ request, params }: ActionArgs) {
             allowJoinAfterStart,
             registrationType,
             registrationPassword,
+            isdeleted: isdeleted,
           },
           select: {
             tags: { select: { name: true } },
@@ -449,6 +452,17 @@ export default function ContestEdit() {
               disabled={transition.isRunning}
             />
             <span className="label-text">允许比赛开始后中途加入</span>
+          </label>
+
+          <label className="label cursor-pointer justify-start gap-2">
+            <input
+              className="checkbox checkbox-primary"
+              type="checkbox"
+              name="isdeleted"
+              defaultChecked={contest.value.isdeleted}
+              disabled={transition.isRunning}
+            />
+            <span className="label-text">是否删除比赛</span>
           </label>
         </div>
 

@@ -21,6 +21,7 @@ export function ContestLink({ contest }: Props) {
       <ContestStateTag
         beginTime={contest.beginTime}
         endTime={contest.endTime}
+        isdeleted={contest.isdeleted}
       />
     </Link>
   );

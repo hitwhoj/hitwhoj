@@ -158,6 +158,7 @@ export default function Index() {
                       <ContestStateTag
                         beginTime={contest.beginTime}
                         endTime={contest.endTime}
+                        isdeleted={contest.isdeleted}
                       />
                       <ContestSystemTag system={contest.system} />
                     </h2>

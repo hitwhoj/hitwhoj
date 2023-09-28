@@ -46,6 +46,7 @@ export async function loader({ request, params }: LoaderArgs) {
       private: true,
       registrationType: true,
       allowJoinAfterStart: true,
+      isdeleted: true,
       tags: {
         select: {
           name: true,
@@ -129,7 +130,9 @@ export default function ContestIndex() {
 
       <Markdown>{contest.value.description}</Markdown>
 
-      {registered.value === "Mod" ? (
+      {contest.value.isdeleted ? (
+        <p className="alert alert-info shadow-lg">比赛已删除</p>
+      ) : registered.value === "Mod" ? (
         <p className="alert alert-info shadow-lg">您已经是比赛的管理员</p>
       ) : registered.value === "Jury" ? (
         <p className="alert alert-info shadow-lg">您已经是比赛的裁判</p>

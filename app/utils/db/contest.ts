@@ -25,6 +25,7 @@ export const selectContestListData = {
   endTime: true,
   system: true,
   private: true,
+  isdeleted: true,
   tags: {
     orderBy: { name: "asc" },
     select: {

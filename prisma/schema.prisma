@@ -190,6 +190,8 @@ model Contest {
   registrationPassword String                  @default("")
   /// 是否允许比赛开始后中途加入
   allowJoinAfterStart  Boolean                 @default(false)
+  /// 是否被删除
+  isdeleted            Boolean                 @default(false)
 
   beginTime DateTime
   endTime   DateTime

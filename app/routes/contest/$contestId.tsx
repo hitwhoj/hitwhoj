@@ -59,6 +59,7 @@ export async function loader({ request, params }: LoaderArgs) {
       beginTime: true,
       endTime: true,
       private: true,
+      isdeleted: true,
       tags: {
         select: {
           name: true,
@@ -127,6 +128,7 @@ export default function ContestView() {
         <ContestStateTag
           beginTime={contest.value.beginTime}
           endTime={contest.value.endTime}
+          isdeleted={contest.value.isdeleted}
         />
         <ContestSystemTag system={contest.value.system} />
         {contest.value.private && (
