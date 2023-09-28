@@ -13,6 +13,7 @@ import { ContestSystemTag } from "~/src/contest/ContestSystemTag";
 import { ContestStateTag } from "~/src/contest/ContestStateTag";
 import { formatDateTime, formatDurationTime } from "~/utils/tools";
 import { useSignalLoaderData } from "~/utils/hooks";
+import { TeamLink } from "~/src/team/TeamLink";
 
 export const meta: MetaFunction = () => ({
   title: "首页 - HITwh OJ",
@@ -61,7 +62,74 @@ export async function loader({ request }: LoaderArgs) {
     take: contestSize,
   });
 
-  return json({ problems, contests });
+  // 最近 50 条评测记录,嵌套查询
+  const lastRecords = await db.record.findMany({
+    orderBy: [{ submittedAt: "asc" }],
+    select: {
+      submittedAt: true,
+      contest: {
+        select: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    take: 50,
+  });
+
+  // 筛选活跃团队
+  const activeRecord = lastRecords.filter(
+    (record) => record.contest?.team !== null
+  );
+
+  // 确定活跃次数
+  const activeTimes = countOccurrences(
+    activeRecord.map((record) => record.contest?.team?.name)
+  );
+
+  const activeTeams: {
+    team: {
+      id: number;
+      name: string;
+    };
+    submittedAt: Date;
+    times: number;
+  }[] = [];
+
+  activeRecord.map((record) => {
+    if (record.contest?.team) {
+      activeTeams.push({
+        team: record.contest.team,
+        submittedAt: record.submittedAt,
+        times: activeTimes.get(record.contest.team.name)!,
+      });
+    }
+  });
+
+  // 对活跃团队进行排序
+  activeTeams.sort((a, b) => a.submittedAt.getTime() - b.submittedAt.getTime());
+
+  return json({ problems, contests, activeTeams });
+}
+
+// 统计一个数组中相同元素出现的次数
+function countOccurrences<T>(arr: T[]): Map<string, number> {
+  const countMap = new Map<string, number>();
+
+  for (const element of arr) {
+    const key = String(element); // 将元素转换为字符串以用作对象的键
+    if (countMap.has(key)) {
+      countMap.set(key, countMap.get(key)! + 1);
+    } else {
+      countMap.set(key, 1);
+    }
+  }
+
+  return countMap;
 }
 
 const QQ_LINK =
@@ -194,6 +262,33 @@ export default function Index() {
                       <ProblemLink problem={problem} />
                     </td>
                     <td>{problem._count.relatedRecords}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="card col-span-8 bg-base-200 md:col-span-12">
+          <div className="card-body">
+            <h2 className="card-title">最近活跃团队(近50次提交)</h2>
+            <table className="table-compact table">
+              <thead>
+                <tr>
+                  <th>团队名</th>
+                  <th>最近活跃时间</th>
+                  <th>近50次提交人数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loaderData.value.activeTeams.map((team) => (
+                  <tr key={team.team.id}>
+                    <td>
+                      <TeamLink team={team.team} />
+                    </td>
+                    <td>
+                      {new Date(team.submittedAt).toLocaleDateString("zh-CN")}
+                    </td>
+                    <td>{team.times}</td>
                   </tr>
                 ))}
               </tbody>
