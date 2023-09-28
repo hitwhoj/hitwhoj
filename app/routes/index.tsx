@@ -64,7 +64,7 @@ export async function loader({ request }: LoaderArgs) {
 
   // 最近 50 条评测记录,嵌套查询
   const lastRecords = await db.record.findMany({
-    orderBy: [{ submittedAt: "asc" }],
+    orderBy: [{ submittedAt: "desc" }],
     select: {
       submittedAt: true,
       contest: {
