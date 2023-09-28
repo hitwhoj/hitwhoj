@@ -49,7 +49,7 @@ export default function Register() {
   const Toasts = useToasts();
 
   useEffect(() => {
-    if (transition.actionSuccess) {
+    if (transition.actionSuccess && !data?.reason) {
       Toasts.success("登录成功");
     }
   }, [transition.actionSuccess]);
