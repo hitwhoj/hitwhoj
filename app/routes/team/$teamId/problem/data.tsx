@@ -18,20 +18,7 @@ export async function loader({ request, params }: LoaderArgs) {
       Permissions.PERM_VIEW_PROBLEM_PUBLIC
     );
 
-  var problems = await db.problem.findMany({
-    where: viewAll
-      ? { teamId: null }
-      : viewPublic
-      ? { teamId: null, private: false }
-      : { id: -1 },
-    orderBy: [{ id: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      tags: { select: { name: true } },
-    },
-  });
-  const publicProblems = await db.problem.findMany({
+  const problems = await db.problem.findMany({
     where: viewAll
       ? { teamId: teamId }
       : viewPublic
@@ -44,7 +31,6 @@ export async function loader({ request, params }: LoaderArgs) {
       tags: { select: { name: true } },
     },
   });
-  problems = publicProblems.concat(problems);
 
   return json({ problems });
 }

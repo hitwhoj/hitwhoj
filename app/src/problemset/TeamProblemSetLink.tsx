@@ -11,7 +11,7 @@ export function TeamProblemSetLink({ problemset, teamId }: Props) {
   return (
     <Link
       className="link inline-flex items-center gap-2"
-      to={`/team/${teamId}/problemset/${problemset.id}/problem`}
+      to={`/team/${teamId}/problemset/${problemset.id}`}
     >
       <span>{problemset.title}</span>
       {problemset.private && <HiOutlineEyeOff className="inline-block" />}
