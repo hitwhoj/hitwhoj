@@ -1,59 +1,64 @@
-import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import { redirect, type LoaderArgs, type ActionArgs } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { db } from "~/utils/server/db.server";
+import { useSignalTransition } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
-import { titleScheme } from "~/utils/scheme";
-import { Privileges } from "~/utils/permission/privilege";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import { useSignalTransition } from "~/utils/hooks";
+import { Privileges } from "~/utils/permission/privilege";
+import { idScheme, titleScheme } from "~/utils/scheme";
+import { db } from "~/utils/server/db.server";
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
+  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
+  await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM);
 
+  for (var i = 0; i < 100; ++i) {
+    console.log("Hello!");
+  }
   return null;
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
+  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
-  await self.team(null).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
-
+  await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM);
   const form = await request.formData();
   const title = invariant(titleScheme, form.get("title"));
 
-  const { id: problemSetId } = await db.problemSet.create({
-    data: { title },
+  for (var i = 0; i < 100; ++i) {
+    console.log("teamId: ", teamId);
+  }
+  const { id } = await db.problem.create({
+    data: {
+      title: title,
+      teamId: teamId,
+    },
   });
 
-  return redirect(`/problemset/${problemSetId}/edit`);
+  return redirect(`/problem/${id}/edit`);
 }
 
-export const meta: MetaFunction = () => ({
-  title: "创建题单 - HITwh OJ",
-});
-
-export default function ProblemSetNew() {
+export default function ProblemNew() {
   const transition = useSignalTransition();
 
   return (
     <>
-      <h1>创建公共题单</h1>
+      <h2>新建题目</h2>
 
       <Form method="post" className="form-control w-full max-w-xs gap-4">
         <div className="form-control">
           <label className="label">
-            <span className="label-text">标题</span>
+            <span className="label-text">题目名称</span>
           </label>
           <input
             className="input input-bordered"
             type="text"
             name="title"
-            disabled={transition.isRunning}
             required
+            disabled={transition.isRunning}
           />
         </div>
 
@@ -63,7 +68,7 @@ export default function ProblemSetNew() {
             type="submit"
             disabled={transition.isRunning}
           >
-            创建题单
+            创建题目
           </button>
         </div>
       </Form>

@@ -1,47 +1,45 @@
-import type { LoaderArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { db } from "~/utils/server/db.server";
-import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
-import { Permissions } from "~/utils/permission/permission";
-import { HiOutlinePlus } from "react-icons/hi";
-import { findRequestUser } from "~/utils/permission";
-import { invariant } from "~/utils/invariant";
-import { pageScheme } from "~/utils/scheme";
-import { Pagination } from "~/src/Pagination";
-import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
-
+import { json, type LoaderArgs, type MetaFunction } from "@remix-run/node";
+import { Link } from "@remix-run/react";
+import { HiOutlinePlus } from "react-icons/hi";
+import { Pagination } from "~/src/Pagination";
+// import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
+import { TeamProblemSetLink } from "~/src/problemset/TeamProblemSetLink";
+import { useSignalLoaderData } from "~/utils/hooks";
+import { invariant } from "~/utils/invariant";
+import { findRequestUser } from "~/utils/permission";
+import { Permissions } from "~/utils/permission/permission";
+import { idScheme, pageScheme } from "~/utils/scheme";
+import { db } from "~/utils/server/db.server";
 const PAGE_SIZE = 15;
-
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
+  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+
   const [viewAll, viewPublic, hasEditPerm] = await self
-    .team(null)
+    .team(teamId)
     .hasPermission(
       Permissions.PERM_VIEW_PROBLEM_SET,
       Permissions.PERM_VIEW_PROBLEM_SET_PUBLIC,
       Permissions.PERM_EDIT_PROBLEM_SET
     );
-
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
   const totalProblemSets = await db.problemSet.count({
     where: viewAll
-      ? { team: null }
+      ? { teamId: teamId }
       : viewPublic
-      ? { team: null, private: false }
+      ? { teamId: teamId, private: false }
       : { id: -1 },
   });
   if (totalProblemSets && page > Math.ceil(totalProblemSets / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
   }
-
   const problemSets = await db.problemSet.findMany({
     where: viewAll
-      ? { team: null }
+      ? { teamId: teamId }
       : viewPublic
-      ? { team: null, private: false }
+      ? { teamId: teamId, private: false }
       : { id: -1 },
 
     orderBy: [{ id: "asc" }],
@@ -58,32 +56,31 @@ export async function loader({ request }: LoaderArgs) {
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
   });
-
   return json({
     problemSets,
     hasEditPerm,
     totalProblemSets,
     currentPage: page,
+    teamId,
   });
 }
-
 export const meta: MetaFunction = () => ({
-  title: "题单列表 - HITwh OJ",
+  title: "团队题单 - HITwh OJ",
 });
-
 export default function ProblemsetList() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problemSets = useComputed(() => loaderData.value.problemSets);
   const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
   const totalProblemSets = useComputed(() => loaderData.value.totalProblemSets);
   const currentPage = useComputed(() => loaderData.value.currentPage);
+
   const totalPages = useComputed(() =>
     Math.ceil(totalProblemSets.value / PAGE_SIZE)
   );
 
   return (
     <>
-      <h1 className="flex items-center justify-between">
+      <h2 className="flex items-center justify-between">
         <span>题单列表</span>
 
         {hasEditPerm.value && (
@@ -92,7 +89,7 @@ export default function ProblemsetList() {
             <span>新建题单</span>
           </Link>
         )}
-      </h1>
+      </h2>
 
       <table className="not-prose table-compact table w-full">
         <thead>
@@ -109,7 +106,10 @@ export default function ProblemsetList() {
                 {index + 1 + (Number(currentPage) - 1) * PAGE_SIZE}
               </th>
               <td>
-                <ProblemSetLink problemset={problemset} />
+                <TeamProblemSetLink
+                  problemset={problemset}
+                  teamId={loaderData.value.teamId}
+                />
               </td>
               <td>{problemset._count.problems}</td>
             </tr>
