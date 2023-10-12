@@ -83,7 +83,8 @@ export async function action({ request, params }: ActionArgs) {
   });
 
   await s3.writeFile(`/record/${recordId}`, Buffer.from(code));
-  judge.push(recordId);
+  // 添加一些延迟，防止前端渲染爆炸
+  setTimeout(() => judge.push(recordId), 1000);
 
   return redirect(`/record/${recordId}`);
 }

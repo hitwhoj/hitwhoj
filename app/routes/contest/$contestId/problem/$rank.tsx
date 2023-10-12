@@ -5,9 +5,9 @@ import { Markdown } from "~/src/Markdown";
 import { invariant } from "~/utils/invariant";
 import {
   codeScheme,
-  problemRankScheme,
   idScheme,
   languageScheme,
+  problemRankScheme,
 } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";

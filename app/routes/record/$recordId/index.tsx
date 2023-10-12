@@ -78,10 +78,11 @@ export default function RecordView() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const record = useSynchronized(() => loaderData.value.record);
   const code = useComputed(() => loaderData.value.code);
+  const id = useComputed(() => record.value.id);
 
   useSignalEffect(() => {
     const subscription = fromEventSource<MessageType>(
-      `./${record.value.id}/events`
+      `./${id.value}/events`
     ).subscribe((msg) => {
       record.value = {
         ...record.value,
@@ -141,7 +142,7 @@ export default function RecordView() {
         <>
           <h2>测试点结果</h2>
           {subtasks.value.map((subtask, index) => (
-            <div className="collapse-open collapse" key={index} tabIndex={0}>
+            <div className="collapse collapse-open" key={index} tabIndex={0}>
               <div className="collapse-title flex gap-2">
                 <span>子任务 {index + 1}</span>
                 <RecordStatus status={subtask.status} />
@@ -168,7 +169,7 @@ export default function RecordView() {
           <h2 className="flex gap-2">
             <span>源代码</span>
             <button
-              className="btn btn-square btn-ghost btn-sm"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={() =>
                 navigator.clipboard.writeText(code.value).then(
                   () => Toasts.success("复制成功"),

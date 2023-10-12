@@ -62,7 +62,7 @@ export function useSignalLoaderData<T>() {
  */
 export function useSynchronized<T>(compute: () => T) {
   const computed = useComputed(compute);
-  const signal = useSignal(computed.value);
+  const signal = useSignal(computed.peek());
 
   useSignalEffect(() => {
     signal.value = computed.value;
