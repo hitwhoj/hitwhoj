@@ -7,6 +7,10 @@ import type { ProblemListData } from "~/utils/db/problem";
 import { useSignalFetcher } from "~/utils/hooks";
 import ProblemEditorCreator from "./ProblemEditorCreator";
 import { ProblemLink } from "./ProblemLink";
+import type { ReadonlySignal } from "@preact/signals-core";
+import { useComputed, useSignal } from "@preact/signals-react";
+import type { Team } from "@prisma/client";
+import type { ChangeEvent } from "react";
 
 type ProblemEditorOperationsProps = {
   pid: number;
@@ -24,7 +28,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
     <fetcher.Form method="post" className="inline-flex gap-2">
       <input type="hidden" name="pid" value={props.pid} />
       <button
-        className="btn btn-square btn-primary btn-error btn-sm"
+        className="btn btn-primary btn-error btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.deleteAction}
@@ -33,7 +37,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineTrash />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveUpAction}
@@ -42,7 +46,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
         <HiOutlineChevronUp />
       </button>
       <button
-        className="btn btn-square btn-ghost btn-sm"
+        className="btn btn-ghost btn-square btn-sm"
         type="submit"
         name="_action"
         value={props.moveDownAction}
@@ -55,6 +59,7 @@ function ProblemEditorOperations(props: ProblemEditorOperationsProps) {
 }
 
 type ProblemEditorProps = {
+  teamList: ReadonlySignal<Pick<Team, "id" | "name">[]>;
   problems: ProblemListData[];
   createAction: string;
   deleteAction: string;
@@ -73,25 +78,52 @@ type ProblemEditorProps = {
  * ```
  */
 export function ProblemEditor(props: ProblemEditorProps) {
+  // 定义状态变量teamId，第一个组件更改teamId，第二个组件根据更改的teamId获取数据
+  let tmpTeamId = useSignal(0);
+  const teamId = useComputed(() => {
+    return tmpTeamId.value;
+  });
+
+  const selectChanged = (event: ChangeEvent<HTMLSelectElement>) => {
+    tmpTeamId.value = Number(event.target.value);
+    console.log("teamId.value", teamId.value);
+    console.log("tmpTeamId.value", tmpTeamId.value);
+  };
+
   return (
     <>
-      <ProblemEditorCreator
-        createAction={props.createAction}
-        existProblem={props.problems.map(({ id }) => id)}
-      />
+      <div className="flex w-full">
+        <select
+          className="select select-bordered w-full max-w-xs"
+          onChange={selectChanged}
+        >
+          <option value={0}>公共题目</option>
+          {props.teamList.value?.map((team: { id: number; name: string }) => (
+            <option value={team.id} key={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <div className="divider divider-horizontal"></div>
+        <ProblemEditorCreator
+          teamId={teamId.value}
+          createAction={props.createAction}
+          existProblem={props.problems.map(({ id }) => id)}
+        />
+      </div>
 
       <table className="not-prose table w-full">
         <thead>
           <tr>
             <th className="w-16" />
-            <th>公共题目</th>
+            <th>已选题目</th>
             <th className="w-16 text-center">操作</th>
           </tr>
         </thead>
         <tbody>
           {props.problems.map((problem, index) => (
             <tr key={problem.id}>
-              <th className="text-center">{problem.id}</th>
+              <th className="text-center">{index + 1}</th>
               <td>
                 <ProblemLink problem={problem} />
               </td>

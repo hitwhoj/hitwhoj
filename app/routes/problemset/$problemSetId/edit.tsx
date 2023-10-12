@@ -50,6 +50,7 @@ export async function loader({ request, params }: LoaderArgs) {
           },
         },
       },
+      teamId: true,
     },
   });
 
@@ -57,7 +58,19 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet });
+  const isInTeam = !!problemSet.teamId;
+
+  const teamList = isInTeam
+    ? await db.team.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+      })
+    : // 如果这个比赛是公共比赛，就不获取其他团队的题目
+      [];
+
+  return json({ problemSet, teamList, isInTeam });
 }
 
 enum ActionType {
@@ -246,6 +259,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function ProblemSetEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problemSet = useComputed(() => loaderData.value.problemSet);
+  const teamList = useComputed(() => loaderData.value.teamList);
+  const isInTeam = useComputed(() => loaderData.value.isInTeam);
 
   const transition = useSignalTransition();
 
@@ -259,7 +274,7 @@ export default function ProblemSetEdit() {
 
   return (
     <>
-      <h2>编辑公共题单信息</h2>
+      {isInTeam.value ? <h2>编辑团队题单信息</h2> : <h2>编辑公共题单信息</h2>}
 
       <Form method="post" className="form-control gap-4">
         <div className="form-control w-full max-w-xs">
@@ -321,6 +336,7 @@ export default function ProblemSetEdit() {
       <h2>题目</h2>
 
       <ProblemEditor
+        teamList={teamList}
         problems={problemSet.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}

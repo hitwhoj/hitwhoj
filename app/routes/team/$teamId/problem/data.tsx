@@ -9,7 +9,7 @@ import { idScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   const [viewAll, viewPublic] = await self
     .team(teamId)
@@ -18,33 +18,36 @@ export async function loader({ request, params }: LoaderArgs) {
       Permissions.PERM_VIEW_PROBLEM_PUBLIC
     );
 
-  var problems = await db.problem.findMany({
-    where: viewAll
-      ? { teamId: teamId }
-      : viewPublic
-      ? { teamId: teamId, private: false }
-      : { id: -1 },
-    orderBy: [{ id: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      tags: { select: { name: true } },
-    },
-  });
-  var publicproblems = await db.problem.findMany({
-    where: viewAll
-      ? { teamId: null }
-      : viewPublic
-      ? { teamId: null, private: false }
-      : { id: -1 },
-    orderBy: [{ id: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      tags: { select: { name: true } },
-    },
-  });
-  problems = problems.concat(publicproblems);
+  const isNotInTeam = teamId === 0;
+
+  const problems = isNotInTeam
+    ? await db.problem.findMany({
+        where: viewAll
+          ? { teamId: null }
+          : viewPublic
+          ? { teamId: null, private: false }
+          : { id: -1 },
+        orderBy: [{ id: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          tags: { select: { name: true } },
+        },
+      })
+    : await db.problem.findMany({
+        where: viewAll
+          ? { teamId: teamId }
+          : viewPublic
+          ? { teamId: teamId, private: false }
+          : { id: -1 },
+        orderBy: [{ id: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          tags: { select: { name: true } },
+        },
+      });
+
   return json({ problems });
 }
 

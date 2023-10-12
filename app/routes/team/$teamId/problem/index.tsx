@@ -15,7 +15,7 @@ import { db } from "~/utils/server/db.server";
 const PAGE_SIZE = 15;
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const [viewAll, viewPublic, hasCreatePerm] = await self
     .team(null)
     .hasPermission(

@@ -1,11 +1,12 @@
 import { useComputed, useSignal } from "@preact/signals-react";
 import { useEffect } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
-import type { LoaderData } from "~/routes/problem/data";
-import { useSignalFetcher } from "~/utils/hooks";
+import type { LoaderData } from "~/routes/team/$teamId/problem/data";
+import { useConvertToSignal, useSignalFetcher } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 
 type ProblemEditorCreatorProps = {
+  teamId: number;
   createAction: string;
   existProblem: number[];
 };
@@ -19,16 +20,18 @@ export default function ProblemEditorCreator(props: ProblemEditorCreatorProps) {
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-    fetch("/problem/data", { signal })
+    fetch(`/team/${props.teamId}/problem/data`, { signal })
       .then((res) => res.json() as Promise<LoaderData>)
       .then((data) => (problems.value = data.problems));
     return () => controller.abort();
-  }, []);
+  }, [props.teamId]);
 
   const filter = useSignal("");
 
+  const existProblem = useConvertToSignal(props.existProblem);
+
   const available = useComputed(() => {
-    return problems.value.filter(({ id }) => !props.existProblem.includes(id));
+    return problems.value.filter(({ id }) => !existProblem.value.includes(id));
   });
 
   const datalist = useComputed(() => {

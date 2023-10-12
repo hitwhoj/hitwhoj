@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Problem Set not found", { status: 404 });
   }
 
-  return json({ problemSet, hasEditPerm });
+  return json({ problemSet, hasEditPerm, problemSetId });
 }
 export default function Problemset() {
   const loaderData = useSignalLoaderData<typeof loader>();
@@ -77,7 +77,10 @@ export default function Problemset() {
           详情
         </NavLink>
         {hasEditPerm.value && (
-          <NavLink className="tab" to="edit">
+          <NavLink
+            className="tab"
+            to={`/problemset/${loaderData.value.problemSetId}/edit`}
+          >
             编辑
           </NavLink>
         )}

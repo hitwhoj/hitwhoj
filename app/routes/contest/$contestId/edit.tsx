@@ -53,6 +53,7 @@ export async function loader({ request, params }: LoaderArgs) {
       allowJoinAfterStart: true,
       isdeleted: true,
       tags: { select: { name: true } },
+      teamId: true,
       problems: {
         orderBy: { rank: "asc" },
         select: {
@@ -70,7 +71,19 @@ export async function loader({ request, params }: LoaderArgs) {
     throw new Response("Contest not found", { status: 404 });
   }
 
-  return json({ contest });
+  const isInTeam = !!contest.teamId;
+
+  const teamList = isInTeam
+    ? await db.team.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+      })
+    : // 如果这个比赛是公共比赛，就不获取其他团队的题目
+      [];
+
+  return json({ contest, teamList });
 }
 
 enum ActionType {
@@ -279,6 +292,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => ({
 export default function ContestEdit() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const contest = useComputed(() => loaderData.value.contest);
+  const teamList = useComputed(() => loaderData.value.teamList);
 
   const registrationType = useSignal(contest.value.registrationType);
 
@@ -488,6 +502,7 @@ export default function ContestEdit() {
       )}
 
       <ProblemEditor
+        teamList={teamList}
         problems={contest.value.problems.map(({ problem }) => problem)}
         createAction={ActionType.CreateProblem}
         deleteAction={ActionType.DeleteProblem}

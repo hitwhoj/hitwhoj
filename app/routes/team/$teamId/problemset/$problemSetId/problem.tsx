@@ -13,7 +13,7 @@ import { idScheme, pageScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 const PAGE_SIZE = 15;
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const problemSetId = invariant(idScheme, params.problemSetId, {
     status: 404,
   });

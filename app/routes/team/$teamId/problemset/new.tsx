@@ -14,7 +14,7 @@ import { idScheme, titleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export async function action({ request, params }: ActionArgs) {
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM_SET);

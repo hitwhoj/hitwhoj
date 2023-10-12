@@ -9,28 +9,22 @@ import { idScheme, titleScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 
 export async function loader({ request, params }: LoaderArgs) {
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const self = await findRequestUser(request);
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM);
 
-  for (var i = 0; i < 100; ++i) {
-    console.log("Hello!");
-  }
   return null;
 }
 
 export async function action({ request, params }: ActionArgs) {
   const self = await findRequestUser(request);
-  const teamId = await invariant(idScheme, params.teamId, { status: 404 });
+  const teamId = invariant(idScheme, params.teamId, { status: 404 });
   await self.checkPrivilege(Privileges.PRIV_OPERATE);
   await self.team(teamId).checkPermission(Permissions.PERM_CREATE_PROBLEM);
   const form = await request.formData();
   const title = invariant(titleScheme, form.get("title"));
 
-  for (var i = 0; i < 100; ++i) {
-    console.log("teamId: ", teamId);
-  }
   const { id } = await db.problem.create({
     data: {
       title: title,
