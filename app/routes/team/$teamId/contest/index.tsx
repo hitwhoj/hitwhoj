@@ -31,9 +31,9 @@ export async function loader({ params, request }: LoaderArgs) {
 
   const contests = await db.contest.findMany({
     where: viewAll
-      ? { teamId }
+      ? { teamId, isdeleted: false }
       : viewPublic
-      ? { teamId, private: false }
+      ? { teamId, private: false, isdeleted: false }
       : { id: -1 },
     orderBy: [{ id: "desc" }],
     select: {

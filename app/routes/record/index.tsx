@@ -3,6 +3,7 @@ import type { LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link } from "@remix-run/react";
 import { HiOutlineFilter } from "react-icons/hi";
+import { z } from "zod";
 import { Pagination } from "~/src/Pagination";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { RecordStatus } from "~/src/record/RecordStatus";
@@ -10,7 +11,7 @@ import { UserLink } from "~/src/user/UserLink";
 import { selectUserData } from "~/utils/db/user";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { invariant } from "~/utils/invariant";
-import { nullableIdScheme, pageScheme } from "~/utils/scheme";
+import { nullableIdScheme, pageScheme, usernameScheme } from "~/utils/scheme";
 import { db } from "~/utils/server/db.server";
 import { formatDateTime, formatRelativeDateTime } from "~/utils/tools";
 
@@ -19,7 +20,10 @@ const PAGE_SIZE = 15;
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
 
-  const uid = invariant(nullableIdScheme, url.searchParams.get("uid"));
+  const uid = invariant(
+    usernameScheme.or(z.literal("")),
+    url.searchParams.get("uid") || ""
+  );
   const pid = invariant(nullableIdScheme, url.searchParams.get("pid"));
   const cid = invariant(nullableIdScheme, url.searchParams.get("cid"));
 
@@ -27,7 +31,9 @@ export async function loader({ request }: LoaderArgs) {
   const totalRecords = await db.record.count({
     where: {
       contestId: cid || null,
-      submitterId: uid || undefined,
+      submitter: {
+        username: uid || undefined,
+      },
       problemId: pid || undefined,
     },
   });
@@ -38,7 +44,9 @@ export async function loader({ request }: LoaderArgs) {
   const records = await db.record.findMany({
     where: {
       contestId: cid || null,
-      submitterId: uid || undefined,
+      submitter: {
+        username: uid || undefined,
+      },
       problemId: pid || undefined,
     },
     orderBy: [{ id: "desc" }],

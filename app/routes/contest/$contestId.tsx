@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderArgs) {
     },
   });
 
-  if (!contest) {
+  if (!contest || contest.isdeleted) {
     throw new Response("Contest not found", { status: 404 });
   }
 
