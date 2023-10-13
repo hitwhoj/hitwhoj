@@ -16,12 +16,13 @@ const PAGE_SIZE = 15;
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
-  const [viewAll, viewPublic, hasCreatePerm] = await self
-    .team(null)
+  const [viewAll, viewPublic, hasCreatePerm, hasEditPerm] = await self
+    .team(teamId)
     .hasPermission(
       Permissions.PERM_VIEW_PROBLEM,
       Permissions.PERM_VIEW_PROBLEM_PUBLIC,
-      Permissions.PERM_CREATE_PROBLEM
+      Permissions.PERM_CREATE_PROBLEM,
+      Permissions.PERM_EDIT_PROBLEM
     );
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
@@ -54,7 +55,13 @@ export async function loader({ request, params }: LoaderArgs) {
     take: PAGE_SIZE,
   });
 
-  return json({ problems, hasCreatePerm, totalProblems, currentPage: page });
+  return json({
+    problems,
+    hasCreatePerm,
+    totalProblems,
+    hasEditPerm,
+    currentPage: page,
+  });
 }
 
 export const meta: MetaFunction = () => ({
@@ -64,10 +71,10 @@ export const meta: MetaFunction = () => ({
 export default function ProblemIndex() {
   const loaderData = useSignalLoaderData<typeof loader>();
   const problems = useComputed(() => loaderData.value.problems);
-  const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
+  // const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
-
+  const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
   const totalPages = useComputed(() =>
     Math.ceil(totalProblems.value / PAGE_SIZE)
   );
@@ -76,7 +83,7 @@ export default function ProblemIndex() {
     <>
       <h2 className="flex items-center justify-between">
         <span>题目列表</span>
-        {hasCreatePerm.value && (
+        {hasEditPerm.value && (
           <Link to="new" className="btn btn-primary gap-2">
             <HiOutlinePlus className="h-4 w-4" />
             <span>新建题目</span>
