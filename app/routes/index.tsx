@@ -113,7 +113,7 @@ export async function loader({ request }: LoaderArgs) {
   });
 
   // 对活跃团队进行排序
-  activeTeams.sort((a, b) => a.submittedAt.getTime() - b.submittedAt.getTime());
+  activeTeams.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
 
   return json({ problems, contests, activeTeams });
 }
