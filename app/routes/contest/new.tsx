@@ -90,9 +90,11 @@ export default function ContestNew() {
   setInterval(() => {
     now = new Date();
   }, 60000);
+
   let getFormatTime = new Date(
     now.getTime() - now.getTimezoneOffset() * 1000 * 60
   );
+
   return (
     <>
       <h1>创建比赛</h1>
@@ -129,7 +131,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
-            value={getFormatTime.toISOString().substring(0, 16)}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
@@ -146,7 +148,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            value={getFormatTime.toISOString().substring(0, 16)}
+            value={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />

@@ -85,6 +85,15 @@ export default function TeamContestNew() {
     }
   }, [transition.actionSuccess]);
 
+  let now: Date = new Date();
+
+  setInterval(() => {
+    now = new Date();
+  }, 60000);
+
+  let getFormatTime = new Date(
+    now.getTime() - now.getTimezoneOffset() * 1000 * 60
+  );
   return (
     <>
       <h2>创建团队比赛</h2>
@@ -121,6 +130,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
@@ -137,6 +147,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
