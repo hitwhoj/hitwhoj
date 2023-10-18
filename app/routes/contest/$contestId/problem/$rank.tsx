@@ -340,7 +340,7 @@ export default function ContestProblemView() {
               >
                 <option value="c">C</option>
                 <option value="cpp">C++</option>
-                <option value="java">Java</option>
+                <option value="py">Python3</option>
               </select>
             </div>
             <div className="inline-flex gap-4">
