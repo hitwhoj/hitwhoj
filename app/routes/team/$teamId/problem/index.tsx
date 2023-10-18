@@ -1,5 +1,5 @@
 import { useComputed } from "@preact/signals-react";
-import { type MetaFunction, type LoaderArgs, json } from "@remix-run/node";
+import { json, type LoaderArgs, type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
   const [viewAll, viewPublic, hasCreatePerm] = await self
-    .team(null)
+    .team(teamId)
     .hasPermission(
       Permissions.PERM_VIEW_PROBLEM,
       Permissions.PERM_VIEW_PROBLEM_PUBLIC,
@@ -54,7 +54,12 @@ export async function loader({ request, params }: LoaderArgs) {
     take: PAGE_SIZE,
   });
 
-  return json({ problems, hasCreatePerm, totalProblems, currentPage: page });
+  return json({
+    problems,
+    hasCreatePerm,
+    totalProblems,
+    currentPage: page,
+  });
 }
 
 export const meta: MetaFunction = () => ({
@@ -67,7 +72,6 @@ export default function ProblemIndex() {
   const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
-
   const totalPages = useComputed(() =>
     Math.ceil(totalProblems.value / PAGE_SIZE)
   );

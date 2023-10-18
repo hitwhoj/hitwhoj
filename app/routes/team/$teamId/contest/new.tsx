@@ -11,7 +11,7 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
-import { adjustTimezone } from "~/utils/time";
+import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -121,6 +121,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
+            defaultValue={getDatetimeLocal()}
             required
             disabled={transition.isRunning}
           />
@@ -137,6 +138,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
+            defaultValue={getDatetimeLocal()}
             required
             disabled={transition.isRunning}
           />
