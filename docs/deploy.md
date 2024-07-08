@@ -106,7 +106,7 @@ http {
 
 ## 部署评测机
 
-请参阅[部署评测机](/docs/deploy-judge.md)。
+请参阅[部署评测机](./deploy-judge.md)。
 
 [postgres]: https://www.postgresql.org/
 [minio]: https://min.io/
