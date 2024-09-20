@@ -16,6 +16,7 @@ import { Markdown } from "~/src/Markdown";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed, useSignal } from "@preact/signals-react";
 import { VscodeEditor } from "~/src/VscodeEditor";
+import type { ChangeEvent } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -108,6 +109,15 @@ export default function ProblemSubmit() {
   const code = useSignal("");
   const language = useSignal("cpp");
 
+  function changeSelect(e: ChangeEvent<HTMLSelectElement>) {
+    language.value = e.currentTarget.value;
+    if (language.value === "java") {
+      code.value = "public class Main {\n\n}";
+    } else {
+      code.value = "";
+    }
+  }
+
   return (
     <Fullscreen visible={true} className="grid grid-cols-2 bg-base-100">
       <div className="overflow-auto p-4">
@@ -150,13 +160,14 @@ export default function ProblemSubmit() {
             <select
               className="select select-bordered"
               name="language"
-              onChange={(e) => (language.value = e.currentTarget.value)}
+              onChange={(e) => changeSelect(e)}
               value={language.value}
               required
             >
               <option value="c">C</option>
               <option value="cpp">C++</option>
               <option value="py">Python3</option>
+              <option value="java">Java</option>
             </select>
             <textarea
               className="textarea textarea-bordered"
