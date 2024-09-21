@@ -109,14 +109,14 @@ export default function ProblemSubmit() {
   const code = useSignal("");
   const language = useSignal("cpp");
 
-  function changeSelect(e: ChangeEvent<HTMLSelectElement>) {
+  const changeSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     language.value = e.currentTarget.value;
     if (language.value === "java") {
       code.value = "public class Main {\n\n}";
     } else {
       code.value = "";
     }
-  }
+  };
 
   return (
     <Fullscreen visible={true} className="grid grid-cols-2 bg-base-100">
