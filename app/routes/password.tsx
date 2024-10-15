@@ -12,13 +12,22 @@ import { db } from "~/utils/server/db.server";
 
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
-  const username = url.searchParams.get("username");
-
-  if (!username) {
-    return json({ error: "No reset username provided" }, 400);
+  const token = url.searchParams.get("token");
+  const jwt = require("jsonwebtoken");
+  if (!token) {
+    return json({ error: "No reset token provided" }, 400);
   }
+  try {
+    const decoded = jwt.verify(token, process.env["JWT_KEY"]);
+    const { username } = decoded;
 
-  return json({ username });
+    if (!username) {
+      return json({ error: "Invalid reset token" }, { status: 400 });
+    }
+    return json({ username, token });
+  } catch (error) {
+    return json({ error: "Invalid or expired reset token" }, { status: 400 });
+  }
 }
 export const meta: MetaFunction = () => ({
   title: "输入你的新密码 - HITwh OJ",
@@ -39,7 +48,7 @@ export async function action({ request }: ActionArgs) {
     return json({ message: "Password updated successfully" });
   } catch (error) {
     console.error("Error updating password:", error);
-    return json({ error: "Failed to update password" }, { status: 500 });
+    return json({ error: "Failed to update password" }, 500);
   }
 }
 

@@ -27,23 +27,37 @@ export async function action({ request }: ActionArgs) {
     return json({ reason: "该邮箱没有绑定用户" }, 400);
   }
 
-  var nodemailer = require("nodemailer");
+  const nodemailer = require("nodemailer");
+  const jwt = require("jsonwebtoken");
   const transporter = nodemailer.createTransport({
-    host: "smtp.qq.com",
+    host: process.env["EMAIL_SMTP"],
     secureConnection: true,
     port: 465,
     secure: true,
     auth: {
-      user: "1914870249@qq.com",
-      pass: "cdrbzsytbmrwdceh",
+      user: process.env["EMAIL_ADDRESS"],
+      pass: process.env["EMAIL_PASS"],
     },
   });
 
+  const payload = {
+    username: user[0].username,
+    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 一小时
+  };
+  const resetToken = jwt.sign(payload, process.env["JWT_KEY"]);
   var mailOptions = {
-    from: "1914870249@qq.com",
+    from: process.env["EMAIL_ADDRESS"],
     to: email,
     subject: "HITWHOJ 重置密码",
-    html: `<p>请点击以下链接重置您的密码：</p><a href="http://localhost:8080/password/?username=${user[0].username}">重置密码</a>`,
+    html: `
+        <h2>重置密码，请点击下面的链接</h2>
+        <h3>重置密码请在1小时内完成，否则将失效</h3>
+        <p>请点击以下链接重置您的密码：</p><a href="${process.env["SERVER_ADDRESS"]}/password/?token=${resetToken}">重置密码</a>
+        <br><br><hr>
+        <div>HITwh OJ 项目组和 HITwh FP 项目组绝赞纳新中！！！</div>
+        <div>需要熟悉 nodejs 开发环境，有 React 开发经验，有热情学习最新最前沿的前端技术栈。</div>
+        <div style="color:blue">详情请联系 QQ 64174234（张老师）或者 QQ 2516844846（史家鸣）。</div>
+        `,
   };
 
   transporter.sendMail(mailOptions, (err: any, info: { response: any }) => {
