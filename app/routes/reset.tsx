@@ -29,6 +29,43 @@ export async function action({ request }: ActionArgs) {
 
   const nodemailer = require("nodemailer");
   const jwt = require("jsonwebtoken");
+  // 解密
+  const crypto = require("crypto");
+
+  // 从环境变量中读取密钥和IV
+  const keyBuffer = process.env["ENCRYPTION_KEY"];
+  const ivBuffer = process.env["ENCRYPTION_IV"];
+  if (!keyBuffer || !ivBuffer) {
+    throw new Error(
+      "ENCRYPTION_KEY and ENCRYPTION_IV must be set in the environment variables."
+    );
+  }
+  // 确保环境变量是有效的十六进制字符串
+  function isValidHex(str: string): boolean {
+    return /^[0-9a-fA-F]+$/.test(str);
+  }
+  if (!isValidHex(keyBuffer) || !isValidHex(ivBuffer)) {
+    throw new Error(
+      "ENCRYPTION_KEY and ENCRYPTION_IV must be valid hexadecimal strings."
+    );
+  }
+  const encryptionKey = Buffer.from(keyBuffer, "hex");
+  const encryptionIv = Buffer.from(ivBuffer, "hex");
+
+  // 解密函数
+  function decrypt(encrypted: string | undefined, key: Buffer, iv: Buffer) {
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  }
+
+  // 解密EMAIL_PASS
+  const emailPass = decrypt(
+    process.env["EMAIL_PASS"],
+    encryptionKey,
+    encryptionIv
+  );
   const transporter = nodemailer.createTransport({
     host: process.env["EMAIL_SMTP"],
     secureConnection: true,
@@ -36,7 +73,7 @@ export async function action({ request }: ActionArgs) {
     secure: true,
     auth: {
       user: process.env["EMAIL_ADDRESS"],
-      pass: process.env["EMAIL_PASS"],
+      pass: emailPass,
     },
   });
 
@@ -45,7 +82,7 @@ export async function action({ request }: ActionArgs) {
     exp: Math.floor(Date.now() / 1000) + 60 * 60, // 一小时
   };
   const resetToken = jwt.sign(payload, process.env["JWT_KEY"]);
-  var mailOptions = {
+  const mailOptions = {
     from: process.env["EMAIL_ADDRESS"],
     to: email,
     subject: "HITWHOJ 重置密码",
