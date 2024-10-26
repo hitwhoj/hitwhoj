@@ -74,6 +74,7 @@ export default function ProblemIndex() {
   const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
+  const teamId = useComputed(() => loaderData.value.teamId);
   const totalPages = useComputed(() =>
     Math.ceil(totalProblems.value / PAGE_SIZE)
   );
@@ -113,7 +114,7 @@ export default function ProblemIndex() {
         </tbody>
       </table>
       <Pagination
-        action="/problem"
+        action={`/team/${teamId}/problem`}
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
