@@ -55,6 +55,7 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 
   return json({
+    teamId,
     problems,
     hasCreatePerm,
     totalProblems,
