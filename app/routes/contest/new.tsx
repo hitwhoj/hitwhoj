@@ -19,7 +19,6 @@ import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
-import { type Signal, useSignal, useComputed } from "@preact/signals-react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -87,25 +86,13 @@ export default function ContestNew() {
 
   let now = new Date();
 
-  let year: number;
-  let month: string;
-  let day: string;
-  let hours: string;
-  let minutes: Signal<string>;
-
   setInterval(() => {
     now = new Date();
   }, 60000);
 
-  year = now.getFullYear();
-  month = String(now.getMonth() + 1).padStart(2, "0");
-  day = String(now.getDate()).padStart(2, "0");
-  hours = String(now.getHours()).padStart(2, "0");
-  minutes = useSignal(String(now.getMinutes()).padStart(2, "0"));
-
-  const formattedDateTime = useComputed(() => {
-    return `${year}-${month}-${day}T${hours}:${minutes.value}`;
-  });
+  let getFormatTime = new Date(
+    now.getTime() - now.getTimezoneOffset() * 1000 * 60
+  );
 
   return (
     <>
@@ -143,7 +130,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
-            value={formattedDateTime.value}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
@@ -160,7 +147,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            value={formattedDateTime.value}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />

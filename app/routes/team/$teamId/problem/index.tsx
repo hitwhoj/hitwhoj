@@ -16,8 +16,8 @@ const PAGE_SIZE = 15;
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
-  const [viewAll, viewPublic, hasCreatePerm] = await self
-    .team(null)
+  const [viewAll, viewPublic, hasCreatePerm, hasEditPerm] = await self
+    .team(teamId)
     .hasPermission(
       Permissions.PERM_VIEW_PROBLEM,
       Permissions.PERM_VIEW_PROBLEM_PUBLIC,
@@ -59,6 +59,7 @@ export async function loader({ request, params }: LoaderArgs) {
     problems,
     hasCreatePerm,
     totalProblems,
+    hasEditPerm,
     currentPage: page,
   });
 }
