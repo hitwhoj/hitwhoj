@@ -62,7 +62,7 @@ export default function Profile() {
           <td>{user.value.username}</td>
         </tr>
         <tr>
-          <th>用户昵称</th>
+          <th>用户昵称（请使用真实姓名）</th>
           <td>{user.value.nickname || "-"}</td>
         </tr>
         <tr>

@@ -141,7 +141,7 @@ export default function UserEdit() {
 
       <div className="form-control">
         <label className="label">
-          <span className="label-text">用户昵称</span>
+          <span className="label-text">用户昵称（请使用真实姓名）</span>
         </label>
         <input
           className="input input-bordered"

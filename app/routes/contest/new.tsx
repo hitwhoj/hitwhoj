@@ -19,7 +19,6 @@ import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
-// import { useSignal } from "@preact/signals-react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -85,7 +84,7 @@ export default function ContestNew() {
     }
   }, [transition.actionSuccess]);
 
-  let now: Date = new Date();
+  let now = new Date();
 
   setInterval(() => {
     now = new Date();
@@ -148,7 +147,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            value={getFormatTime.toISOString().slice(0, 16)}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />

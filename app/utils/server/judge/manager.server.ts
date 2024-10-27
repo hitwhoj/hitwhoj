@@ -77,6 +77,7 @@ export class JudgeManager {
       id,
       code,
       language: record.language,
+      // files 是一个字典
       files: record.problem.data.reduce(
         (files, { filename, id }) => ({
           ...files,
