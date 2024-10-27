@@ -11,7 +11,7 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import { ContestParticipantRole, ContestSystem } from "@prisma/client";
-import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
+import { adjustTimezone } from "~/utils/time";
 import { idScheme } from "~/utils/scheme";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
@@ -85,6 +85,15 @@ export default function TeamContestNew() {
     }
   }, [transition.actionSuccess]);
 
+  let now: Date = new Date();
+
+  setInterval(() => {
+    now = new Date();
+  }, 60000);
+
+  let getFormatTime = new Date(
+    now.getTime() - now.getTimezoneOffset() * 1000 * 60
+  );
   return (
     <>
       <h2>创建团队比赛</h2>
@@ -121,7 +130,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
-            defaultValue={getDatetimeLocal()}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
@@ -138,7 +147,7 @@ export default function TeamContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            defaultValue={getDatetimeLocal()}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />

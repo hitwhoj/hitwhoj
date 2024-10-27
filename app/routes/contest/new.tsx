@@ -11,7 +11,7 @@ import {
   titleScheme,
 } from "~/utils/scheme";
 import { ContestSystem } from "@prisma/client";
-import { adjustTimezone, getDatetimeLocal } from "~/utils/time";
+import { adjustTimezone } from "~/utils/time";
 import { findRequestUser } from "~/utils/permission";
 import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
@@ -19,6 +19,7 @@ import { MarkdownEditor } from "~/src/MarkdownEditor";
 import { useSignalTransition } from "~/utils/hooks";
 import { useToasts } from "~/utils/toast";
 import { useEffect } from "react";
+// import { useSignal } from "@preact/signals-react";
 
 export async function loader({ request }: LoaderArgs) {
   const self = await findRequestUser(request);
@@ -84,6 +85,16 @@ export default function ContestNew() {
     }
   }, [transition.actionSuccess]);
 
+  let now: Date = new Date();
+
+  setInterval(() => {
+    now = new Date();
+  }, 60000);
+
+  let getFormatTime = new Date(
+    now.getTime() - now.getTimezoneOffset() * 1000 * 60
+  );
+
   return (
     <>
       <h1>创建比赛</h1>
@@ -120,7 +131,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="beginTime"
-            defaultValue={getDatetimeLocal()}
+            defaultValue={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />
@@ -137,7 +148,7 @@ export default function ContestNew() {
             className="input input-bordered"
             type="datetime-local"
             name="endTime"
-            value={getDatetimeLocal()}
+            value={getFormatTime.toISOString().slice(0, 16)}
             required
             disabled={transition.isRunning}
           />

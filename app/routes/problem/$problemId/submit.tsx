@@ -1,7 +1,7 @@
 import type { ActionArgs, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, Link } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { s3 } from "~/utils/server/s3.server";
 import { invariant } from "~/utils/invariant";
@@ -11,11 +11,6 @@ import { Privileges } from "~/utils/permission/privilege";
 import { Permissions } from "~/utils/permission/permission";
 import { findProblemPrivacy, findProblemTeam } from "~/utils/db/problem";
 import { judge } from "~/utils/server/judge/manager.server";
-import Fullscreen from "~/src/Fullscreen";
-import { Markdown } from "~/src/Markdown";
-import { useSignalLoaderData } from "~/utils/hooks";
-import { useComputed, useSignal } from "@preact/signals-react";
-import { VscodeEditor } from "~/src/VscodeEditor";
 
 export async function loader({ request, params }: LoaderArgs) {
   const problemId = invariant(idScheme, params.problemId, { status: 404 });
@@ -31,14 +26,7 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const problem = await db.problem.findUnique({
     where: { id: problemId },
-    select: {
-      id: true,
-      title: true,
-      allowSubmit: true,
-      description: true,
-      private: true,
-      files: { orderBy: { filename: "asc" } },
-    },
+    select: { title: true, allowSubmit: true },
   });
 
   if (!problem) {
@@ -102,77 +90,45 @@ export async function action({ request, params }: ActionArgs) {
 }
 
 export default function ProblemSubmit() {
-  const loaderData = useSignalLoaderData<typeof loader>();
-  const problem = useComputed(() => loaderData.value.problem);
-
-  const code = useSignal("");
-  const language = useSignal("cpp");
-
   return (
-    <Fullscreen visible={true} className="grid grid-cols-2 bg-base-100">
-      <div className="overflow-auto p-4">
-        <h1 className="flex justify-between">
-          <span>{problem.value.title}</span>
-          <button className="btn btn-ghost" onClick={() => history.go(-1)}>
-            返回
-          </button>
-        </h1>
-
-        <Markdown>{problem.value.description}</Markdown>
-
-        {problem.value.files.length > 0 && (
-          <>
-            <h2>相关文件</h2>
-
-            <ul>
-              {problem.value.files.map((file) => (
-                <li key={file.id}>
-                  <Link
-                    className="link"
-                    to={`/file/${file.id}`}
-                    target="_blank"
-                  >
-                    {file.filename}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+    <Form method="post" className="form-control gap-4">
+      <div className="form-control w-full max-w-xs">
+        <label className="label">
+          <span className="label-text">语言</span>
+        </label>
+        <select
+          className="select select-bordered"
+          name="language"
+          defaultValue=""
+          required
+        >
+          <option value="" disabled>
+            选择代码语言
+          </option>
+          <option value="c">C</option>
+          <option value="cpp">C++</option>
+          <option value="py">Python3</option>
+        </select>
       </div>
 
-      <div className="flex flex-col">
-        <div className="flex-1">
-          <VscodeEditor code={code} language={language.value} />
-        </div>
-        <div className="p-2">
-          <Form method="post" className="flex justify-between">
-            <select
-              className="select select-bordered"
-              name="language"
-              onChange={(e) => (language.value = e.currentTarget.value)}
-              value={language.value}
-              required
-            >
-              <option value="c">C</option>
-              <option value="cpp">C++</option>
-              <option value="py">Python3</option>
-            </select>
-            <textarea
-              className="textarea textarea-bordered"
-              name="code"
-              required
-              value={code.value}
-              hidden
-              readOnly
-            />
-            <button className="btn btn-primary" type="submit">
-              提交
-            </button>
-          </Form>
-        </div>
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">代码</span>
+        </label>
+        <textarea
+          className="textarea textarea-bordered"
+          name="code"
+          placeholder="Paste your code here desu~"
+          required
+        />
       </div>
-    </Fullscreen>
+
+      <div className="form-control w-full max-w-xs">
+        <button className="btn btn-primary" type="submit">
+          提交
+        </button>
+      </div>
+    </Form>
   );
 }
 

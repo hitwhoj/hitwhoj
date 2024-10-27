@@ -1,5 +1,5 @@
 import { useComputed } from "@preact/signals-react";
-import { json, type LoaderArgs, type MetaFunction } from "@remix-run/node";
+import { type MetaFunction, type LoaderArgs, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { HiOutlinePlus } from "react-icons/hi";
 import { Pagination } from "~/src/Pagination";
@@ -16,7 +16,7 @@ const PAGE_SIZE = 15;
 export async function loader({ request, params }: LoaderArgs) {
   const self = await findRequestUser(request);
   const teamId = invariant(idScheme, params.teamId, { status: 404 });
-  const [viewAll, viewPublic, hasCreatePerm] = await self
+  const [viewAll, viewPublic, hasCreatePerm, hasEditPerm] = await self
     .team(teamId)
     .hasPermission(
       Permissions.PERM_VIEW_PROBLEM,
@@ -55,9 +55,11 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 
   return json({
+    teamId,
     problems,
     hasCreatePerm,
     totalProblems,
+    hasEditPerm,
     currentPage: page,
   });
 }
@@ -72,6 +74,7 @@ export default function ProblemIndex() {
   const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
+  const teamId = useComputed(() => loaderData.value.teamId);
   const totalPages = useComputed(() =>
     Math.ceil(totalProblems.value / PAGE_SIZE)
   );
@@ -111,7 +114,7 @@ export default function ProblemIndex() {
         </tbody>
       </table>
       <Pagination
-        action="/problem"
+        action={`/team/${teamId}/problem`}
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
