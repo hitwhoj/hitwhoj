@@ -68,7 +68,7 @@ export default function Register() {
       >
         <div className="form-control">
           <label className="label">
-            <span className="label-text">用户名 (请使用字母数字下划线)</span>
+            <span className="label-text">用户名 (请使用学号)</span>
           </label>
           <input
             className="input input-bordered w-full max-w-xs"
