@@ -71,7 +71,7 @@ export default function Problemset() {
           {problemSet.value.tags.map(({ name }) => (
             <Link
               className="badge gap-1"
-              to={`/problemset/tag/${name}`}
+              to={`/problemset?tags=${name}`}
               key={name}
             >
               <HiOutlineTag />

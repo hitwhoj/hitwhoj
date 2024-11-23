@@ -12,6 +12,7 @@ import { invariant } from "~/utils/invariant";
 import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { TagSelector } from "~/src/TagSelector";
 
 const PAGE_SIZE = 15;
 
@@ -27,12 +28,14 @@ export async function loader({ request }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const tags = url.searchParams.get("tags")?.split(",") || [];
+  const tagQuery = tags.map((tagName) => { return { tags: { some: { name: tagName } } } });
   const totalProblems = await db.problem.count({
     where: viewAll
-      ? { team: null }
+      ? { team: null, AND: tagQuery }
       : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+      ? { team: null, private: false, AND: tagQuery }
+      : { id: -1, AND: tagQuery },
   });
   if (totalProblems && page > Math.ceil(totalProblems / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
@@ -40,10 +43,10 @@ export async function loader({ request }: LoaderArgs) {
 
   const problems = await db.problem.findMany({
     where: viewAll
-      ? { team: null }
+      ? { team: null, AND: tagQuery }
       : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+      ? { team: null, private: false, AND: tagQuery }
+      : { id: -1, AND: tagQuery },
     orderBy: [{ id: "asc" }],
     select: {
       ...selectProblemListData,
@@ -57,7 +60,13 @@ export async function loader({ request }: LoaderArgs) {
     take: PAGE_SIZE,
   });
 
-  return json({ problems, hasCreatePerm, totalProblems, currentPage: page });
+  const allTags = await db.problemTag.findMany({
+    select: {
+      name: true
+    }
+  });
+
+  return json({ tagsUrl: url.searchParams.get("tags"), problems, allTags, tags, hasCreatePerm, totalProblems, currentPage: page });
 }
 
 export const meta: MetaFunction = () => ({
@@ -66,7 +75,10 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemIndex() {
   const loaderData = useSignalLoaderData<typeof loader>();
+  const tagsUrl = useComputed(() => loaderData.value.tagsUrl);
   const problems = useComputed(() => loaderData.value.problems);
+  const allTags = useComputed(() => loaderData.value.allTags);
+  const tags = useComputed(() => loaderData.value.tags);
   const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
@@ -86,6 +98,12 @@ export default function ProblemIndex() {
           </Link>
         )}
       </h1>
+
+      <TagSelector
+        allTags={allTags.value.map(({name}) => name)}
+        selectedTags={tags.value}
+        action="/problem" 
+      />
 
       <table className="not-prose table-compact table w-full">
         <thead>
@@ -108,7 +126,7 @@ export default function ProblemIndex() {
         </tbody>
       </table>
       <Pagination
-        action="/problem"
+        action={"/problem" + (tagsUrl.value != null ? "?tags=" + tagsUrl.value : "")}
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />

@@ -11,6 +11,7 @@ import { pageScheme } from "~/utils/scheme";
 import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
 import { useComputed } from "@preact/signals-react";
+import { TagSelector } from "~/src/TagSelector";
 
 const PAGE_SIZE = 15;
 
@@ -26,12 +27,14 @@ export async function loader({ request }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
+  const tags = url.searchParams.get("tags")?.split(",") || [];
+  const tagQuery = tags.map((tagName) => { return { tags: { some: { name: tagName } } } });
   const totalProblemSets = await db.problemSet.count({
     where: viewAll
-      ? { team: null }
+      ? { team: null, AND: tagQuery }
       : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+      ? { team: null, private: false, AND: tagQuery }
+      : { id: -1, AND: tagQuery },
   });
   if (totalProblemSets && page > Math.ceil(totalProblemSets / PAGE_SIZE)) {
     throw new Response("Page is out of range", { status: 404 });
@@ -39,10 +42,10 @@ export async function loader({ request }: LoaderArgs) {
 
   const problemSets = await db.problemSet.findMany({
     where: viewAll
-      ? { team: null }
+      ? { team: null, AND: tagQuery }
       : viewPublic
-      ? { team: null, private: false }
-      : { id: -1 },
+      ? { team: null, private: false, AND: tagQuery }
+      : { id: -1, AND: tagQuery },
 
     orderBy: [{ id: "asc" }],
     select: {
@@ -59,7 +62,16 @@ export async function loader({ request }: LoaderArgs) {
     take: PAGE_SIZE,
   });
 
+  const allTags = await db.problemSetTag.findMany({
+    select: {
+      name: true
+    }
+  });
+
   return json({
+    tagsUrl: url.searchParams.get("tags"), 
+    allTags,
+    tags,
     problemSets,
     hasEditPerm,
     totalProblemSets,
@@ -73,6 +85,9 @@ export const meta: MetaFunction = () => ({
 
 export default function ProblemsetList() {
   const loaderData = useSignalLoaderData<typeof loader>();
+  const tagsUrl = useComputed(() => loaderData.value.tagsUrl);
+  const allTags = useComputed(() => loaderData.value.allTags);
+  const tags = useComputed(() => loaderData.value.tags);
   const problemSets = useComputed(() => loaderData.value.problemSets);
   const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
   const totalProblemSets = useComputed(() => loaderData.value.totalProblemSets);
@@ -93,6 +108,12 @@ export default function ProblemsetList() {
           </Link>
         )}
       </h1>
+
+      <TagSelector
+        allTags={allTags.value.map(({name}) => name)}
+        selectedTags={tags.value}
+        action="/problemset" 
+      />
 
       <table className="not-prose table-compact table w-full">
         <thead>
@@ -118,7 +139,7 @@ export default function ProblemsetList() {
       </table>
 
       <Pagination
-        action="/problemset"
+        action={"/problemset" + (tagsUrl.value != null ? "?tags=" + tagsUrl.value : "")}
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
