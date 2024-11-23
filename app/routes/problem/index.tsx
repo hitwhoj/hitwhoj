@@ -6,12 +6,12 @@ import { db } from "~/utils/server/db.server";
 import { ProblemLink } from "~/src/problem/ProblemLink";
 import { findRequestUser } from "~/utils/permission";
 import { Permissions } from "~/utils/permission/permission";
-import { HiOutlinePlus } from "react-icons/hi";
+import { HiOutlinePlus, HiOutlineTag } from "react-icons/hi";
 import { pageScheme } from "~/utils/scheme";
 import { invariant } from "~/utils/invariant";
 import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
-import { useComputed } from "@preact/signals-react";
+import { useComputed, useSignal } from "@preact/signals-react";
 import { TagSelector } from "~/src/TagSelector";
 
 const PAGE_SIZE = 15;
@@ -28,7 +28,8 @@ export async function loader({ request }: LoaderArgs) {
 
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
-  const tags = url.searchParams.get("tags")?.split(",") || [];
+  const tagsUrl = url.searchParams.get("tags");
+  const tags = tagsUrl ? tagsUrl.split(",") : [];
   const tagQuery = tags.map((tagName) => { return { tags: { some: { name: tagName } } } });
   const totalProblems = await db.problem.count({
     where: viewAll
@@ -50,6 +51,7 @@ export async function loader({ request }: LoaderArgs) {
     orderBy: [{ id: "asc" }],
     select: {
       ...selectProblemListData,
+      tags: true,
       _count: {
         select: {
           relatedRecords: true,
@@ -66,7 +68,7 @@ export async function loader({ request }: LoaderArgs) {
     }
   });
 
-  return json({ tagsUrl: url.searchParams.get("tags"), problems, allTags, tags, hasCreatePerm, totalProblems, currentPage: page });
+  return json({ tagsUrl, problems, allTags, tags, hasCreatePerm, totalProblems, currentPage: page });
 }
 
 export const meta: MetaFunction = () => ({
@@ -79,6 +81,7 @@ export default function ProblemIndex() {
   const problems = useComputed(() => loaderData.value.problems);
   const allTags = useComputed(() => loaderData.value.allTags);
   const tags = useComputed(() => loaderData.value.tags);
+  const showTags = useSignal(true);
   const hasCreatePerm = useComputed(() => loaderData.value.hasCreatePerm);
   const totalProblems = useComputed(() => loaderData.value.totalProblems);
   const currentPage = useComputed(() => loaderData.value.currentPage);
@@ -99,26 +102,52 @@ export default function ProblemIndex() {
         )}
       </h1>
 
-      <TagSelector
-        allTags={allTags.value.map(({name}) => name)}
-        selectedTags={tags.value}
-        action="/problem" 
-      />
+      <div className="flex">
+        <label className="flex items-center px-4 py-2 text-sm">
+          <input
+            type="checkbox"
+            className="checkbox mr-2 leading-tight"
+            checked={showTags.value}
+            onChange={(event) => showTags.value = event.target.checked}
+          />
+          显示标签
+        </label>
+        <TagSelector
+          allTags={allTags.value.map(({name}) => name)}
+          selectedTags={tags.value}
+          key={tagsUrl.value}
+          action="/problem"
+        />
+      </div>
+
 
       <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />
             <th>题目</th>
-            <th>提交</th>
+            <th className="w-24">提交</th>
           </tr>
         </thead>
         <tbody>
           {problems.value.map((problem) => (
             <tr key={problem.id}>
               <th className="text-center">{problem.id}</th>
-              <td>
+              <td className="not-prose flex flex-wrap gap-4">
                 <ProblemLink problem={problem} />
+                <span className="flex gap-2">
+                  {showTags.value && problem.tags.map((tag) => (
+                    <Link
+                      className="badge gap-1"
+                      to={`/problem?tags=${tag.name}`}
+                      key={tag.name}
+                    >
+                      <HiOutlineTag />
+                      <span>{tag.name}</span>
+                    </Link>
+                  ))}
+                </span>
+
               </td>
               <td>{problem._count.relatedRecords}</td>
             </tr>
