@@ -4,13 +4,13 @@ import { Link } from "@remix-run/react";
 import { db } from "~/utils/server/db.server";
 import { ProblemSetLink } from "~/src/problemset/ProblemSetLink";
 import { Permissions } from "~/utils/permission/permission";
-import { HiOutlinePlus } from "react-icons/hi";
+import {HiOutlinePlus, HiOutlineTag} from "react-icons/hi";
 import { findRequestUser } from "~/utils/permission";
 import { invariant } from "~/utils/invariant";
 import { pageScheme } from "~/utils/scheme";
 import { Pagination } from "~/src/Pagination";
 import { useSignalLoaderData } from "~/utils/hooks";
-import { useComputed } from "@preact/signals-react";
+import {useComputed, useSignal} from "@preact/signals-react";
 import { TagSelector } from "~/src/TagSelector";
 
 const PAGE_SIZE = 15;
@@ -52,6 +52,7 @@ export async function loader({ request }: LoaderArgs) {
       id: true,
       title: true,
       private: true,
+      tags: true,
       _count: {
         select: {
           problems: true,
@@ -69,7 +70,7 @@ export async function loader({ request }: LoaderArgs) {
   });
 
   return json({
-    tagsUrl: url.searchParams.get("tags"), 
+    tagsUrl: url.searchParams.get("tags"),
     allTags,
     tags,
     problemSets,
@@ -88,6 +89,7 @@ export default function ProblemsetList() {
   const tagsUrl = useComputed(() => loaderData.value.tagsUrl);
   const allTags = useComputed(() => loaderData.value.allTags);
   const tags = useComputed(() => loaderData.value.tags);
+  const showTags = useSignal(true);
   const problemSets = useComputed(() => loaderData.value.problemSets);
   const hasEditPerm = useComputed(() => loaderData.value.hasEditPerm);
   const totalProblemSets = useComputed(() => loaderData.value.totalProblemSets);
@@ -109,18 +111,30 @@ export default function ProblemsetList() {
         )}
       </h1>
 
-      <TagSelector
-        allTags={allTags.value.map(({name}) => name)}
-        selectedTags={tags.value}
-        action="/problemset" 
-      />
+      <div className="flex">
+        <label className="flex items-center px-4 py-2 text-sm">
+          <input
+            type="checkbox"
+            className="checkbox mr-2 leading-tight"
+            checked={showTags.value}
+            onChange={(event) => (showTags.value = event.target.checked)}
+          />
+          显示标签
+        </label>
+        <TagSelector
+          allTags={allTags.value.map(({ name }) => name)}
+          selectedTags={tags.value}
+          key={tagsUrl.value}
+          action="/problemset"
+        />
+      </div>
 
       <table className="not-prose table-compact table w-full">
         <thead>
           <tr>
             <th className="w-16" />
             <th>题单</th>
-            <th>题目数量</th>
+            <th className="w-24">题目数量</th>
           </tr>
         </thead>
         <tbody>
@@ -129,8 +143,21 @@ export default function ProblemsetList() {
               <th className="text-center">
                 {index + 1 + (Number(currentPage) - 1) * PAGE_SIZE}
               </th>
-              <td>
+              <td className="not-prose flex flex-wrap gap-4">
                 <ProblemSetLink problemset={problemset} />
+                <span className="flex gap-2">
+                  {showTags.value &&
+                    problemset.tags.map((tag) => (
+                      <Link
+                        className="badge gap-1"
+                        to={`/problemset?tags=${tag.name}`}
+                        key={tag.name}
+                      >
+                        <HiOutlineTag />
+                        <span>{tag.name}</span>
+                      </Link>
+                    ))}
+                </span>
               </td>
               <td>{problemset._count.problems}</td>
             </tr>
@@ -139,7 +166,10 @@ export default function ProblemsetList() {
       </table>
 
       <Pagination
-        action={"/problemset" + (tagsUrl.value != null ? "?tags=" + tagsUrl.value : "")}
+        action={
+          "/problemset" +
+          (tagsUrl.value != null ? "?tags=" + tagsUrl.value : "")
+        }
         totalPages={totalPages.value}
         currentPage={currentPage.value}
       />
@@ -147,5 +177,5 @@ export default function ProblemsetList() {
   );
 }
 
-export { ErrorBoundary } from "~/src/ErrorBoundary";
-export { CatchBoundary } from "~/src/CatchBoundary";
+export {ErrorBoundary} from "~/src/ErrorBoundary";
+export {CatchBoundary} from "~/src/CatchBoundary";
