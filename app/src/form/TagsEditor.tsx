@@ -36,7 +36,7 @@ export function TagsEditor(props: Props) {
             <HiOutlineX
               className="cursor-pointer"
               onClick={() => {
-                tags.value = tags.value.filter((name) => name !== tag.value);
+                tags.value = tags.value.filter((tagName) => tagName !== name);
               }}
             />
           </div>

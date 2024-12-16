@@ -76,7 +76,7 @@ export default function ProblemView() {
           {problem.value.tags.map(({ name }) => (
             <Link
               className="badge gap-1"
-              to={`/problem?tags=${name}`}
+              to={`/problem?tags=${encodeURIComponent(name)}`}
               key={name}
             >
               <HiOutlineTag />

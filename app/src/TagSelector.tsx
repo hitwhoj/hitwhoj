@@ -21,7 +21,7 @@ export function TagSelector(props: Props) {
       if (query.length != 0) {
         query += ",";
       }
-      query += tag;
+      query += encodeURIComponent(tag);
     }
     navigate(props.action + (query.length != 0 ? "?tags=" + query : ""));
   };
@@ -49,7 +49,7 @@ export function TagSelector(props: Props) {
                 placeholder="选择标签"
                 value={tag.value}
                 onChange={(event) => {
-                  const forbiddenCharacters = /[%:/?#[\]@!$&'()*+,;=<>"{}|\\^~`]/g;
+                  const forbiddenCharacters = /%/g;
                   event.target.value = event.target.value.replace(forbiddenCharacters, '');
                   tag.value = event.target.value;
                 }}

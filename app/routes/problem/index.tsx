@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url);
   const page = invariant(pageScheme, url.searchParams.get("page") || "1");
   const tagsUrl = url.searchParams.get("tags");
-  const tags = tagsUrl ? tagsUrl.split(",") : [];
+  const tags = tagsUrl ? tagsUrl.split(",").map((value) => decodeURIComponent(value)) : [];
   const tagQuery = tags.map((tagName) => { return { tags: { some: { name: tagName } } } });
   const totalProblems = await db.problem.count({
     where: viewAll
@@ -139,7 +139,7 @@ export default function ProblemIndex() {
                   {showTags.value && problem.tags.map((tag) => (
                     <Link
                       className="badge gap-1"
-                      to={`/problem?tags=${tag.name}`}
+                      to={`/problem?tags=${encodeURIComponent(tag.name)}`}
                       key={tag.name}
                     >
                       <HiOutlineTag />
