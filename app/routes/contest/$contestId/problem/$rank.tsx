@@ -80,6 +80,7 @@ export async function loader({ request, params }: LoaderArgs) {
       contest: {
         select: {
           id: true,
+          system: true,
           beginTime: true,
           endTime: true,
         },
@@ -187,7 +188,9 @@ export default function ContestProblemView() {
   useEffect(() => {
     if (transition.actionSuccess) {
       Toasts.success("提交成功");
-      visible.value = true;
+      if (contest.value.system !== "OI" || status.value.isEnded) {
+        visible.value = true;
+      }
     }
   }, [transition.actionSuccess]);
 
@@ -344,14 +347,16 @@ export default function ContestProblemView() {
               </select>
             </div>
             <div className="inline-flex gap-4">
-              <button
-                className="btn btn-ghost gap-2"
-                type="button"
-                onClick={() => (visible.value = true)}
-              >
-                <AiOutlineHistory />
-                <span>查看提交记录</span>
-              </button>
+              {(contest.value.system !== "OI" || status.value.isEnded) && (
+                <button
+                  className="btn btn-ghost gap-2"
+                  type="button"
+                  onClick={() => (visible.value = true)}
+                >
+                  <AiOutlineHistory />
+                  <span>查看提交记录</span>
+                </button>
+              )}
               {!status.value.isNotStarted && !status.value.isEnded ? (
                 <button
                   className="btn btn-primary gap-2"

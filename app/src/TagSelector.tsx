@@ -55,10 +55,11 @@ export function TagSelector(props: Props) {
                 }}
               />
               <div className="dropdown-content rounded-t-box rounded-b-box top-0 mt-16 h-[70vh] max-h-96 w-52 overflow-y-auto bg-base-200 text-base-content shadow-2xl">
-                <div className="grid grid-cols-1 gap-3 p-3" tabIndex={0}>
+                <div className="grid grid-cols-1 p-3" tabIndex={0}>
                   {props.allTags.concat(tags.value).filter((item, index, arr) => arr.indexOf(item) === index).map(option => (
-                    <label key={option} className="flex justify-start items-center px-4 py-2 text-sm btn btn-ghost normal-case">
+                    <div key={option} className="flex flex-nowrap justify-start items-center px-4 py-2 btn btn-ghost normal-case">
                       <input
+                        id="tagCheckbox"
                         type="checkbox"
                         checked={tags.value.includes(option)}
                         onChange={() => {
@@ -71,8 +72,8 @@ export function TagSelector(props: Props) {
                         }}
                         className="checkbox mr-2 leading-tight"
                       />
-                      {option}
-                    </label>
+                      <label className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">{option}</label>
+                    </div>
                   ))}
                 </div>
               </div>

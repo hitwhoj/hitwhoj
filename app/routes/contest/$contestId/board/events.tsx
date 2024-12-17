@@ -15,7 +15,9 @@ const observable = recordFinishSubject.pipe(
         where: { id },
         select: {
           id: true,
+          score: true,
           status: true,
+          subtasks: true,
           submittedAt: true,
           problemId: true,
           submitter: { select: { ...selectUserData } },
