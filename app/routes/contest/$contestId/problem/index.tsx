@@ -39,6 +39,7 @@ export async function loader({ request, params }: LoaderArgs) {
     const contest = await db.contest.findUnique({
       where: { id: contestId },
       select: {
+        system: true,
         beginTime: true,
         endTime: true,
       },
@@ -52,6 +53,7 @@ export async function loader({ request, params }: LoaderArgs) {
     const contest = await db.contest.findUnique({
       where: { id: contestId },
       select: {
+        system: true,
         beginTime: true,
         endTime: true,
         problems: {
@@ -139,6 +141,7 @@ function Countdown(props: CountdownProps) {
 
 export default function ContestProblemIndex() {
   const loaderData = useSignalLoaderData<typeof loader>();
+  const contest = useComputed(() => loaderData.value.contest);
   const navigate = useNavigate();
 
   return loaderData.value.countdown ? (
@@ -156,7 +159,7 @@ export default function ContestProblemIndex() {
         <tr>
           <th className="w-16" />
           <th>题目</th>
-          <th>状态</th>
+          {contest.value.system === "ACM" && <th>状态</th>}
         </tr>
       </thead>
       <tbody>
@@ -181,12 +184,14 @@ export default function ContestProblemIndex() {
                   <HiOutlineArrowsExpand />
                 </Link>
               </td>
-              <td>
-                {accepted && (
-                  <HiOutlineCheck className="h-6 w-6 text-success" />
-                )}
-                {failed && <HiOutlineX className="h-6 w-6 text-error" />}
-              </td>
+              {contest.value.system === "ACM" && (
+                <td>
+                  {accepted && (
+                    <HiOutlineCheck className="h-6 w-6 text-success"/>
+                  )}
+                  {failed && <HiOutlineX className="h-6 w-6 text-error"/>}
+                </td>
+              )}
             </tr>
           );
         })}

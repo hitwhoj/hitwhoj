@@ -55,6 +55,7 @@ export async function loader({ request }: LoaderArgs) {
     select: {
       id: true,
       status: true,
+      contest: true,
       submittedAt: true,
       problem: {
         select: {
@@ -152,30 +153,35 @@ export default function RecordList() {
           </tr>
         </thead>
         <tbody>
-          {records.value.map((record) => (
-            <tr key={record.id}>
-              <th className="text-center">{record.id}</th>
-              <td>
-                <Link to={`/record/${record.id}`}>
-                  <RecordStatus status={record.status} />
-                </Link>
-              </td>
-              <td className="hidden md:table-cell">
-                <ProblemLink problem={record.problem} />
-              </td>
-              <td>
-                <UserLink user={record.submitter} />
-              </td>
-              <td className="hidden xl:table-cell">
+          {records.value.map((record) => {
+            if (record.contest == null || (record.contest.system !== "OI" || new Date(record.contest.endTime) < new Date())) {
+              return (
+                <tr key={record.id}>
+                  <th className="text-center">{record.id}</th>
+                  <td>
+                    <Link to={`/record/${record.id}`}>
+                      <RecordStatus status={record.status} />
+                    </Link>
+                  </td>
+                  <td className="hidden md:table-cell">
+                    <ProblemLink problem={record.problem} />
+                  </td>
+                  <td>
+                    <UserLink user={record.submitter} />
+                  </td>
+                  <td className="hidden xl:table-cell">
                 <span
                   className="tooltip"
                   data-tip={formatDateTime(record.submittedAt)}
                 >
                   {formatRelativeDateTime(record.submittedAt)}
                 </span>
-              </td>
-            </tr>
-          ))}
+                  </td>
+                </tr>
+              );
+            }
+            return null;
+          })}
         </tbody>
       </table>
       <Pagination

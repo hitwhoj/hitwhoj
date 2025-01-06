@@ -20,6 +20,7 @@ interface Problem {
   count: number;
   solved: boolean;
   penalty: number;
+  score: number;
 }
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -39,6 +40,8 @@ export async function loader({ request, params }: LoaderArgs) {
       id: true,
       title: true,
       beginTime: true,
+      endTime: true,
+      system: true,
       problems: {
         orderBy: { rank: "asc" },
         select: { problemId: true, rank: true },
@@ -47,6 +50,8 @@ export async function loader({ request, params }: LoaderArgs) {
         orderBy: { submittedAt: "asc" },
         select: {
           status: true,
+          score: true,
+          subtasks: true,
           submittedAt: true,
           problemId: true,
           submitter: { select: { ...selectUserData } },
@@ -97,7 +102,7 @@ export default function RankView() {
       const user = userMap.get(record.submitter.id)!;
 
       if (!user.has(record.problemId))
-        user.set(record.problemId, { count: 0, solved: false, penalty: 0 });
+        user.set(record.problemId, { count: 0, solved: false, penalty: 0, score: 0 });
       const problem = user.get(record.problemId)!;
 
       if (!problem.solved) {
@@ -105,6 +110,9 @@ export default function RankView() {
         problem.solved ||= record.status === "Accepted";
         problem.penalty = penalty;
       }
+
+      if (record.score > problem.score)
+        problem.score = record.score;
 
       user.set(record.problemId, problem);
     }
@@ -127,21 +135,32 @@ export default function RankView() {
           .filter((p) => p.solved)
           .reduce((acc, p) => acc + p.penalty, 0),
         problems: userMap.get(id)!,
+        score: [...userMap.get(id)!.values()].reduce((acc, p) => acc + p.score, 0)
       }))
       // sort rank
       .sort((a, b) => {
-        if (a.solved !== b.solved) return b.solved - a.solved;
-        if (a.penalty !== b.penalty) return a.penalty - b.penalty;
+        if (contest.value.system === "ACM") {
+          if (a.solved !== b.solved) return b.solved - a.solved;
+          if (a.penalty !== b.penalty) return a.penalty - b.penalty;
+        } else {
+          if (a.score !== b.score) return b.score - a.score;
+        }
         return a.submitter.id - b.submitter.id;
       })
       // set rank
       .map((user, index) => ({ ...user, rank: index + 1 }))
-      // adjust rank
+      // 处理排名相同情况
       .map((user, index, array) => {
         if (!index) return user;
         const prev = array[index - 1];
-        if (prev.solved === user.solved && prev.penalty === user.penalty) {
-          user.rank = prev.rank;
+        if (contest.value.system === "ACM") {
+          if (prev.solved === user.solved && prev.penalty === user.penalty) {
+            user.rank = prev.rank;
+          }
+        } else {
+          if (prev.score === user.score) {
+            user.rank = prev.rank;
+          }
         }
         return user;
       });
@@ -153,23 +172,46 @@ export default function RankView() {
     const data = users.value.map((user) => {
       const problems = contest.value.problems.map((problem) => {
         const p = user.problems.get(problem.problemId);
-        if (!p) return "-";
-        return p.solved ? `+${p.count}/${p.penalty}\t` : `-${p.count}\t`;
+        if (contest.value.system === "ACM") {
+          if (!p) return "-";
+          return p.solved ? `+${p.count}/${p.penalty}\t` : `-${p.count}\t`;
+        }
+        return p ? p.score.toString() : "0";
       });
-      return [
-        user.rank,
-        user.submitter.nickname,
-        user.submitter.username,
-        user.submitter.studentId,
-        user.solved,
-        user.penalty,
-        ...problems,
-      ];
+      if (contest.value.system === "ACM") {
+        return [
+          user.rank,
+          user.submitter.nickname,
+          user.submitter.username,
+          user.submitter.studentId,
+          user.solved,
+          user.penalty,
+          ...problems,
+        ];
+      } else {
+        return [
+          user.rank,
+          user.submitter.nickname,
+          user.submitter.username,
+          user.submitter.studentId,
+          user.score,
+          ...problems,
+        ];
+      }
     });
     // add \ufeff to make excel recognize the csv file as utf-8
-    let csv =
-      "\ufeff排名,选手,用户名,学号,解题数,总罚时," +
-      contest.value.problems
+    let csv = "";
+    switch (contest.value.system) {
+      case "ACM":
+        csv += "\ufeff排名,选手,用户名,学号,解题数,总罚时,";
+        break;
+      case "IOI":
+      case "OI":
+      case "Homework":
+        csv += "\ufeff排名,选手,用户名,学号,总分数,";
+        break;
+    }
+    csv += contest.value.problems
         .map((p) => String.fromCharCode(0x40 + p.rank))
         .join(",") +
       "\n";
@@ -189,68 +231,106 @@ export default function RankView() {
 
   return (
     <>
-      {canExport && (
-        <div className="flex w-full items-center justify-end">
-          <button
-            className="btn btn-primary btn-sm gap-2 font-normal"
-            onClick={exportData}
-          >
-            <HiOutlineSave />
-            导出csv
-          </button>
-        </div>
-      )}
-      <table className="not-prose table w-full">
-        <thead>
-          <tr>
-            <th className="w-16 text-center">排名</th>
-            <th>选手</th>
-            <th className="w-16 text-center">解题数</th>
-            <th className="w-16 text-center">总罚时</th>
-            {contest.value.problems.map((problem) => (
-              <th key={problem.problemId} className="w-16 text-center">
-                {String.fromCharCode(0x40 + problem.rank)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {users.value.map((user) => (
-            <tr key={user.submitter.id}>
-              <th className="text-center">{user.rank}</th>
-              <td>
-                <UserLink user={user.submitter} />
-              </td>
-              <td className="text-center">{user.solved}</td>
-              <td className="text-center">{user.penalty}</td>
-              {contest.value.problems.map(({ problemId }) => {
-                const problem = user.problems.get(problemId);
-                if (!problem)
-                  return (
-                    <td key={problemId} className="text-center">
-                      -
-                    </td>
-                  );
-
-                return (
-                  <td
-                    key={problemId}
-                    className={
-                      problem.solved
-                        ? "bg-success text-center text-success-content"
-                        : "bg-error text-center text-error-content"
-                    }
-                  >
-                    {problem.solved
-                      ? `+${problem.count}/${problem.penalty}`
-                      : `-${problem.count}`}
+      {(contest.value.system !== "OI" ||
+        new Date(contest.value.endTime) < new Date()) && (
+        <>
+          {canExport && (
+            <div className="flex w-full items-center justify-end">
+              <button
+                className="btn btn-primary btn-sm gap-2 font-normal"
+                onClick={exportData}
+              >
+                <HiOutlineSave />
+                导出csv
+              </button>
+            </div>
+          )}
+          <table className="not-prose table w-full">
+            <thead>
+              <tr>
+                <th className="w-16 text-center">排名</th>
+                <th>选手</th>
+                {contest.value.system === "ACM" && (
+                  <>
+                    <th className="w-16 text-center">解题数</th>
+                    <th className="w-16 text-center">总罚时</th>
+                  </>
+                )}
+                {contest.value.system !== "ACM" && (
+                  <th className="w-16 text-center">总分数</th>
+                )}
+                {contest.value.problems.map((problem) => (
+                  <th key={problem.problemId} className="w-16 text-center">
+                    {String.fromCharCode(0x40 + problem.rank)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.value.map((user) => (
+                <tr key={user.submitter.id}>
+                  <th className="text-center">{user.rank}</th>
+                  <td>
+                    <UserLink user={user.submitter} />
                   </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {contest.value.system === "ACM" && (
+                    <>
+                      <td className="text-center">{user.solved}</td>
+                      <td className="text-center">{user.penalty}</td>
+                    </>
+                  )}
+                  {contest.value.system !== "ACM" && (
+                    <td className="text-center">{user.score}</td>
+                  )}
+                  {contest.value.problems.map(({ problemId }) => {
+                    const problem = user.problems.get(problemId);
+                    if (contest.value.system === "ACM") {
+                      if (!problem)
+                        return (
+                          <td key={problemId} className="text-center">
+                            -
+                          </td>
+                        );
+
+                      return (
+                        <td
+                          key={problemId}
+                          className={
+                            problem.solved
+                              ? "bg-success text-center text-success-content"
+                              : "bg-error text-center text-error-content"
+                          }
+                        >
+                          {problem.solved
+                            ? `+${problem.count}/${problem.penalty}`
+                            : `-${problem.count}`}
+                        </td>
+                      );
+                    } else {
+                      if (!problem) {
+                        return (
+                          <td key={problemId} className="text-center">
+                            0
+                          </td>
+                        );
+                      }
+                      return (
+                        <td key={problemId} className="text-center">
+                          {problem.score}
+                        </td>
+                      );
+                    }
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      {contest.value.system === "OI" &&
+        new Date(contest.value.endTime) >= new Date() && (
+          <label className="text-center">OI赛制比赛结束前不公开排行榜</label>
+        )}
     </>
   );
 }

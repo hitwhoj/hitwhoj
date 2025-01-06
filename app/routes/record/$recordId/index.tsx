@@ -103,87 +103,94 @@ export default function RecordView() {
 
   return (
     <>
-      <h1>
-        <RecordStatus status={record.value.status} />
-      </h1>
+      {(!record.value.contest || record.value.contest.system !== "OI" || new Date(record.value.contest.endTime) < new Date()) && (
+        <>
+          <h1>
+            <RecordStatus status={record.value.status} />
+          </h1>
 
-      <p>
-        <RecordTimeMemory
-          time={record.value.time}
-          memory={record.value.memory}
-        />
-      </p>
+          <p>
+            <RecordTimeMemory
+              time={record.value.time}
+              memory={record.value.memory}
+            />
+          </p>
 
-      <div className="my-4 flex flex-wrap gap-4">
+          <div className="my-4 flex flex-wrap gap-4">
         <span>
           <span className="opacity-60">用户：</span>
           <UserLink user={record.value.submitter} />
         </span>
-        <span>
+            <span>
           <span className="opacity-60">题目：</span>
           <ProblemLink problem={record.value.problem} />
         </span>
-        {record.value.contest && (
-          <span>
+            {record.value.contest && (
+              <span>
             <span className="opacity-60">比赛：</span>
             <ContestLink contest={record.value.contest} />
           </span>
-        )}
-      </div>
+            )}
+          </div>
 
-      {record.value.message && (
-        <>
-          <h2>输出信息</h2>
-          <Highlighter language="text">{record.value.message}</Highlighter>
-        </>
-      )}
+          {record.value.message && (
+            <>
+              <h2>输出信息</h2>
+              <Highlighter language="text">{record.value.message}</Highlighter>
+            </>
+          )}
 
-      {subtasks.value.length > 0 && (
-        <>
-          <h2>测试点结果</h2>
-          {subtasks.value.map((subtask, index) => (
-            <div className="collapse collapse-open" key={index} tabIndex={0}>
-              <div className="collapse-title flex gap-2">
-                <span>子任务 {index + 1}</span>
-                <RecordStatus status={subtask.status} />
-                <span>{subtask.message}</span>
-              </div>
-              <div className="collapse-content">
-                {subtask.tasks.map((task, index) => (
-                  <div className="flex items-center gap-2" key={index}>
-                    <HiOutlineChevronRight />
-                    <span>测试点 {index + 1}</span>
-                    <RecordStatus status={task.status} />
-                    <span>{task.message}</span>
-                    <RecordTimeMemory time={task.time} memory={task.memory} />
+          {subtasks.value.length > 0 && (
+            <>
+              <h2>测试点结果</h2>
+              {subtasks.value.map((subtask, index) => (
+                <div className="collapse collapse-open" key={index} tabIndex={0}>
+                  <div className="collapse-title flex gap-2">
+                    <span>子任务 {index + 1}</span>
+                    <RecordStatus status={subtask.status} />
+                    <span>{subtask.message}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                  <div className="collapse-content">
+                    {subtask.tasks.map((task, index) => (
+                      <div className="flex items-center gap-2" key={index}>
+                        <HiOutlineChevronRight />
+                        <span>测试点 {index + 1}</span>
+                        <RecordStatus status={task.status} />
+                        <span>{task.message}</span>
+                        <RecordTimeMemory time={task.time} memory={task.memory} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {code.value && (
+            <>
+              <h2 className="flex gap-2">
+                <span>源代码</span>
+                <button
+                  className="btn btn-ghost btn-square btn-sm"
+                  onClick={() =>
+                    navigator.clipboard.writeText(code.value).then(
+                      () => Toasts.success("复制成功"),
+                      () => Toasts.error("权限不足")
+                    )
+                  }
+                >
+                  <AiOutlineCopy className="h-4 w-4 text-info" />
+                </button>
+              </h2>
+              <Highlighter language={record.value.language}>
+                {code.value}
+              </Highlighter>
+            </>
+          )}
         </>
       )}
-
-      {code.value && (
-        <>
-          <h2 className="flex gap-2">
-            <span>源代码</span>
-            <button
-              className="btn btn-ghost btn-square btn-sm"
-              onClick={() =>
-                navigator.clipboard.writeText(code.value).then(
-                  () => Toasts.success("复制成功"),
-                  () => Toasts.error("权限不足")
-                )
-              }
-            >
-              <AiOutlineCopy className="h-4 w-4 text-info" />
-            </button>
-          </h2>
-          <Highlighter language={record.value.language}>
-            {code.value}
-          </Highlighter>
-        </>
+      {record.value.contest && record.value.contest.system === "OI" && new Date(record.value.contest.endTime) >= new Date() && (
+        <h1>OI赛制比赛结束前不允许查看提交结果</h1>
       )}
     </>
   );
